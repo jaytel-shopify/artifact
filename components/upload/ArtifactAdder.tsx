@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus } from "lucide-react";
@@ -102,9 +102,9 @@ export default function ArtifactAdder({
                 try {
                   const result = JSON.parse(xhr.responseText);
                   resolve(result);
-                } catch (e) {
-                  reject(new Error('Failed to parse upload response'));
-                }
+              } catch {
+                reject(new Error('Failed to parse upload response'));
+              }
               } else {
                 reject(new Error(`Upload failed with status ${xhr.status}`));
               }
@@ -185,9 +185,10 @@ export default function ArtifactAdder({
       setOpen(false);
       resetState();
       onAdded?.();
-    } catch (e: any) {
-      setError(e.message);
-      toast.error(e.message || "Upload failed. Please try again.");
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Upload failed. Please try again.";
+      setError(message);
+      toast.error(message);
       setUploadState({
         uploading: false,
         totalFiles: 0,

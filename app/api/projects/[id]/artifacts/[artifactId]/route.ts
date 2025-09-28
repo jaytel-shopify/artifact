@@ -20,7 +20,7 @@ export async function PATCH(
     .reduce((obj, key) => {
       obj[key] = body[key];
       return obj;
-    }, {} as any);
+    }, {} as Record<string, unknown>);
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });

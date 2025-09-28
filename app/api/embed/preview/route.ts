@@ -46,8 +46,9 @@ export async function GET(req: NextRequest) {
       }
     } catch {}
     return NextResponse.json({ allowEmbed, title: meta.title, description: meta.description, iconUrl, url });
-  } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Failed to process request';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 

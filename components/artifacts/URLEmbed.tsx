@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { DEFAULT_VIEWPORT_KEY, VIEWPORTS, type ViewportKey, getViewportDimensions } from "@/lib/viewports";
 
 function sanitizeUrl(input: string): string | null {

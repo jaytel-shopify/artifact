@@ -4,7 +4,7 @@ import { Artifact } from "@/types";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
-export function usePageArtifacts(projectId: string | undefined, pageId: string | undefined) {
+export function usePageArtifacts(projectId: string | undefined, pageId: string | undefined | null) {
   const { data, error, isLoading, mutate } = useSWR<{ artifacts: Artifact[] }>(
     projectId && pageId ? `/api/projects/${projectId}/pages/${pageId}/artifacts` : null,
     fetcher,

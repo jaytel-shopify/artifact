@@ -88,7 +88,6 @@ export default function AppLayout({
         sidebarOpen={sidebarOpen}
         projectId={projectId}
         projectName={projectName}
-        onProjectNameUpdate={onProjectNameUpdate}
         onArtifactAdded={onArtifactAdded}
         currentPageId={currentPageId}
         columns={columns}

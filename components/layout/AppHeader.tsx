@@ -1,16 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, PanelLeft, PanelLeftClose, ChevronDown, Share, Settings, LogOut, Plus } from "lucide-react";
+import { ArrowLeft, PanelLeft, PanelLeftClose, Share, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +25,6 @@ interface AppHeaderProps {
   // Project-specific props (for canvas view)
   projectId?: string;
   projectName?: string;
-  onProjectNameUpdate?: (name: string) => void;
   onArtifactAdded?: () => void;
   currentPageId?: string;
   
@@ -54,7 +46,6 @@ export default function AppHeader({
   sidebarOpen,
   projectId,
   projectName,
-  onProjectNameUpdate,
   onArtifactAdded,
   currentPageId,
   columns = 3,

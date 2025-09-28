@@ -33,7 +33,7 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid body" }, { status: 400 });
   }
 
-  const updateData: any = {};
+  const updateData: { name?: string; position?: number } = {};
   if (typeof body.name === "string") updateData.name = body.name;
   if (typeof body.position === "number") updateData.position = body.position;
 

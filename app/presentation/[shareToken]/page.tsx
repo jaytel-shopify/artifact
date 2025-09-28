@@ -11,6 +11,7 @@ import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { useRouter } from "next/navigation";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
+import type { Project } from "@/types";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -55,7 +56,7 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
   }, [columns, hydrated]);
 
   // Fetch project data
-  const { data: projectRes } = useSWR<{ project: any }>(
+  const { data: projectRes } = useSWR<{ project: Project }>(
     () => (shareToken ? `/api/projects/by-share?token=${shareToken}` : null),
     fetcher,
     { revalidateOnFocus: false }
@@ -64,10 +65,10 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
 
   // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage } = usePages(project?.id);
-  const { currentPageId, currentPage, selectPage } = useCurrentPage(pages, project?.id);
+  const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
   // Fetch page-specific artifacts
-  const { artifacts, createArtifact, reorderArtifacts, updateArtifact, deleteArtifact, refetch: refetchArtifacts } = usePageArtifacts(project?.id, currentPageId);
+  const { artifacts, createArtifact, reorderArtifacts, updateArtifact, deleteArtifact, refetch: refetchArtifacts } = usePageArtifacts(project?.id, currentPageId || undefined);
 
   // Set document title
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
     try {
       let completedCount = 0;
       
-      for (const [index, file] of files.entries()) {
+      for (const file of files) {
         // Upload file with progress tracking
         const form = new FormData();
         form.append("file", file);
@@ -120,7 +121,7 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
               try {
                 const result = JSON.parse(xhr.responseText);
                 resolve(result);
-              } catch (e) {
+              } catch {
                 reject(new Error('Failed to parse upload response'));
               }
             } else {
@@ -287,7 +288,7 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
       onColumnsChange={setColumns}
       showColumnControls={true}
       pages={pages}
-      currentPageId={currentPageId}
+      currentPageId={currentPageId || undefined}
       onPageSelect={selectPage}
       onPageRename={handlePageRename}
       onPageCreate={handlePageCreate}

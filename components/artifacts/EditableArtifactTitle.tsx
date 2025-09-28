@@ -13,7 +13,6 @@ interface EditableArtifactTitleProps {
 
 export default function EditableArtifactTitle({
   title,
-  artifactId,
   onUpdate,
   className = "",
 }: EditableArtifactTitleProps) {

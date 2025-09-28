@@ -66,7 +66,7 @@ export async function POST(
   if (posErr) {
     return NextResponse.json({ error: posErr.message }, { status: 500 });
   }
-  const currentMax = Array.isArray(positions) && positions.length > 0 ? (positions[0] as any).position ?? 0 : 0;
+  const currentMax = Array.isArray(positions) && positions.length > 0 ? (positions[0] as { position: number }).position ?? 0 : 0;
   const nextPosition = (Number.isFinite(currentMax) ? currentMax : 0) + 1;
 
   const insert = {

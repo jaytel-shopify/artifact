@@ -4,15 +4,7 @@ import ImageViewer from "@/components/artifacts/ImageViewer";
 import URLEmbed from "@/components/artifacts/URLEmbed";
 import VideoPlayer from "@/components/artifacts/VideoPlayer";
 import PDFViewer from "@/components/artifacts/PDFViewer";
-
-type Artifact = {
-  id: string;
-  type: string;
-  source_url: string;
-  file_path: string | null;
-  name: string;
-  metadata?: any;
-};
+import type { Artifact } from "@/types";
 
 export default function ArtifactPreview({ artifact, maxHeight }: { artifact: Artifact; maxHeight?: number }) {
   return (

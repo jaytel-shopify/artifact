@@ -5,9 +5,9 @@ import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 
-export default function LoginPage() {
+function LoginContent() {
   const supabase = getSupabaseClient();
   const { user, loading } = useAuth();
   const router = useRouter();
@@ -72,5 +72,19 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+        </div>
+      }
+    >
+      <LoginContent />
+    </Suspense>
   );
 }

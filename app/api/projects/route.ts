@@ -23,7 +23,7 @@ async function getSupabaseServerClient() {
   );
 }
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   const supabase = await getSupabaseServerClient();
   
   // Get current user
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
   // If no name provided, generate a unique default name
   if (!body?.name) {
     let counter = 1;
-    let baseName = "Untitled Project";
+    const baseName = "Untitled Project";
     
     // Check for existing projects with similar names
     while (true) {
