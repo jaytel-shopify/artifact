@@ -17,20 +17,8 @@ function LoginContent() {
   // Get current domain for proper redirects
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL;
 
-  useEffect(() => {
-    if (user && !loading) {
-      // Redirect to intended destination or homepage
-      const destination = redirectTo || '/';
-      console.log('Login page: User authenticated, redirecting to:', destination);
-      
-      // Add a small delay to ensure auth state is fully settled
-      const timeoutId = setTimeout(() => {
-        router.replace(destination);
-      }, 100);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [user, loading, router, redirectTo]);
+  // Let middleware handle redirects for authenticated users
+  // No client-side redirects from login page to prevent loops
 
   // Show loading while auth is being determined
   if (loading) {
@@ -41,17 +29,7 @@ function LoginContent() {
     );
   }
 
-  // If user is authenticated, show redirecting state
-  if (user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
-        <div className="text-center space-y-4">
-          <div className="text-white">Redirecting to dashboard...</div>
-          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
-        </div>
-      </div>
-    );
-  }
+  // If user is authenticated, middleware will redirect them away from this page
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)] p-6">

@@ -45,9 +45,14 @@ export async function GET(request: Request) {
     if (!error) {
       console.log('OAuth exchange successful, session created');
       
-      // Force redirect to homepage (not login) to break potential loops
-      const destination = redirectTo === '/auth/login' ? '/' : (redirectTo || '/');
-      response = NextResponse.redirect(`${origin}${destination}`);
+      // Redirect to success page to let auth settle, then to final destination
+      const finalDestination = redirectTo === '/auth/login' ? '/' : (redirectTo || '/');
+      const successUrl = new URL('/auth/success', origin);
+      if (finalDestination !== '/') {
+        successUrl.searchParams.set('redirectTo', finalDestination);
+      }
+      
+      response = NextResponse.redirect(successUrl.toString());
       
       return response;
     } else {

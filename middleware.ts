@@ -47,6 +47,7 @@ export async function middleware(req: NextRequest) {
   const publicRoutes = [
     '/auth/login',
     '/auth/callback',
+    '/auth/success',
   ];
 
   // Share routes that require authentication but allow viewing shared projects
