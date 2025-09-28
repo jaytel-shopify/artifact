@@ -53,7 +53,7 @@ export async function middleware(req: NextRequest) {
   const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname);
 
   // If not authenticated and not on a public route, redirect to login
-    if (!user && !isPublicRoute) {
+  if (!user && !isPublicRoute) {
     const redirectUrl = new URL('/auth/login', req.url);
     
     // Preserve the original URL for redirect after login (only if not root)
@@ -66,11 +66,13 @@ export async function middleware(req: NextRequest) {
       }
     }
     
+    console.log('Redirecting unauthenticated user to login:', redirectUrl.toString());
     return NextResponse.redirect(redirectUrl);
   }
 
   // If authenticated and on login page, redirect to homepage
   if (user && req.nextUrl.pathname === '/auth/login') {
+    console.log('Redirecting authenticated user from login to homepage');
     return NextResponse.redirect(new URL('/', req.url));
   }
 

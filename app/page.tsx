@@ -88,10 +88,13 @@ export default function HomePage() {
     );
   }
 
-  // If not authenticated, middleware should redirect, but just in case
+  // If not authenticated, let middleware handle redirect
   if (!user) {
-    router.push('/auth/login');
-    return null;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (

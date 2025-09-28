@@ -21,10 +21,12 @@ function LoginContent() {
     if (user && !loading) {
       // Redirect to intended destination or homepage
       const destination = redirectTo || '/';
-      router.push(destination);
+      console.log('Redirecting authenticated user to:', destination);
+      router.replace(destination); // Use replace instead of push to avoid history issues
     }
   }, [user, loading, router, redirectTo]);
 
+  // Show loading while auth is being determined
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
@@ -33,10 +35,14 @@ function LoginContent() {
     );
   }
 
+  // If user is authenticated, show redirecting state
   if (user) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
-        <div className="text-white">Redirecting...</div>
+        <div className="text-center space-y-4">
+          <div className="text-white">Redirecting to dashboard...</div>
+          <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
+        </div>
       </div>
     );
   }
