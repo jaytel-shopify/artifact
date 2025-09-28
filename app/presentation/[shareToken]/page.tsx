@@ -282,7 +282,6 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
       mode="canvas"
       projectId={project.id}
       projectName={project.name}
-      onProjectNameUpdate={handleProjectNameUpdate}
       onArtifactAdded={refetchArtifacts}
       columns={columns}
       onColumnsChange={setColumns}
