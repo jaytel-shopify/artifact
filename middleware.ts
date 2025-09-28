@@ -3,12 +3,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export async function middleware(req: NextRequest) {
+  // Create a response that we can modify
   let response = NextResponse.next({
     request: {
       headers: req.headers,
     },
   });
 
+  // Create a supabase client with proper cookie handling
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -18,38 +20,30 @@ export async function middleware(req: NextRequest) {
           return req.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: any) {
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          // Set the cookie on both request and response
+          req.cookies.set({ name, value, ...options });
+          response.cookies.set({ name, value, ...options });
         },
         remove(name: string, options: any) {
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          // Remove the cookie from both request and response
+          req.cookies.set({ name, value: '', ...options });
+          response.cookies.set({ name, value: '', ...options, maxAge: 0 });
         },
       },
     }
   );
 
-  // Get current user session with detailed logging
+  // Try to get the session first (more reliable than getUser)
   const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
   const currentPath = req.nextUrl.pathname;
+  const user = session?.user;
   
-  console.log(`Middleware detailed check:`, {
-    path: currentPath,
-    userEmail: user?.email || 'None',
-    userError: userError?.message || 'None',
-    hasUser: !!user,
-    origin: req.nextUrl.origin
-  });
+  // Server-side logging (will appear in Vercel functions logs)
+  console.log(`[Middleware] Path: ${currentPath}, User: ${user?.email || 'None'}, Session: ${!!session}`);
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -58,53 +52,42 @@ export async function middleware(req: NextRequest) {
     '/auth/success',
   ];
 
-  // Share routes that require authentication but allow viewing shared projects
-  const shareRoutes = currentPath.startsWith('/presentation/');
-
   // Check if current route is public
   const isPublicRoute = publicRoutes.includes(currentPath);
 
-  // If not authenticated and not on a public route, redirect to login
-  if (!user && !isPublicRoute) {
+  // If no session and not on a public route, redirect to login
+  if (!session && !isPublicRoute) {
     const redirectUrl = new URL('/auth/login', req.url);
     
-    // Preserve the original URL for redirect after login (only if not root)
+    // Preserve the original URL for redirect after login
     if (currentPath !== '/') {
-      if (!shareRoutes) {
-        redirectUrl.searchParams.set('redirectTo', currentPath);
-      } else {
-        // For shared presentations, redirect to the share link after login
-        redirectUrl.searchParams.set('redirectTo', currentPath + req.nextUrl.search);
-      }
+      redirectUrl.searchParams.set('redirectTo', currentPath);
     }
     
-    console.log('Middleware: Redirecting unauthenticated user to login:', redirectUrl.toString());
+    console.log('[Middleware] No session, redirecting to login');
     return NextResponse.redirect(redirectUrl);
   }
 
-  // If authenticated and on login/auth pages, redirect to homepage
-  if (user && (currentPath === '/auth/login' || currentPath === '/auth/success')) {
-    console.log('Middleware: Redirecting authenticated user from auth pages to homepage');
+  // If we have a session and on login page, redirect to home
+  if (session && currentPath === '/auth/login') {
+    console.log('[Middleware] Session exists, redirecting from login to home');
     return NextResponse.redirect(new URL('/', req.url));
   }
 
-  // If authenticated and on homepage, allow access
-  if (user && currentPath === '/') {
-    console.log('Middleware: Allowing authenticated user access to homepage');
-  }
-
+  // For all other cases, return the response
   return response;
 }
 
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match all request paths except:
+     * - api/auth/** (Supabase auth endpoints)
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - api routes that don't require auth
+     * - public files (public folder)
      */
-    '/((?!_next/static|_next/image|favicon.ico|api/embed).*)',
+    '/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

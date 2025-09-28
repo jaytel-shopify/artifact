@@ -1,5 +1,5 @@
-import { NextResponse } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
+import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
@@ -7,12 +7,12 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const redirectTo = searchParams.get('redirectTo');
 
-  console.log('Auth callback triggered with code:', !!code);
+  console.log('[Auth Callback] Code received:', !!code, 'RedirectTo:', redirectTo);
 
   if (code) {
-    let response = NextResponse.redirect(`${origin}${redirectTo || '/'}`);
     const cookieStore = await cookies();
     
+    // Create a Supabase client with server-side cookie handling
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -22,50 +22,36 @@ export async function GET(request: Request) {
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: { [key: string]: unknown }) {
-            response.cookies.set({
-              name,
-              value,
-              ...options,
-            });
+            cookieStore.set({ name, value, ...options });
           },
           remove(name: string, options: { [key: string]: unknown }) {
-            response.cookies.set({
-              name,
-              value: '',
-              ...options,
-              maxAge: 0,
-            });
+            cookieStore.delete({ name, ...options });
           },
         },
       }
     );
 
+    // Exchange the code for a session
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      console.log('OAuth exchange successful, session created');
+      console.log('[Auth Callback] Session exchange successful');
       
-      // Get the session to verify it's working
+      // Verify the session was created
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Session verification:', session ? `User: ${session.user.email}` : 'No session');
+      console.log('[Auth Callback] Session verified:', session ? `User: ${session.user.email}` : 'No session');
       
-      // Redirect to success page to let auth settle, then to final destination
-      const finalDestination = redirectTo === '/auth/login' ? '/' : (redirectTo || '/');
-      const successUrl = new URL('/auth/success', origin);
-      if (finalDestination !== '/') {
-        successUrl.searchParams.set('redirectTo', finalDestination);
-      }
+      // Redirect to the success page or intended destination
+      const destination = redirectTo || '/';
+      console.log('[Auth Callback] Redirecting to:', destination);
       
-      console.log('Redirecting to success page:', successUrl.toString());
-      response = NextResponse.redirect(successUrl.toString());
-      
-      return response;
+      return NextResponse.redirect(new URL(destination, origin));
     } else {
-      console.error('OAuth exchange failed:', error);
+      console.error('[Auth Callback] Session exchange failed:', error.message);
+      return NextResponse.redirect(new URL('/auth/login?error=auth_failed', origin));
     }
   }
 
-  // Authentication failed - redirect back to login
-  console.log('Auth callback failed, redirecting to login');
-  return NextResponse.redirect(`${origin}/auth/login`);
+  console.log('[Auth Callback] No code provided, redirecting to login');
+  return NextResponse.redirect(new URL('/auth/login', origin));
 }

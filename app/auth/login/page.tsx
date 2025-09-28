@@ -2,29 +2,54 @@
 
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
-import { getSupabaseClient } from "@/lib/supabase";
+import { getSupabaseBrowserClient } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useEffect, useState } from "react";
 
 function LoginContent() {
-  const supabase = getSupabaseClient();
+  const supabase = getSupabaseBrowserClient();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo');
-  
-  // Get current domain for proper redirects
-  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL;
+  const error = searchParams.get('error');
+  const [currentOrigin, setCurrentOrigin] = useState<string>('');
 
-  // Middleware handles all auth redirects, so this page only shows login UI
+  useEffect(() => {
+    // Set the current origin for redirects
+    setCurrentOrigin(window.location.origin);
+    
+    // Check if already authenticated
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        console.log('[Login Page] User already authenticated:', session.user.email);
+        console.log('[Login Page] Redirecting to home...');
+        window.location.href = '/';
+      }
+    });
+  }, [supabase]);
+
+  if (!currentOrigin) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
+        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)] p-6">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome to Artifact</h1>
-          <p className="text-white/70">Sign in to create and share presentations</p>
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
+      <div className="w-full max-w-md p-8 space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-white">Welcome to Artifact</h1>
+          <p className="text-gray-400">Sign in with your Google account to continue</p>
         </div>
+        
+        {error && (
+          <div className="p-4 bg-red-900/20 border border-red-500 rounded-lg text-red-400 text-sm">
+            Authentication failed. Please try again.
+          </div>
+        )}
 
-        <div className="bg-white rounded-lg p-6">
+        <div className="bg-[var(--color-background-secondary)] rounded-xl p-6">
           <Auth
             supabaseClient={supabase}
             appearance={{
@@ -32,12 +57,17 @@ function LoginContent() {
               variables: {
                 default: {
                   colors: {
-                    brand: '#000000',
-                    brandAccent: '#333333',
+                    brand: '#3b82f6',
+                    brandAccent: '#2563eb',
                   },
                 },
               },
+              className: {
+                container: 'auth-container',
+                button: 'auth-button',
+              },
             }}
+            theme="dark"
             providers={['google']}
             redirectTo={`${currentOrigin}/auth/callback${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
             onlyThirdPartyProviders
@@ -52,8 +82,13 @@ function LoginContent() {
           />
         </div>
 
-        <div className="text-center mt-6 text-sm text-white/60">
-          By signing in, you agree to our terms of service and privacy policy.
+        <div className="text-center">
+          <a 
+            href="/auth/debug" 
+            className="text-xs text-gray-500 hover:text-gray-400 underline"
+          >
+            Debug Auth Issues
+          </a>
         </div>
       </div>
     </div>
