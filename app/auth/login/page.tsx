@@ -67,6 +67,13 @@ function LoginContent() {
             redirectTo={`${currentOrigin}/auth/callback${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
             onlyThirdPartyProviders
             showLinks={false}
+            queryParams={{
+              access_type: 'offline',
+              prompt: 'consent',
+            }}
+            providerScopes={{
+              google: 'openid email profile'
+            }}
           />
         </div>
 

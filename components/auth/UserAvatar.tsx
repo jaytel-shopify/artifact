@@ -32,15 +32,15 @@ export default function UserAvatar() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="gap-2 p-2">
           <div className="w-8 h-8 rounded-full overflow-hidden">
-            {user.user_metadata?.avatar_url ? (
+            {user.user_metadata?.picture || user.user_metadata?.avatar_url ? (
               <img 
-                src={user.user_metadata.avatar_url} 
-                alt={user.user_metadata?.full_name || user.email || "User"} 
+                src={user.user_metadata?.picture || user.user_metadata?.avatar_url} 
+                alt={user.user_metadata?.name || user.user_metadata?.full_name || user.email || "User"} 
                 className="w-full h-full object-cover"
               />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center text-white text-sm font-medium">
-                {(user.user_metadata?.full_name || user.email || "U").charAt(0).toUpperCase()}
+                {(user.user_metadata?.name || user.user_metadata?.full_name || user.email || "U").charAt(0).toUpperCase()}
               </div>
             )}
           </div>
@@ -49,7 +49,7 @@ export default function UserAvatar() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         <div className="px-2 py-1.5 text-sm font-medium">
-          {user.user_metadata?.full_name || user.email}
+          {user.user_metadata?.name || user.user_metadata?.full_name || user.email}
         </div>
         <div className="px-2 py-1 text-xs text-muted-foreground">
           {user.email}
