@@ -14,7 +14,6 @@ interface AppLayoutProps {
   // Project-specific props (for canvas mode)
   projectId?: string;
   projectName?: string;
-  onProjectNameUpdate?: (name: string) => void;
   onArtifactAdded?: () => void;
   
   // Column controls
@@ -39,7 +38,6 @@ export default function AppLayout({
   mode,
   projectId,
   projectName,
-  onProjectNameUpdate,
   onArtifactAdded,
   columns,
   onColumnsChange,

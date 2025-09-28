@@ -21,14 +21,14 @@ export async function GET(request: Request) {
           get(name: string) {
             return cookieStore.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: { [key: string]: unknown }) {
             response.cookies.set({
               name,
               value,
               ...options,
             });
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: { [key: string]: unknown }) {
             response.cookies.set({
               name,
               value: '',

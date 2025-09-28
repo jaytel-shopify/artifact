@@ -3,33 +3,18 @@
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useAuth } from "@/components/auth/AuthProvider";
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
 function LoginContent() {
   const supabase = getSupabaseClient();
-  const { user, loading } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo');
   
   // Get current domain for proper redirects
   const currentOrigin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL;
 
-  // Let middleware handle redirects for authenticated users
-  // No client-side redirects from login page to prevent loops
-
-  // Show loading while auth is being determined
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
-        <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  // If user is authenticated, middleware will redirect them away from this page
+  // Middleware handles all auth redirects, so this page only shows login UI
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)] p-6">
