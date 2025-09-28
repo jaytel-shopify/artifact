@@ -35,13 +35,21 @@ export async function middleware(req: NextRequest) {
     }
   );
 
-  // Get current user session
+  // Get current user session with detailed logging
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
   const currentPath = req.nextUrl.pathname;
-  console.log(`Middleware check: ${currentPath} - User: ${user ? user.email : 'None'}`);
+  
+  console.log(`Middleware detailed check:`, {
+    path: currentPath,
+    userEmail: user?.email || 'None',
+    userError: userError?.message || 'None',
+    hasUser: !!user,
+    origin: req.nextUrl.origin
+  });
 
   // Public routes that don't require authentication
   const publicRoutes = [
@@ -61,23 +69,28 @@ export async function middleware(req: NextRequest) {
     const redirectUrl = new URL('/auth/login', req.url);
     
     // Preserve the original URL for redirect after login (only if not root)
-    if (req.nextUrl.pathname !== '/') {
+    if (currentPath !== '/') {
       if (!shareRoutes) {
-        redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
+        redirectUrl.searchParams.set('redirectTo', currentPath);
       } else {
         // For shared presentations, redirect to the share link after login
-        redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname + req.nextUrl.search);
+        redirectUrl.searchParams.set('redirectTo', currentPath + req.nextUrl.search);
       }
     }
     
-    console.log('Redirecting unauthenticated user to login:', redirectUrl.toString());
+    console.log('Middleware: Redirecting unauthenticated user to login:', redirectUrl.toString());
     return NextResponse.redirect(redirectUrl);
   }
 
-  // If authenticated and on login page, redirect to homepage
-  if (user && currentPath === '/auth/login') {
-    console.log('Middleware: Redirecting authenticated user from login to homepage');
+  // If authenticated and on login/auth pages, redirect to homepage
+  if (user && (currentPath === '/auth/login' || currentPath === '/auth/success')) {
+    console.log('Middleware: Redirecting authenticated user from auth pages to homepage');
     return NextResponse.redirect(new URL('/', req.url));
+  }
+
+  // If authenticated and on homepage, allow access
+  if (user && currentPath === '/') {
+    console.log('Middleware: Allowing authenticated user access to homepage');
   }
 
   return response;

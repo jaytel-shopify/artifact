@@ -45,6 +45,10 @@ export async function GET(request: Request) {
     if (!error) {
       console.log('OAuth exchange successful, session created');
       
+      // Get the session to verify it's working
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('Session verification:', session ? `User: ${session.user.email}` : 'No session');
+      
       // Redirect to success page to let auth settle, then to final destination
       const finalDestination = redirectTo === '/auth/login' ? '/' : (redirectTo || '/');
       const successUrl = new URL('/auth/success', origin);
@@ -52,6 +56,7 @@ export async function GET(request: Request) {
         successUrl.searchParams.set('redirectTo', finalDestination);
       }
       
+      console.log('Redirecting to success page:', successUrl.toString());
       response = NextResponse.redirect(successUrl.toString());
       
       return response;

@@ -36,7 +36,7 @@ export default function HomePage() {
     fetcher
   );
   
-  console.log('Homepage render - User:', user ? user.email : 'None', 'Loading:', loading);
+  console.log('Homepage render - User:', user ? user.email : 'None', 'Loading:', loading, 'Projects data:', isLoading);
   
   const [isDeleting, setIsDeleting] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);

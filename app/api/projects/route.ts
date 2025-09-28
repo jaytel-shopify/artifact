@@ -32,7 +32,10 @@ export async function GET() {
     error: userError,
   } = await supabase.auth.getUser();
 
+  console.log('API Projects - User:', user ? user.email : 'None', 'Error:', userError?.message || 'None');
+
   if (userError || !user) {
+    console.log('API Projects: Unauthorized access attempt');
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -43,9 +46,11 @@ export async function GET() {
     .order("created_at", { ascending: false });
 
   if (error) {
+    console.log('API Projects: Database error:', error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
   
+  console.log('API Projects: Successfully returning', data?.length || 0, 'projects for user:', user.email);
   return NextResponse.json({ projects: data ?? [] });
 }
 

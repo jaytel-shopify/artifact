@@ -12,21 +12,23 @@ function AuthSuccessContent() {
   const redirectTo = searchParams.get('redirectTo');
 
   useEffect(() => {
-    console.log('Auth success page - User:', user ? user.email : 'None', 'Loading:', loading);
+    console.log('Auth success page - User:', user ? user.email : 'None', 'Loading:', loading, 'RedirectTo:', redirectTo);
     
-    if (!loading) {
+    // Always wait a bit for auth to settle, regardless of loading state
+    const redirectTimer = setTimeout(() => {
       if (user) {
         const destination = redirectTo || '/';
-        console.log('Auth success: User confirmed, redirecting to:', destination);
-        // Wait a bit longer to ensure auth is fully settled
-        setTimeout(() => {
-          router.replace(destination);
-        }, 500);
+        console.log('Auth success: User confirmed, executing redirect to:', destination);
+        
+        // Force full page navigation to ensure fresh middleware check
+        window.location.replace(destination);
       } else {
-        console.log('Auth success: No user found, redirecting to login');
-        router.replace('/auth/login');
+        console.log('Auth success: No user found after timeout, redirecting to login');
+        window.location.replace('/auth/login');
       }
-    }
+    }, 2000); // Even longer delay to ensure cookies are fully set
+
+    return () => clearTimeout(redirectTimer);
   }, [user, loading, router, redirectTo]);
 
   return (
