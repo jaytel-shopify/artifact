@@ -3,14 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { getSupabaseBrowserClient } from "@/lib/supabase";
-import { Plus, Settings, MoreHorizontal, ExternalLink, Trash2, Share2 } from "lucide-react";
+import { Plus, MoreHorizontal, ExternalLink, Trash2, Share2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import useSWR from "swr";
 import type { Project } from "@/types";
-import { nanoid } from "nanoid";
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -246,7 +243,7 @@ export default function HomePage() {
           <div className="bg-[var(--color-background-secondary)] rounded-lg p-6 max-w-sm w-full mx-4">
             <h2 className="text-lg font-semibold text-white mb-2">Delete Project?</h2>
             <p className="text-gray-400 mb-4">
-              Are you sure you want to delete "{projectToDelete.name}"? This action cannot be undone.
+              Are you sure you want to delete &ldquo;{projectToDelete.name}&rdquo;? This action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <Button

@@ -257,11 +257,6 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
     }
   }, [updatePage]);
 
-  const handleProjectNameUpdate = useCallback((name: string) => {
-    if (!project) return;
-    project.name = name;
-  }, [project]);
-
   const handleBackToHome = useCallback(() => {
     router.push('/');
   }, [router]);

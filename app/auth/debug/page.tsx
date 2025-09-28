@@ -3,12 +3,13 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase";
+import type { Session } from "@supabase/supabase-js";
 
 export default function AuthDebugPage() {
   const { user, loading, session } = useAuth();
-  const [clientSession, setClientSession] = useState<any>(null);
+  const [clientSession, setClientSession] = useState<Session | null>(null);
   const [cookies, setCookies] = useState<string>("");
-  const [apiResponse, setApiResponse] = useState<any>(null);
+  const [apiResponse, setApiResponse] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
     // Get session directly from Supabase client
