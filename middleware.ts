@@ -40,6 +40,9 @@ export async function middleware(req: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const currentPath = req.nextUrl.pathname;
+  console.log(`Middleware check: ${currentPath} - User: ${user ? user.email : 'None'}`);
+
   // Public routes that don't require authentication
   const publicRoutes = [
     '/auth/login',
@@ -47,10 +50,10 @@ export async function middleware(req: NextRequest) {
   ];
 
   // Share routes that require authentication but allow viewing shared projects
-  const shareRoutes = req.nextUrl.pathname.startsWith('/presentation/');
+  const shareRoutes = currentPath.startsWith('/presentation/');
 
   // Check if current route is public
-  const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname);
+  const isPublicRoute = publicRoutes.includes(currentPath);
 
   // If not authenticated and not on a public route, redirect to login
   if (!user && !isPublicRoute) {
@@ -71,8 +74,8 @@ export async function middleware(req: NextRequest) {
   }
 
   // If authenticated and on login page, redirect to homepage
-  if (user && req.nextUrl.pathname === '/auth/login') {
-    console.log('Redirecting authenticated user from login to homepage');
+  if (user && currentPath === '/auth/login') {
+    console.log('Middleware: Redirecting authenticated user from login to homepage');
     return NextResponse.redirect(new URL('/', req.url));
   }
 

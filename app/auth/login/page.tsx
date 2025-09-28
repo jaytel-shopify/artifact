@@ -21,8 +21,14 @@ function LoginContent() {
     if (user && !loading) {
       // Redirect to intended destination or homepage
       const destination = redirectTo || '/';
-      console.log('Redirecting authenticated user to:', destination);
-      router.replace(destination); // Use replace instead of push to avoid history issues
+      console.log('Login page: User authenticated, redirecting to:', destination);
+      
+      // Add a small delay to ensure auth state is fully settled
+      const timeoutId = setTimeout(() => {
+        router.replace(destination);
+      }, 100);
+      
+      return () => clearTimeout(timeoutId);
     }
   }, [user, loading, router, redirectTo]);
 

@@ -7,7 +7,10 @@ export async function GET(request: Request) {
   const code = searchParams.get('code');
   const redirectTo = searchParams.get('redirectTo');
 
+  console.log('Auth callback triggered with code:', !!code);
+
   if (code) {
+    let response = NextResponse.redirect(`${origin}${redirectTo || '/'}`);
     const cookieStore = await cookies();
     
     const supabase = createServerClient(
@@ -19,10 +22,19 @@ export async function GET(request: Request) {
             return cookieStore.get(name)?.value;
           },
           set(name: string, value: string, options: any) {
-            cookieStore.set(name, value, options);
+            response.cookies.set({
+              name,
+              value,
+              ...options,
+            });
           },
           remove(name: string, options: any) {
-            cookieStore.set(name, '', { ...options, maxAge: 0 });
+            response.cookies.set({
+              name,
+              value: '',
+              ...options,
+              maxAge: 0,
+            });
           },
         },
       }
@@ -31,25 +43,19 @@ export async function GET(request: Request) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Successful authentication - redirect to destination
-      const destination = redirectTo || '/';
-      console.log('OAuth success, redirecting to:', destination);
+      console.log('OAuth exchange successful, session created');
       
-      // Create response with proper headers
-      const response = NextResponse.redirect(`${origin}${destination}`);
-      
-      // Ensure cookies are properly set in the response
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        console.log('Session created successfully for user:', session.user.email);
-      }
+      // Force redirect to homepage (not login) to break potential loops
+      const destination = redirectTo === '/auth/login' ? '/' : (redirectTo || '/');
+      response = NextResponse.redirect(`${origin}${destination}`);
       
       return response;
     } else {
-      console.error('OAuth exchange error:', error);
+      console.error('OAuth exchange failed:', error);
     }
   }
 
   // Authentication failed - redirect back to login
+  console.log('Auth callback failed, redirecting to login');
   return NextResponse.redirect(`${origin}/auth/login`);
 }
