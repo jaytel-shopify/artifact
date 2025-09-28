@@ -97,25 +97,44 @@ export default function AppLayout({
       />
 
       {/* Main Content Area */}
-      <div className="flex flex-1 min-h-0">
-        {/* Sidebar (Canvas mode only) */}
-        {mode === 'canvas' && (
-          <PageNavigationSidebar
-            isOpen={sidebarOpen}
-            pages={pages || []}
-            currentPageId={currentPageId}
-            onPageSelect={onPageSelect}
-            onPageRename={onPageRename}
-            onPageCreate={onPageCreate}
-            onPageDelete={onPageDelete}
+      <div className="flex flex-1 min-h-0 relative">
+        {/* Mobile backdrop overlay */}
+        {mode === 'canvas' && sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
+            style={{ animationTimingFunction: 'var(--spring-elegant-easing-light)' }}
+            onClick={() => setSidebarOpen(false)}
           />
+        )}
+        
+        {/* Sidebar (Canvas mode only) - Always rendered for smooth animation */}
+        {mode === 'canvas' && (
+          <div 
+            className={`absolute top-0 left-0 h-full z-10 ${
+              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
+            style={{ 
+              transition: 'transform 400ms var(--spring-elegant-easing-light)'
+            }}
+          >
+            <PageNavigationSidebar
+              isOpen={true}
+              pages={pages || []}
+              currentPageId={currentPageId}
+              onPageSelect={onPageSelect}
+              onPageRename={onPageRename}
+              onPageCreate={onPageCreate}
+              onPageDelete={onPageDelete}
+            />
+          </div>
         )}
 
         {/* Main Content */}
         <main 
-          className="flex-1 min-w-0 transition-all duration-200 ease-in-out"
+          className="flex-1 min-w-0"
           style={{
-            marginLeft: mode === 'canvas' && sidebarOpen ? '0' : '0'
+            marginLeft: mode === 'canvas' && sidebarOpen ? 'var(--sidebar-width)' : '0',
+            transition: 'margin-left 400ms var(--spring-elegant-easing-light)'
           }}
         >
           {children}

@@ -22,4 +22,7 @@ export function getSupabaseAdminClient(): SupabaseClient {
   return createClient(supabaseUrl, serviceRoleKey);
 }
 
+// Alias for consistency in auth components
+export const getSupabaseClient = getSupabaseBrowserClient;
+
 

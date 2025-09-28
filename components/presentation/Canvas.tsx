@@ -163,7 +163,7 @@ export default function Canvas({
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
-            className="group relative p-4 hover:bg-gray-800 hover:bg-opacity-30 transition-colors cursor-pointer"
+            className="group relative p-4 hover:bg-gray-800 hover:bg-opacity-30 transition-colors"
             style={{ margin: '-16px', padding: '16px' }} // Offset to maintain spacing
           >
             <div className="space-y-2">

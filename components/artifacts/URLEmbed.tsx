@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import Card, { CardContent } from "@/components/ui/Card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { DEFAULT_VIEWPORT_KEY, VIEWPORTS, type ViewportKey, getViewportDimensions } from "@/lib/viewports";
 
 function sanitizeUrl(input: string): string | null {
@@ -125,28 +125,30 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
   return (
     <div ref={containerRef} className="w-full flex items-start">
       <Card className="max-w-xl w-full bg-white/80 backdrop-blur border border-white/20 shadow-2xl">
-        <CardContent>
+        <CardHeader>
           <div className="flex items-start gap-3">
             {meta?.iconUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={meta.iconUrl} alt="" className="w-10 h-10" />
+              <img src={meta.iconUrl} alt="" className="w-10 h-10 flex-shrink-0" />
             )}
             <div className="min-w-0">
-              <div className="font-medium text-gray-900 truncate">{meta?.title || safeUrl}</div>
+              <CardTitle className="text-gray-900 truncate text-base">{meta?.title || safeUrl}</CardTitle>
               {meta?.description && (
-                <div className="text-sm text-gray-600 line-clamp-3">{meta.description}</div>
+                <CardDescription className="text-gray-600 line-clamp-3 mt-1">{meta.description}</CardDescription>
               )}
-              <a
-                href={safeUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="text-blue-600 hover:underline text-sm mt-3 inline-block"
-              >
-                Open in new tab
-              </a>
             </div>
           </div>
-        </CardContent>
+        </CardHeader>
+        <CardFooter className="pt-0">
+          <a
+            href={safeUrl}
+            target="_blank"
+            rel="noreferrer noopener"
+            className="text-blue-600 hover:underline text-sm"
+          >
+            Open in new tab
+          </a>
+        </CardFooter>
       </Card>
     </div>
   );

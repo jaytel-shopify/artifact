@@ -1,39 +1,93 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseAdminClient } from "@/lib/supabase";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 import { customAlphabet } from "nanoid";
-import { randomUUID } from "crypto";
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 12);
 
-export async function GET(req: NextRequest) {
-  const supabase = getSupabaseAdminClient();
-  const { searchParams } = new URL(req.url);
-  const creatorId = searchParams.get("creator_id");
+// Get authenticated Supabase client for server-side requests
+async function getSupabaseServerClient() {
+  const cookieStore = await cookies();
+  
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
+  );
+}
 
-  let query = supabase.from("projects").select("*").order("created_at", { ascending: false });
-  if (creatorId) {
-    query = query.eq("creator_id", creatorId);
+export async function GET(req: NextRequest) {
+  const supabase = await getSupabaseServerClient();
+  
+  // Get current user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data, error } = await query;
+  // Get projects that the user owns (RLS will automatically filter)
+  const { data, error } = await supabase
+    .from("projects")
+    .select("*")
+    .order("created_at", { ascending: false });
+
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+  
   return NextResponse.json({ projects: data ?? [] });
 }
 
 export async function POST(req: NextRequest) {
-  const supabase = getSupabaseAdminClient();
-  const body = await req.json().catch(() => null);
-  if (!body || typeof body.name !== "string") {
-    return NextResponse.json({ error: "Invalid body" }, { status: 400 });
+  const supabase = await getSupabaseServerClient();
+  const body = await req.json().catch(() => ({}));
+
+  // Get current user
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const providedCreator: unknown = body.creator_id;
-  const creatorId =
-    typeof providedCreator === "string" && /^[0-9a-fA-F-]{36}$/.test(providedCreator)
-      ? providedCreator
-      : randomUUID();
+  const creatorId = user.id;
+
+  // Generate unique project name
+  let projectName = body?.name || "Untitled Project";
+  
+  // If no name provided, generate a unique default name
+  if (!body?.name) {
+    let counter = 1;
+    let baseName = "Untitled Project";
+    
+    // Check for existing projects with similar names
+    while (true) {
+      const { data: existingProjects } = await supabase
+        .from("projects")
+        .select("name")
+        .eq("creator_id", creatorId)
+        .ilike("name", counter === 1 ? baseName : `${baseName} ${counter}`);
+      
+      if (!existingProjects || existingProjects.length === 0) {
+        projectName = counter === 1 ? baseName : `${baseName} ${counter}`;
+        break;
+      }
+      counter++;
+    }
+  }
 
   const shareToken = nanoid();
   const defaultSettings = {
@@ -42,14 +96,17 @@ export async function POST(req: NextRequest) {
     background_color: "#ffffff",
   };
 
-  // Create project
-  const { data: project, error } = await supabase
+  // Use admin client for project creation (bypasses RLS for initial creation)
+  const adminSupabase = getSupabaseAdminClient();
+  const { data: project, error } = await adminSupabase
     .from("projects")
     .insert([
       {
-        name: body.name,
+        name: projectName,
         creator_id: creatorId,
         share_token: shareToken,
+        is_shared: false,
+        shared_at: null,
         settings: defaultSettings,
       },
     ])
@@ -61,7 +118,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Create default page for the project
-  const { error: pageError } = await supabase
+  const { error: pageError } = await adminSupabase
     .from("pages")
     .insert([
       {

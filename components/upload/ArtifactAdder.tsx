@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Plus } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -209,11 +210,11 @@ export default function ArtifactAdder({
     }}>
       <DialogTrigger asChild>
         <Button
+          variant="outline"
           size="icon"
-          className="h-9 w-9 rounded-full bg-white text-black shadow-lg hover:bg-white/90"
           aria-label="Add artifact"
         >
-          <span className="text-lg">+</span>
+          <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>
       
@@ -265,7 +266,7 @@ export default function ArtifactAdder({
                   key={key}
                   type="button"
                   onClick={() => setViewport(key as ViewportKey)}
-                  className={`rounded-full px-3 py-1 border transition ${
+                  className={`rounded-full px-3 py-1 border transition cursor-pointer ${
                     viewport === key
                       ? "border-white/40 bg-white/20 text-white"
                       : "border-white/15 bg-white/5 text-white/70 hover:border-white/30"
