@@ -12,7 +12,7 @@ export async function GET(request: Request) {
 
     if (!error) {
       // Successful authentication
-      const destination = redirectTo || '/projects';
+      const destination = redirectTo || '/';
       return NextResponse.redirect(`${origin}${destination}`);
     }
   }

@@ -42,7 +42,6 @@ export async function middleware(req: NextRequest) {
 
   // Public routes that don't require authentication
   const publicRoutes = [
-    '/',
     '/auth/login',
     '/auth/callback',
   ];
@@ -54,23 +53,25 @@ export async function middleware(req: NextRequest) {
   const isPublicRoute = publicRoutes.includes(req.nextUrl.pathname);
 
   // If not authenticated and not on a public route, redirect to login
-  if (!user && !isPublicRoute) {
+    if (!user && !isPublicRoute) {
     const redirectUrl = new URL('/auth/login', req.url);
     
-    // Preserve the original URL for redirect after login
-    if (!shareRoutes) {
-      redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
-    } else {
-      // For shared presentations, redirect to the share link after login
-      redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname + req.nextUrl.search);
+    // Preserve the original URL for redirect after login (only if not root)
+    if (req.nextUrl.pathname !== '/') {
+      if (!shareRoutes) {
+        redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname);
+      } else {
+        // For shared presentations, redirect to the share link after login
+        redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname + req.nextUrl.search);
+      }
     }
     
     return NextResponse.redirect(redirectUrl);
   }
 
-  // If authenticated and on login page, redirect to projects
+  // If authenticated and on login page, redirect to homepage
   if (user && req.nextUrl.pathname === '/auth/login') {
-    return NextResponse.redirect(new URL('/projects', req.url));
+    return NextResponse.redirect(new URL('/', req.url));
   }
 
   return response;

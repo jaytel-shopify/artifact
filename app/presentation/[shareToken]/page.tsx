@@ -263,7 +263,7 @@ export default function PresentationPage({ params }: { params: Promise<{ shareTo
   }, [project]);
 
   const handleBackToHome = useCallback(() => {
-    router.push('/projects');
+    router.push('/');
   }, [router]);
 
   const isUploading = uploadState.uploading || isPending;

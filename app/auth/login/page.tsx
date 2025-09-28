@@ -13,11 +13,14 @@ function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirectTo');
+  
+  // Get current domain for proper redirects
+  const currentOrigin = typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL;
 
   useEffect(() => {
     if (user && !loading) {
-      // Redirect to intended destination or projects page
-      const destination = redirectTo || '/projects';
+      // Redirect to intended destination or homepage
+      const destination = redirectTo || '/';
       router.push(destination);
     }
   }, [user, loading, router, redirectTo]);
@@ -61,7 +64,7 @@ function LoginContent() {
               },
             }}
             providers={['google']}
-            redirectTo={`${process.env.NEXT_PUBLIC_APP_URL}/auth/callback${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
+            redirectTo={`${currentOrigin}/auth/callback${redirectTo ? `?redirectTo=${encodeURIComponent(redirectTo)}` : ''}`}
             onlyThirdPartyProviders
             showLinks={false}
           />

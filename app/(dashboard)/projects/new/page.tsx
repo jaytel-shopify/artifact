@@ -28,8 +28,8 @@ export default function NewProjectPage() {
       } catch (err) {
         toast.error("Failed to create project. Please try again.");
         console.error("Failed to create project:", err);
-        // Redirect back to projects page on error
-        router.push("/projects");
+        // Redirect back to homepage on error
+        router.push("/");
       }
     }
 

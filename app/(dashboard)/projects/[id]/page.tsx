@@ -19,12 +19,12 @@ export default function ProjectPage({ params }: { params: Promise<{ id: string }
           const { project } = await response.json();
           router.replace(`/presentation/${project.share_token}`);
         } else {
-          // Project not found or no access, redirect to projects list
-          router.replace('/projects');
+          // Project not found or no access, redirect to homepage
+          router.replace('/');
         }
       } catch {
-        // Error occurred, redirect to projects list
-        router.replace('/projects');
+        // Error occurred, redirect to homepage
+        router.replace('/');
       }
     }
 
