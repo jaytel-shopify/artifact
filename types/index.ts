@@ -9,8 +9,6 @@ export type Project = {
   name: string;
   creator_id: string;
   share_token: string;
-  is_shared: boolean;
-  shared_at: string | null;
   created_at: string;
   updated_at: string;
   settings: ProjectSettings;

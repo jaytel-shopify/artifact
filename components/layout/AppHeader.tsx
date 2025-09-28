@@ -1,9 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, PanelLeft, PanelLeftClose, Share, Plus } from "lucide-react";
+import { ArrowLeft, PanelLeft, PanelLeftClose, Share, LogOut, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -12,9 +18,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import UserAvatar from "@/components/auth/UserAvatar";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import EditableTitle from "@/components/presentation/EditableTitle";
+import { useAuth } from "@/components/auth/AuthProvider";
+import UserAvatar from "@/components/auth/UserAvatar";
+import { useRouter } from "next/navigation";
 
 interface AppHeaderProps {
   // Navigation props
@@ -25,6 +33,7 @@ interface AppHeaderProps {
   // Project-specific props (for canvas view)
   projectId?: string;
   projectName?: string;
+  onProjectNameUpdate?: (name: string) => void;
   onArtifactAdded?: () => void;
   currentPageId?: string;
   
@@ -46,6 +55,7 @@ export default function AppHeader({
   sidebarOpen,
   projectId,
   projectName,
+  onProjectNameUpdate,
   onArtifactAdded,
   currentPageId,
   columns = 3,
@@ -55,6 +65,17 @@ export default function AppHeader({
   mode
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const { user, signInWithGoogle, signOut, loading } = useAuth();
+  const router = useRouter();
+
+  const handleSignIn = async () => {
+    await signInWithGoogle();
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/auth/login");
+  };
 
   return (
     <header 
@@ -65,19 +86,35 @@ export default function AppHeader({
         {/* Left Section */}
         <div className="flex items-center gap-3 w-full max-w-[var(--section-width)]">
           {mode === 'homepage' ? (
-            /* Homepage: Profile + Branding */
-            <>
-              <UserAvatar />
-              
+            <div className="flex items-center gap-3">
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2">
+                      <UserAvatar />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <DropdownMenuItem disabled className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{user.user_metadata?.full_name ?? "Signed in"}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button onClick={handleSignIn} disabled={loading} className="gap-2">
+                  Sign in with Google
+                </Button>
+              )}
               <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
-                  Artifact
-                </h1>
-                <span className="text-lg text-muted-foreground font-normal">
-                  Projects
-                </span>
+                <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Artifact</h1>
+                <span className="text-lg text-muted-foreground font-normal">Projects</span>
               </div>
-            </>
+            </div>
           ) : (
             /* Canvas mode: Navigation + Tools */
             <>
@@ -147,6 +184,7 @@ export default function AppHeader({
             <EditableTitle
               initialValue={projectName || "Untitled Project"}
               projectId={projectId}
+              onUpdated={onProjectNameUpdate}
             />
           </div>
         )}
@@ -154,7 +192,6 @@ export default function AppHeader({
         {/* Right Section - Actions */}
         <div className="flex items-center justify-end gap-3 w-full max-w-[var(--section-width)]">
           {mode === 'canvas' ? (
-            /* Canvas mode: Share & User Avatars */
             <div className="flex items-center gap-3">
               <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
                 <DialogTrigger asChild>
@@ -178,20 +215,62 @@ export default function AppHeader({
                 </DialogContent>
               </Dialog>
 
-              {/* Placeholder for user avatars */}
-              <div className="flex items-center -space-x-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 border-2 border-[var(--color-background-primary)]" />
-                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-cyan-400 border-2 border-[var(--color-background-primary)]" />
-              </div>
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2">
+                      <UserAvatar />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{user.user_metadata?.full_name ?? "Signed in"}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button onClick={handleSignIn} disabled={loading} className="gap-2">
+                  Sign in with Google
+                </Button>
+              )}
             </div>
           ) : (
-            /* Homepage mode: New Project Button */
-            onNewProject && (
-              <Button onClick={onNewProject} className="gap-2">
-                <Plus className="h-4 w-4" />
-                New Project
-              </Button>
-            )
+            <div className="flex items-center gap-3">
+              {onNewProject && (
+                <Button onClick={onNewProject} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              )}
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2">
+                      <UserAvatar />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{user.user_metadata?.full_name ?? "Signed in"}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button onClick={handleSignIn} disabled={loading} className="gap-2">
+                  Sign in with Google
+                </Button>
+              )}
+            </div>
           )}
         </div>
       </div>

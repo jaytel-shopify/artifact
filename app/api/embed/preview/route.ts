@@ -47,8 +47,9 @@ export async function GET(req: NextRequest) {
     } catch {}
     return NextResponse.json({ allowEmbed, title: meta.title, description: meta.description, iconUrl, url });
   } catch (e) {
-    const message = e instanceof Error ? e.message : 'Failed to process request';
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ 
+      error: e instanceof Error ? e.message : "Failed to fetch embed preview" 
+    }, { status: 500 });
   }
 }
 

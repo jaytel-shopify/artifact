@@ -8,9 +8,11 @@ import { Check } from "lucide-react";
 export default function EditableTitle({
   initialValue,
   projectId,
+  onUpdated,
 }: {
   initialValue: string;
   projectId?: string;
+  onUpdated?: (name: string) => void;
 }) {
   const [value, setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
@@ -32,6 +34,7 @@ export default function EditableTitle({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: next.trim() }),
       });
+      onUpdated?.(next.trim());
     } catch (err) {
       console.error(err);
       setValue(initialValue);

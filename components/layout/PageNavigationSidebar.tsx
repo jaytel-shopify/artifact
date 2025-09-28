@@ -22,6 +22,7 @@ interface PageNavigationSidebarProps {
 }
 
 export default function PageNavigationSidebar({
+  isOpen,
   pages,
   currentPageId,
   onPageSelect,

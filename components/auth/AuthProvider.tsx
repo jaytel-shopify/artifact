@@ -1,68 +1,76 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
-import { getSupabaseClient } from "@/lib/supabase";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
+import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
 
-interface AuthContextType {
-  user: User | null;
+interface AuthContextValue {
+  supabase: SupabaseClient;
   session: Session | null;
+  user: User | null;
   loading: boolean;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  session: null,
-  loading: true,
-  signOut: async () => {},
-});
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [supabase] = useState(() => createSupabaseBrowserClient());
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = getSupabaseClient();
+    let isMounted = true;
 
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session ? `User: ${session.user.email}` : 'No session');
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
+    async function initSession() {
+      const { data } = await supabase.auth.getSession();
+      if (isMounted) {
+        setSession(data.session);
+        setLoading(false);
+      }
+    }
+
+    initSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
     });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event, session ? `User: ${session.user.email}` : 'No session');
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    return () => {
+      isMounted = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [supabase]);
 
-    return () => subscription.unsubscribe();
-  }, []);
+  const value = useMemo<AuthContextValue>(() => {
+    return {
+      supabase,
+      session,
+      user: session?.user ?? null,
+      loading,
+      signInWithGoogle: async () => {
+        const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`;
+        await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: {
+            redirectTo,
+          },
+        });
+      },
+      signOut: async () => {
+        await supabase.auth.signOut();
+      },
+    };
+  }, [loading, session, supabase]);
 
-  const signOut = async () => {
-    const supabase = getSupabaseClient();
-    await supabase.auth.signOut();
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context;
+  return ctx;
 }

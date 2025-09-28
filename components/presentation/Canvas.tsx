@@ -28,7 +28,6 @@ import {
   horizontalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
-import type { DragStartEvent } from "@dnd-kit/core";
 import SortableArtifact from "./SortableArtifact";
 import ArtifactPreview from "./ArtifactPreview";
 import type { Artifact } from "@/types";
@@ -127,8 +126,8 @@ export default function Canvas({
     [onReorder]
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
-    setActiveId(String(event.active.id));
+  const handleDragStart = useCallback((event: any) => {
+    setActiveId(event.active.id);
     setDragging(true);
   }, []);
 
