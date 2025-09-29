@@ -11,6 +11,7 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
+import { Eye, EyeOff, RotateCcw, Volume2, VolumeX, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
@@ -42,7 +43,7 @@ export default function Canvas({
   columns: number;
   artifacts: Artifact[];
   onReorder?: (next: Artifact[]) => void;
-  onUpdateArtifact?: (artifactId: string, updates: { name?: string }) => Promise<void>;
+  onUpdateArtifact?: (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
 }) {
   const [items, setItems] = useState(artifacts);
@@ -151,6 +152,52 @@ export default function Canvas({
 
   // Wrapper component for individual artifacts with context menu
   const ArtifactWrapper = useCallback(({ artifact, children }: { artifact: Artifact; children: React.ReactNode }) => {
+    const isVideo = artifact.type === 'video';
+    const videoMetadata = artifact.metadata as { hideUI?: boolean; loop?: boolean; muted?: boolean } | undefined;
+    
+    const toggleVideoUI = async () => {
+      if (!onUpdateArtifact) return;
+      const newMetadata = {
+        ...artifact.metadata,
+        hideUI: !videoMetadata?.hideUI
+      };
+      try {
+        await onUpdateArtifact(artifact.id, { metadata: newMetadata });
+        toast.success(videoMetadata?.hideUI ? 'Video controls enabled' : 'Video controls hidden');
+      } catch (error) {
+        toast.error('Failed to update video settings');
+      }
+    };
+
+    const toggleVideoLoop = async () => {
+      if (!onUpdateArtifact) return;
+      const newMetadata = {
+        ...artifact.metadata,
+        loop: !videoMetadata?.loop
+      };
+      try {
+        await onUpdateArtifact(artifact.id, { metadata: newMetadata });
+        toast.success(videoMetadata?.loop ? 'Video loop disabled' : 'Video loop enabled');
+      } catch (error) {
+        toast.error('Failed to update video settings');
+      }
+    };
+
+    const toggleVideoMute = async () => {
+      if (!onUpdateArtifact) return;
+      const currentMuted = videoMetadata?.muted !== false; // Default to muted
+      const newMetadata = {
+        ...artifact.metadata,
+        muted: !currentMuted
+      };
+      try {
+        await onUpdateArtifact(artifact.id, { metadata: newMetadata });
+        toast.success(currentMuted ? 'Video unmuted' : 'Video muted');
+      } catch (error) {
+        toast.error('Failed to update video settings');
+      }
+    };
+
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>
@@ -174,6 +221,32 @@ export default function Canvas({
           </div>
         </ContextMenuTrigger>
         <ContextMenuContent>
+          {isVideo && (
+            <>
+              <ContextMenuItem onClick={toggleVideoUI} className="flex items-center gap-2">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {!videoMetadata?.hideUI ? <Check className="w-3 h-3" /> : null}
+                </div>
+                {!videoMetadata?.hideUI ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                Show Controls
+              </ContextMenuItem>
+              <ContextMenuItem onClick={toggleVideoLoop} className="flex items-center gap-2">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {videoMetadata?.loop ? <Check className="w-3 h-3" /> : null}
+                </div>
+                <RotateCcw className="w-4 h-4" />
+                Loop Video
+              </ContextMenuItem>
+              <ContextMenuItem onClick={toggleVideoMute} className="flex items-center gap-2">
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {videoMetadata?.muted === false ? <Check className="w-3 h-3" /> : null}
+                </div>
+                {videoMetadata?.muted !== false ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                Audio On
+              </ContextMenuItem>
+              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
+            </>
+          )}
           <ContextMenuItem
             variant="destructive"
             onClick={async () => {
@@ -253,7 +326,7 @@ function ArtifactCell({ artifact }: { artifact: Artifact }) {
     return <URLEmbed url={artifact.source_url} metadata={artifact.metadata} />;
   }
   if (artifact.type === "video") {
-    return <VideoPlayer src={artifact.source_url} />;
+    return <VideoPlayer src={artifact.source_url} metadata={artifact.metadata as { hideUI?: boolean; loop?: boolean; muted?: boolean }} />;
   }
   if (artifact.type === "pdf") {
     return <PDFViewer src={artifact.source_url} />;

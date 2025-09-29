@@ -14,7 +14,7 @@ export async function PATCH(
   }
 
   // Validate that we have something to update
-  const allowedFields = ['name'];
+  const allowedFields = ['name', 'metadata'];
   const updates = Object.keys(body)
     .filter(key => allowedFields.includes(key))
     .reduce((obj, key) => {

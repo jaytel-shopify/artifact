@@ -86,34 +86,14 @@ export default function AppHeader({
         {/* Left Section */}
         <div className="flex items-center gap-3 w-full max-w-[var(--section-width)]">
           {mode === 'homepage' ? (
-            <div className="flex items-center gap-3">
-              {user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2">
-                      <UserAvatar />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    <DropdownMenuItem disabled className="flex flex-col items-start">
-                      <span className="text-sm font-medium">{user.user_metadata?.full_name ?? "Signed in"}</span>
-                      <span className="text-xs text-muted-foreground">{user.email}</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button onClick={handleSignIn} disabled={loading} className="gap-2">
-                  Sign in with Google
-                </Button>
-              )}
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Artifact</h1>
-                <span className="text-lg text-muted-foreground font-normal">Projects</span>
-              </div>
+            <div className="flex items-center gap-2">
+              <img 
+                src="/favicons/icon-256.png" 
+                alt="Artifact"
+                className="w-8 h-8"
+                style={{ imageRendering: 'crisp-edges' }}
+              />
+              <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Artifact</h1>
             </div>
           ) : (
             /* Canvas mode: Navigation + Tools */
@@ -124,8 +104,15 @@ export default function AppHeader({
                 size="icon"
                 onClick={onBackToHome}
                 aria-label="Back to home"
+                className="group relative overflow-hidden"
               >
-                <ArrowLeft className="h-4 w-4" />
+                <img 
+                  src="/favicons/icon-256.png" 
+                  alt="Back to home"
+                  className="w-8 h-8 transition-all duration-200 group-hover:opacity-0 group-hover:scale-75"
+                  style={{ imageRendering: 'crisp-edges' }}
+                />
+                <ArrowLeft className="h-4 w-4 absolute inset-0 m-auto transition-all duration-200 opacity-0 scale-125 group-hover:opacity-100 group-hover:scale-100" />
               </Button>
 
               {/* Sidebar Toggle */}
@@ -141,9 +128,6 @@ export default function AppHeader({
                   <PanelLeft className="h-4 w-4" />
                 )}
               </Button>
-
-              {/* Separator */}
-              <div className="h-6 w-px bg-border" />
               
               {/* Add Artifact Button */}
               {projectId && currentPageId && (
@@ -157,7 +141,6 @@ export default function AppHeader({
               {/* Column Count Slider */}
               {showColumnControls && onColumnsChange && (
                 <>
-                  <div className="h-6 w-px bg-border" />
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground font-medium min-w-[12px]">
                       {columns}

@@ -80,7 +80,7 @@ export function usePageArtifacts(projectId: string | undefined, pageId: string |
     }
   }, [projectId, pageId, mutate, data]);
 
-  const updateArtifact = useCallback(async (artifactId: string, updates: { name?: string }) => {
+  const updateArtifact = useCallback(async (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => {
     if (!projectId) return null;
 
     const response = await fetch(`/api/projects/${projectId}/artifacts/${artifactId}`, {

@@ -219,7 +219,8 @@ export default function ArtifactAdder({
       </DialogTrigger>
       
       <DialogContent 
-        className="w-full max-w-2xl bg-[#181c20] text-white border-white/10"
+        className="w-full max-w-2xl text-white border-white/10"
+        style={{ backgroundColor: 'var(--color-background-secondary)' }}
         showCloseButton={!uploadState.uploading}
       >
         <DialogHeader>

@@ -24,16 +24,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let isMounted = true;
 
     async function initSession() {
-      const { data } = await supabase.auth.getSession();
-      if (isMounted) {
-        setSession(data.session);
-        setLoading(false);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        console.log('Session data:', data, 'Error:', error);
+        if (isMounted) {
+          setSession(data.session);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Session init error:', err);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     initSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      console.log('Auth state change:', _event, newSession);
       setSession(newSession);
     });
 

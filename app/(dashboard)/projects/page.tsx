@@ -14,7 +14,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -22,20 +21,26 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import AppHeader from "@/components/layout/AppHeader";
-import type { Project } from "@/types";
+import ProjectCard from "@/components/presentation/ProjectCard";
+import type { Project, Artifact } from "@/types";
 import { toast } from "sonner";
 
 const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { data, isLoading, error, mutate } = useSWR<{ projects: Project[] }>(
-    "/api/projects",
-    fetcher
+  const { data, isLoading, error, mutate } = useSWR<{ projects: (Project & { coverArtifacts: Artifact[] })[] }>(
+    "/api/projects/covers",
+    fetcher,
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 30000, // Cache for 30 seconds
+      refreshInterval: 60000,  // Refresh every minute
+    }
   );
   
   const [isDeleting, setIsDeleting] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<(Project & { coverArtifacts: Artifact[] }) | null>(null);
 
   const projects = useMemo(() => data?.projects ?? [], [data]);
 
@@ -43,11 +48,11 @@ export default function ProjectsPage() {
     router.push('/projects/new');
   }
 
-  function handleProjectClick(project: Project) {
+  function handleProjectClick(project: Project & { coverArtifacts: Artifact[] }) {
     router.push(`/presentation/${project.share_token}`);
   }
 
-  function handleDeleteProject(project: Project) {
+  function handleDeleteProject(project: Project & { coverArtifacts: Artifact[] }) {
     setProjectToDelete(project);
   }
 
@@ -93,19 +98,11 @@ export default function ProjectsPage() {
             {projects.map((p) => (
               <ContextMenu key={p.id}>
                 <ContextMenuTrigger asChild>
-                  <Card 
-                    className="group hover:shadow-md transition-shadow cursor-pointer"
+                  <ProjectCard
+                    project={p}
                     onClick={() => handleProjectClick(p)}
-                  >
-                    <CardHeader>
-                      <CardTitle>{p.name}</CardTitle>
-                      <CardDescription>{p.share_token}</CardDescription>
-                    </CardHeader>
-                    
-                    <CardFooter>
-                      <span className="text-sm text-gray-500">Click to open</span>
-                    </CardFooter>
-                  </Card>
+                    onDelete={() => handleDeleteProject(p)}
+                  />
                 </ContextMenuTrigger>
                 <ContextMenuContent>
                   <ContextMenuItem
