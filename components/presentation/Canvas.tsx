@@ -307,6 +307,7 @@ export default function Canvas({
                   artifact={artifact}
                   width={columnWidth}
                   columnHeight={columnHeight ?? undefined}
+                  isGlobalDragActive={dragging}
                 >
                   <ArtifactWrapper artifact={artifact}>
                     <ArtifactCell artifact={artifact} />
