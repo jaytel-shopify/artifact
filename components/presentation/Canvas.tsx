@@ -29,6 +29,7 @@ import {
   horizontalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import { LayoutGroup } from "framer-motion";
 import SortableArtifact from "./SortableArtifact";
 import ArtifactPreview from "./ArtifactPreview";
 import type { Artifact } from "@/types";
@@ -288,31 +289,33 @@ export default function Canvas({
       onDragEnd={handleDragEnd}
     >
       <div className="h-full">
-        <div
-          ref={containerRef}
-          className={`w-full h-full overflow-x-auto overflow-y-hidden flex items-stretch ${showScrollbar ? "" : "hide-scrollbar"}`}
-          style={{
-            gap: `${gapPx}px`,
-            scrollSnapType: dragging ? "none" : "x mandatory",
-            scrollPaddingInline: `${gapPx}px`,
-            paddingInline: `${gapPx}px`,
-          }}
-        >
-          <SortableContext items={items.map((item) => item.id)} strategy={horizontalListSortingStrategy}>
-            {items.map((artifact) => (
-              <SortableArtifact
-                key={artifact.id}
-                artifact={artifact}
-                width={columnWidth}
-                columnHeight={columnHeight ?? undefined}
-              >
-                <ArtifactWrapper artifact={artifact}>
-                  <ArtifactCell artifact={artifact} />
-                </ArtifactWrapper>
-              </SortableArtifact>
-            ))}
-          </SortableContext>
-        </div>
+        <LayoutGroup>
+          <div
+            ref={containerRef}
+            className={`w-full h-full overflow-x-auto overflow-y-hidden flex items-stretch ${showScrollbar ? "" : "hide-scrollbar"}`}
+            style={{
+              gap: `${gapPx}px`,
+              scrollSnapType: dragging ? "none" : "x mandatory",
+              scrollPaddingInline: `${gapPx}px`,
+              paddingInline: `${gapPx}px`,
+            }}
+          >
+            <SortableContext items={items.map((item) => item.id)} strategy={horizontalListSortingStrategy}>
+              {items.map((artifact) => (
+                <SortableArtifact
+                  key={artifact.id}
+                  artifact={artifact}
+                  width={columnWidth}
+                  columnHeight={columnHeight ?? undefined}
+                >
+                  <ArtifactWrapper artifact={artifact}>
+                    <ArtifactCell artifact={artifact} />
+                  </ArtifactWrapper>
+                </SortableArtifact>
+              ))}
+            </SortableContext>
+          </div>
+        </LayoutGroup>
       </div>
       <DragOverlay>
         {activeId ? (

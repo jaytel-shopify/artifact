@@ -2,6 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { motion } from "framer-motion";
 import type { ReactNode } from "react";
 
 export default function SortableArtifact({
@@ -28,7 +29,7 @@ export default function SortableArtifact({
     width,
     minHeight: "100%",
     scrollSnapAlign: "start",
-    transition: transition || "width 260ms cubic-bezier(0.33, 1, 0.68, 1)",
+    // Remove manual transition - Motion's layout prop handles this now
     transform: CSS.Transform.toString(transform),
     opacity: isDragging ? 0.1 : 1,
     cursor: isDragging ? "grabbing" : "grab",
@@ -36,11 +37,19 @@ export default function SortableArtifact({
   };
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
       data-artifact-id={artifact.id}
       className="inline-flex flex-col align-top shrink-0 h-full"
+      layout
+      transition={{
+        layout: { 
+          type: "spring", 
+          bounce: 0.15, 
+          duration: 0.4 
+        }
+      }}
       {...attributes}
       {...listeners}
     >
@@ -54,6 +63,6 @@ export default function SortableArtifact({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
