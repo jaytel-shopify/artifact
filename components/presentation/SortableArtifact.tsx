@@ -29,7 +29,8 @@ export default function SortableArtifact({
     width,
     minHeight: "100%",
     scrollSnapAlign: "start",
-    // Remove manual transition - Motion's layout prop handles this now
+    // Use dnd-kit's transition during drag, Motion handles it otherwise
+    transition: isDragging ? transition : undefined,
     transform: CSS.Transform.toString(transform),
     opacity: isDragging ? 0.1 : 1,
     cursor: isDragging ? "grabbing" : "grab",
@@ -42,7 +43,7 @@ export default function SortableArtifact({
       style={style}
       data-artifact-id={artifact.id}
       className="inline-flex flex-col align-top shrink-0 h-full"
-      layout
+      layout={!isDragging}
       transition={{
         layout: { 
           type: "spring", 
