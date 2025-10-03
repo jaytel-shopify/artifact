@@ -112,9 +112,15 @@ export default function Canvas({
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
-      setActiveId(null);
-      setDragging(false);
+      
+      // Use requestAnimationFrame to ensure smooth transition
+      requestAnimationFrame(() => {
+        setActiveId(null);
+        setDragging(false);
+      });
+      
       if (!over || active.id === over.id) return;
+      
       setItems((prev) => {
         const oldIndex = prev.findIndex((p) => p.id === active.id);
         const newIndex = prev.findIndex((p) => p.id === over.id);
@@ -202,16 +208,15 @@ export default function Canvas({
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <div
-            className="group relative p-4 hover:bg-gray-800 hover:bg-opacity-30 transition-colors"
-            style={{ margin: '-16px', padding: '16px' }} // Offset to maintain spacing
+            className="group relative"
           >
-            <div className="space-y-2">
+            <div className="space-y-4">
               <div data-artifact-title-id={artifact.id}>
                 <EditableArtifactTitle
                   title={artifact.name}
                   artifactId={artifact.id}
                   onUpdate={(newTitle) => onUpdateArtifact?.(artifact.id, { name: newTitle }) ?? Promise.resolve()}
-                  className="mb-2"
+                  className="mb-6"
                 />
               </div>
               <div>

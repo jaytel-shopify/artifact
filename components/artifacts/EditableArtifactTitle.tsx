@@ -107,7 +107,7 @@ export default function EditableArtifactTitle({
 
   return (
     <div 
-      className={`text-center cursor-pointer hover:bg-gray-800 hover:bg-opacity-10 rounded px-1 py-0.5 transition-colors ${className}`}
+      className={`text-center cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200 ${className}`}
       onDoubleClick={handleDoubleClick}
       title="Double-click to edit"
     >

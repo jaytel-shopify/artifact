@@ -13,7 +13,27 @@ export default function ArtifactPreview({ artifact, maxHeight }: { artifact: Art
       style={{ maxHeight: maxHeight ? `${maxHeight}px` : undefined }}
     >
       <div className="overflow-hidden">
-        <PreviewContent artifact={artifact} />
+        {/* Include title with same spacing as actual artifacts */}
+        <div className="space-y-4">
+          <div className="mb-6">
+            <div className="text-center">
+              <div 
+                className="text-xs text-gray-400 truncate select-none px-2 py-1"
+                style={{ 
+                  fontSize: '14px',
+                  lineHeight: '1.2',
+                  maxWidth: '440px',
+                  margin: '0 auto'
+                }}
+              >
+                {artifact.name || "Untitled"}
+              </div>
+            </div>
+          </div>
+          <div>
+            <PreviewContent artifact={artifact} />
+          </div>
+        </div>
       </div>
     </div>
   );
