@@ -29,6 +29,7 @@ import {
   horizontalListSortingStrategy,
   arrayMove,
 } from "@dnd-kit/sortable";
+import { LayoutGroup } from "framer-motion";
 import SortableArtifact from "./SortableArtifact";
 import ArtifactPreview from "./ArtifactPreview";
 import type { Artifact } from "@/types";
@@ -113,11 +114,11 @@ export default function Canvas({
     (event: DragEndEvent) => {
       const { active, over } = event;
       
-      // Use requestAnimationFrame to ensure smooth transition
-      requestAnimationFrame(() => {
-        setActiveId(null);
-        setDragging(false);
-      });
+      console.log('[Canvas] handleDragEnd called - clearing state immediately');
+      
+      // Clear drag state immediately (no delay)
+      setActiveId(null);
+      setDragging(false);
       
       if (!over || active.id === over.id) return;
       
@@ -134,6 +135,7 @@ export default function Canvas({
   );
 
   const handleDragStart = useCallback((event: any) => {
+    console.log('[Canvas] handleDragStart called');
     setActiveId(event.active.id);
     setDragging(true);
   }, []);
@@ -219,7 +221,7 @@ export default function Canvas({
                   className="mb-6"
                 />
               </div>
-              <div>
+              <div className="relative" data-artifact-overlay-container="true">
                 {children}
               </div>
             </div>
@@ -288,31 +290,35 @@ export default function Canvas({
       onDragEnd={handleDragEnd}
     >
       <div className="h-full">
-        <div
-          ref={containerRef}
-          className={`w-full h-full overflow-x-auto overflow-y-hidden flex items-stretch ${showScrollbar ? "" : "hide-scrollbar"}`}
-          style={{
-            gap: `${gapPx}px`,
-            scrollSnapType: dragging ? "none" : "x mandatory",
-            scrollPaddingInline: `${gapPx}px`,
-            paddingInline: `${gapPx}px`,
-          }}
-        >
-          <SortableContext items={items.map((item) => item.id)} strategy={horizontalListSortingStrategy}>
-            {items.map((artifact) => (
-              <SortableArtifact
-                key={artifact.id}
-                artifact={artifact}
-                width={columnWidth}
-                columnHeight={columnHeight ?? undefined}
-              >
-                <ArtifactWrapper artifact={artifact}>
-                  <ArtifactCell artifact={artifact} />
-                </ArtifactWrapper>
-              </SortableArtifact>
-            ))}
-          </SortableContext>
-        </div>
+        <LayoutGroup>
+          <div
+            ref={containerRef}
+            className={`w-full h-full overflow-x-auto overflow-y-hidden flex items-stretch ${showScrollbar ? "" : "hide-scrollbar"}`}
+            style={{
+              gap: `${gapPx}px`,
+              scrollSnapType: dragging ? "none" : "x mandatory",
+              scrollPaddingInline: `${gapPx}px`,
+              paddingInline: `${gapPx}px`,
+            }}
+          >
+            <SortableContext items={items.map((item) => item.id)} strategy={horizontalListSortingStrategy}>
+              {items.map((artifact) => (
+                <SortableArtifact
+                  key={artifact.id}
+                  artifact={artifact}
+                  width={columnWidth}
+                  columnHeight={columnHeight ?? undefined}
+                  isGlobalDragActive={dragging}
+                  activeArtifactId={activeId}
+                >
+                  <ArtifactWrapper artifact={artifact}>
+                    <ArtifactCell artifact={artifact} />
+                  </ArtifactWrapper>
+                </SortableArtifact>
+              ))}
+            </SortableContext>
+          </div>
+        </LayoutGroup>
       </div>
       <DragOverlay>
         {activeId ? (
