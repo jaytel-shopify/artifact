@@ -1,118 +1,124 @@
+"use client";
+
 import useSWR from "swr";
 import { useCallback } from "react";
+import {
+  getArtifactsByPage,
+  createArtifact as createArtifactDB,
+  updateArtifact as updateArtifactDB,
+  deleteArtifact as deleteArtifactDB,
+  reorderArtifacts as reorderArtifactsDB,
+  getNextPosition,
+} from "@/lib/quick-db";
 import { Artifact } from "@/types";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+/**
+ * Fetcher function for SWR
+ */
+async function fetcher(pageId: string): Promise<Artifact[]> {
+  return await getArtifactsByPage(pageId);
+}
 
 export function usePageArtifacts(projectId: string | undefined, pageId: string | undefined) {
-  const { data, error, isLoading, mutate } = useSWR<{ artifacts: Artifact[] }>(
-    projectId && pageId ? `/api/projects/${projectId}/pages/${pageId}/artifacts` : null,
-    fetcher,
+  const { data: artifacts = [], error, isLoading, mutate } = useSWR<Artifact[]>(
+    pageId ? `page-artifacts-${pageId}` : null,
+    () => (pageId ? fetcher(pageId) : []),
     { revalidateOnFocus: false }
   );
 
-  const artifacts = data?.artifacts ?? [];
+  const createArtifact = useCallback(
+    async (artifactData: {
+      type: "figma" | "url" | "image" | "video" | "pdf";
+      source_url: string;
+      file_path?: string | null;
+      name?: string;
+      metadata?: Record<string, unknown>;
+    }) => {
+      if (!projectId || !pageId) return null;
 
-  const createArtifact = useCallback(async (artifactData: {
-    type: string;
-    source_url: string;
-    file_path?: string | null;
-    name?: string;
-    metadata?: Record<string, unknown>;
-  }) => {
-    if (!projectId || !pageId) return null;
+      try {
+        // Get next available position
+        const nextPosition = await getNextPosition("artifacts", pageId, "page_id");
 
-    const response = await fetch(`/api/projects/${projectId}/pages/${pageId}/artifacts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(artifactData),
-    });
+        // Create the artifact
+        const artifact = await createArtifactDB({
+          project_id: projectId,
+          page_id: pageId,
+          type: artifactData.type,
+          source_url: artifactData.source_url,
+          file_path: artifactData.file_path || undefined,
+          name: artifactData.name || "Untitled",
+          position: nextPosition,
+          metadata: artifactData.metadata || {},
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create artifact');
-    }
-
-    const result = await response.json();
-    await mutate();
-    return result.artifact;
-  }, [projectId, pageId, mutate]);
-
-  const reorderArtifacts = useCallback(async (reorderedArtifacts: Artifact[]) => {
-    if (!projectId || !pageId) return;
-
-    // Store original data for potential rollback
-    const originalData = data;
-    
-    // Update positions locally first for optimistic updates
-    const optimisticData = {
-      artifacts: reorderedArtifacts.map((artifact, index) => ({
-        ...artifact,
-        position: index,
-      })),
-    };
-    
-    // Apply optimistic update
-    mutate(optimisticData, false);
-
-    // Then update on server
-    try {
-      const response = await fetch(`/api/projects/${projectId}/pages/${pageId}/artifacts`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          order: reorderedArtifacts.map(a => a.id),
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update artifact order');
+        // Revalidate
+        await mutate();
+        return artifact;
+      } catch (error) {
+        console.error("Failed to create artifact:", error);
+        throw error;
       }
-      
-      // Success - keep the optimistic update and just refresh to ensure server consistency
-      // but don't await it to avoid overwriting our optimistic changes too quickly
-      mutate();
-    } catch (error) {
-      // Revert to original data on error
-      mutate(originalData, false);
-      throw error;
-    }
-  }, [projectId, pageId, mutate, data]);
+    },
+    [projectId, pageId, mutate]
+  );
 
-  const updateArtifact = useCallback(async (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => {
-    if (!projectId) return null;
+  const reorderArtifacts = useCallback(
+    async (reorderedArtifacts: Artifact[]) => {
+      if (!projectId || !pageId) return;
 
-    const response = await fetch(`/api/projects/${projectId}/artifacts/${artifactId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+      // Optimistic update
+      mutate(reorderedArtifacts, false);
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update artifact');
-    }
+      try {
+        // Update positions in database
+        const updates = reorderedArtifacts.map((artifact, index) => ({
+          id: artifact.id,
+          position: index,
+        }));
 
-    const result = await response.json();
-    await mutate(); // Refresh the data
-    return result.artifact;
-  }, [projectId, mutate]);
+        await reorderArtifactsDB(updates);
+        await mutate();
+      } catch (error) {
+        // Revert on error
+        await mutate();
+        console.error("Failed to reorder artifacts:", error);
+        throw error;
+      }
+    },
+    [projectId, pageId, mutate]
+  );
 
-  const deleteArtifact = useCallback(async (artifactId: string): Promise<void> => {
-    if (!projectId) return;
+  const updateArtifact = useCallback(
+    async (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => {
+      if (!projectId) return null;
 
-    const response = await fetch(`/api/projects/${projectId}/artifacts/${artifactId}`, {
-      method: 'DELETE',
-    });
+      try {
+        const artifact = await updateArtifactDB(artifactId, updates);
+        await mutate();
+        return artifact;
+      } catch (error) {
+        console.error("Failed to update artifact:", error);
+        throw error;
+      }
+    },
+    [projectId, mutate]
+  );
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete artifact');
-    }
+  const deleteArtifact = useCallback(
+    async (artifactId: string): Promise<void> => {
+      if (!projectId) return;
 
-    await mutate(); // Refresh the data
-  }, [projectId, mutate]);
+      try {
+        await deleteArtifactDB(artifactId);
+        await mutate();
+      } catch (error) {
+        console.error("Failed to delete artifact:", error);
+        throw error;
+      }
+    },
+    [projectId, mutate]
+  );
 
   return {
     artifacts,

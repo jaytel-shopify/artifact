@@ -39,6 +39,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Quick Platform SDK - provides quick.db, quick.fs, quick.id, etc. */}
+        <script src="/client/quick.js" async />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

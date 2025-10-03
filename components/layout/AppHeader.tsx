@@ -65,11 +65,11 @@ export default function AppHeader({
   mode
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const { user, signInWithGoogle, signOut, loading } = useAuth();
+  const { user, signIn, signOut, loading } = useAuth();
   const router = useRouter();
 
   const handleSignIn = async () => {
-    await signInWithGoogle();
+    await signIn();
   };
 
   const handleSignOut = async () => {
@@ -207,7 +207,7 @@ export default function AppHeader({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem disabled className="flex flex-col items-start">
-                      <span className="text-sm font-medium">{user.user_metadata?.full_name ?? "Signed in"}</span>
+                      <span className="text-sm font-medium">{user.fullName ?? "Signed in"}</span>
                       <span className="text-xs text-muted-foreground">{user.email}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
@@ -218,7 +218,7 @@ export default function AppHeader({
                 </DropdownMenu>
               ) : (
                 <Button onClick={handleSignIn} disabled={loading} className="gap-2">
-                  Sign in with Google
+                  Sign in
                 </Button>
               )}
             </div>
@@ -239,7 +239,7 @@ export default function AppHeader({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem disabled className="flex flex-col items-start">
-                      <span className="text-sm font-medium">{user.user_metadata?.full_name ?? "Signed in"}</span>
+                      <span className="text-sm font-medium">{user.fullName ?? "Signed in"}</span>
                       <span className="text-xs text-muted-foreground">{user.email}</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
@@ -250,7 +250,7 @@ export default function AppHeader({
                 </DropdownMenu>
               ) : (
                 <Button onClick={handleSignIn} disabled={loading} className="gap-2">
-                  Sign in with Google
+                  Sign in
                 </Button>
               )}
             </div>

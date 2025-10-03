@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/components/auth/AuthProvider";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,14 +34,35 @@ import AppHeader from "@/components/layout/AppHeader";
 import ProjectCard from "@/components/presentation/ProjectCard";
 import type { Project, Artifact } from "@/types";
 import { toast } from "sonner";
+import { getProjects, updateProject, deleteProject, getArtifactsByProject } from "@/lib/quick-db";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+/**
+ * Fetcher function for SWR - gets all projects and their first 3 artifacts for covers
+ */
+async function fetcher(userEmail?: string): Promise<Array<Project & { coverArtifacts: Artifact[] }>> {
+  const projects = await getProjects(userEmail);
+  
+  // For each project, get first 3 artifacts for the cover
+  const projectsWithCovers = await Promise.all(
+    projects.map(async (project) => {
+      const artifacts = await getArtifactsByProject(project.id);
+      return {
+        ...project,
+        coverArtifacts: artifacts.slice(0, 3), // First 3 artifacts for cover
+      };
+    })
+  );
+  
+  return projectsWithCovers;
+}
 
 export default function ProjectsPage() {
   const router = useRouter();
-  const { data, isLoading, error, mutate } = useSWR<{ projects: (Project & { coverArtifacts: Artifact[] })[] }>(
-    "/api/projects/covers",
-    fetcher,
+  const { user } = useAuth();
+  
+  const { data: projects = [], isLoading, error, mutate } = useSWR<Array<Project & { coverArtifacts: Artifact[] }>>(
+    user ? `projects-${user.email}` : null,
+    () => (user ? fetcher(user.email) : []),
     { 
       revalidateOnFocus: false,
       dedupingInterval: 30000, // Cache for 30 seconds
@@ -54,14 +76,13 @@ export default function ProjectsPage() {
   const [projectToRename, setProjectToRename] = useState<(Project & { coverArtifacts: Artifact[] }) | null>(null);
   const [newProjectName, setNewProjectName] = useState("");
 
-  const projects = useMemo(() => data?.projects ?? [], [data]);
-
   function handleNewProject() {
     router.push('/projects/new');
   }
 
   function handleProjectClick(project: Project & { coverArtifacts: Artifact[] }) {
-    router.push(`/presentation/${project.share_token}`);
+    // Updated to use new /p?token= route
+    router.push(`/p?token=${project.share_token}`);
   }
 
   function handleDeleteProject(project: Project & { coverArtifacts: Artifact[] }) {
@@ -78,13 +99,7 @@ export default function ProjectsPage() {
     
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/projects/${projectToDelete.id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete project');
-      }
+      await deleteProject(projectToDelete.id);
       
       // Update the local data to remove the deleted project
       mutate();
@@ -104,15 +119,7 @@ export default function ProjectsPage() {
     
     setIsRenaming(true);
     try {
-      const response = await fetch(`/api/projects/${projectToRename.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newProjectName.trim() }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to rename project');
-      }
+      await updateProject(projectToRename.id, { name: newProjectName.trim() });
       
       // Update the local data
       mutate();

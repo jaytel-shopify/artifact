@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { updateProject } from "@/lib/quick-db";
+import { toast } from "sonner";
 
 export default function EditableTitle({
   initialValue,
@@ -29,14 +31,13 @@ export default function EditableTitle({
     }
     setSaving(true);
     try {
-      await fetch(`/api/projects/${projectId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: next.trim() }),
-      });
+      // Update project name using Quick.db
+      await updateProject(projectId, { name: next.trim() });
       onUpdated?.(next.trim());
+      toast.success("Project name updated");
     } catch (err) {
-      console.error(err);
+      console.error("Failed to update project name:", err);
+      toast.error("Failed to update project name");
       setValue(initialValue);
     } finally {
       setSaving(false);

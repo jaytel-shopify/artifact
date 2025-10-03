@@ -16,6 +16,7 @@ import {
 import { VIEWPORTS, DEFAULT_VIEWPORT_KEY, getViewportDimensions, type ViewportKey } from "@/lib/viewports";
 import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
+import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
 import { toast } from "sonner";
 
 export default function ArtifactAdder({
@@ -75,64 +76,28 @@ export default function ArtifactAdder({
         let completedCount = 0;
         
         for (const file of files) {
-          // Upload file with progress tracking
-          const form = new FormData();
-          form.append("file", file);
-          form.append("project_id", projectId);
-          
-          const uploadPromise = new Promise<{publicUrl: string, path: string}>((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
+          // Upload file to Quick.fs with progress tracking
+          const upResult = await uploadFile(file, (progress) => {
+            const fileProgress = progress.percentage;
+            const overallProgress = Math.round(
+              ((completedCount * 100) + fileProgress) / files.length
+            );
             
-            xhr.upload.addEventListener('progress', (e) => {
-              if (e.lengthComputable) {
-                const fileProgress = Math.round((e.loaded / e.total) * 100);
-                const overallProgress = Math.round(
-                  ((completedCount * 100) + fileProgress) / files.length
-                );
-                
-                setUploadState(prev => ({
-                  ...prev,
-                  currentProgress: overallProgress,
-                }));
-              }
-            });
-            
-            xhr.addEventListener('load', () => {
-              if (xhr.status >= 200 && xhr.status < 300) {
-                try {
-                  const result = JSON.parse(xhr.responseText);
-                  resolve(result);
-                } catch (e) {
-                  reject(new Error('Failed to parse upload response'));
-                }
-              } else {
-                reject(new Error(`Upload failed with status ${xhr.status}`));
-              }
-            });
-            
-            xhr.addEventListener('error', () => {
-              reject(new Error('Upload failed'));
-            });
-            
-            xhr.open('POST', '/api/upload');
-            xhr.send(form);
+            setUploadState(prev => ({
+              ...prev,
+              currentProgress: overallProgress,
+            }));
           });
           
-          const upResult = await uploadPromise;
-          
-          // Determine file type
-          const type = file.type.startsWith("video/")
-            ? "video"
-            : file.type === "application/pdf"
-              ? "pdf"
-              : "image";
+          // Determine file type from MIME type
+          const type = getArtifactTypeFromMimeType(upResult.mimeType);
               
           // Create artifact using the hook with generated name
-          const artifactName = generateArtifactName(type, upResult.publicUrl, file);
+          const artifactName = generateArtifactName(type, upResult.fullUrl, file);
           await createArtifact({
             type,
-            source_url: upResult.publicUrl,
-            file_path: upResult.path,
+            source_url: upResult.fullUrl,  // Use fullUrl for display
+            file_path: upResult.url,        // Store relative url
             name: artifactName,
           });
           

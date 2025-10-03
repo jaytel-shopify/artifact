@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "deploy": "pnpm build && quick deploy dist artifact",
+    "preview": "pnpm build && npx serve dist"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

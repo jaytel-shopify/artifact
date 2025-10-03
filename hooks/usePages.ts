@@ -1,101 +1,113 @@
+"use client";
+
 import useSWR from "swr";
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
+import {
+  getPages,
+  createPage as createPageDB,
+  updatePage as updatePageDB,
+  deletePage as deletePageDB,
+  reorderPages as reorderPagesDB,
+  getNextPosition,
+} from "@/lib/quick-db";
 import { Page } from "@/types";
 
-const fetcher = (url: string) => fetch(url).then((r) => r.json());
+/**
+ * Fetcher function for SWR
+ */
+async function fetcher(projectId: string): Promise<Page[]> {
+  return await getPages(projectId);
+}
 
 export function usePages(projectId: string | undefined) {
-  const { data, error, isLoading, mutate } = useSWR<{ pages: Page[] }>(
-    projectId ? `/api/projects/${projectId}/pages` : null,
-    fetcher,
+  const { data: pages = [], error, isLoading, mutate } = useSWR<Page[]>(
+    projectId ? `pages-${projectId}` : null,
+    () => (projectId ? fetcher(projectId) : []),
     { revalidateOnFocus: false }
   );
 
-  const pages = data?.pages ?? [];
+  const createPage = useCallback(
+    async (name: string) => {
+      if (!projectId) return null;
 
-  const createPage = useCallback(async (name: string) => {
-    if (!projectId) return null;
+      try {
+        // Get next available position
+        const nextPosition = await getNextPosition("pages", projectId, "project_id");
 
-    const response = await fetch(`/api/projects/${projectId}/pages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name }),
-    });
+        // Create the page
+        const page = await createPageDB({
+          project_id: projectId,
+          name,
+          position: nextPosition,
+        });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to create page');
-    }
+        // Revalidate
+        await mutate();
+        return page;
+      } catch (error) {
+        console.error("Failed to create page:", error);
+        throw error;
+      }
+    },
+    [projectId, mutate]
+  );
 
-    const result = await response.json();
-    await mutate();
-    return result.page;
-  }, [projectId, mutate]);
+  const updatePage = useCallback(
+    async (pageId: string, updates: Partial<Pick<Page, "name" | "position">>) => {
+      if (!projectId) return null;
 
-  const updatePage = useCallback(async (pageId: string, updates: Partial<Pick<Page, 'name' | 'position'>>) => {
-    if (!projectId) return null;
+      try {
+        const page = await updatePageDB(pageId, updates);
+        await mutate();
+        return page;
+      } catch (error) {
+        console.error("Failed to update page:", error);
+        throw error;
+      }
+    },
+    [projectId, mutate]
+  );
 
-    const response = await fetch(`/api/projects/${projectId}/pages/${pageId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    });
+  const deletePage = useCallback(
+    async (pageId: string) => {
+      if (!projectId) return;
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to update page');
-    }
+      try {
+        await deletePageDB(pageId);
+        await mutate();
+      } catch (error) {
+        console.error("Failed to delete page:", error);
+        throw error;
+      }
+    },
+    [projectId, mutate]
+  );
 
-    const result = await response.json();
-    await mutate();
-    return result.page;
-  }, [projectId, mutate]);
+  const reorderPages = useCallback(
+    async (reorderedPages: Page[]) => {
+      if (!projectId) return;
 
-  const deletePage = useCallback(async (pageId: string) => {
-    if (!projectId) return;
+      // Optimistic update
+      mutate(reorderedPages, false);
 
-    const response = await fetch(`/api/projects/${projectId}/pages/${pageId}`, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.error || 'Failed to delete page');
-    }
-
-    await mutate();
-  }, [projectId, mutate]);
-
-  const reorderPages = useCallback(async (reorderedPages: Page[]) => {
-    if (!projectId) return;
-
-    // Update positions locally first for optimistic updates
-    const optimisticData = {
-      pages: reorderedPages.map((page, index) => ({
-        ...page,
-        position: index,
-      })),
-    };
-    
-    await mutate(optimisticData, false);
-
-    // Then update on server
-    try {
-      await Promise.all(
-        reorderedPages.map((page, index) =>
-          fetch(`/api/projects/${projectId}/pages/${page.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ position: index }),
-          })
-        )
-      );
-    } catch (error) {
-      // Revert on error
-      await mutate();
-      throw error;
-    }
-  }, [projectId, mutate]);
+      try {
+        // Update positions in database
+        const updates = reorderedPages.map((page, index) => ({
+          id: page.id,
+          position: index,
+        }));
+        
+        await reorderPagesDB(updates);
+        await mutate();
+      } catch (error) {
+        // Revert on error
+        await mutate();
+        console.error("Failed to reorder pages:", error);
+        throw error;
+      }
+    },
+    [projectId, mutate]
+  );
 
   return {
     pages,

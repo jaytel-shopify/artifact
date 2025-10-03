@@ -1,77 +1,96 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import type { Session, SupabaseClient, User } from "@supabase/supabase-js";
-import { createSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { waitForQuick, type QuickIdentity } from "@/lib/quick";
+
+/**
+ * Quick User type - extends QuickIdentity with our app-specific fields
+ */
+export interface QuickUser {
+  email: string;
+  fullName: string;
+  firstName: string;
+  slackHandle?: string;
+  slackId?: string;
+  slackImageUrl?: string;
+  title?: string;
+  github?: string;
+}
 
 interface AuthContextValue {
-  supabase: SupabaseClient;
-  session: Session | null;
-  user: User | null;
+  user: QuickUser | null;
   loading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  isAuthenticated: boolean;
+  signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [supabase] = useState(() => createSupabaseBrowserClient());
-  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<QuickUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function initSession() {
+    async function initUser() {
       try {
-        const { data, error } = await supabase.auth.getSession();
-        console.log('Session data:', data, 'Error:', error);
+        // Wait for Quick SDK to load
+        const quick = await waitForQuick();
+        
+        // Get user identity from Quick
+        const userData = await quick.id.waitForUser();
+        
+        console.log('Quick user loaded:', userData);
+        
         if (isMounted) {
-          setSession(data.session);
+          setUser({
+            email: userData.email,
+            fullName: userData.fullName,
+            firstName: userData.firstName,
+            slackHandle: userData.slackHandle,
+            slackId: userData.slackId,
+            slackImageUrl: userData.slackImageUrl,
+            title: userData.title,
+            github: userData.github,
+          });
           setLoading(false);
         }
       } catch (err) {
-        console.error('Session init error:', err);
+        console.error('Failed to load Quick user:', err);
         if (isMounted) {
           setLoading(false);
         }
       }
     }
 
-    initSession();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      console.log('Auth state change:', _event, newSession);
-      setSession(newSession);
-    });
+    initUser();
 
     return () => {
       isMounted = false;
-      listener.subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, []);
 
-  const value = useMemo<AuthContextValue>(() => {
-    return {
-      supabase,
-      session,
-      user: session?.user ?? null,
-      loading,
-      signInWithGoogle: async () => {
-        const redirectTo = `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"}/auth/callback`;
-        await supabase.auth.signInWithOAuth({
-          provider: "google",
-          options: {
-            redirectTo,
-          },
-        });
-      },
-      signOut: async () => {
-        await supabase.auth.signOut();
-      },
-    };
-  }, [loading, session, supabase]);
+  const value: AuthContextValue = {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    signIn: async () => {
+      // Quick handles authentication automatically via Google OAuth
+      // If the user isn't authenticated, they'll be redirected to sign in
+      // For now, we just reload the page to trigger Quick's auth flow
+      window.location.reload();
+    },
+    signOut: async () => {
+      // Quick doesn't have a built-in signOut method exposed in the docs
+      // The user can sign out by clearing cookies or navigating to a logout URL
+      // For Shopify internal tools, users are typically always authenticated
+      console.warn('Sign out is handled by Quick platform - redirect to logout if needed');
+      // You may need to redirect to a specific logout URL provided by Quick
+      // window.location.href = '/logout';
+    },
+  };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
