@@ -114,11 +114,11 @@ export default function Canvas({
     (event: DragEndEvent) => {
       const { active, over } = event;
       
-      // Use requestAnimationFrame to ensure smooth transition
-      requestAnimationFrame(() => {
-        setActiveId(null);
-        setDragging(false);
-      });
+      console.log('[Canvas] handleDragEnd called - clearing state immediately');
+      
+      // Clear drag state immediately (no delay)
+      setActiveId(null);
+      setDragging(false);
       
       if (!over || active.id === over.id) return;
       
@@ -135,6 +135,7 @@ export default function Canvas({
   );
 
   const handleDragStart = useCallback((event: any) => {
+    console.log('[Canvas] handleDragStart called');
     setActiveId(event.active.id);
     setDragging(true);
   }, []);
@@ -220,7 +221,7 @@ export default function Canvas({
                   className="mb-6"
                 />
               </div>
-              <div>
+              <div className="relative" data-artifact-overlay-container="true">
                 {children}
               </div>
             </div>
@@ -308,6 +309,7 @@ export default function Canvas({
                   width={columnWidth}
                   columnHeight={columnHeight ?? undefined}
                   isGlobalDragActive={dragging}
+                  activeArtifactId={activeId}
                 >
                   <ArtifactWrapper artifact={artifact}>
                     <ArtifactCell artifact={artifact} />
