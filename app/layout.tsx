@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import LocalDevWarning from "@/components/LocalDevWarning";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -40,12 +41,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Quick Platform SDK - provides quick.db, quick.fs, quick.id, etc. */}
+        {/* Quick Platform SDK - only works on deployed Quick sites */}
         <script src="/client/quick.js" async />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {/* Show warning when running on localhost */}
+        <LocalDevWarning />
+        
         <AuthProvider>
           <ThemeProvider
             attribute="class"

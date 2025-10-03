@@ -109,22 +109,67 @@ dist/
 
 ---
 
-## 🧪 Local Testing
+## 💻 Development Workflow
 
-Test the static build locally before deploying:
+### ⚠️ Local Development Not Supported
+
+**This app cannot run on localhost** because Quick SDK APIs (quick.db, quick.fs, quick.id) only work on deployed Quick sites.
+
+If you try to run `pnpm dev`, you'll see a warning screen explaining this limitation.
+
+---
+
+### ✅ Recommended Development Workflow
+
+Quick deployments are **fast** (~10-15 seconds), so the workflow is:
 
 ```bash
-# Build and serve locally
-pnpm preview
+# 1. Make code changes in your editor
 
-# Or build and serve separately
+# 2. Build the static site
 pnpm build
-npx serve dist
 
-# Visit http://localhost:3000
+# 3. Deploy to Quick
+quick deploy dist artifact
+# Type: y
+
+# 4. Test on the deployed site
+# Visit: https://artifact.quick.shopify.io
+
+# 5. Repeat!
 ```
 
-**Note**: Quick SDK features (quick.id, quick.db, quick.fs) won't work locally - they only work on deployed Quick sites.
+**Pro tip**: Keep your browser open to https://artifact.quick.shopify.io and just refresh after each deploy.
+
+---
+
+### 🎨 What You CAN Do Locally
+
+You can still work on **UI/styling** locally:
+
+```bash
+pnpm dev
+```
+
+Use this for:
+- ✅ Component layout and styling
+- ✅ CSS/Tailwind adjustments
+- ✅ Visual design changes
+- ✅ TypeScript compilation checks
+
+But you'll see a deployment message overlay since Quick SDK won't work.
+
+---
+
+### 🚀 Quick Deploy Shortcut
+
+For convenience, use the deploy script:
+
+```bash
+pnpm deploy
+```
+
+This runs `pnpm build && quick deploy dist artifact` in one command.
 
 ---
 

@@ -3,17 +3,17 @@
 import Image from "next/image";
 import { useMemo } from "react";
 
-function isSupabaseUrl(url: string): boolean {
+function isQuickUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    return u.hostname.endsWith("supabase.co") || u.hostname.endsWith("supabase.in");
+    return u.hostname.includes("quick.shopify.io");
   } catch {
     return false;
   }
 }
 
 export default function ImageViewer({ src, alt }: { src: string; alt?: string }) {
-  const useNextImage = useMemo(() => isSupabaseUrl(src), [src]);
+  const useNextImage = useMemo(() => isQuickUrl(src), [src]);
   const commonClass = "w-full h-auto";
 
   return useNextImage ? (
