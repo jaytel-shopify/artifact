@@ -4,6 +4,7 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import LocalDevWarning from "@/components/LocalDevWarning";
+import AnimatedPageWrapper from "@/components/transitions/AnimatedPageWrapper";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -57,7 +58,9 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <AnimatedPageWrapper>
+              {children}
+            </AnimatedPageWrapper>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

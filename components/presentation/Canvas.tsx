@@ -241,6 +241,8 @@ export default function Canvas({
                   title={artifact.name}
                   artifactId={artifact.id}
                   onUpdate={(newTitle) => onUpdateArtifact?.(artifact.id, { name: newTitle }) ?? Promise.resolve()}
+                  artifactType={artifact.type}
+                  sourceUrl={artifact.source_url}
                   className="mb-6"
                 />
               </div>

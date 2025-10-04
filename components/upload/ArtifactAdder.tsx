@@ -16,7 +16,7 @@ import {
 import { VIEWPORTS, DEFAULT_VIEWPORT_KEY, getViewportDimensions, type ViewportKey } from "@/lib/viewports";
 import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
-import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
+import { uploadFile, getArtifactTypeFromMimeType, validateFile } from "@/lib/quick-storage";
 import { toast } from "sonner";
 
 export default function ArtifactAdder({
@@ -65,6 +65,16 @@ export default function ArtifactAdder({
     
     try {
       if (files.length) {
+        // Validate all files first (50MB limit)
+        for (const file of files) {
+          const validation = validateFile(file, { maxSizeMB: 50 });
+          if (!validation.valid) {
+            setError(validation.error || "File too large");
+            toast.error(validation.error || "File too large");
+            return;
+          }
+        }
+        
         // Initialize upload state for files
         setUploadState({
           uploading: true,
@@ -190,9 +200,6 @@ export default function ArtifactAdder({
       >
         <DialogHeader>
           <DialogTitle className="text-white">Add Artifact</DialogTitle>
-          <DialogDescription className="text-white/70">
-            Upload files or embed content via URL
-          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -200,7 +207,7 @@ export default function ArtifactAdder({
             <p className="text-sm text-white/70">Upload files</p>
             <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 py-12 cursor-pointer transition hover:border-white/40">
               <span className="text-sm font-medium">Browse files</span>
-              <span className="text-xs text-white/60">Images, videos, or PDFs up to 20MB</span>
+              <span className="text-xs text-white/60">Images, videos, or PDFs up to 50MB</span>
               <input type="file" multiple accept="image/*,video/*,application/pdf" className="hidden" onChange={onFileInputChange} />
             </label>
             {files.length > 0 && (

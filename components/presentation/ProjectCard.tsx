@@ -1,6 +1,14 @@
 'use client'
 
 import { Card, CardFooter } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { MoreVertical } from 'lucide-react'
 import ArtifactThumbnail from './ArtifactThumbnail'
 import type { Artifact } from '@/types'
 import { SPRING_TRANSITIONS } from '@/lib/easings'
@@ -19,6 +27,8 @@ interface ProjectCardProps {
   project: ProjectCoverData
   onClick: () => void
   onDelete?: () => void
+  menuItems?: React.ReactNode  // Pass the menu items from parent
+  onHover?: () => void          // Prefetch handler
 }
 
 function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
@@ -89,7 +99,7 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
   )
 }
 
-export default function ProjectCard({ project, onClick, onDelete }: ProjectCardProps) {
+export default function ProjectCard({ project, onClick, onDelete, menuItems, onHover }: ProjectCardProps) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr)
     const now = new Date()
@@ -104,12 +114,31 @@ export default function ProjectCard({ project, onClick, onDelete }: ProjectCardP
 
   return (
     <Card 
-      className="group hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden aspect-[4/5] flex flex-col outline-none border-0"
+      className="group relative hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden aspect-[4/5] flex flex-col outline-none border-0"
       style={{ 
         transition: 'all 500ms var(--spring-elegant-easing-light)'
       }}
       onClick={onClick}
+      onMouseEnter={onHover}
     >
+      {/* Three dots menu button */}
+      {menuItems && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            {menuItems}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      
       {/* Dynamic Cover */}
       <ProjectCover artifacts={project.coverArtifacts} />
       

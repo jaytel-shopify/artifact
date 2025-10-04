@@ -23,7 +23,11 @@ export function usePageArtifacts(projectId: string | undefined, pageId: string |
   const { data: artifacts = [], error, isLoading, mutate } = useSWR<Artifact[]>(
     pageId ? `page-artifacts-${pageId}` : null,
     () => (pageId ? fetcher(pageId) : []),
-    { revalidateOnFocus: false }
+    { 
+      revalidateOnFocus: false,
+      dedupingInterval: 300000,    // 5 minutes - cache artifacts per page
+      keepPreviousData: true,      // Show old data while loading new (smooth transitions)
+    }
   );
 
   const createArtifact = useCallback(

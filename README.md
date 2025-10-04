@@ -570,7 +570,7 @@ This app was migrated from a traditional Next.js + Supabase architecture to Quic
 
 1. **Local development** - Must deploy to Quick to test full functionality
 2. **Quick.db queries** - No SQL joins or complex queries (use JavaScript filtering)
-3. **File size limits** - 20MB per file (Quick.fs limitation)
+3. **File size limits** - 50MB per file (Quick.fs limitation)
 4. **Shopify-only** - Only Shopify employees can access (by design)
 
 ---

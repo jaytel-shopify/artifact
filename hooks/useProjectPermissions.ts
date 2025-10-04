@@ -4,6 +4,7 @@ import { useMemo, useEffect, useState } from "react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { Project } from "@/types";
 import { getProjectAccessList } from "@/lib/quick-db";
+import { getFolderAccessList } from "@/lib/quick-folders";
 
 /**
  * Hook to determine user permissions for a project
@@ -18,9 +19,10 @@ import { getProjectAccessList } from "@/lib/quick-db";
 export function useProjectPermissions(project: Project | null) {
   const { user } = useAuth();
   const [accessList, setAccessList] = useState<any[]>([]);
+  const [folderAccessList, setFolderAccessList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load project access list
+  // Load project and folder access lists
   useEffect(() => {
     async function checkAccess() {
       if (!project?.id) {
@@ -29,8 +31,15 @@ export function useProjectPermissions(project: Project | null) {
       }
       
       try {
-        const access = await getProjectAccessList(project.id);
-        setAccessList(access);
+        // Get project access
+        const projectAccess = await getProjectAccessList(project.id);
+        setAccessList(projectAccess);
+
+        // Get folder access if project is in a folder
+        if (project.folder_id) {
+          const folderAccess = await getFolderAccessList(project.folder_id);
+          setFolderAccessList(folderAccess);
+        }
       } catch (error) {
         console.error("Failed to load project access:", error);
       } finally {
@@ -39,7 +48,7 @@ export function useProjectPermissions(project: Project | null) {
     }
     
     checkAccess();
-  }, [project?.id]);
+  }, [project?.id, project?.folder_id]);
 
   const isCreator = useMemo(() => {
     if (!project || !user) return false;
@@ -55,7 +64,16 @@ export function useProjectPermissions(project: Project | null) {
     );
   }, [accessList, user, isCreator, loading]);
 
-  const canEdit = isCreator || isCollaborator;
+  const isFolderCollaborator = useMemo(() => {
+    if (!user || isCreator || loading || !project?.folder_id) return false;
+    
+    // Check if user has editor access to the parent folder
+    return folderAccessList.some(
+      (access) => access.user_email === user.email && access.role === "editor"
+    );
+  }, [folderAccessList, user, isCreator, loading, project?.folder_id]);
+
+  const canEdit = isCreator || isCollaborator || isFolderCollaborator;
   const canView = true; // Everyone at Shopify can view
 
   return {
@@ -63,7 +81,8 @@ export function useProjectPermissions(project: Project | null) {
     canEdit,
     canView,
     isReadOnly: !canEdit,
-    isCollaborator,
+    isCollaborator: isCollaborator || isFolderCollaborator,
+    isFolderCollaborator,
     loading,
   };
 }

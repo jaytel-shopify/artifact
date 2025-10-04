@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, Suspense } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createProject as createProjectDB, getProjects } from "@/lib/quick-db";
@@ -9,10 +9,13 @@ import { customAlphabet } from "nanoid";
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 12);
 
-export default function NewProjectPage() {
+function NewProjectContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const hasCreatedRef = useRef(false);
+  
+  const folderId = searchParams.get("folder");
 
   useEffect(() => {
     async function createNewProject() {
@@ -41,11 +44,12 @@ export default function NewProjectPage() {
         // Generate unique share token
         const shareToken = nanoid();
         
-        // Create the project
+        // Create the project (with optional folder assignment)
         const project = await createProjectDB({
           name: projectName,
           creator_id: user.email,
           share_token: shareToken,
+          folder_id: folderId || null,
         });
         
         toast.success(`Created "${project.name}"`);
@@ -61,7 +65,7 @@ export default function NewProjectPage() {
     }
 
     createNewProject();
-  }, [router, user]);
+  }, [router, user, folderId]);
 
   return (
     <main className="h-screen flex items-center justify-center bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
@@ -70,6 +74,14 @@ export default function NewProjectPage() {
         <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
       </div>
     </main>
+  );
+}
+
+export default function NewProjectPage() {
+  return (
+    <Suspense fallback={null}>
+      <NewProjectContent />
+    </Suspense>
   );
 }
 

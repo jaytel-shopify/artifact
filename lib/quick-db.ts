@@ -31,11 +31,12 @@ export async function getProjects(creatorEmail?: string): Promise<Project[]> {
     projects = projects.filter((p: Project) => p.creator_id === creatorEmail);
   }
 
-  // Sort by created_at descending (newest first)
-  return projects.sort(
-    (a: Project, b: Project) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
+  // Sort by last_accessed_at (most recent first), fallback to created_at
+  return projects.sort((a: Project, b: Project) => {
+    const aTime = a.last_accessed_at || a.created_at;
+    const bTime = b.last_accessed_at || b.created_at;
+    return new Date(bTime).getTime() - new Date(aTime).getTime();
+  });
 }
 
 /**
@@ -73,6 +74,7 @@ export async function createProject(data: {
   name: string;
   creator_id: string; // user.email
   share_token: string;
+  folder_id?: string | null; // Optional folder assignment
   settings?: {
     default_columns?: number;
     allow_viewer_control?: boolean;
@@ -86,6 +88,7 @@ export async function createProject(data: {
     name: data.name,
     creator_id: data.creator_id,
     share_token: data.share_token,
+    folder_id: data.folder_id || null,
     settings: data.settings || {
       default_columns: 3,
       allow_viewer_control: true,
@@ -110,7 +113,7 @@ export async function createProject(data: {
  */
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "name" | "settings">>
+  updates: Partial<Pick<Project, "name" | "settings" | "last_accessed_at" | "folder_id">>
 ): Promise<Project> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");

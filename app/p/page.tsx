@@ -12,12 +12,13 @@ import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { useRouter } from "next/navigation";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
-import type { Project } from "@/types";
+import type { Project, Folder } from "@/types";
 import { getProjectByShareToken } from "@/lib/quick-db";
 import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
+import PageTransition from "@/components/transitions/PageTransition";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -42,6 +43,27 @@ function PresentationPageContent() {
   
   // Debug mode: Override read-only state for testing
   const [debugReadOnly, setDebugReadOnly] = useState(false);
+  
+  // Load user's folders for folder dropdown
+  const [userFolders, setUserFolders] = useState<Folder[]>([]);
+  
+  useEffect(() => {
+    if (!user?.email) return;
+    
+    async function loadFolders() {
+      if (!user) return;
+      
+      try {
+        const { getUserFolders } = await import("@/lib/quick-folders");
+        const folders = await getUserFolders(user.email);
+        setUserFolders(folders);
+      } catch (error) {
+        console.error("Failed to load folders:", error);
+      }
+    }
+    
+    loadFolders();
+  }, [user]);
   const [uploadState, setUploadState] = useState<{
     uploading: boolean;
     totalFiles: number;
@@ -100,10 +122,43 @@ function PresentationPageContent() {
     document.title = `${project.name} | Artifact`;
   }, [project?.name]);
 
+  // Track when project is accessed (for "last opened" sorting)
+  useEffect(() => {
+    if (!project?.id) return;
+    
+    async function trackAccess() {
+      if (!project) return;
+      
+      try {
+        const { updateProject } = await import("@/lib/quick-db");
+        await updateProject(project.id, {
+          last_accessed_at: new Date().toISOString(),
+        });
+      } catch (error) {
+        // Silent fail - tracking is not critical
+        console.debug("Failed to track project access:", error);
+      }
+    }
+    
+    // Track after a short delay to ensure project loaded
+    const timer = setTimeout(trackAccess, 1000);
+    return () => clearTimeout(timer);
+  }, [project]);
+
   // File upload handler with progress tracking
   const handleFileUpload = useCallback(async (files: File[]) => {
     if (!project?.id || !currentPageId) return;
     if (files.length === 0) return;
+    
+    // Validate all files first (50MB limit)
+    const { validateFile } = await import("@/lib/quick-storage");
+    for (const file of files) {
+      const validation = validateFile(file, { maxSizeMB: 50 });
+      if (!validation.valid) {
+        toast.error(validation.error || "File too large");
+        return;
+      }
+    }
     
     // Initialize upload state
     setUploadState({
@@ -249,22 +304,56 @@ function PresentationPageContent() {
     project.name = name;
   }, [project]);
 
+  const handleMoveToFolder = useCallback(async (folderId: string) => {
+    if (!project) return;
+    
+    try {
+      const { moveProjectToFolder } = await import("@/lib/quick-folders");
+      await moveProjectToFolder(project.id, folderId);
+      const folder = userFolders.find((f) => f.id === folderId);
+      toast.success(`Moved to ${folder?.name || "folder"}`);
+      // Update local project state
+      project.folder_id = folderId;
+    } catch (error) {
+      toast.error("Failed to move project");
+      console.error(error);
+    }
+  }, [project, userFolders]);
+
+  const handleRemoveFromFolder = useCallback(async () => {
+    if (!project) return;
+    
+    try {
+      const { removeProjectFromFolder } = await import("@/lib/quick-folders");
+      await removeProjectFromFolder(project.id);
+      toast.success("Removed from folder");
+      // Update local project state
+      project.folder_id = null;
+    } catch (error) {
+      toast.error("Failed to remove from folder");
+      console.error(error);
+    }
+  }, [project]);
+
   const handleBackToHome = useCallback(() => {
-    router.push('/projects');
-  }, [router]);
+    // Smart back: Go to folder if project is in a folder, otherwise /projects
+    if (project?.folder_id) {
+      router.push(`/folder?id=${project.folder_id}`);
+    } else {
+      router.push('/projects');
+    }
+  }, [router, project]);
 
   const isUploading = uploadState.uploading || isPending;
-  const isLoading = !project || pages.length === 0;
+  const isPageLoading = !project || pages.length === 0;
 
-  if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
-        <div className="text-sm">Loading...</div>
-      </div>
-    );
+  // Show loading state
+  if (isPageLoading) {
+    return null; // AnimatePresence will handle the fade
   }
 
   return (
+    <PageTransition isLoading={false}>
     <AppLayout
       mode="canvas"
       projectId={project.id}
@@ -274,7 +363,11 @@ function PresentationPageContent() {
       isCreator={isCreator}
       isCollaborator={isCollaborator}
       isReadOnly={isReadOnly}
+      currentFolderId={project.folder_id}
+      folders={userFolders}
       onProjectNameUpdate={canEdit ? handleProjectNameUpdate : undefined}
+      onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
+      onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
       onArtifactAdded={canEdit ? refetchArtifacts : undefined}
       columns={columns}
       onColumnsChange={setColumns}
@@ -373,6 +466,7 @@ function PresentationPageContent() {
         userEmail={user?.email}
       />
     </AppLayout>
+    </PageTransition>
   );
 }
 
@@ -381,7 +475,7 @@ function PresentationPageContent() {
 
 export default function PresentationPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen">Loading...</div>}>
+    <Suspense fallback={null}>
       <PresentationPageContent />
     </Suspense>
   );

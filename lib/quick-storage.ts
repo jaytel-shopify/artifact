@@ -141,12 +141,12 @@ export function validateFile(
     allowedTypes?: string[];
   }
 ): { valid: boolean; error?: string } {
-  const maxSizeBytes = (options?.maxSizeMB || 20) * 1024 * 1024;
+  const maxSizeBytes = (options?.maxSizeMB || 50) * 1024 * 1024;
 
   if (file.size > maxSizeBytes) {
     return {
       valid: false,
-      error: `File size exceeds ${options?.maxSizeMB || 20}MB limit`,
+      error: `File size exceeds ${options?.maxSizeMB || 50}MB limit. Try compressing your file.`,
     };
   }
 

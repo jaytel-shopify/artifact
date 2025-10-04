@@ -9,7 +9,7 @@ interface AppLayoutProps {
   children: ReactNode;
   
   // View mode
-  mode: 'homepage' | 'canvas';
+  mode: 'homepage' | 'canvas' | 'folder';
   
   // Project-specific props (for canvas mode)
   projectId?: string;
@@ -19,8 +19,21 @@ interface AppLayoutProps {
   isCreator?: boolean;
   isCollaborator?: boolean;
   isReadOnly?: boolean;
+  currentFolderId?: string | null;
+  folders?: any[];
   onProjectNameUpdate?: (name: string) => void;
+  onMoveToFolder?: (folderId: string) => void;
+  onRemoveFromFolder?: () => void;
   onArtifactAdded?: () => void;
+  
+  // Folder-specific props (for folder mode)
+  folderId?: string;
+  folderName?: string;
+  onFolderNameUpdate?: (name: string) => void;
+  onFolderShare?: () => void;
+  onFolderRename?: () => void;
+  onFolderDelete?: () => void;
+  onNewProject?: () => void;
   
   // Column controls
   columns?: number;
@@ -49,8 +62,19 @@ export default function AppLayout({
   isCreator = false,
   isCollaborator = false,
   isReadOnly = false,
+  currentFolderId,
+  folders = [],
   onProjectNameUpdate,
+  onMoveToFolder,
+  onRemoveFromFolder,
   onArtifactAdded,
+  folderId,
+  folderName,
+  onFolderNameUpdate,
+  onFolderShare,
+  onFolderRename,
+  onFolderDelete,
+  onNewProject,
   columns,
   onColumnsChange,
   showColumnControls,
@@ -100,11 +124,22 @@ export default function AppLayout({
         isCreator={isCreator}
         isCollaborator={isCollaborator}
         isReadOnly={isReadOnly}
+        currentFolderId={currentFolderId}
+        folders={folders}
+        folderId={folderId}
+        folderName={folderName}
         onBackToHome={onBackToHome}
-        onToggleSidebar={handleToggleSidebar}
+        onToggleSidebar={mode === 'canvas' ? handleToggleSidebar : undefined}
         sidebarOpen={sidebarOpen}
         onProjectNameUpdate={onProjectNameUpdate}
+        onMoveToFolder={onMoveToFolder}
+        onRemoveFromFolder={onRemoveFromFolder}
         onArtifactAdded={onArtifactAdded}
+        onFolderNameUpdate={onFolderNameUpdate}
+        onFolderShare={onFolderShare}
+        onFolderRename={onFolderRename}
+        onFolderDelete={onFolderDelete}
+        onNewProject={onNewProject}
         currentPageId={currentPageId}
         columns={columns}
         onColumnsChange={onColumnsChange}

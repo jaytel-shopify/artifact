@@ -11,9 +11,5 @@ export default function Home() {
     router.replace("/projects");
   }, [router]);
 
-  return (
-    <div className="h-screen flex items-center justify-center">
-      <div className="text-sm text-muted-foreground">Redirecting...</div>
-    </div>
-  );
+  return null; // Clean redirect, no loading text
 }

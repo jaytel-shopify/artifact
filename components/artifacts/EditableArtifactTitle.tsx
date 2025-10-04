@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Globe, SquareArrowOutUpRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditableArtifactTitleProps {
@@ -9,6 +11,8 @@ interface EditableArtifactTitleProps {
   artifactId: string;
   onUpdate: (newTitle: string) => Promise<void>;
   className?: string;
+  artifactType?: string;
+  sourceUrl?: string;
 }
 
 export default function EditableArtifactTitle({
@@ -16,6 +20,8 @@ export default function EditableArtifactTitle({
   artifactId,
   onUpdate,
   className = "",
+  artifactType,
+  sourceUrl,
 }: EditableArtifactTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(title);
@@ -81,6 +87,8 @@ export default function EditableArtifactTitle({
     handleSave();
   }, [handleSave]);
 
+  const isUrlArtifact = artifactType === "url";
+
   if (isEditing) {
     return (
       <div className={`text-center ${className}`}>
@@ -106,22 +114,44 @@ export default function EditableArtifactTitle({
   }
 
   return (
-    <div 
-      className={`text-center cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200 ${className}`}
-      onDoubleClick={handleDoubleClick}
-      title="Double-click to edit"
-    >
+    <div className={`flex items-center justify-center gap-2 ${className}`}>
+      {/* Left: Globe icon for URL artifacts */}
+      {isUrlArtifact && (
+        <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
+      )}
+      
+      {/* Center: Title */}
       <div 
-        className="text-xs text-gray-400 truncate select-none"
-        style={{ 
-          fontSize: '14px',
-          lineHeight: '1.2',
-          maxWidth: '440px',
-          margin: '0 auto'
-        }}
+        className="cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200 flex-1 min-w-0"
+        onDoubleClick={handleDoubleClick}
+        title="Double-click to edit"
       >
-        {currentTitle || "Untitled"}
+        <div 
+          className="text-xs text-gray-400 truncate select-none"
+          style={{ 
+            fontSize: '14px',
+            lineHeight: '1.2',
+          }}
+        >
+          {currentTitle || "Untitled"}
+        </div>
       </div>
+
+      {/* Right: External link for URL artifacts */}
+      {isUrlArtifact && sourceUrl && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0 flex-shrink-0 text-gray-500 hover:text-gray-300 hover:bg-white/10"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+          }}
+          aria-label="Open in new tab"
+        >
+          <SquareArrowOutUpRight className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 }

@@ -3,20 +3,37 @@
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Check, ChevronDown, Folder as FolderIcon, X } from "lucide-react";
 import { updateProject } from "@/lib/quick-db";
 import { toast } from "sonner";
+import type { Folder } from "@/types";
 
 export default function EditableTitle({
   initialValue,
   projectId,
   onUpdated,
   isReadOnly = false,
+  isFolder = false,
+  folders = [],
+  currentFolderId = null,
+  onMoveToFolder,
+  onRemoveFromFolder,
 }: {
   initialValue: string;
   projectId?: string;
   onUpdated?: (name: string) => void;
   isReadOnly?: boolean;
+  isFolder?: boolean;
+  folders?: Folder[];
+  currentFolderId?: string | null;
+  onMoveToFolder?: (folderId: string) => void;
+  onRemoveFromFolder?: () => void;
 }) {
   const [value, setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
@@ -33,19 +50,31 @@ export default function EditableTitle({
     }
     setSaving(true);
     try {
-      // Update project name using Quick.db
-      await updateProject(projectId, { name: next.trim() });
-      onUpdated?.(next.trim());
-      toast.success("Project name updated");
+      if (isFolder) {
+        // Update folder name
+        const { updateFolder } = await import("@/lib/quick-folders");
+        await updateFolder(projectId, { name: next.trim() });
+        onUpdated?.(next.trim());
+        toast.success("Folder renamed");
+      } else {
+        // Update project name
+        await updateProject(projectId, { name: next.trim() });
+        onUpdated?.(next.trim());
+        toast.success("Project name updated");
+      }
     } catch (err) {
-      console.error("Failed to update project name:", err);
-      toast.error("Failed to update project name");
+      console.error(`Failed to update ${isFolder ? 'folder' : 'project'} name:`, err);
+      toast.error(`Failed to update ${isFolder ? 'folder' : 'project'} name`);
       setValue(initialValue);
     } finally {
       setSaving(false);
       setEditing(false);
     }
   }
+
+  // Filter folders (exclude current folder)
+  const availableFolders = folders.filter((f) => f.id !== currentFolderId);
+  const showFolderActions = !isReadOnly && onMoveToFolder && (availableFolders.length > 0 || currentFolderId);
 
   // If read-only, just show the title (not editable)
   if (isReadOnly) {
@@ -100,6 +129,50 @@ export default function EditableTitle({
         </button>
       )}
       {saving && <span className="text-xs text-white/60 ml-2">Saving…</span>}
+      
+      {/* Folder Actions Dropdown */}
+      {showFolderActions && (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/10"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {/* Move to Folder options */}
+            {availableFolders.length > 0 && availableFolders.map((folder) => (
+              <DropdownMenuItem
+                key={folder.id}
+                onClick={() => onMoveToFolder?.(folder.id)}
+                className="flex items-center gap-2"
+              >
+                <FolderIcon className="h-4 w-4" />
+                Move to {folder.name}
+              </DropdownMenuItem>
+            ))}
+            
+            {/* Remove from Folder option */}
+            {currentFolderId && onRemoveFromFolder && (
+              <>
+                {availableFolders.length > 0 && (
+                  <div className="h-px bg-border my-1" />
+                )}
+                <DropdownMenuItem
+                  onClick={onRemoveFromFolder}
+                  className="flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Remove from Folder
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
     </div>
   );
 }

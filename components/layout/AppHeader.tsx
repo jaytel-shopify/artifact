@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, PanelLeft, PanelLeftClose, Share, LogOut, Plus } from "lucide-react";
+import { ArrowLeft, PanelLeft, PanelLeftClose, Share, LogOut, Plus, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import {
@@ -33,7 +33,11 @@ interface AppHeaderProps {
   isCreator?: boolean;
   isCollaborator?: boolean;
   isReadOnly?: boolean;
+  currentFolderId?: string | null;
+  folders?: any[];
   onProjectNameUpdate?: (name: string) => void;
+  onMoveToFolder?: (folderId: string) => void;
+  onRemoveFromFolder?: () => void;
   onArtifactAdded?: () => void;
   currentPageId?: string;
   
@@ -42,11 +46,19 @@ interface AppHeaderProps {
   onColumnsChange?: (columns: number) => void;
   showColumnControls?: boolean;
   
-  // Homepage props
+  // Folder-specific props (for folder mode)
+  folderId?: string;
+  folderName?: string;
+  onFolderNameUpdate?: (name: string) => void;
+  onFolderShare?: () => void;
+  onFolderRename?: () => void;
+  onFolderDelete?: () => void;
+  
+  // Homepage/Folder props
   onNewProject?: () => void;
   
   // View mode
-  mode: 'homepage' | 'canvas';
+  mode: 'homepage' | 'canvas' | 'folder';
 }
 
 export default function AppHeader({
@@ -60,13 +72,23 @@ export default function AppHeader({
   isCreator = false,
   isCollaborator = false,
   isReadOnly = false,
+  currentFolderId,
+  folders = [],
   onProjectNameUpdate,
+  onMoveToFolder,
+  onRemoveFromFolder,
   onArtifactAdded,
+  folderId,
+  folderName,
+  onFolderNameUpdate,
+  onFolderShare,
+  onFolderRename,
+  onFolderDelete,
+  onNewProject,
   currentPageId,
   columns = 3,
   onColumnsChange,
   showColumnControls = true,
-  onNewProject,
   mode
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -101,38 +123,33 @@ export default function AppHeader({
               <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">Artifact</h1>
             </div>
           ) : (
-            /* Canvas mode: Navigation + Tools */
+            /* Canvas/Folder mode: Navigation + Tools */
             <>
-              {/* Back to Home Button */}
+              {/* Back Button */}
               <Button
                 variant="outline"
                 size="icon"
                 onClick={onBackToHome}
-                aria-label="Back to home"
-                className="group relative overflow-hidden"
+                aria-label="Back"
               >
-                <img 
-                  src="/favicons/icon-256.png" 
-                  alt="Back to home"
-                  className="w-8 h-8 transition-all duration-200 group-hover:opacity-0 group-hover:scale-75"
-                  style={{ imageRendering: 'crisp-edges' }}
-                />
-                <ArrowLeft className="h-4 w-4 absolute inset-0 m-auto transition-all duration-200 opacity-0 scale-125 group-hover:opacity-100 group-hover:scale-100" />
+                <ArrowLeft className="h-4 w-4" />
               </Button>
 
-              {/* Sidebar Toggle */}
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={onToggleSidebar}
-                aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-              >
-                {sidebarOpen ? (
-                  <PanelLeftClose className="h-4 w-4" />
-                ) : (
-                  <PanelLeft className="h-4 w-4" />
-                )}
-              </Button>
+              {/* Sidebar Toggle (only for canvas mode) */}
+              {onToggleSidebar && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={onToggleSidebar}
+                  aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+                >
+                  {sidebarOpen ? (
+                    <PanelLeftClose className="h-4 w-4" />
+                  ) : (
+                    <PanelLeft className="h-4 w-4" />
+                  )}
+                </Button>
+              )}
               
               {/* Add Artifact Button (hidden in read-only mode) */}
               {projectId && currentPageId && onArtifactAdded && (
@@ -166,7 +183,7 @@ export default function AppHeader({
           )}
         </div>
 
-        {/* Center Section - Project Title (Canvas mode only) */}
+        {/* Center Section - Title */}
         {mode === 'canvas' && projectId && (
           <div className="flex items-center justify-center w-full max-w-[var(--section-width)]">
             <EditableTitle
@@ -174,13 +191,95 @@ export default function AppHeader({
               projectId={projectId}
               onUpdated={onProjectNameUpdate}
               isReadOnly={!onProjectNameUpdate}
+              folders={folders}
+              currentFolderId={currentFolderId}
+              onMoveToFolder={onMoveToFolder}
+              onRemoveFromFolder={onRemoveFromFolder}
+            />
+          </div>
+        )}
+        
+        {mode === 'folder' && folderId && (
+          <div className="flex items-center justify-center w-full max-w-[var(--section-width)]">
+            <EditableTitle
+              initialValue={folderName || "Untitled Folder"}
+              projectId={folderId}
+              onUpdated={onFolderNameUpdate}
+              isReadOnly={!onFolderNameUpdate}
+              isFolder={true}
             />
           </div>
         )}
 
         {/* Right Section - Actions */}
         <div className="flex items-center justify-end gap-3 w-full max-w-[var(--section-width)]">
-          {mode === 'canvas' ? (
+          {mode === 'folder' ? (
+            <div className="flex items-center gap-3">
+              {/* Share Folder Button */}
+              {onFolderShare && (
+                <Button variant="outline" className="gap-2" onClick={onFolderShare}>
+                  <Share className="h-4 w-4" />
+                  Share
+                </Button>
+              )}
+              
+              {/* New Project Button */}
+              {onNewProject && (
+                <Button className="gap-2" onClick={onNewProject}>
+                  <Plus className="h-4 w-4" />
+                  New Project
+                </Button>
+              )}
+              
+              {/* Folder Actions Menu */}
+              {(onFolderRename || onFolderDelete) && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="icon">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {onFolderRename && (
+                      <DropdownMenuItem onClick={onFolderRename}>
+                        Rename Folder
+                      </DropdownMenuItem>
+                    )}
+                    {onFolderDelete && (
+                      <DropdownMenuItem variant="destructive" onClick={onFolderDelete}>
+                        Delete Folder
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              
+              {/* User Avatar */}
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2">
+                      <UserAvatar />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem disabled className="flex flex-col items-start">
+                      <span className="text-sm font-medium">{user.fullName ?? "Signed in"}</span>
+                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button onClick={handleSignIn} disabled={loading} className="gap-2">
+                  Sign in
+                </Button>
+              )}
+            </div>
+          ) : mode === 'canvas' ? (
             <div className="flex items-center gap-3">
               {/* Collaborator Badge (shown for invited editors) */}
               {isCollaborator && creatorEmail && <CollaboratorBadge creatorEmail={creatorEmail} />}
