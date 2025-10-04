@@ -27,3 +27,5 @@ Still to implement:
 - change video defaults to be looping with no controls
 
 - live follow mode feature
+
+- fit height feature

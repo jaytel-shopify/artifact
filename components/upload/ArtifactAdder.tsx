@@ -102,6 +102,11 @@ export default function ArtifactAdder({
           // Determine file type from MIME type
           const type = getArtifactTypeFromMimeType(upResult.mimeType);
               
+          // Set default metadata for videos (muted, loop, hide controls)
+          const defaultMetadata = type === "video" 
+            ? { hideUI: true, loop: true, muted: true }
+            : {};
+          
           // Create artifact using the hook with generated name
           const artifactName = generateArtifactName(type, upResult.fullUrl, file);
           await createArtifact({
@@ -109,6 +114,7 @@ export default function ArtifactAdder({
             source_url: upResult.fullUrl,  // Use fullUrl for display
             file_path: upResult.url,        // Store relative url
             name: artifactName,
+            metadata: defaultMetadata,
           });
           
           completedCount++;
