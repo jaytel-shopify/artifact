@@ -593,9 +593,7 @@ Internal Shopify tool - Not for public distribution
 
 ## 🙏 Acknowledgments
 
-Built with Quick platform by Shopify Infrastructure team.
-
-Uses Shadcn/ui components and Radix UI primitives.
+Built by Product Design Studio.
 
 ---
 
