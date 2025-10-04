@@ -1,7 +1,19 @@
 "use client";
 
-import ProjectsPage from "./(dashboard)/projects/page";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
-  return <ProjectsPage />;
+  const router = useRouter();
+
+  useEffect(() => {
+    // Redirect to /projects so URL always shows /projects
+    router.replace("/projects");
+  }, [router]);
+
+  return (
+    <div className="h-screen flex items-center justify-center">
+      <div className="text-sm text-muted-foreground">Redirecting...</div>
+    </div>
+  );
 }
