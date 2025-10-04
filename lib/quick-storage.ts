@@ -118,13 +118,11 @@ export async function uploadFilesSequentially(
 /**
  * Determine artifact type based on MIME type
  */
-export function getArtifactTypeFromMimeType(mimeType: string): "image" | "video" | "pdf" {
+export function getArtifactTypeFromMimeType(mimeType: string): "image" | "video" {
   if (mimeType.startsWith("image/")) {
     return "image";
   } else if (mimeType.startsWith("video/")) {
     return "video";
-  } else if (mimeType === "application/pdf") {
-    return "pdf";
   }
   
   // Default to image for unknown types

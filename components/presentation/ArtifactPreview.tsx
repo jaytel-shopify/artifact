@@ -3,7 +3,6 @@
 import ImageViewer from "@/components/artifacts/ImageViewer";
 import URLEmbed from "@/components/artifacts/URLEmbed";
 import VideoPlayer from "@/components/artifacts/VideoPlayer";
-import PDFViewer from "@/components/artifacts/PDFViewer";
 import type { Artifact } from "@/types";
 
 export default function ArtifactPreview({ artifact, maxHeight }: { artifact: Artifact; maxHeight?: number }) {
@@ -48,9 +47,6 @@ function PreviewContent({ artifact }: { artifact: Artifact }) {
   }
   if (artifact.type === "video") {
     return <VideoPlayer src={artifact.source_url} />;
-  }
-  if (artifact.type === "pdf") {
-    return <PDFViewer src={artifact.source_url} />;
   }
   return <div className="text-sm text-white/70">Unsupported</div>;
 }

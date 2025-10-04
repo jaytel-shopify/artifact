@@ -15,6 +15,7 @@ import EditableTitle from "@/components/presentation/EditableTitle";
 import ShareDialog from "@/components/sharing/ShareDialog";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
 import CollaboratorBadge from "@/components/sharing/CollaboratorBadge";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/auth/UserAvatar";
 import { useRouter } from "next/navigation";
@@ -45,6 +46,8 @@ interface AppHeaderProps {
   columns?: number;
   onColumnsChange?: (columns: number) => void;
   showColumnControls?: boolean;
+  fitMode?: boolean;
+  onFitModeChange?: (fit: boolean) => void;
   
   // Folder-specific props (for folder mode)
   folderId?: string;
@@ -89,6 +92,8 @@ export default function AppHeader({
   columns = 3,
   onColumnsChange,
   showColumnControls = true,
+  fitMode = false,
+  onFitModeChange,
   mode
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -176,6 +181,17 @@ export default function AppHeader({
                         className="w-full"
                       />
                     </div>
+                    
+                    {/* Fit toggle (only when columns === 1) */}
+                    {columns === 1 && onFitModeChange && (
+                      <div className="flex items-center gap-2 ml-2">
+                        <span className="text-xs text-muted-foreground font-medium">Fit</span>
+                        <Switch
+                          checked={fitMode}
+                          onCheckedChange={onFitModeChange}
+                        />
+                      </div>
+                    )}
                   </div>
                 </>
               )}

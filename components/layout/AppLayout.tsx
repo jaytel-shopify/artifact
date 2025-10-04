@@ -39,6 +39,8 @@ interface AppLayoutProps {
   columns?: number;
   onColumnsChange?: (columns: number) => void;
   showColumnControls?: boolean;
+  fitMode?: boolean;
+  onFitModeChange?: (fit: boolean) => void;
   
   // Page management (canvas mode)
   pages?: Page[];
@@ -78,6 +80,8 @@ export default function AppLayout({
   columns,
   onColumnsChange,
   showColumnControls,
+  fitMode,
+  onFitModeChange,
   pages,
   currentPageId,
   onPageSelect,
@@ -144,6 +148,8 @@ export default function AppLayout({
         columns={columns}
         onColumnsChange={onColumnsChange}
         showColumnControls={showColumnControls}
+        fitMode={fitMode}
+        onFitModeChange={onFitModeChange}
       />
 
       {/* Main Content Area */}

@@ -37,6 +37,7 @@ function PresentationPageContent() {
   const router = useRouter();
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
+  const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hydrated, setHydrated] = useState(false);
@@ -76,14 +77,20 @@ function PresentationPageContent() {
     currentProgress: 0,
   });
 
-  // Load column preference
+  // Load column and fit mode preferences
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("columns_in_view");
-    if (stored) {
-      const next = Math.min(8, Math.max(1, Number(stored)));
+    const storedColumns = window.localStorage.getItem("columns_in_view");
+    if (storedColumns) {
+      const next = Math.min(8, Math.max(1, Number(storedColumns)));
       setColumns(next);
     }
+    
+    const storedFitMode = window.localStorage.getItem("fit_mode");
+    if (storedFitMode === "true") {
+      setFitMode(true);
+    }
+    
     setHydrated(true);
   }, []);
 
@@ -92,6 +99,19 @@ function PresentationPageContent() {
     if (!hydrated) return;
     window.localStorage.setItem("columns_in_view", String(columns));
   }, [columns, hydrated]);
+
+  // Save fit mode preference
+  useEffect(() => {
+    if (!hydrated) return;
+    window.localStorage.setItem("fit_mode", String(fitMode));
+  }, [fitMode, hydrated]);
+
+  // Auto-disable fit mode when columns > 1
+  useEffect(() => {
+    if (columns > 1 && fitMode) {
+      setFitMode(false);
+    }
+  }, [columns, fitMode]);
 
   // Fetch project data
   const { data: project } = useSWR<Project | null>(
@@ -378,6 +398,8 @@ function PresentationPageContent() {
       columns={columns}
       onColumnsChange={setColumns}
       showColumnControls={true}
+      fitMode={fitMode}
+      onFitModeChange={setFitMode}
       pages={pages}
       currentPageId={currentPageId || undefined}
       onPageSelect={selectPage}
@@ -434,7 +456,8 @@ function PresentationPageContent() {
         {/* Canvas */}
         <div className="h-full pt-[var(--spacing-md)]">
           <Canvas 
-            columns={columns} 
+            columns={columns}
+            fitMode={fitMode}
             artifacts={artifacts}
             onReorder={async (reorderedArtifacts) => {
               try {

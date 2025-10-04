@@ -20,7 +20,7 @@ type UrlMetadata = {
   viewport?: string;
 };
 
-export default function URLEmbed({ url, metadata }: { url: string; metadata?: UrlMetadata }) {
+export default function URLEmbed({ url, metadata, fitMode = false }: { url: string; metadata?: UrlMetadata; fitMode?: boolean }) {
   const safeUrl = useMemo(() => sanitizeUrl(url), [url]);
   const [iframeError, setIframeError] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -52,11 +52,29 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
     if (!el) return;
 
     const updateScale = () => {
-      const availableWidth = el.clientWidth;
-      if (!availableWidth || !dimensions.width) return;
-      const nextScale = availableWidth / dimensions.width;
-      setScale(nextScale);
-      setScaledHeight(dimensions.height * nextScale);
+      if (fitMode) {
+        // Fit mode: Scale to fit BOTH width and height constraints
+        const availableWidth = el.clientWidth;
+        const availableHeight = window.innerHeight - 194; // 194px = header + spacing + title + bottom padding
+        
+        if (!availableWidth || !dimensions.width || !dimensions.height) return;
+        
+        // Calculate scale for both dimensions
+        const scaleX = availableWidth / dimensions.width;
+        const scaleY = availableHeight / dimensions.height;
+        
+        // Use smaller scale to ensure it fits both constraints
+        const nextScale = Math.min(scaleX, scaleY);
+        setScale(nextScale);
+        setScaledHeight(dimensions.height * nextScale);
+      } else {
+        // Normal mode: Scale to fit width only
+        const availableWidth = el.clientWidth;
+        if (!availableWidth || !dimensions.width) return;
+        const nextScale = availableWidth / dimensions.width;
+        setScale(nextScale);
+        setScaledHeight(dimensions.height * nextScale);
+      }
     };
 
     updateScale();
@@ -72,7 +90,7 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
       ro?.disconnect();
       window.removeEventListener("resize", updateScale);
     };
-  }, [dimensions.height, dimensions.width]);
+  }, [dimensions.height, dimensions.width, fitMode]);
 
   if (!safeUrl) return <div className="p-4 text-sm text-red-600">Invalid URL</div>;
 
@@ -81,19 +99,23 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
     return (
       <div
         ref={containerRef}
-        className="w-full"
-        style={{ position: "relative", height: `${scaledHeight}px`, overflow: "hidden" }}
+        className="w-full flex justify-center"
+        style={{ 
+          position: "relative", 
+          height: `${scaledHeight}px`, 
+          overflow: fitMode ? "visible" : "hidden",
+        }}
       >
         <div
           className="shadow-2xl border border-white/10"
           style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
+            position: fitMode ? "relative" : "absolute",
+            top: fitMode ? undefined : 0,
+            left: fitMode ? undefined : 0,
             width: `${dimensions.width}px`,
             height: `${dimensions.height}px`,
             transform: `scale(${scale})`,
-            transformOrigin: "top left",
+            transformOrigin: fitMode ? "top center" : "top left",
             pointerEvents: "auto",
           }}
         >

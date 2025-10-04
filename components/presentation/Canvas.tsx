@@ -3,7 +3,6 @@
 import URLEmbed from "@/components/artifacts/URLEmbed";
 import ImageViewer from "@/components/artifacts/ImageViewer";
 import VideoPlayer from "@/components/artifacts/VideoPlayer";
-import PDFViewer from "@/components/artifacts/PDFViewer";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
 import {
   ContextMenu,
@@ -41,6 +40,7 @@ export default function Canvas({
   onUpdateArtifact,
   onDeleteArtifact,
   isReadOnly = false,
+  fitMode = false,
 }: {
   columns: number;
   artifacts: Artifact[];
@@ -48,6 +48,7 @@ export default function Canvas({
   onUpdateArtifact?: (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   isReadOnly?: boolean;
+  fitMode?: boolean;
 }) {
   const [items, setItems] = useState(artifacts);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -235,7 +236,7 @@ export default function Canvas({
           <div
             className="group relative"
           >
-            <div className="space-y-4">
+            <div className="space-y-4 h-full flex flex-col">
               <div data-artifact-title-id={artifact.id}>
                 <EditableArtifactTitle
                   title={artifact.name}
@@ -246,7 +247,7 @@ export default function Canvas({
                   className="mb-6"
                 />
               </div>
-              <div className="relative" data-artifact-overlay-container="true">
+              <div className="relative flex-1 flex items-start justify-center" data-artifact-overlay-container="true">
                 {children}
               </div>
             </div>
@@ -318,12 +319,13 @@ export default function Canvas({
         <LayoutGroup>
           <div
             ref={containerRef}
-            className={`w-full h-full overflow-x-auto overflow-y-hidden flex items-stretch ${showScrollbar ? "" : "hide-scrollbar"}`}
+            className={`w-full h-full overflow-x-auto overflow-y-hidden flex ${fitMode ? "justify-center items-start" : "items-stretch"} ${showScrollbar ? "" : "hide-scrollbar"}`}
             style={{
               gap: `${gapPx}px`,
               scrollSnapType: dragging ? "none" : "x mandatory",
               scrollPaddingInline: `${gapPx}px`,
               paddingInline: `${gapPx}px`,
+              paddingBottom: fitMode ? '64px' : undefined,
             }}
           >
             <SortableContext items={items.map((item) => item.id)} strategy={horizontalListSortingStrategy}>
@@ -335,9 +337,10 @@ export default function Canvas({
                   columnHeight={columnHeight ?? undefined}
                   isGlobalDragActive={dragging}
                   activeArtifactId={activeId}
+                  fitMode={fitMode}
                 >
                   <ArtifactWrapper artifact={artifact}>
-                    <ArtifactCell artifact={artifact} />
+                    <ArtifactCell artifact={artifact} fitMode={fitMode} />
                   </ArtifactWrapper>
                 </SortableArtifact>
               ))}
@@ -354,18 +357,15 @@ export default function Canvas({
   );
 }
 
-function ArtifactCell({ artifact }: { artifact: Artifact }) {
+function ArtifactCell({ artifact, fitMode = false }: { artifact: Artifact; fitMode?: boolean }) {
   if (artifact.type === "image") {
-    return <ImageViewer src={artifact.source_url} alt="" />;
+    return <ImageViewer src={artifact.source_url} alt="" fitMode={fitMode} />;
   }
   if (artifact.type === "url") {
-    return <URLEmbed url={artifact.source_url} metadata={artifact.metadata} />;
+    return <URLEmbed url={artifact.source_url} metadata={artifact.metadata} fitMode={fitMode} />;
   }
   if (artifact.type === "video") {
-    return <VideoPlayer src={artifact.source_url} metadata={artifact.metadata as { hideUI?: boolean; loop?: boolean; muted?: boolean }} />;
-  }
-  if (artifact.type === "pdf") {
-    return <PDFViewer src={artifact.source_url} />;
+    return <VideoPlayer src={artifact.source_url} metadata={artifact.metadata as { hideUI?: boolean; loop?: boolean; muted?: boolean }} fitMode={fitMode} />;
   }
   return (
     <div className="h-full flex items-center justify-center text-sm text-gray-500">

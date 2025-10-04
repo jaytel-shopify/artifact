@@ -11,6 +11,7 @@ export default function SortableArtifact({
   columnHeight,
   isGlobalDragActive,
   activeArtifactId,
+  fitMode = false,
   children,
 }: {
   artifact: { id: string };
@@ -18,6 +19,7 @@ export default function SortableArtifact({
   columnHeight?: number;
   isGlobalDragActive?: boolean;
   activeArtifactId?: string | null;
+  fitMode?: boolean;
   children: ReactNode;
 }) {
   const {
@@ -68,10 +70,12 @@ export default function SortableArtifact({
     >
       <div className="flex-1">
         <div
-          className="overflow-y-auto"
-          style={{ maxHeight: columnHeight ? `${columnHeight}px` : undefined }}
+          className={fitMode ? "h-full flex flex-col" : "overflow-y-auto"}
+          style={{ 
+            maxHeight: fitMode ? undefined : (columnHeight ? `${columnHeight}px` : undefined),
+          }}
         >
-          <div className="overflow-hidden dim-overlay-parent relative">
+          <div className={`overflow-hidden dim-overlay-parent relative ${fitMode ? 'flex-1 flex flex-col' : ''}`}>
             {children}
             
             {/* Overlay positioned to cover only artifact content (data-artifact-overlay-container), not title */}

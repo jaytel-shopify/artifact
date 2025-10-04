@@ -47,15 +47,6 @@ export default function ArtifactThumbnail({ artifact, className = '' }: Artifact
         </div>
       )
 
-    case 'pdf':
-      return (
-        <div className={baseClasses}>
-          <div className="w-full h-full bg-orange-500/20 flex items-center justify-center">
-            <FileText className="w-8 h-8 text-orange-400" />
-          </div>
-        </div>
-      )
-
     case 'figma':
       return (
         <div className={baseClasses}>

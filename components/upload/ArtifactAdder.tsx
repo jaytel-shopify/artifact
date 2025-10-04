@@ -213,8 +213,8 @@ export default function ArtifactAdder({
             <p className="text-sm text-white/70">Upload files</p>
             <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 py-12 cursor-pointer transition hover:border-white/40">
               <span className="text-sm font-medium">Browse files</span>
-              <span className="text-xs text-white/60">Images, videos, or PDFs up to 50MB</span>
-              <input type="file" multiple accept="image/*,video/*,application/pdf" className="hidden" onChange={onFileInputChange} />
+              <span className="text-xs text-white/60">Images or videos up to 50MB</span>
+              <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={onFileInputChange} />
             </label>
             {files.length > 0 && (
               <div className="text-xs text-white/60">

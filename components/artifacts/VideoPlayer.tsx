@@ -11,11 +11,13 @@ interface VideoMetadata {
 export default function VideoPlayer({ 
   src, 
   poster, 
-  metadata 
+  metadata,
+  fitMode = false,
 }: { 
   src: string; 
   poster?: string; 
-  metadata?: VideoMetadata 
+  metadata?: VideoMetadata;
+  fitMode?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const showControls = !metadata?.hideUI;
@@ -71,7 +73,14 @@ export default function VideoPlayer({
       loop={shouldLoop}
       muted={shouldMute}
       playsInline
-      className="w-full h-auto cursor-pointer"
+      className={fitMode ? "cursor-pointer" : "w-full h-auto cursor-pointer"}
+      style={fitMode ? {
+        maxWidth: '100%',
+        maxHeight: 'calc(100vh - 194px)', // viewport - header(64) - topPadding(12) - title(30) - titleMargin(24) - bottomPadding(64)
+        width: 'auto',
+        height: 'auto',
+        objectFit: 'contain',
+      } : undefined}
       onClick={handleVideoClick}
     />
   );

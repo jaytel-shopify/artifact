@@ -16,7 +16,7 @@ export type Project = {
   settings: ProjectSettings;
 };
 
-export type ArtifactType = "figma" | "url" | "image" | "video" | "pdf";
+export type ArtifactType = "figma" | "url" | "image" | "video";
 
 export type UrlViewportMetadata = {
   viewport?: string;

@@ -12,14 +12,22 @@ function isQuickUrl(url: string): boolean {
   }
 }
 
-export default function ImageViewer({ src, alt }: { src: string; alt?: string }) {
+export default function ImageViewer({ src, alt, fitMode = false }: { src: string; alt?: string; fitMode?: boolean }) {
   const useNextImage = useMemo(() => isQuickUrl(src), [src]);
-  const commonClass = "w-full h-auto";
+  
+  const commonClass = fitMode ? "" : "w-full h-auto";
+  const fitStyle = fitMode ? {
+    maxWidth: '100%',
+    maxHeight: 'calc(100vh - 194px)', // viewport - header(64) - topPadding(12) - title(30) - titleMargin(24) - bottomPadding(64)
+    width: 'auto',
+    height: 'auto',
+    objectFit: 'contain' as const,
+  } : undefined;
 
   return useNextImage ? (
-    <Image src={src} alt={alt || ""} width={2000} height={1500} className={commonClass} />
+    <Image src={src} alt={alt || ""} width={2000} height={1500} className={commonClass} style={fitStyle} />
   ) : (
-    <img src={src} alt={alt || ""} className={commonClass} />
+    <img src={src} alt={alt || ""} className={commonClass} style={fitStyle} />
   );
 }
 
