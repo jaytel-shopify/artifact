@@ -11,10 +11,12 @@ export default function EditableTitle({
   initialValue,
   projectId,
   onUpdated,
+  isReadOnly = false,
 }: {
   initialValue: string;
   projectId?: string;
   onUpdated?: (name: string) => void;
+  isReadOnly?: boolean;
 }) {
   const [value, setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
@@ -43,6 +45,17 @@ export default function EditableTitle({
       setSaving(false);
       setEditing(false);
     }
+  }
+
+  // If read-only, just show the title (not editable)
+  if (isReadOnly) {
+    return (
+      <div className="flex items-center gap-2">
+        <span className="text-white font-semibold text-base px-2 py-1">
+          {value || "Untitled Project"}
+        </span>
+      </div>
+    );
   }
 
   return (

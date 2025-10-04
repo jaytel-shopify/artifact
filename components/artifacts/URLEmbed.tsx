@@ -22,8 +22,7 @@ type UrlMetadata = {
 
 export default function URLEmbed({ url, metadata }: { url: string; metadata?: UrlMetadata }) {
   const safeUrl = useMemo(() => sanitizeUrl(url), [url]);
-  const [allowEmbed, setAllowEmbed] = useState<boolean | null>(null);
-  const [meta, setMeta] = useState<{ title: string; description: string; iconUrl: string | null } | null>(null);
+  const [iframeError, setIframeError] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [scale, setScale] = useState(1);
   const [scaledHeight, setScaledHeight] = useState<number>(() => getViewportDimensions(DEFAULT_VIEWPORT_KEY).height);
@@ -38,6 +37,15 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
     }
     return getViewportDimensions(DEFAULT_VIEWPORT_KEY);
   }, [metadata?.height, metadata?.width, metadata?.viewport]);
+  
+  // Extract domain for display
+  const domain = useMemo(() => {
+    try {
+      return new URL(safeUrl || "").hostname;
+    } catch {
+      return safeUrl;
+    }
+  }, [safeUrl]);
 
   useLayoutEffect(() => {
     const el = containerRef.current;
@@ -66,28 +74,10 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
     };
   }, [dimensions.height, dimensions.width]);
 
-  useEffect(() => {
-    let active = true;
-    if (!safeUrl) return;
-    (async () => {
-      try {
-        const res = await fetch(`/api/embed/preview?url=${encodeURIComponent(safeUrl)}`);
-        const j = await res.json();
-        if (!active) return;
-        setAllowEmbed(j.allowEmbed ?? false);
-        setMeta({ title: j.title || safeUrl, description: j.description || "", iconUrl: j.iconUrl || null });
-      } catch {
-        if (active) setAllowEmbed(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, [safeUrl]);
-
   if (!safeUrl) return <div className="p-4 text-sm text-red-600">Invalid URL</div>;
 
-  if (allowEmbed === true) {
+  // Try to embed via iframe (fallback to card if it fails)
+  if (!iframeError) {
     return (
       <div
         ref={containerRef}
@@ -115,26 +105,31 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
             allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
             referrerPolicy="no-referrer-when-downgrade"
             style={{ border: 0 }}
+            onError={() => setIframeError(true)}
           />
         </div>
       </div>
     );
   }
 
-  // Fallback rich preview
+  // Fallback: Show link card if iframe can't be embedded
   return (
     <div ref={containerRef} className="w-full flex items-start">
       <Card className="max-w-xl w-full bg-white/80 backdrop-blur border border-white/20 shadow-2xl">
         <CardHeader>
           <div className="flex items-start gap-3">
-            {meta?.iconUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={meta.iconUrl} alt="" className="w-10 h-10 flex-shrink-0" />
-            )}
-            <div className="min-w-0">
-              <CardTitle className="text-gray-900 truncate text-base">{meta?.title || safeUrl}</CardTitle>
-              {meta?.description && (
-                <CardDescription className="text-gray-600 line-clamp-3 mt-1">{meta.description}</CardDescription>
+            <div className="w-10 h-10 flex-shrink-0 bg-gray-200 rounded flex items-center justify-center">
+              <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+            </div>
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-gray-900 truncate text-base">{domain}</CardTitle>
+              <CardDescription className="text-gray-600 truncate mt-1">{safeUrl}</CardDescription>
+              {iframeError && (
+                <div className="mt-2 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">
+                  ⚠️ This site cannot be embedded. Click below to open.
+                </div>
               )}
             </div>
           </div>
@@ -144,9 +139,9 @@ export default function URLEmbed({ url, metadata }: { url: string; metadata?: Ur
             href={safeUrl}
             target="_blank"
             rel="noreferrer noopener"
-            className="text-blue-600 hover:underline text-sm"
+            className="text-blue-600 hover:underline text-sm font-medium"
           >
-            Open in new tab
+            Open in new tab →
           </a>
         </CardFooter>
       </Card>

@@ -10,16 +10,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import EditableTitle from "@/components/presentation/EditableTitle";
+import ShareDialog from "@/components/sharing/ShareDialog";
+import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
+import CollaboratorBadge from "@/components/sharing/CollaboratorBadge";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/auth/UserAvatar";
 import { useRouter } from "next/navigation";
@@ -33,6 +28,11 @@ interface AppHeaderProps {
   // Project-specific props (for canvas view)
   projectId?: string;
   projectName?: string;
+  shareToken?: string;
+  creatorEmail?: string;
+  isCreator?: boolean;
+  isCollaborator?: boolean;
+  isReadOnly?: boolean;
   onProjectNameUpdate?: (name: string) => void;
   onArtifactAdded?: () => void;
   currentPageId?: string;
@@ -55,6 +55,11 @@ export default function AppHeader({
   sidebarOpen,
   projectId,
   projectName,
+  shareToken,
+  creatorEmail,
+  isCreator = false,
+  isCollaborator = false,
+  isReadOnly = false,
   onProjectNameUpdate,
   onArtifactAdded,
   currentPageId,
@@ -129,8 +134,8 @@ export default function AppHeader({
                 )}
               </Button>
               
-              {/* Add Artifact Button */}
-              {projectId && currentPageId && (
+              {/* Add Artifact Button (hidden in read-only mode) */}
+              {projectId && currentPageId && onArtifactAdded && (
                 <ArtifactAdder 
                   projectId={projectId} 
                   pageId={currentPageId} 
@@ -168,6 +173,7 @@ export default function AppHeader({
               initialValue={projectName || "Untitled Project"}
               projectId={projectId}
               onUpdated={onProjectNameUpdate}
+              isReadOnly={!onProjectNameUpdate}
             />
           </div>
         )}
@@ -176,27 +182,36 @@ export default function AppHeader({
         <div className="flex items-center justify-end gap-3 w-full max-w-[var(--section-width)]">
           {mode === 'canvas' ? (
             <div className="flex items-center gap-3">
-              <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+              {/* Collaborator Badge (shown for invited editors) */}
+              {isCollaborator && creatorEmail && <CollaboratorBadge creatorEmail={creatorEmail} />}
+              
+              {/* Read-Only Badge (shown for viewers) */}
+              {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
+              
+              {/* Share Button */}
+              {shareToken && projectId && (
+                <>
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => setShareDialogOpen(true)}
+                  >
                     <Share className="h-4 w-4" />
                     Share
                   </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Share Project</DialogTitle>
-                    <DialogDescription>
-                      Share this project with others (functionality coming soon)
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <p className="text-sm text-muted-foreground">
-                      Share functionality will be implemented here.
-                    </p>
-                  </div>
-                </DialogContent>
-              </Dialog>
+                  
+                  {/* Share Dialog */}
+                  <ShareDialog
+                    projectId={projectId}
+                    projectName={projectName || "Untitled Project"}
+                    shareToken={shareToken}
+                    creatorEmail={creatorEmail || ""}
+                    isCreator={isCreator}
+                    isOpen={shareDialogOpen}
+                    onClose={() => setShareDialogOpen(false)}
+                  />
+                </>
+              )}
 
               {user ? (
                 <DropdownMenu>

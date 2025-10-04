@@ -15,7 +15,7 @@ export default function ArtifactPreview({ artifact, maxHeight }: { artifact: Art
       <div className="overflow-hidden">
         {/* Include title with same spacing as actual artifacts */}
         <div className="space-y-4">
-          <div className="mb-6">
+          <div className="mb-2">
             <div className="text-center">
               <div 
                 className="text-xs text-gray-400 truncate select-none px-2 py-1"

@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import type { Project } from "@/types";
 import { getProjectByShareToken } from "@/lib/quick-db";
 import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
+import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { useAuth } from "@/components/auth/AuthProvider";
+import DevDebugPanel from "@/components/DevDebugPanel";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -31,10 +34,14 @@ function PresentationPageContent() {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
   const router = useRouter();
+  const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [dragging, setDragging] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hydrated, setHydrated] = useState(false);
+  
+  // Debug mode: Override read-only state for testing
+  const [debugReadOnly, setDebugReadOnly] = useState(false);
   const [uploadState, setUploadState] = useState<{
     uploading: boolean;
     totalFiles: number;
@@ -70,6 +77,15 @@ function PresentationPageContent() {
     () => (shareToken ? fetchProject(shareToken) : null),
     { revalidateOnFocus: false }
   );
+
+  // Check permissions
+  const permissions = useProjectPermissions(project || null);
+  
+  // Allow debug override of read-only mode
+  const isReadOnly = debugReadOnly || permissions.isReadOnly;
+  const canEdit = !debugReadOnly && permissions.canEdit;
+  const isCreator = permissions.isCreator;
+  const isCollaborator = permissions.isCollaborator;
 
   // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage } = usePages(project?.id);
@@ -253,8 +269,13 @@ function PresentationPageContent() {
       mode="canvas"
       projectId={project.id}
       projectName={project.name}
-      onProjectNameUpdate={handleProjectNameUpdate}
-      onArtifactAdded={refetchArtifacts}
+      shareToken={project.share_token}
+      creatorEmail={project.creator_id}
+      isCreator={isCreator}
+      isCollaborator={isCollaborator}
+      isReadOnly={isReadOnly}
+      onProjectNameUpdate={canEdit ? handleProjectNameUpdate : undefined}
+      onArtifactAdded={canEdit ? refetchArtifacts : undefined}
       columns={columns}
       onColumnsChange={setColumns}
       showColumnControls={true}
@@ -262,13 +283,13 @@ function PresentationPageContent() {
       currentPageId={currentPageId || undefined}
       onPageSelect={selectPage}
       onPageRename={handlePageRename}
-      onPageCreate={handlePageCreate}
-      onPageDelete={handlePageDelete}
+      onPageCreate={canEdit ? handlePageCreate : undefined}
+      onPageDelete={canEdit ? handlePageDelete : undefined}
       onBackToHome={handleBackToHome}
     >
       <div className="h-full relative">
-        {/* Dropzone for file uploads */}
-        {project?.id && currentPageId && (
+        {/* Dropzone for file uploads (only for creators/editors) */}
+        {project?.id && currentPageId && canEdit && (
           <DropzoneUploader
             onFiles={handleFileUpload}
             onUrl={handleUrlAdd}
@@ -312,7 +333,7 @@ function PresentationPageContent() {
         )}
         
         {/* Canvas */}
-        <div className="h-full pt-[var(--spacing-xl)]">
+        <div className="h-full pt-[var(--spacing-md)]">
           <Canvas 
             columns={columns} 
             artifacts={artifacts}
@@ -330,9 +351,27 @@ function PresentationPageContent() {
             onDeleteArtifact={async (artifactId) => {
               await deleteArtifact(artifactId);
             }}
+            isReadOnly={isReadOnly}
           />
         </div>
       </div>
+
+      {/* Dev Debug Panel - Press '/' to toggle */}
+      <DevDebugPanel
+        isReadOnly={debugReadOnly}
+        onToggleReadOnly={setDebugReadOnly}
+        projectInfo={
+          project
+            ? {
+                id: project.id,
+                name: project.name,
+                creator_id: project.creator_id,
+                share_token: project.share_token,
+              }
+            : undefined
+        }
+        userEmail={user?.email}
+      />
     </AppLayout>
   );
 }

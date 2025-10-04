@@ -19,6 +19,7 @@ interface PageNavigationSidebarProps {
   onPageRename?: (pageId: string, newName: string) => Promise<void>;
   onPageCreate?: () => void;
   onPageDelete?: (pageId: string) => void;
+  isReadOnly?: boolean;
 }
 
 export default function PageNavigationSidebar({
@@ -28,7 +29,8 @@ export default function PageNavigationSidebar({
   onPageSelect,
   onPageRename,
   onPageCreate,
-  onPageDelete
+  onPageDelete,
+  isReadOnly = false,
 }: PageNavigationSidebarProps) {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -104,6 +106,23 @@ export default function PageNavigationSidebar({
                       autoFocus
                     />
                   </div>
+                ) : isReadOnly ? (
+                  // Read-only: No context menu, just clickable page
+                  <div
+                    className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
+                      currentPageId === page.id 
+                        ? 'bg-[var(--color-background-tertiary)]' 
+                        : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+                    }`}
+                    onClick={() => onPageSelect?.(page.id)}
+                  >
+                    <span 
+                      className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
+                      style={{ fontSize: 'var(--font-size-sm)' }}
+                    >
+                      {page.name}
+                    </span>
+                  </div>
                 ) : (
                   <ContextMenu>
                     <ContextMenuTrigger asChild>
@@ -147,17 +166,19 @@ export default function PageNavigationSidebar({
           )}
         </div>
 
-        {/* Add New Page Button */}
-        <div className="pt-[var(--spacing-lg)] border-t border-[var(--color-border-primary)] mt-[var(--spacing-lg)]">
-          <button
-            onClick={onPageCreate}
-            className="flex items-center gap-[var(--spacing-sm)] w-full p-[var(--spacing-sm)] rounded-[var(--radius-md)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-background-secondary)] transition-all cursor-pointer"
-            style={{ fontSize: 'var(--font-size-sm)' }}
-          >
-            <span className="text-lg">+</span>
-            <span>New Page</span>
-          </button>
-        </div>
+        {/* Add New Page Button (hidden in read-only mode) */}
+        {!isReadOnly && onPageCreate && (
+          <div className="pt-[var(--spacing-lg)] border-t border-[var(--color-border-primary)] mt-[var(--spacing-lg)]">
+            <button
+              onClick={onPageCreate}
+              className="flex items-center gap-[var(--spacing-sm)] w-full p-[var(--spacing-sm)] rounded-[var(--radius-md)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-background-secondary)] transition-all cursor-pointer"
+              style={{ fontSize: 'var(--font-size-sm)' }}
+            >
+              <span className="text-lg">+</span>
+              <span>New Page</span>
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

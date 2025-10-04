@@ -40,12 +40,14 @@ export default function Canvas({
   onReorder,
   onUpdateArtifact,
   onDeleteArtifact,
+  isReadOnly = false,
 }: {
   columns: number;
   artifacts: Artifact[];
   onReorder?: (next: Artifact[]) => void;
   onUpdateArtifact?: (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
+  isReadOnly?: boolean;
 }) {
   const [items, setItems] = useState(artifacts);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -56,9 +58,12 @@ export default function Canvas({
     setItems(artifacts);
   }, [artifacts]);
 
+  // Only enable drag sensors when not in read-only mode
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 },
+      // Disable sensor in read-only mode by making it impossible to activate
+      ...(isReadOnly ? { activationConstraint: { distance: 999999 } } : {}),
     })
   );
 
@@ -162,6 +167,24 @@ export default function Canvas({
   const ArtifactWrapper = useCallback(({ artifact, children }: { artifact: Artifact; children: React.ReactNode }) => {
     const isVideo = artifact.type === 'video';
     const videoMetadata = artifact.metadata as { hideUI?: boolean; loop?: boolean; muted?: boolean } | undefined;
+    
+    // If read-only, don't show context menu - just render the content
+    if (isReadOnly) {
+      return (
+        <div className="group relative">
+          <div className="space-y-4">
+            <div data-artifact-title-id={artifact.id}>
+              <div className="mb-6 text-white/80 text-sm font-medium text-center">
+                {artifact.name}
+              </div>
+            </div>
+            <div className="relative" data-artifact-overlay-container="true">
+              {children}
+            </div>
+          </div>
+        </div>
+      );
+    }
     
     const toggleVideoUI = async () => {
       if (!onUpdateArtifact) return;
@@ -271,7 +294,7 @@ export default function Canvas({
         </ContextMenuContent>
       </ContextMenu>
     );
-  }, [onUpdateArtifact, onDeleteArtifact]);
+  }, [onUpdateArtifact, onDeleteArtifact, isReadOnly]);
 
   if (items.length === 0) {
     return (

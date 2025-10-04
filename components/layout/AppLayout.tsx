@@ -14,6 +14,11 @@ interface AppLayoutProps {
   // Project-specific props (for canvas mode)
   projectId?: string;
   projectName?: string;
+  shareToken?: string;
+  creatorEmail?: string;
+  isCreator?: boolean;
+  isCollaborator?: boolean;
+  isReadOnly?: boolean;
   onProjectNameUpdate?: (name: string) => void;
   onArtifactAdded?: () => void;
   
@@ -39,6 +44,11 @@ export default function AppLayout({
   mode,
   projectId,
   projectName,
+  shareToken,
+  creatorEmail,
+  isCreator = false,
+  isCollaborator = false,
+  isReadOnly = false,
   onProjectNameUpdate,
   onArtifactAdded,
   columns,
@@ -83,11 +93,16 @@ export default function AppLayout({
       {/* Header */}
       <AppHeader
         mode={mode}
+        projectId={projectId}
+        projectName={projectName}
+        shareToken={shareToken}
+        creatorEmail={creatorEmail}
+        isCreator={isCreator}
+        isCollaborator={isCollaborator}
+        isReadOnly={isReadOnly}
         onBackToHome={onBackToHome}
         onToggleSidebar={handleToggleSidebar}
         sidebarOpen={sidebarOpen}
-        projectId={projectId}
-        projectName={projectName}
         onProjectNameUpdate={onProjectNameUpdate}
         onArtifactAdded={onArtifactAdded}
         currentPageId={currentPageId}
@@ -125,6 +140,7 @@ export default function AppLayout({
               onPageRename={onPageRename}
               onPageCreate={onPageCreate}
               onPageDelete={onPageDelete}
+              isReadOnly={isReadOnly}
             />
           </div>
         )}
