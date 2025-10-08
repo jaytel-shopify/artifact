@@ -2,7 +2,7 @@
 
 /**
  * Quick Platform Integration Library
- * 
+ *
  * This library provides TypeScript definitions and helper functions
  * for the Quick platform APIs (quick.db, quick.fs, quick.id, etc.)
  */
@@ -50,29 +50,42 @@ interface QuickQuery {
 
 // ==================== FILE STORAGE ====================
 interface QuickFS {
-  upload(files: File[], options?: { 
-    strategy?: 'uuid' | 'timestamp' | 'hybrid' | 'original' 
-  }): Promise<Array<{
-    originalName: string;
-    filename: string;
-    url: string;
-    fullUrl: string;
-    size: number;
-    mimeType: string;
-  }> | {
-    files: Array<{
-      originalName: string;
-      filename: string;
-      url: string;
-      fullUrl: string;
-      size: number;
-      mimeType: string;
-    }>;
-  }>;
-  
-  uploadFile(file: File, options?: {
-    onProgress?: (progress: { percentage: number; loaded: number; total: number }) => void;
-  }): Promise<{
+  upload(
+    files: File[],
+    options?: {
+      strategy?: "uuid" | "timestamp" | "hybrid" | "original";
+    }
+  ): Promise<
+    | Array<{
+        originalName: string;
+        filename: string;
+        url: string;
+        fullUrl: string;
+        size: number;
+        mimeType: string;
+      }>
+    | {
+        files: Array<{
+          originalName: string;
+          filename: string;
+          url: string;
+          fullUrl: string;
+          size: number;
+          mimeType: string;
+        }>;
+      }
+  >;
+
+  uploadFile(
+    file: File,
+    options?: {
+      onProgress?: (progress: {
+        percentage: number;
+        loaded: number;
+        total: number;
+      }) => void;
+    }
+  ): Promise<{
     originalName: string;
     filename: string;
     url: string;
@@ -100,11 +113,14 @@ interface QuickIdentity {
 interface QuickAI {
   ask(prompt: string): Promise<string>;
   askWithSystem(system: string, prompt: string): Promise<string>;
-  chat(messages: Array<{ role: string; content: string }>, options?: {
-    model?: string;
-    temperature?: number;
-    max_tokens?: number;
-  }): Promise<{ choices: Array<{ message: { content: string } }> }>;
+  chat(
+    messages: Array<{ role: string; content: string }>,
+    options?: {
+      model?: string;
+      temperature?: number;
+      max_tokens?: number;
+    }
+  ): Promise<{ choices: Array<{ message: { content: string } }> }>;
   chatStream(
     messages: Array<{ role: string; content: string }>,
     callback: (contentChunk: string | null, fullContent: string) => void
@@ -140,32 +156,57 @@ interface QuickUser {
 
 // ==================== SITE MANAGEMENT ====================
 interface QuickSite {
-  create(subdomain: string, files: File[], options?: { 
-    force?: boolean 
-  }): Promise<{ 
-    message: string; 
-    url: string; 
+  create(
+    subdomain: string,
+    files: File[],
+    options?: {
+      force?: boolean;
+    }
+  ): Promise<{
+    message: string;
+    url: string;
   }>;
-  
-  get(subdomain: string): Promise<{ 
-    subdomain: string; 
-    url: string; 
-    lastModified: string; 
-    'modified-by': string;
+
+  get(subdomain: string): Promise<{
+    subdomain: string;
+    url: string;
+    lastModified: string;
+    "modified-by": string;
   } | null>;
-  
-  delete(subdomain: string, options?: { 
-    confirm?: boolean 
-  }): Promise<void>;
+
+  delete(
+    subdomain: string,
+    options?: {
+      confirm?: boolean;
+    }
+  ): Promise<void>;
 }
 
 // ==================== SLACK ====================
 interface QuickSlack {
   sendMessage(channel: string, text: string, options?: any): Promise<any>;
-  sendAlert(channel: string, message: string, level: 'info' | 'warning' | 'error' | 'success'): Promise<any>;
-  sendStatus(channel: string, status: 'online' | 'offline' | 'maintenance' | 'degraded', message: string): Promise<any>;
-  sendCode(channel: string, code: string, language: string, title?: string): Promise<any>;
-  sendTable(channel: string, title: string, headers: string[], rows: any[][]): Promise<any>;
+  sendAlert(
+    channel: string,
+    message: string,
+    level: "info" | "warning" | "error" | "success"
+  ): Promise<any>;
+  sendStatus(
+    channel: string,
+    status: "online" | "offline" | "maintenance" | "degraded",
+    message: string
+  ): Promise<any>;
+  sendCode(
+    channel: string,
+    code: string,
+    language: string,
+    title?: string
+  ): Promise<any>;
+  sendTable(
+    channel: string,
+    title: string,
+    headers: string[],
+    rows: any[][]
+  ): Promise<any>;
 }
 
 // ==================== AUTH ====================
@@ -186,39 +227,40 @@ export function useQuick() {
 /**
  * Wait for Quick SDK to be loaded and ready
  * Useful for ensuring Quick is available before making API calls
- * 
+ *
  * In local development, this returns a mock implementation with placeholder data
  */
 export async function waitForQuick(): Promise<typeof window.quick> {
   if (typeof window === "undefined") {
     throw new Error("Quick is only available in the browser");
   }
-  
+
   // Check if running in local development
   const hostname = window.location.hostname;
-  const isLocal = hostname === "localhost" || 
-                  hostname === "127.0.0.1" ||
-                  hostname.startsWith("192.168.");
-  
+  const isLocal =
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname.startsWith("192.168.");
+
   if (isLocal) {
     // Use mock implementation for local development
     const { createMockQuick } = await import("./quick-mock");
     const mockQuick = createMockQuick();
-    
+
     // Store it on window for consistency
     if (!window.quick) {
       (window as any).quick = mockQuick;
     }
-    
+
     console.log("[Quick] Using mock implementation for local development");
-    return mockQuick as typeof window.quick;
+    return mockQuick as unknown as typeof window.quick;
   }
-  
+
   // Production: wait for real Quick SDK
   if (window.quick) {
     return window.quick;
   }
-  
+
   return new Promise((resolve) => {
     const checkQuick = () => {
       if (window.quick) {
@@ -246,12 +288,12 @@ export function getCurrentUser(): QuickIdentity | null {
   if (typeof window === "undefined" || !window.quick) {
     return null;
   }
-  
+
   // Quick.id properties are directly accessible
   if (window.quick.id.email) {
     return window.quick.id;
   }
-  
+
   return null;
 }
 
@@ -269,5 +311,3 @@ export type {
   QuickSlack,
   QuickAuth,
 };
-
-
