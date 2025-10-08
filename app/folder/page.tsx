@@ -94,6 +94,9 @@ function FolderPageContent() {
         setFolder(folderData);
         setCanEdit(hasEditAccess);
 
+        // Set document title
+        document.title = `${folderData.name} | Artifact`;
+
         // Track folder access (async, don't wait)
         if (hasEditAccess) {
           updateFolder(folderId, {
