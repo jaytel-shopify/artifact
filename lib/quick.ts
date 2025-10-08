@@ -186,12 +186,35 @@ export function useQuick() {
 /**
  * Wait for Quick SDK to be loaded and ready
  * Useful for ensuring Quick is available before making API calls
+ * 
+ * In local development, this returns a mock implementation with placeholder data
  */
 export async function waitForQuick(): Promise<typeof window.quick> {
   if (typeof window === "undefined") {
     throw new Error("Quick is only available in the browser");
   }
   
+  // Check if running in local development
+  const hostname = window.location.hostname;
+  const isLocal = hostname === "localhost" || 
+                  hostname === "127.0.0.1" ||
+                  hostname.startsWith("192.168.");
+  
+  if (isLocal) {
+    // Use mock implementation for local development
+    const { createMockQuick } = await import("./quick-mock");
+    const mockQuick = createMockQuick();
+    
+    // Store it on window for consistency
+    if (!window.quick) {
+      (window as any).quick = mockQuick;
+    }
+    
+    console.log("[Quick] Using mock implementation for local development");
+    return mockQuick as typeof window.quick;
+  }
+  
+  // Production: wait for real Quick SDK
   if (window.quick) {
     return window.quick;
   }

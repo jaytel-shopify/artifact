@@ -6,11 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 /**
  * LocalDevWarning
  * 
- * Shows a warning message when running on localhost.
- * Quick SDK only works on deployed Quick sites, not localhost.
+ * Shows a small notice when running on localhost with mock data.
  */
 export default function LocalDevWarning() {
   const [isLocalhost, setIsLocalhost] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     // Check if running on localhost
@@ -20,81 +20,49 @@ export default function LocalDevWarning() {
                     hostname.startsWith("192.168.");
     
     setIsLocalhost(isLocal);
+
+    // Check if previously dismissed
+    const wasDismissed = localStorage.getItem('local-dev-notice-dismissed') === 'true';
+    setDismissed(wasDismissed);
   }, []);
 
-  // Don't show anything if not on localhost
-  if (!isLocalhost) {
+  const handleDismiss = () => {
+    setDismissed(true);
+    localStorage.setItem('local-dev-notice-dismissed', 'true');
+  };
+
+  // Don't show anything if not on localhost or if dismissed
+  if (!isLocalhost || dismissed) {
     return null;
   }
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
-        <CardHeader>
-          <CardTitle className="text-2xl">⚠️ Local Development Not Supported</CardTitle>
-          <CardDescription>
-            This app requires Quick platform APIs and must be deployed to Quick to function.
+    <div className="fixed top-4 right-4 z-50 max-w-md">
+      <Card className="border-yellow-500/50 bg-yellow-500/10">
+        <CardHeader className="pb-3">
+          <div className="flex items-start justify-between gap-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <span>💡</span>
+              <span>Local Development Mode</span>
+            </CardTitle>
+            <button
+              onClick={handleDismiss}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+          <CardDescription className="text-xs">
+            Using mock data. Deploy to Quick for full functionality.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              The Artifact app uses Quick&apos;s serverless APIs (quick.db, quick.fs, quick.id) 
-              which are only available on deployed Quick sites.
-            </p>
-          </div>
-
-          <div className="space-y-3">
-            <div className="font-semibold text-sm">To deploy and use this app:</div>
-            
-            <div className="bg-muted p-4 rounded-lg space-y-3">
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">1. Build the static site:</div>
-                <code className="text-sm bg-black/50 px-3 py-1.5 rounded block font-mono">
-                  pnpm build
-                </code>
-              </div>
-              
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">2. Deploy to Quick:</div>
-                <code className="text-sm bg-black/50 px-3 py-1.5 rounded block font-mono">
-                  quick deploy dist artifact
-                </code>
-                <div className="text-xs text-muted-foreground mt-1">
-                  (Type <span className="font-mono bg-black/50 px-1">y</span> when prompted to overwrite)
-                </div>
-              </div>
-              
-              <div>
-                <div className="text-xs text-muted-foreground mb-1">3. Visit your deployed site:</div>
-                <a 
-                  href="https://artifact.quick.shopify.io" 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="text-sm text-blue-500 hover:text-blue-400 underline block font-mono"
-                >
-                  https://artifact.quick.shopify.io
-                </a>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-4 border-t">
-            <div className="text-xs text-muted-foreground space-y-2">
-              <p>
-                <strong>Quick Deployment Workflow:</strong>
-              </p>
-              <ul className="list-disc list-inside space-y-1 ml-2">
-                <li>Make code changes locally</li>
-                <li>Build and deploy (takes ~10-15 seconds)</li>
-                <li>Test on the deployed Quick site</li>
-                <li>Iterate and deploy again</li>
-              </ul>
-              <p className="pt-2">
-                This is the intended workflow for Quick-based applications. 
-                All Quick SDK features work only on Quick&apos;s infrastructure.
-              </p>
-            </div>
+        <CardContent className="pt-0 pb-3">
+          <p className="text-xs text-muted-foreground mb-2">
+            You&apos;re seeing placeholder data. File uploads will use sample images.
+          </p>
+          <div className="bg-muted/50 p-2 rounded text-xs font-mono">
+            pnpm build && quick deploy dist artifact
           </div>
         </CardContent>
       </Card>
