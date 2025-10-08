@@ -9,10 +9,10 @@ export type Project = {
   name: string;
   creator_id: string;
   share_token: string;
-  folder_id: string | null;      // Reference to parent folder (null if uncategorized)
+  folder_id: string | null; // Reference to parent folder (null if uncategorized)
   created_at: string;
   updated_at: string;
-  last_accessed_at?: string;     // For "last opened" sorting (optional for backward compat)
+  last_accessed_at?: string; // For "last opened" sorting (optional for backward compat)
   settings: ProjectSettings;
 };
 
@@ -22,6 +22,13 @@ export type UrlViewportMetadata = {
   viewport?: string;
   width?: number;
   height?: number;
+};
+
+export type VideoMetadata = {
+  thumbnail_url?: string;
+  hideUI?: boolean;
+  loop?: boolean;
+  muted?: boolean;
 };
 
 export type Page = {
@@ -58,18 +65,18 @@ export type ViewportState = {
 export type Folder = {
   id: string;
   name: string;
-  creator_id: string;            // Owner's email
-  position: number;              // For manual ordering
+  creator_id: string; // Owner's email
+  position: number; // For manual ordering
   created_at: string;
   updated_at: string;
-  last_accessed_at?: string;     // For "last opened" sorting
+  last_accessed_at?: string; // For "last opened" sorting
 };
 
 export type FolderAccess = {
   id: string;
-  folder_id: string;             // Reference to folder
-  user_email: string;            // Collaborator's email
-  role: "editor" | "viewer";     // Permission level
+  folder_id: string; // Reference to folder
+  user_email: string; // Collaborator's email
+  role: "editor" | "viewer"; // Permission level
   created_at: string;
   updated_at: string;
 };

@@ -13,10 +13,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { VIEWPORTS, DEFAULT_VIEWPORT_KEY, getViewportDimensions, type ViewportKey } from "@/lib/viewports";
+import {
+  VIEWPORTS,
+  DEFAULT_VIEWPORT_KEY,
+  getViewportDimensions,
+  type ViewportKey,
+} from "@/lib/viewports";
 import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
-import { uploadFile, getArtifactTypeFromMimeType, validateFile } from "@/lib/quick-storage";
+import {
+  uploadFile,
+  getArtifactTypeFromMimeType,
+  validateFile,
+} from "@/lib/quick-storage";
+import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { toast } from "sonner";
 
 export default function ArtifactAdder({
@@ -44,7 +54,7 @@ export default function ArtifactAdder({
   });
   const [error, setError] = useState<string | null>(null);
   const [viewport, setViewport] = useState<ViewportKey>(DEFAULT_VIEWPORT_KEY);
-  
+
   const { createArtifact } = usePageArtifacts(projectId, pageId);
 
   function resetState() {
@@ -62,7 +72,7 @@ export default function ArtifactAdder({
 
   async function handleAdd() {
     setError(null);
-    
+
     try {
       if (files.length) {
         // Validate all files first (50MB limit)
@@ -74,7 +84,7 @@ export default function ArtifactAdder({
             return;
           }
         }
-        
+
         // Initialize upload state for files
         setUploadState({
           uploading: true,
@@ -82,43 +92,53 @@ export default function ArtifactAdder({
           completedFiles: 0,
           currentProgress: 0,
         });
-        
+
         let completedCount = 0;
-        
+
         for (const file of files) {
           // Upload file to Quick.fs with progress tracking
           const upResult = await uploadFile(file, (progress) => {
             const fileProgress = progress.percentage;
             const overallProgress = Math.round(
-              ((completedCount * 100) + fileProgress) / files.length
+              (completedCount * 100 + fileProgress) / files.length
             );
-            
-            setUploadState(prev => ({
+
+            setUploadState((prev) => ({
               ...prev,
               currentProgress: overallProgress,
             }));
           });
-          
+
           // Determine file type from MIME type
           const type = getArtifactTypeFromMimeType(upResult.mimeType);
-              
+
           // Set default metadata for videos (muted, loop, hide controls)
-          const defaultMetadata = type === "video" 
-            ? { hideUI: true, loop: true, muted: true }
-            : {};
-          
+          const defaultMetadata =
+            type === "video" ? { hideUI: true, loop: true, muted: true } : {};
+
           // Create artifact using the hook with generated name
-          const artifactName = generateArtifactName(type, upResult.fullUrl, file);
-          await createArtifact({
+          const artifactName = generateArtifactName(
             type,
-            source_url: upResult.fullUrl,  // Use fullUrl for display
-            file_path: upResult.url,        // Store relative url
+            upResult.fullUrl,
+            file
+          );
+          const artifact = await createArtifact({
+            type,
+            source_url: upResult.fullUrl, // Use fullUrl for display
+            file_path: upResult.url, // Store relative url
             name: artifactName,
             metadata: defaultMetadata,
           });
-          
+
+          // Generate thumbnail asynchronously for videos (don't await)
+          if (type === "video" && artifact) {
+            generateAndUploadThumbnail(file, artifact.id).catch((err) => {
+              console.error("Thumbnail generation failed:", err);
+            });
+          }
+
           completedCount++;
-          setUploadState(prev => ({
+          setUploadState((prev) => ({
             ...prev,
             completedFiles: completedCount,
             currentProgress: Math.round((completedCount / files.length) * 100),
@@ -134,9 +154,9 @@ export default function ArtifactAdder({
           completedFiles: 0,
           currentProgress: 50,
         });
-        
+
         const dims = getViewportDimensions(viewport);
-        
+
         // Create URL artifact using the hook with generated name
         const artifactName = generateArtifactName("url", url);
         await createArtifact({
@@ -149,8 +169,8 @@ export default function ArtifactAdder({
             height: dims.height,
           },
         });
-        
-        setUploadState(prev => ({
+
+        setUploadState((prev) => ({
           ...prev,
           completedFiles: 1,
           currentProgress: 100,
@@ -158,7 +178,9 @@ export default function ArtifactAdder({
       }
 
       if (files.length) {
-        toast.success(`Successfully uploaded ${files.length} file${files.length > 1 ? 's' : ''}`);
+        toast.success(
+          `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}`
+        );
       } else if (url) {
         toast.success("Successfully added URL artifact");
       }
@@ -183,25 +205,24 @@ export default function ArtifactAdder({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      setOpen(isOpen);
-      if (!isOpen) {
-        resetState();
-      }
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+          resetState();
+        }
+      }}
+    >
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          aria-label="Add artifact"
-        >
+        <Button variant="outline" size="icon" aria-label="Add artifact">
           <Plus className="h-4 w-4" />
         </Button>
       </DialogTrigger>
-      
-      <DialogContent 
+
+      <DialogContent
         className="w-full max-w-2xl text-white border-white/10"
-        style={{ backgroundColor: 'var(--color-background-secondary)' }}
+        style={{ backgroundColor: "var(--color-background-secondary)" }}
         showCloseButton={!uploadState.uploading}
       >
         <DialogHeader>
@@ -213,8 +234,16 @@ export default function ArtifactAdder({
             <p className="text-sm text-white/70">Upload files</p>
             <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 py-12 cursor-pointer transition hover:border-white/40">
               <span className="text-sm font-medium">Browse files</span>
-              <span className="text-xs text-white/60">Images or videos up to 50MB</span>
-              <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={onFileInputChange} />
+              <span className="text-xs text-white/60">
+                Images or videos up to 50MB
+              </span>
+              <input
+                type="file"
+                multiple
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={onFileInputChange}
+              />
             </label>
             {files.length > 0 && (
               <div className="text-xs text-white/60">
@@ -260,11 +289,15 @@ export default function ArtifactAdder({
           {uploadState.uploading && (
             <div className="space-y-3">
               <div className="text-center text-sm text-white/80">
-                Uploading{uploadState.totalFiles > 1 ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}` : ''}...
+                Uploading
+                {uploadState.totalFiles > 1
+                  ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
+                  : ""}
+                ...
               </div>
               <div className="space-y-2">
                 <div className="w-full bg-white/20 rounded-full h-2">
-                  <div 
+                  <div
                     className="bg-white h-2 rounded-full transition-all duration-300 ease-out"
                     style={{ width: `${uploadState.currentProgress}%` }}
                   />
@@ -280,8 +313,8 @@ export default function ArtifactAdder({
         </div>
 
         <DialogFooter>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => {
               setOpen(false);
               resetState();
@@ -303,5 +336,3 @@ export default function ArtifactAdder({
     </Dialog>
   );
 }
-
-

@@ -9,36 +9,45 @@
 const db: Record<string, any[]> = {};
 
 // Generate unique ID
-const id = () => `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+const id = () =>
+  `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
 // Initialize with sample data
 function init() {
   if (db.projects?.length) return;
-  
+
   const now = new Date().toISOString();
   const projectId = "sample-1";
   const pageId = "page-1";
-  
-  db.projects = [{
-    id: projectId,
-    name: "Sample Project",
-    creator_id: "dev@shopify.com",
-    share_token: "sample",
-    folder_id: null,
-    settings: { default_columns: 3, allow_viewer_control: true, background_color: "#ffffff" },
-    created_at: now,
-    updated_at: now,
-  }];
-  
-  db.pages = [{
-    id: pageId,
-    project_id: projectId,
-    name: "Page 01",
-    position: 0,
-    created_at: now,
-    updated_at: now,
-  }];
-  
+
+  db.projects = [
+    {
+      id: projectId,
+      name: "Sample Project",
+      creator_id: "dev@shopify.com",
+      share_token: "sample",
+      folder_id: null,
+      settings: {
+        default_columns: 3,
+        allow_viewer_control: true,
+        background_color: "#ffffff",
+      },
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+
+  db.pages = [
+    {
+      id: pageId,
+      project_id: projectId,
+      name: "Page 01",
+      position: 0,
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+
   db.artifacts = [
     {
       id: "art-1",
@@ -54,59 +63,61 @@ function init() {
       updated_at: now,
     },
     {
-     id: "art-2",
-     project_id: projectId,
-     page_id: pageId,
-     type: "image",
-     source_url: "https://picsum.photos/id/237/800/600",
-     file_path: null,
-     name: "Placeholder Image - Dog",
-     position: 1,
-     metadata: { width: 800, height: 600 },
-     created_at: now,
-     updated_at: now,
-   },
-   {
-     id: "art-3",
-     project_id: projectId,
-     page_id: pageId,
-     type: "video",
-     source_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-     file_path: null,
-     name: "Sample Video - Big Buck Bunny",
-     position: 2,
-     metadata: { duration: 634, loop: true, muted: true },
-     created_at: now,
-     updated_at: now,
-   },
-   {
-     id: "art-4",
-     project_id: projectId,
-     page_id: pageId,
-     type: "image",
-     source_url: "https://picsum.photos/id/1015/1200/800",
-     file_path: null,
-     name: "Placeholder Image - Nature",
-     position: 3,
-     metadata: { width: 1200, height: 800 },
-     created_at: now,
-     updated_at: now,
-   },
-   {
-     id: "art-5",
-     project_id: projectId,
-     page_id: pageId,
-     type: "video",
-     source_url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-     file_path: null,
-     name: "Sample Video - For Bigger Blazes",
-     position: 4,
-     metadata: { duration: 15, loop: true, muted: true },
-     created_at: now,
-     updated_at: now,
-   },
+      id: "art-2",
+      project_id: projectId,
+      page_id: pageId,
+      type: "image",
+      source_url: "https://picsum.photos/id/237/800/600",
+      file_path: null,
+      name: "Placeholder Image - Dog",
+      position: 1,
+      metadata: { width: 800, height: 600 },
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: "art-3",
+      project_id: projectId,
+      page_id: pageId,
+      type: "video",
+      source_url:
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+      file_path: null,
+      name: "Sample Video - Big Buck Bunny",
+      position: 2,
+      metadata: { duration: 634, loop: true, muted: true },
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: "art-4",
+      project_id: projectId,
+      page_id: pageId,
+      type: "image",
+      source_url: "https://picsum.photos/id/1015/1200/800",
+      file_path: null,
+      name: "Placeholder Image - Nature",
+      position: 3,
+      metadata: { width: 1200, height: 800 },
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: "art-5",
+      project_id: projectId,
+      page_id: pageId,
+      type: "video",
+      source_url:
+        "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+      file_path: null,
+      name: "Sample Video - For Bigger Blazes",
+      position: 4,
+      metadata: { duration: 15, loop: true, muted: true },
+      created_at: now,
+      updated_at: now,
+    },
   ];
-  
+
   db.folders = [];
   db.folder_access = [];
   db.project_access = [];
@@ -119,7 +130,12 @@ class Collection {
   }
 
   async create(data: any) {
-    const doc = { ...data, id: id(), created_at: new Date().toISOString(), updated_at: new Date().toISOString() };
+    const doc = {
+      ...data,
+      id: id(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
     db[this.name].push(doc);
     return doc;
   }
@@ -129,39 +145,41 @@ class Collection {
   }
 
   async findById(id: string) {
-    const doc = db[this.name].find(item => item.id === id);
+    const doc = db[this.name].find((item) => item.id === id);
     if (!doc) throw new Error(`Not found: ${id}`);
     return doc;
   }
 
   async update(id: string, data: any) {
-    const index = db[this.name].findIndex(item => item.id === id);
+    const index = db[this.name].findIndex((item) => item.id === id);
     if (index === -1) throw new Error(`Not found: ${id}`);
-    db[this.name][index] = { ...db[this.name][index], ...data, updated_at: new Date().toISOString() };
+    db[this.name][index] = {
+      ...db[this.name][index],
+      ...data,
+      updated_at: new Date().toISOString(),
+    };
   }
 
   async delete(id: string) {
-    const index = db[this.name].findIndex(item => item.id === id);
+    const index = db[this.name].findIndex((item) => item.id === id);
     if (index === -1) throw new Error(`Not found: ${id}`);
     db[this.name].splice(index, 1);
   }
 
   where(query: any) {
-    const filter = (items: any[]) => items.filter(item => 
-      Object.entries(query).every(([k, v]) => item[k] === v)
-    );
-    return {
+    const filter = (items: any[]) =>
+      items.filter((item) =>
+        Object.entries(query).every(([k, v]) => item[k] === v)
+      );
+    const createQuery = (): any => ({
       find: async () => filter(db[this.name]),
       limit: (n: number) => ({
         find: async () => filter(db[this.name]).slice(0, n),
+        select: (fields: string[]) => createQuery(),
       }),
-      select: (fields: string[]) => ({
-        find: async () => filter(db[this.name]),
-        limit: (n: number) => ({
-          find: async () => filter(db[this.name]).slice(0, n),
-        }),
-      }),
-    };
+      select: (fields: string[]) => createQuery(),
+    });
+    return createQuery();
   }
 
   subscribe() {
@@ -171,7 +189,7 @@ class Collection {
 
 export function createMockQuick() {
   init();
-  
+
   return {
     db: {
       collection: (name: string) => new Collection(name),
@@ -181,29 +199,37 @@ export function createMockQuick() {
         return files.map((file, i) => ({
           originalName: file.name,
           filename: `mock-${Date.now()}-${i}-${file.name}`,
-          url: file.type.startsWith("image/") 
+          url: file.type.startsWith("image/")
             ? `https://picsum.photos/800/600?random=${Date.now() + i}`
             : file.type.startsWith("video/")
-            ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-            : `/uploads/mock-${file.name}`,
-          fullUrl: file.type.startsWith("image/") 
+              ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+              : `/uploads/mock-${file.name}`,
+          fullUrl: file.type.startsWith("image/")
             ? `https://picsum.photos/800/600?random=${Date.now() + i}`
             : file.type.startsWith("video/")
-            ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-            : `/uploads/mock-${file.name}`,
+              ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+              : `/uploads/mock-${file.name}`,
           size: file.size,
           mimeType: file.type,
         }));
       },
       async uploadFile(file: File, options?: any) {
         if (options?.onProgress) {
-          setTimeout(() => options.onProgress({ percentage: 100, loaded: file.size, total: file.size }), 100);
+          setTimeout(
+            () =>
+              options.onProgress({
+                percentage: 100,
+                loaded: file.size,
+                total: file.size,
+              }),
+            100
+          );
         }
-        const mockUrl = file.type.startsWith("image/") 
+        const mockUrl = file.type.startsWith("image/")
           ? `https://picsum.photos/800/600?random=${Date.now()}`
           : file.type.startsWith("video/")
-          ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-          : `/uploads/mock-${file.name}`;
+            ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
+            : `/uploads/mock-${file.name}`;
         return {
           originalName: file.name,
           filename: `mock-${Date.now()}-${file.name}`,
@@ -218,13 +244,41 @@ export function createMockQuick() {
       email: "dev@shopify.com",
       fullName: "Local Developer",
       firstName: "Local",
-      waitForUser: async function() { return this; },
+      waitForUser: async function () {
+        return this;
+      },
     },
     // Minimal stubs for unused APIs
-    ai: { ask: async () => "Mock", askWithSystem: async () => "Mock", chat: async () => ({ choices: [{ message: { content: "Mock" } }] }), chatStream: async () => {}, embed: async () => [] },
-    socket: { room: () => ({ join: async () => {}, leave: async () => {}, on: () => {}, emit: () => {}, users: new Map(), user: { socketId: "", name: "", email: "", state: {} }, updateUserState: () => {} }) },
-    site: { create: async () => ({ message: "Mock", url: "" }), get: async () => null, delete: async () => {} },
-    slack: { sendMessage: async () => ({}), sendAlert: async () => ({}), sendStatus: async () => ({}), sendCode: async () => ({}), sendTable: async () => ({}) },
+    ai: {
+      ask: async () => "Mock",
+      askWithSystem: async () => "Mock",
+      chat: async () => ({ choices: [{ message: { content: "Mock" } }] }),
+      chatStream: async () => {},
+      embed: async () => [],
+    },
+    socket: {
+      room: () => ({
+        join: async () => {},
+        leave: async () => {},
+        on: () => {},
+        emit: () => {},
+        users: new Map(),
+        user: { socketId: "", name: "", email: "", state: {} },
+        updateUserState: () => {},
+      }),
+    },
+    site: {
+      create: async () => ({ message: "Mock", url: "" }),
+      get: async () => null,
+      delete: async () => {},
+    },
+    slack: {
+      sendMessage: async () => ({}),
+      sendAlert: async () => ({}),
+      sendStatus: async () => ({}),
+      sendCode: async () => ({}),
+      sendTable: async () => ({}),
+    },
     auth: { requestScopes: async () => ({ hasRequiredScopes: true }) },
   };
 }
