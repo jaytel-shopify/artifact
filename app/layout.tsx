@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import LocalDevWarning from "@/components/LocalDevWarning";
 import AnimatedPageWrapper from "@/components/transitions/AnimatedPageWrapper";
+import QuickMultiplayerCursorsProvider from "@/components/QuickMultiplayerCursorsProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,6 +35,8 @@ export const metadata: Metadata = {
   },
 };
 
+
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -50,6 +53,9 @@ export default function RootLayout({
       >
         {/* Show warning when running on localhost */}
         <LocalDevWarning />
+        
+        {/* Initialize multiplayer cursors globally */}
+        <QuickMultiplayerCursorsProvider />
         
         <AuthProvider>
           <ThemeProvider

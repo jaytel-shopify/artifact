@@ -1,0 +1,75 @@
+name: 'Deploy to Quick'
+description: 'Deploy a directory to Quick hosting using gcloud storage rsync'
+inputs:
+  dir:
+    description: 'Directory to deploy (e.g., dist, build)'
+    required: true
+  site_name:
+    description: 'Subdomain name for the site'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        pwd
+        echo ${{ github.workspace }}
+        ls ${{github.workspace}}
+
+        # Validate site_name (subdomain rules)
+        if [[ ! "${{ inputs.site_name }}" =~ ^[a-z0-9][a-z0-9-]*[a-z0-9]$ ]] && [[ ! "${{ inputs.site_name }}" =~ ^[a-z0-9]$ ]]; then
+          echo "Error: site_name must be lowercase alphanumeric with hyphens"
+          exit 1
+        fi
+
+        site_name="${{ inputs.site_name }}"
+        if [[ ${#site_name} -gt 63 ]]; then
+          echo "Error: site_name must be 63 characters or less"
+          exit 1
+        fi
+
+        # Validate directory exists and has index.html
+        if [[ ! -d "${{ github.workspace }}/${{ inputs.dir }}" ]]; then
+          echo "Error: Directory ${{ inputs.dir }} does not exist"
+          exit 1
+        fi
+
+        if [[ ! -f "${{ github.workspace }}/${{ inputs.dir }}/index.html" ]]; then
+          echo "Error: Directory ${{ inputs.dir }} must contain an index.html file"
+          exit 1
+        fi
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v3
+      with:
+        project_id: shopify-skai-train
+        workload_identity_provider: "projects/503582027637/locations/global/workloadIdentityPools/github-actions-pool/providers/quick-v2"
+        service_account: "quick-gha@shopify-skai-train.iam.gserviceaccount.com"
+        token_format: "access_token"
+
+    - name: Set up Cloud SDK
+      uses: google-github-actions/setup-gcloud@v2
+
+    - name: Deploy to GCS
+      shell: bash
+      run: |
+        # Create metadata with GitHub context
+        METADATA="modified-by=${{ github.actor }},deployed-from=${{ github.repository }},commit-sha=${{ github.sha }}"
+
+        # Deploy using gcloud storage rsync
+        echo "🚀 Deploying ${{ inputs.dir }} to ${{ inputs.site_name }}.quick.shopify.io..."
+
+        gcloud storage rsync \
+          --recursive \
+          --delete-unmatched-destination-objects \
+          --custom-metadata="$METADATA" \
+          "${{github.workspace}}/${{ inputs.dir }}" \
+          "gs://skai-train-quick/sites/${{ inputs.site_name }}"
+
+    - name: Show success
+      shell: bash
+      run: |
+        echo "✅ Deployment complete!"
+        echo "🌐 Your site is live at: https://${{ inputs.site_name }}.quick.shopify.io"
