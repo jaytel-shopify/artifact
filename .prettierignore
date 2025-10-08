@@ -1,0 +1,25 @@
+# Dependencies
+node_modules
+pnpm-lock.yaml
+package-lock.json
+
+# Build outputs
+dist
+.next
+out
+build
+
+# Cache
+.cache
+.turbo
+
+# Logs
+*.log
+
+# Environment files
+.env*
+
+# Generated files
+*.gen.ts
+*.gen.tsx
+
