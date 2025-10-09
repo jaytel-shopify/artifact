@@ -20,12 +20,12 @@ interface CanvasProps {
   fitMode?: boolean;
 }
 
-export default function Canvas(_props: CanvasProps) {
+export default function Canvas({ columns }: CanvasProps) {
   // For now, just showing the SortableCarousel example with placeholders
   // Ignoring the actual artifacts prop
   return (
     <div className="w-full h-full">
-      <SortableCarousel layout={Layout.Horizontal} />
+      <SortableCarousel layout={Layout.Horizontal} columns={columns} />
     </div>
   );
 }

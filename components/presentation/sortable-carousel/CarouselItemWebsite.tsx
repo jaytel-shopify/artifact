@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 interface CarouselItemWebsiteProps {
   url: string;
@@ -11,42 +11,67 @@ export function CarouselItemWebsite({
   width = 1920,
   height = 1080,
 }: CarouselItemWebsiteProps) {
-  // Calculate scale to fit the carousel height (200px)
-  const CAROUSEL_HEIGHT = 200;
-  const scale = CAROUSEL_HEIGHT / height;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (containerRef.current) {
+        const containerWidth = containerRef.current.offsetWidth;
+        const containerHeight = containerRef.current.offsetHeight;
+
+        // Calculate scale and add small buffer to prevent white borders
+        const scaleX = containerWidth / width;
+        const scaleY = containerHeight / height;
+        const newScale = Math.max(scaleX, scaleY) * 1.01; // 1% buffer
+
+        setScale(newScale);
+      }
+    };
+
+    updateScale();
+    window.addEventListener("resize", updateScale);
+
+    // Use ResizeObserver to detect container size changes (when slider changes)
+    let resizeObserver: ResizeObserver | null = null;
+    if (containerRef.current) {
+      resizeObserver = new ResizeObserver(updateScale);
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Small delay to ensure container is sized
+    const timer = setTimeout(updateScale, 100);
+
+    return () => {
+      window.removeEventListener("resize", updateScale);
+      resizeObserver?.disconnect();
+      clearTimeout(timer);
+    };
+  }, [width, height]);
 
   return (
     <div
+      ref={containerRef}
       className="carousel-item-content"
       style={{
-        position: "relative",
         overflow: "hidden",
         pointerEvents: "auto",
       }}
     >
-      <div
+      <iframe
+        src={url}
+        width={width}
+        height={height}
         style={{
-          width: `${width}px`,
-          height: `${height}px`,
+          border: 0,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
           pointerEvents: "auto",
         }}
-      >
-        <iframe
-          src={url}
-          width={width}
-          height={height}
-          style={{
-            border: 0,
-            width: "100%",
-            height: "100%",
-          }}
-          allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
-          referrerPolicy="no-referrer-when-downgrade"
-          title={url}
-        />
-      </div>
+        allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
+        referrerPolicy="no-referrer-when-downgrade"
+        title={url}
+      />
     </div>
   );
 }

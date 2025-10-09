@@ -32,6 +32,7 @@ import "./sortable-carousel.css";
 
 interface Props {
   layout: Layout;
+  columns?: number;
 }
 
 const measuring: MeasuringConfiguration = {
@@ -68,7 +69,7 @@ function createRange<T = number>(
   return [...new Array(length)].map((_, index) => initializer(index));
 }
 
-export function SortableCarousel({ layout }: Props) {
+export function SortableCarousel({ layout, columns = 3 }: Props) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [items, setItems] = useState(() =>
     createRange<UniqueIdentifier>(20, (index) => `${index + 1}`)
@@ -81,6 +82,17 @@ export function SortableCarousel({ layout }: Props) {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+
+  // Calculate column width in vw based on number of columns
+  // Padding: 1rem on each side = 2rem total
+  // Gaps: 2rem between each item = 2rem * (columns - 1)
+  const totalPaddingRem = 2;
+  const totalGapRem = 2 * (columns - 1);
+  const totalSpacingRem = totalPaddingRem + totalGapRem;
+  // Convert rem to vw (assuming 16px = 1rem and using viewport width)
+  const remToVw = (rem: number) =>
+    `${((rem * 16) / window.innerWidth) * 100}vw`;
+  const columnWidth = `calc((100vw - ${remToVw(totalSpacingRem)}) / ${columns})`;
 
   return (
     <DndContext
@@ -101,6 +113,7 @@ export function SortableCarousel({ layout }: Props) {
               layout={layout}
               activeIndex={activeIndex}
               metadata={itemMetadata[id.toString()]}
+              columnWidth={columnWidth}
               onDelete={() => {
                 console.log("Delete item:", id);
                 setItems((items) => items.filter((itemId) => itemId !== id));
@@ -178,8 +191,9 @@ function CarouselItemOverlay({
 function SortableCarouselItem({
   id,
   activeIndex,
+  columnWidth,
   ...props
-}: CarouselItemProps & { activeIndex: number }) {
+}: CarouselItemProps & { activeIndex: number; columnWidth?: string }) {
   const {
     attributes,
     listeners,
@@ -204,6 +218,7 @@ function SortableCarouselItem({
       style={{
         transition,
         transform: isSorting ? undefined : CSS.Translate.toString(transform),
+        width: columnWidth,
       }}
       insertPosition={
         over?.id === id

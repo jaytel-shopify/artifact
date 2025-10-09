@@ -156,14 +156,6 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const contentWidth = propWidth || mockItem.width;
     const contentHeight = propHeight || mockItem.height;
 
-    // Calculate width based on original aspect ratio
-    // Fixed height of 200px, calculate width to maintain aspect ratio
-    const CAROUSEL_HEIGHT = 200;
-    const itemWidth =
-      contentWidth && contentHeight
-        ? (contentWidth / contentHeight) * CAROUSEL_HEIGHT
-        : 150; // fallback to default width
-
     const isVideo = type === "video";
     const isUrl = type === "url";
 
@@ -177,7 +169,13 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         ${insertPosition === Position.After ? "insert-after" : ""}
         ${layout === Layout.Vertical ? "vertical" : ""}
       `}
-        style={{ ...style, width: `${itemWidth}px` }}
+        style={{
+          ...style,
+          aspectRatio:
+            contentWidth && contentHeight
+              ? `${contentWidth} / ${contentHeight}`
+              : "16 / 9",
+        }}
         ref={ref}
       >
         {name && (
