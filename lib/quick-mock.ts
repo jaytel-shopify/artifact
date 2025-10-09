@@ -58,7 +58,7 @@ function init() {
       file_path: null,
       name: "Sample Image 1",
       position: 0,
-      metadata: {},
+      metadata: { width: 800, height: 600 },
       created_at: now,
       updated_at: now,
     },

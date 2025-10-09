@@ -60,68 +60,9 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   onDelete?: () => void;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
+  isSettling?: boolean;
   fitMode?: boolean;
 }
-
-// Mock content from your data (images and videos) with original dimensions
-const mockContent = [
-  {
-    url: "https://picsum.photos/800/600?random=1",
-    type: "image" as const,
-    width: 800,
-    height: 600,
-    name: "Sample Image 1",
-  },
-  {
-    url: "https://www.shopify.com",
-    type: "url" as const,
-    width: 1920,
-    height: 1080,
-    name: "Shopify Homepage",
-  },
-  {
-    url: "https://picsum.photos/id/237/800/600",
-    type: "image" as const,
-    width: 800,
-    height: 600,
-    name: "Placeholder Image - Dog",
-  },
-  {
-    url: "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    type: "video" as const,
-    width: 1280,
-    height: 720,
-    name: "Sample Video - Big Buck Bunny",
-  },
-  {
-    url: "https://www.shopify.com",
-    type: "url" as const,
-    width: 1920,
-    height: 1080,
-    name: "Shopify Homepage",
-  },
-  {
-    url: "https://picsum.photos/id/1015/1200/800",
-    type: "image" as const,
-    width: 1200,
-    height: 800,
-    name: "Placeholder Image - Nature",
-  },
-  {
-    url: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
-    type: "video" as const,
-    width: 1920,
-    height: 1080,
-    name: "Sample Video - For Bigger Blazes",
-  },
-  {
-    url: "https://atlas-prototypes.quick.shopify.io/adaptive-form/",
-    type: "url" as const,
-    width: 1440,
-    height: 900,
-    name: "intent flow",
-  },
-];
 
 export const CarouselItem = forwardRef<HTMLLIElement, Props>(
   function CarouselItem(
@@ -144,22 +85,20 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onDelete,
       isReadOnly = false,
       isAnyDragging = false,
+      isSettling = false,
       fitMode = false,
       ...props
     },
     ref
   ) {
-    // Use provided contentUrl or cycle through mock content based on id (not index, so it doesn't change during drag)
-    const contentIndex =
-      typeof id === "number" ? id : parseInt(id.toString(), 10);
-    const mockItem = mockContent[(contentIndex - 1) % mockContent.length];
-    const url = contentUrl || mockItem.url;
-    const type = contentUrl ? contentType : mockItem.type;
-    const name = propName || mockItem.name || `Item ${index}`;
+    // Use provided data (required now, no mock fallback)
+    const url = contentUrl || "";
+    const type = contentType;
+    const name = propName || `Item ${index}`;
 
-    // Get content dimensions (either from props or mock data)
-    const contentWidth = propWidth || mockItem.width;
-    const contentHeight = propHeight || mockItem.height;
+    // Get content dimensions from props
+    const contentWidth = propWidth;
+    const contentHeight = propHeight;
 
     const isVideo = type === "video";
     const isUrl = type === "url";
@@ -170,6 +109,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         carousel-item-wrapper
         ${active ? "active" : ""}
         ${clone ? "clone" : ""}
+        ${isSettling ? "settling" : ""}
         ${insertPosition === Position.Before ? "insert-before" : ""}
         ${insertPosition === Position.After ? "insert-after" : ""}
         ${layout === Layout.Vertical ? "vertical" : ""}

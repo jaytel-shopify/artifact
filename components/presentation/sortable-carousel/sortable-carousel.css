@@ -52,7 +52,8 @@
 .carousel-item-wrapper {
   position: relative;
   list-style: none;
-  /* Width is set via vw based on columns slider */
+  /* Width is set via CSS custom property from columns slider */
+  width: var(--column-width);
   margin-bottom: 1.5rem; /* Extra space for page number below */
   /* Scroll snapping */
   scroll-snap-align: start;
@@ -60,24 +61,35 @@
 }
 
 .carousel-item-wrapper.active .carousel-item {
-  background-color: rgba(10, 10, 10);
+  background-color: rgba(60, 60, 60, 0.2);
 }
 
 .carousel-item-wrapper.active .carousel-item .carousel-item-content {
-  opacity: 0.3;
+  opacity: 0;
 }
 
 .carousel-item-wrapper.active .carousel-item-header {
-  opacity: 0.3;
+  opacity: 0;
 }
 
-.carousel-item-wrapper.active .carousel-item-number {
-  opacity: 0.3;
+.carousel-item-wrapper.settling .carousel-item {
+  background-color: rgba(60, 60, 60, 0.2);
+}
+
+.carousel-item-wrapper.settling .carousel-item .carousel-item-content {
+  opacity: 0;
+}
+
+.carousel-item-wrapper.settling .carousel-item-header {
+  opacity: 0;
+}
+
+.carousel-item-wrapper.clone {
+  /* transform: translate3d(10px, 10px, 0) scale(1.025);
+  animation: pop 150ms cubic-bezier(0.18, 0.67, 0.6, 1.22); */
 }
 
 .carousel-item-wrapper.clone .carousel-item {
-  transform: translate3d(10px, 10px, 0) scale(1.025);
-  animation: pop 150ms cubic-bezier(0.18, 0.67, 0.6, 1.22);
   box-shadow:
     0 0 0 1px rgba(63, 63, 68, 0.05),
     0 1px 6px 0 rgba(34, 33, 81, 0.3);
@@ -174,15 +186,13 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
-  animation: fadeIn 1000ms ease;
   margin-bottom: 20px;
 }
 
 .carousel-item-title {
   flex: 1;
   text-align: left;
-  color: rgba(255, 255, 255, 0.6);
+  color: #888;
   font-size: 0.875rem;
   font-weight: 500;
   user-select: none;
@@ -240,17 +250,6 @@
   opacity: 1;
 }
 
-.carousel-item-number {
-  display: block;
-  width: 100%;
-  margin-top: 0.5rem;
-  text-align: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.75rem;
-  user-select: none;
-  animation: fadeIn 1000ms ease;
-}
-
 /* Fit mode: when columns = 1 and fit mode is enabled */
 .carousel-horizontal.fit-mode .carousel-item-wrapper.fit-mode {
   height: calc(100vh - 200px) !important;
@@ -286,19 +285,19 @@
   justify-content: center !important;
 }
 
-@keyframes fadeIn {
+/* @keyframes fadeIn {
   0% {
     opacity: 0;
   }
   100% {
     opacity: 1;
   }
-}
-@keyframes pop {
+} */
+/* @keyframes pop {
   0% {
     transform: translate3d(0px, 0px, 0) scale(1);
   }
   100% {
     transform: translate3d(10px, 10px, 0) scale(1.025);
   }
-}
+} */

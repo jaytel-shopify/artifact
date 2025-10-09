@@ -4,8 +4,8 @@ import { SortableCarousel } from "./sortable-carousel/SortableCarousel";
 import { Layout } from "./sortable-carousel/CarouselItem";
 import type { Artifact } from "@/types";
 
-// Temporary wrapper to test the SortableCarousel component
-// Your original Canvas is backed up as Canvas.backup.tsx
+// Carousel-based Canvas component
+// Original Canvas is backed up as Canvas.backup.tsx
 
 interface CanvasProps {
   columns: number;
@@ -20,15 +20,26 @@ interface CanvasProps {
   fitMode?: boolean;
 }
 
-export default function Canvas({ columns, fitMode }: CanvasProps) {
-  // For now, just showing the SortableCarousel example with placeholders
-  // Ignoring the actual artifacts prop
+export default function Canvas({
+  columns,
+  artifacts,
+  onReorder,
+  onUpdateArtifact,
+  onDeleteArtifact,
+  isReadOnly = false,
+  fitMode = false,
+}: CanvasProps) {
   return (
     <div className="w-full h-full">
       <SortableCarousel
         layout={Layout.Horizontal}
         columns={columns}
         fitMode={fitMode}
+        artifacts={artifacts}
+        onReorder={onReorder}
+        onUpdateArtifact={onUpdateArtifact}
+        onDeleteArtifact={onDeleteArtifact}
+        isReadOnly={isReadOnly}
       />
     </div>
   );
