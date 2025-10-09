@@ -4,7 +4,6 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import LocalDevWarning from "@/components/LocalDevWarning";
-import AnimatedPageWrapper from "@/components/transitions/AnimatedPageWrapper";
 import QuickMultiplayerCursorsProvider from "@/components/QuickMultiplayerCursorsProvider";
 import "./globals.css";
 
@@ -22,20 +21,18 @@ export const metadata: Metadata = {
   title: "Projects | Artifact",
   description: "Collaborative presentation tool for design artifacts",
   icons: {
-    icon: '/favicons/icon-32.png', // This overrides the default favicon.ico
-    shortcut: '/favicons/icon-32.png',
-    apple: '/favicons/icon-180.png',
+    icon: "/favicons/icon-32.png", // This overrides the default favicon.ico
+    shortcut: "/favicons/icon-32.png",
+    apple: "/favicons/icon-180.png",
     other: [
-      { url: '/favicons/icon-16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicons/icon-32.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicons/icon-64.png', sizes: '64x64', type: 'image/png' },
-      { url: '/favicons/icon-128.png', sizes: '128x128', type: 'image/png' },
-      { url: '/favicons/icon-256.png', sizes: '256x256', type: 'image/png' },
+      { url: "/favicons/icon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/favicons/icon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicons/icon-64.png", sizes: "64x64", type: "image/png" },
+      { url: "/favicons/icon-128.png", sizes: "128x128", type: "image/png" },
+      { url: "/favicons/icon-256.png", sizes: "256x256", type: "image/png" },
     ],
   },
 };
-
-
 
 export default function RootLayout({
   children,
@@ -53,10 +50,10 @@ export default function RootLayout({
       >
         {/* Show warning when running on localhost */}
         <LocalDevWarning />
-        
+
         {/* Initialize multiplayer cursors globally */}
         <QuickMultiplayerCursorsProvider />
-        
+
         <AuthProvider>
           <ThemeProvider
             attribute="class"
@@ -64,9 +61,7 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            <AnimatedPageWrapper>
-              {children}
-            </AnimatedPageWrapper>
+            {children}
             <Toaster />
           </ThemeProvider>
         </AuthProvider>
