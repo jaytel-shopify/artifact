@@ -12,9 +12,19 @@
   overflow-x: auto;
   overflow-y: visible;
   max-width: 100%;
+  /* Scroll snapping */
+  scroll-snap-type: x proximity;
+  scroll-padding-left: 1rem;
+  scroll-behavior: smooth;
   /* Better scrollbar styling */
   scrollbar-width: thin;
   scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+/* Disable snap scrolling during item reorder to prevent jump */
+.carousel-horizontal.settling {
+  scroll-snap-type: none;
+  scroll-behavior: auto;
 }
 
 .carousel-horizontal::-webkit-scrollbar {
@@ -44,6 +54,9 @@
   list-style: none;
   /* Width is set via vw based on columns slider */
   margin-bottom: 1.5rem; /* Extra space for page number below */
+  /* Scroll snapping */
+  scroll-snap-align: start;
+  /* scroll-snap-stop: normal; */
 }
 
 .carousel-item-wrapper.active .carousel-item {

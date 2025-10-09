@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   closestCenter,
   DndContext,
@@ -71,6 +71,11 @@ function createRange<T = number>(
 
 export function SortableCarousel({ layout, columns = 3 }: Props) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+  const [isSettling, setIsSettling] = useState(false);
+  const containerRef = useRef<HTMLUListElement>(null);
+  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined
+  );
   const [items, setItems] = useState(() =>
     createRange<UniqueIdentifier>(20, (index) => `${index + 1}`)
   );
@@ -108,7 +113,10 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
       measuring={measuring}
     >
       <SortableContext items={items}>
-        <ul className={`carousel carousel-${layout}`}>
+        <ul
+          ref={containerRef}
+          className={`carousel carousel-${layout} ${isSettling ? "settling" : ""}`}
+        >
           {items.map((id, index) => (
             <SortableCarouselItem
               id={id}
@@ -159,7 +167,17 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
       if (activeIndex !== overIndex) {
         const newIndex = overIndex;
 
+        // Disable snap scrolling during reorder to prevent jump
+        setIsSettling(true);
         setItems((items) => arrayMove(items, activeIndex, newIndex));
+
+        // Re-enable after DOM settles
+        if (settleTimeoutRef.current) {
+          clearTimeout(settleTimeoutRef.current);
+        }
+        settleTimeoutRef.current = setTimeout(() => {
+          setIsSettling(false);
+        }, 150);
       }
     }
 
