@@ -8,6 +8,9 @@ interface VideoMetadata {
   muted?: boolean;
 }
 
+// Global state to preserve video times across re-mounts during drag operations
+const videoTimesMap = new Map<string, { time: number; wasPlaying: boolean }>();
+
 export default function VideoPlayer({ 
   src, 
   poster, 
@@ -19,10 +22,41 @@ export default function VideoPlayer({
   metadata?: VideoMetadata;
   fitMode?: boolean;
 }) {
+  console.log('[VideoPlayer] Rendering for src:', src.slice(0, 50));
+  
   const videoRef = useRef<HTMLVideoElement>(null);
   const showControls = !metadata?.hideUI;
   const shouldLoop = metadata?.loop || false;
   const shouldMute = metadata?.muted !== false; // Default to muted
+  
+  // Track mount/unmount and save/restore video time
+  useEffect(() => {
+    console.log('[VideoPlayer] MOUNTED for src:', src.slice(0, 50));
+    const video = videoRef.current;
+    
+    // Restore saved time if this video was recently unmounted
+    const savedState = videoTimesMap.get(src);
+    if (savedState && video) {
+      console.log('[VideoPlayer] Restoring saved time:', savedState.time, 'wasPlaying:', savedState.wasPlaying);
+      video.currentTime = savedState.time;
+      if (savedState.wasPlaying) {
+        video.play().catch(() => {
+          console.log('[VideoPlayer] Could not auto-play after restore');
+        });
+      }
+      videoTimesMap.delete(src);
+    }
+    
+    return () => {
+      console.log('[VideoPlayer] UNMOUNTED for src:', src.slice(0, 50));
+      // Save current time and playing state when unmounting
+      if (video) {
+        const wasPlaying = !video.paused && !video.ended;
+        videoTimesMap.set(src, { time: video.currentTime, wasPlaying });
+        console.log('[VideoPlayer] Saved time on unmount:', video.currentTime, 'wasPlaying:', wasPlaying);
+      }
+    };
+  }, [src]);
 
   // Auto-play looping videos when component mounts
   useEffect(() => {
@@ -31,6 +65,13 @@ export default function VideoPlayer({
 
     // Auto-play looping videos (works because they're muted by default)
     const playVideo = async () => {
+      // Don't auto-play if video has been seeked (e.g., restored from saved state)
+      const savedState = videoTimesMap.get(src);
+      if (video.currentTime > 0.1 || savedState) {
+        console.log('[VideoPlayer] Skipping auto-play - video already has currentTime:', video.currentTime, 'or saved state exists');
+        return;
+      }
+      
       try {
         await video.play();
       } catch (error) {

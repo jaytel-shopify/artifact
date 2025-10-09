@@ -2,26 +2,21 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { motion } from "framer-motion";
 import type { ReactNode } from "react";
+import type { UniqueIdentifier } from "@dnd-kit/core";
+
+interface SortableArtifactProps {
+  id: UniqueIdentifier;
+  activeIndex?: number;
+  isReadOnly?: boolean;
+  children: ReactNode;
+}
 
 export default function SortableArtifact({
-  artifact,
-  width,
-  columnHeight,
-  isGlobalDragActive,
-  activeArtifactId,
-  fitMode = false,
+  id,
+  isReadOnly = false,
   children,
-}: {
-  artifact: { id: string };
-  width: string;
-  columnHeight?: number;
-  isGlobalDragActive?: boolean;
-  activeArtifactId?: string | null;
-  fitMode?: boolean;
-  children: ReactNode;
-}) {
+}: SortableArtifactProps) {
   const {
     attributes,
     listeners,
@@ -29,74 +24,25 @@ export default function SortableArtifact({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: artifact.id });
-
-  // Check if this item is being repositioned (has a transform applied)
-  const isBeingRepositioned = transform !== null;
-
-  // DEBUG: Log state changes
-  const shouldDim = isDragging && isGlobalDragActive;
-  if (isDragging || isGlobalDragActive) {
-    console.log(`[Artifact ${artifact.id.slice(0, 8)}] isDragging: ${isDragging}, isGlobalDragActive: ${isGlobalDragActive}, shouldDim: ${shouldDim}`);
-  }
+    isSorting,
+  } = useSortable({
+    id,
+    disabled: isReadOnly,
+    animateLayoutChanges: () => true,
+  });
 
   const style: React.CSSProperties = {
-    width,
-    minHeight: "100%",
-    scrollSnapAlign: "start",
-    // Use dnd-kit's transition for any item being moved during drag
-    transition: (isGlobalDragActive && isBeingRepositioned) ? transition : undefined,
-    transform: CSS.Transform.toString(transform),
-    cursor: isDragging ? "grabbing" : "grab",
-    touchAction: "manipulation",
+    height: "100%",
+    transition,
+    // Like Pages example: only apply transform when NOT sorting
+    transform: isSorting ? undefined : CSS.Translate.toString(transform),
+    opacity: isDragging ? 0.5 : 1,
+    cursor: isReadOnly ? "default" : "grab",
   };
 
   return (
-    <motion.div
-      ref={setNodeRef}
-      style={style}
-      data-artifact-id={artifact.id}
-      className="inline-flex flex-col align-top shrink-0 h-full"
-      layout={!isGlobalDragActive}
-      transition={{
-        layout: { 
-          type: "spring", 
-          bounce: 0.15, 
-          duration: 0.4 
-        }
-      }}
-      {...attributes}
-      {...listeners}
-    >
-      <div className="flex-1">
-        <div
-          className={fitMode ? "h-full flex flex-col" : "overflow-y-auto"}
-          style={{ 
-            maxHeight: fitMode ? undefined : (columnHeight ? `${columnHeight}px` : undefined),
-          }}
-        >
-          <div className={`overflow-hidden dim-overlay-parent relative ${fitMode ? 'flex-1 flex flex-col' : ''}`}>
-            {children}
-            
-            {/* Overlay positioned to cover only artifact content (data-artifact-overlay-container), not title */}
-            {shouldDim && (
-              <style dangerouslySetInnerHTML={{
-                __html: `
-                  [data-artifact-id="${artifact.id}"] [data-artifact-overlay-container="true"]::after {
-                    content: "";
-                    position: absolute;
-                    inset: 0;
-                    background: black;
-                    opacity: 0.9;
-                    pointer-events: none;
-                    z-index: 10;
-                  }
-                `
-              }} />
-            )}
-          </div>
-        </div>
-      </div>
-    </motion.div>
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+      {children}
+    </div>
   );
 }
