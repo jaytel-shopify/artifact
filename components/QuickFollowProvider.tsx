@@ -2,6 +2,7 @@
 
 import { useEffect, useState, createContext, useContext } from "react";
 import { QuickFollowManager } from "@/lib/followManager";
+import { useRouter } from "next/navigation";
 
 interface User {
   socketId: string;
@@ -65,6 +66,7 @@ export default function QuickFollowProvider({
   executeOptions = {},
   children,
 }: QuickFollowProviderProps) {
+  const router = useRouter();
   const [followManager, setFollowManager] = useState<QuickFollowManager | null>(
     null
   );
@@ -121,6 +123,10 @@ export default function QuickFollowProvider({
 
       const success = await manager.init();
       if (success) {
+        // Inject SPA navigation for local leader navigation
+        manager.setNavigate((url: string) => router.push(url));
+        // Ensure followers navigate client-side too
+        manager.setupNavigateHandler((url: string) => router.push(url));
         setFollowManager(manager);
         setIsInitialized(true);
 
@@ -161,7 +167,7 @@ export default function QuickFollowProvider({
         manager.destroy();
       }
     };
-  }, [roomName, autoInit]);
+  }, [roomName, autoInit, router]);
 
   const contextValue: FollowContextType = {
     followManager,
