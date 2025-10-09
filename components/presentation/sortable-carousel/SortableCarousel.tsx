@@ -101,9 +101,6 @@ export function SortableCarousel({ layout }: Props) {
               layout={layout}
               activeIndex={activeIndex}
               metadata={itemMetadata[id.toString()]}
-              onRemove={() =>
-                setItems((items) => items.filter((itemId) => itemId !== id))
-              }
               onDelete={() => {
                 console.log("Delete item:", id);
                 setItems((items) => items.filter((itemId) => itemId !== id));

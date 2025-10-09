@@ -7,6 +7,8 @@ interface CarouselItemContentProps {
   type: "image" | "video" | "url";
   url: string;
   alt: string;
+  width?: number;
+  height?: number;
   metadata?: {
     hideUI?: boolean;
     loop?: boolean;
@@ -18,6 +20,8 @@ export function CarouselItemContent({
   type,
   url,
   alt,
+  width,
+  height,
   metadata,
 }: CarouselItemContentProps) {
   switch (type) {
@@ -33,7 +37,7 @@ export function CarouselItemContent({
         />
       );
     case "url":
-      return <CarouselItemWebsite url={url} />;
+      return <CarouselItemWebsite url={url} width={width} height={height} />;
     default:
       return null;
   }

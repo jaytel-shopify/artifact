@@ -1,6 +1,6 @@
 .carousel {
   display: grid;
-  gap: 1rem;
+  gap: 2rem;
   padding: 1rem;
   margin: 0;
   list-style: none;
@@ -79,7 +79,7 @@
 .carousel-item-wrapper:not(.active):not(.clone).insert-after::after {
   content: "";
   position: absolute;
-  background-color: #4c9ffe;
+  background-color: #fff;
   z-index: 10;
 }
 
@@ -95,7 +95,7 @@
 }
 
 .carousel-item-wrapper:not(.vertical).insert-before::after {
-  left: -9px;
+  left: -1rem;
 }
 
 .carousel-item-wrapper:not(.vertical).insert-after.clone {
@@ -103,7 +103,7 @@
 }
 
 .carousel-item-wrapper:not(.vertical).insert-after::after {
-  right: -9px;
+  right: -1rem;
 }
 
 .carousel-item-wrapper.vertical.insert-before::after,
@@ -150,14 +150,6 @@
   object-fit: cover;
   pointer-events: none;
   user-select: none;
-}
-
-.carousel-item-url-preview {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #f5f5f5;
-  font-size: 48px;
 }
 
 .carousel-item:focus-visible:not(.carousel-item-wrapper.active .carousel-item) {

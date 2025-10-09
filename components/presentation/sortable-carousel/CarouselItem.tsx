@@ -38,7 +38,6 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   id: UniqueIdentifier;
   index?: number;
   layout: Layout;
-  onRemove?(): void;
   contentUrl?: string;
   contentType?: "image" | "video" | "url";
   width?: number;
@@ -71,6 +70,13 @@ const mockContent = [
     name: "Sample Image 1",
   },
   {
+    url: "https://www.shopify.com",
+    type: "url" as const,
+    width: 1920,
+    height: 1080,
+    name: "Shopify Homepage",
+  },
+  {
     url: "https://picsum.photos/id/237/800/600",
     type: "image" as const,
     width: 800,
@@ -83,6 +89,13 @@ const mockContent = [
     width: 1280,
     height: 720,
     name: "Sample Video - Big Buck Bunny",
+  },
+  {
+    url: "https://www.shopify.com",
+    type: "url" as const,
+    width: 1920,
+    height: 1080,
+    name: "Shopify Homepage",
   },
   {
     url: "https://picsum.photos/id/1015/1200/800",
@@ -98,6 +111,13 @@ const mockContent = [
     height: 1080,
     name: "Sample Video - For Bigger Blazes",
   },
+  {
+    url: "https://atlas-prototypes.quick.shopify.io/adaptive-form/",
+    type: "url" as const,
+    width: 1440,
+    height: 900,
+    name: "intent flow",
+  },
 ];
 
 export const CarouselItem = forwardRef<HTMLLIElement, Props>(
@@ -109,7 +129,6 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       clone,
       insertPosition,
       layout,
-      onRemove,
       style,
       contentUrl,
       contentType = "image",
@@ -133,15 +152,17 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const type = contentUrl ? contentType : mockItem.type;
     const name = propName || mockItem.name || `Item ${index}`;
 
+    // Get content dimensions (either from props or mock data)
+    const contentWidth = propWidth || mockItem.width;
+    const contentHeight = propHeight || mockItem.height;
+
     // Calculate width based on original aspect ratio
     // Fixed height of 200px, calculate width to maintain aspect ratio
     const CAROUSEL_HEIGHT = 200;
     const itemWidth =
-      propWidth && propHeight
-        ? (propWidth / propHeight) * CAROUSEL_HEIGHT
-        : mockItem.width && mockItem.height
-          ? (mockItem.width / mockItem.height) * CAROUSEL_HEIGHT
-          : 150; // fallback to default width
+      contentWidth && contentHeight
+        ? (contentWidth / contentHeight) * CAROUSEL_HEIGHT
+        : 150; // fallback to default width
 
     const isVideo = type === "video";
     const isUrl = type === "url";
@@ -172,6 +193,8 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             type={type}
             url={url}
             alt={`Item ${index}`}
+            width={contentWidth}
+            height={contentHeight}
             metadata={metadata}
           />
         </div>
