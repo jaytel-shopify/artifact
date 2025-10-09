@@ -103,6 +103,9 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isVideo = type === "video";
     const isUrl = type === "url";
 
+    // Extract ref from dragHandleProps to apply to the entire item
+    const { ref: dragHandleRef, ...dragListeners } = dragHandleProps || {};
+
     const contentElement = (
       <li
         className={`
@@ -123,6 +126,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               : "16 / 9",
         }}
         ref={ref}
+        {...dragListeners}
       >
         {name && (
           <div className="carousel-item-header">
@@ -140,7 +144,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                   <ExternalLink size={16} />
                 </button>
               )}
-              <div className="carousel-item-drag-handle" {...dragHandleProps}>
+              <div className="carousel-item-drag-handle" ref={dragHandleRef}>
                 <GripVertical size={16} />
               </div>
             </div>
