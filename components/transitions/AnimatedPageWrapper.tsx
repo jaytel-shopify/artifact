@@ -1,7 +1,7 @@
 "use client";
 
 import { AnimatePresence } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { useHashRouter } from "@/components/Router";
 
 /**
  * AnimatedPageWrapper
@@ -10,11 +10,11 @@ import { usePathname } from "next/navigation";
  * Must be a separate client component since layout.tsx exports metadata.
  */
 export default function AnimatedPageWrapper({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const { hash } = useHashRouter();
 
   return (
     <AnimatePresence mode="wait" initial={false}>
-      <div key={pathname}>
+      <div key={hash}>
         {children}
       </div>
     </AnimatePresence>

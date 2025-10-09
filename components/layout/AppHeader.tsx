@@ -18,7 +18,7 @@ import CollaboratorBadge from "@/components/sharing/CollaboratorBadge";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/auth/UserAvatar";
-import { useRouter } from "next/navigation";
+import { useHashNavigation } from "@/components/Router";
 
 interface AppHeaderProps {
   // Navigation props
@@ -98,7 +98,7 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { user, signIn, signOut, loading } = useAuth();
-  const router = useRouter();
+  const router = useHashNavigation();
 
   const handleSignIn = async () => {
     await signIn();

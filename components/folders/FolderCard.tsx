@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useHashNavigation } from "@/components/Router";
 
 interface FolderCardProps {
   folder: {
@@ -41,7 +41,7 @@ export default function FolderCard({
   onManageAccess,
   onDelete,
 }: FolderCardProps) {
-  const router = useRouter();
+  const router = useHashNavigation();
 
   function handleClick() {
     router.push(`/folder?id=${folder.id}`);

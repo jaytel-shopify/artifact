@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { useMemo, useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useHashNavigation } from "@/components/Router";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   AlertDialog,
@@ -87,7 +87,7 @@ async function fetcher(userEmail?: string): Promise<{
 }
 
 export default function ProjectsPage() {
-  const router = useRouter();
+  const router = useHashNavigation();
   const { user } = useAuth();
   
   // Single SWR call loads both projects and folders in parallel

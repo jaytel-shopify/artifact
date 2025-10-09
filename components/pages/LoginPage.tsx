@@ -3,11 +3,11 @@
 import { useAuth } from '@/components/auth/AuthProvider'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useHashNavigation } from '@/components/Router'
 
 export default function LoginPage() {
   const { user, loading, isAuthenticated } = useAuth()
-  const router = useRouter()
+  const router = useHashNavigation()
 
   useEffect(() => {
     if (isAuthenticated && user && !loading) {

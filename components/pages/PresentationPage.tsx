@@ -9,13 +9,13 @@ import {
   useCallback,
 } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useHashSearchParams } from "@/components/Router";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { usePageArtifacts } from "@/hooks/usePageArtifacts";
-import { useRouter } from "next/navigation";
+import { useHashNavigation } from "@/components/Router";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
 import type { Project, Folder } from "@/types";
@@ -39,9 +39,9 @@ async function fetchProject(shareToken: string): Promise<Project | null> {
 }
 
 function PresentationPageContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useHashSearchParams();
   const shareToken = searchParams.get("token") || "";
-  const router = useRouter();
+  const router = useHashNavigation();
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);

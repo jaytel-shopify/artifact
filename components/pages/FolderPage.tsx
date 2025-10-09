@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense, use, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useHashSearchParams } from "@/components/Router";
+import { useHashNavigation } from "@/components/Router";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   ContextMenu,
@@ -50,9 +51,9 @@ import {
 import { updateProject, deleteProject as deleteProjectDB, getArtifactsByProject } from "@/lib/quick-db";
 
 function FolderPageContent() {
-  const searchParams = useSearchParams();
+  const searchParams = useHashSearchParams();
   const folderId = searchParams.get("id") || "";
-  const router = useRouter();
+  const router = useHashNavigation();
   const { user } = useAuth();
 
   const [folder, setFolder] = useState<Folder | null>(null);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useHashNavigation, useHashSearchParams } from "@/components/Router";
 import { useEffect, useRef, Suspense } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -10,8 +10,8 @@ import { customAlphabet } from "nanoid";
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 12);
 
 function NewProjectContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const router = useHashNavigation();
+  const searchParams = useHashSearchParams();
   const { user } = useAuth();
   const hasCreatedRef = useRef(false);
   
