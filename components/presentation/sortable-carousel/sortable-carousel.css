@@ -13,7 +13,7 @@
   overflow-y: visible;
   max-width: 100%;
   /* Scroll snapping */
-  scroll-snap-type: x proximity;
+  scroll-snap-type: x mandatory;
   scroll-padding-left: 1rem;
   scroll-behavior: smooth;
   /* Better scrollbar styling */
@@ -248,6 +248,41 @@
   font-size: 0.75rem;
   user-select: none;
   animation: fadeIn 1000ms ease;
+}
+
+/* Fit mode: when columns = 1 and fit mode is enabled */
+.carousel-horizontal.fit-mode .carousel-item-wrapper.fit-mode {
+  height: calc(100vh - 200px) !important;
+  aspect-ratio: auto !important;
+}
+
+.carousel-horizontal.fit-mode .carousel-item-wrapper.fit-mode .carousel-item {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+}
+
+/* Content sizing for images and videos - auto size to fit viewport */
+.carousel-horizontal.fit-mode
+  .carousel-item-wrapper.fit-mode
+  .carousel-item-content {
+  width: auto !important;
+  height: auto !important;
+  max-height: 100% !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+}
+
+/* Iframe containers need full size + flexbox centering */
+.carousel-horizontal.fit-mode
+  .carousel-item-wrapper.fit-mode
+  .carousel-item-content:has(iframe) {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 @keyframes fadeIn {

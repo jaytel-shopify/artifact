@@ -15,6 +15,7 @@ interface CarouselItemContentProps {
     loop?: boolean;
     muted?: boolean;
   };
+  fitMode?: boolean;
 }
 
 export function CarouselItemContent({
@@ -25,6 +26,7 @@ export function CarouselItemContent({
   height,
   isDragging = false,
   metadata,
+  fitMode = false,
 }: CarouselItemContentProps) {
   switch (type) {
     case "image":
@@ -46,6 +48,7 @@ export function CarouselItemContent({
           width={width}
           height={height}
           isDragging={isDragging}
+          fitMode={fitMode}
         />
       );
     default:

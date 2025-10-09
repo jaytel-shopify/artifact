@@ -33,6 +33,7 @@ import "./sortable-carousel.css";
 interface Props {
   layout: Layout;
   columns?: number;
+  fitMode?: boolean;
 }
 
 const measuring: MeasuringConfiguration = {
@@ -69,7 +70,11 @@ function createRange<T = number>(
   return [...new Array(length)].map((_, index) => initializer(index));
 }
 
-export function SortableCarousel({ layout, columns = 3 }: Props) {
+export function SortableCarousel({
+  layout,
+  columns = 3,
+  fitMode = false,
+}: Props) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [isSettling, setIsSettling] = useState(false);
   const containerRef = useRef<HTMLUListElement>(null);
@@ -103,6 +108,9 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
     `${((rem * 16) / window.innerWidth) * 100}vw`;
   const columnWidth = `calc((100vw - ${remToVw(totalSpacingRem)}) / ${columns})`;
 
+  // Enable fit mode when columns is 1 and fitMode is true
+  const isFitMode = columns === 1 && fitMode;
+
   return (
     <DndContext
       onDragStart={handleDragStart}
@@ -115,7 +123,7 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
       <SortableContext items={items}>
         <ul
           ref={containerRef}
-          className={`carousel carousel-${layout} ${isSettling ? "settling" : ""}`}
+          className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""}`}
         >
           {items.map((id, index) => (
             <SortableCarouselItem
@@ -127,6 +135,7 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
               metadata={itemMetadata[id.toString()]}
               columnWidth={columnWidth}
               isAnyDragging={activeId !== null}
+              fitMode={isFitMode}
               onDelete={() => {
                 console.log("Delete item:", id);
                 setItems((items) => items.filter((itemId) => itemId !== id));
@@ -216,11 +225,13 @@ function SortableCarouselItem({
   activeIndex,
   columnWidth,
   isAnyDragging,
+  fitMode,
   ...props
 }: CarouselItemProps & {
   activeIndex: number;
   columnWidth?: string;
   isAnyDragging?: boolean;
+  fitMode?: boolean;
 }) {
   const {
     attributes,
@@ -244,6 +255,7 @@ function SortableCarouselItem({
       id={id}
       active={isDragging}
       isAnyDragging={isAnyDragging}
+      fitMode={fitMode}
       style={{
         transition,
         transform: isSorting ? undefined : CSS.Translate.toString(transform),

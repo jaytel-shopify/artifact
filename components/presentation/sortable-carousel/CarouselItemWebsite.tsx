@@ -5,6 +5,7 @@ interface CarouselItemWebsiteProps {
   width?: number;
   height?: number;
   isDragging?: boolean;
+  fitMode?: boolean;
 }
 
 export function CarouselItemWebsite({
@@ -12,6 +13,7 @@ export function CarouselItemWebsite({
   width = 1920,
   height = 1080,
   isDragging = false,
+  fitMode = false,
 }: CarouselItemWebsiteProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -22,10 +24,15 @@ export function CarouselItemWebsite({
         const containerWidth = containerRef.current.offsetWidth;
         const containerHeight = containerRef.current.offsetHeight;
 
-        // Calculate scale and add small buffer to prevent white borders
+        // Calculate scale
         const scaleX = containerWidth / width;
         const scaleY = containerHeight / height;
-        const newScale = Math.max(scaleX, scaleY) * 1.01; // 1% buffer
+
+        // In fit mode, use Math.min to "contain" (fit within bounds)
+        // In normal mode, use Math.max to "cover" (fill and crop)
+        const newScale = fitMode
+          ? Math.min(scaleX, scaleY)
+          : Math.max(scaleX, scaleY) * 1.01; // 1% buffer for cover mode
 
         setScale(newScale);
       }
@@ -49,7 +56,7 @@ export function CarouselItemWebsite({
       resizeObserver?.disconnect();
       clearTimeout(timer);
     };
-  }, [width, height]);
+  }, [width, height, fitMode]);
 
   return (
     <div
@@ -67,7 +74,7 @@ export function CarouselItemWebsite({
         style={{
           border: 0,
           transform: `scale(${scale})`,
-          transformOrigin: "top left",
+          transformOrigin: fitMode ? "center center" : "top left",
           pointerEvents: isDragging ? "none" : "auto",
         }}
         allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"

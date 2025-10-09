@@ -60,6 +60,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   onDelete?: () => void;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
+  fitMode?: boolean;
 }
 
 // Mock content from your data (images and videos) with original dimensions
@@ -143,6 +144,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onDelete,
       isReadOnly = false,
       isAnyDragging = false,
+      fitMode = false,
       ...props
     },
     ref
@@ -171,6 +173,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         ${insertPosition === Position.Before ? "insert-before" : ""}
         ${insertPosition === Position.After ? "insert-after" : ""}
         ${layout === Layout.Vertical ? "vertical" : ""}
+        ${fitMode ? "fit-mode" : ""}
       `}
         style={{
           ...style,
@@ -212,6 +215,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             height={contentHeight}
             isDragging={isAnyDragging}
             metadata={metadata}
+            fitMode={fitMode}
           />
         </div>
       </li>
