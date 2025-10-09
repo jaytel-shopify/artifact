@@ -10,21 +10,15 @@ interface PageTransitionProps {
 
 /**
  * PageTransition
- * 
+ *
  * Simple, minimal fade transition for page content.
  * Only animates once content is loaded - never delays user experience.
  * Uses simple ease-out for smooth, professional feel.
  */
-export default function PageTransition({ children, isLoading = false }: PageTransitionProps) {
-  const [shouldRender, setShouldRender] = useState(false);
-
-  useEffect(() => {
-    // Only show content once it's loaded
-    if (!isLoading) {
-      setShouldRender(true);
-    }
-  }, [isLoading]);
-
+export default function PageTransition({
+  children,
+  isLoading = false,
+}: PageTransitionProps) {
   // Check for reduced motion preference
   const prefersReducedMotion =
     typeof window !== "undefined" &&
@@ -38,7 +32,7 @@ export default function PageTransition({ children, isLoading = false }: PageTran
   return (
     <motion.div
       initial={{ opacity: 0 }}
-      animate={{ opacity: shouldRender ? 1 : 0 }}
+      animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{
         duration: prefersReducedMotion ? 0 : 0.5,
@@ -50,4 +44,3 @@ export default function PageTransition({ children, isLoading = false }: PageTran
     </motion.div>
   );
 }
-

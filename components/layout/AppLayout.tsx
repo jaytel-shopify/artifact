@@ -1,197 +1,71 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
 import AppHeader from "./AppHeader";
 import PageNavigationSidebar from "./PageNavigationSidebar";
-import { Page } from "@/types";
+import { useAppShell } from "./AppShellProvider";
 
 interface AppLayoutProps {
   children: ReactNode;
-  
-  // View mode
-  mode: 'homepage' | 'canvas' | 'folder';
-  
-  // Project-specific props (for canvas mode)
-  projectId?: string;
-  projectName?: string;
-  shareToken?: string;
-  creatorEmail?: string;
-  isCreator?: boolean;
-  isCollaborator?: boolean;
-  isReadOnly?: boolean;
-  currentFolderId?: string | null;
-  folders?: any[];
-  onProjectNameUpdate?: (name: string) => void;
-  onMoveToFolder?: (folderId: string) => void;
-  onRemoveFromFolder?: () => void;
-  onArtifactAdded?: () => void;
-  
-  // Folder-specific props (for folder mode)
-  folderId?: string;
-  folderName?: string;
-  onFolderNameUpdate?: (name: string) => void;
-  onFolderShare?: () => void;
-  onFolderRename?: () => void;
-  onFolderDelete?: () => void;
-  onNewProject?: () => void;
-  
-  // Column controls
-  columns?: number;
-  onColumnsChange?: (columns: number) => void;
-  showColumnControls?: boolean;
-  fitMode?: boolean;
-  onFitModeChange?: (fit: boolean) => void;
-  
-  // Page management (canvas mode)
-  pages?: Page[];
-  currentPageId?: string;
-  onPageSelect?: (pageId: string) => void;
-  onPageRename?: (pageId: string, newName: string) => Promise<void>;
-  onPageCreate?: () => void;
-  onPageDelete?: (pageId: string) => void;
-  
-  // Navigation
-  onBackToHome?: () => void;
 }
 
-export default function AppLayout({
-  children,
-  mode,
-  projectId,
-  projectName,
-  shareToken,
-  creatorEmail,
-  isCreator = false,
-  isCollaborator = false,
-  isReadOnly = false,
-  currentFolderId,
-  folders = [],
-  onProjectNameUpdate,
-  onMoveToFolder,
-  onRemoveFromFolder,
-  onArtifactAdded,
-  folderId,
-  folderName,
-  onFolderNameUpdate,
-  onFolderShare,
-  onFolderRename,
-  onFolderDelete,
-  onNewProject,
-  columns,
-  onColumnsChange,
-  showColumnControls,
-  fitMode,
-  onFitModeChange,
-  pages,
-  currentPageId,
-  onPageSelect,
-  onPageRename,
-  onPageCreate,
-  onPageDelete,
-  onBackToHome
-}: AppLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+export default function AppLayout({ children }: AppLayoutProps) {
+  const { config, sidebarOpen, setSidebarOpen } = useAppShell();
+  const mode = config.mode ?? "homepage";
+  const pageSidebar = config.pageSidebar;
+  const isCanvasMode = mode === "canvas";
 
-  // Load sidebar state from localStorage
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem('sidebar_open');
-    if (stored !== null) {
-      setSidebarOpen(JSON.parse(stored));
+    if (!isCanvasMode && sidebarOpen) {
+      setSidebarOpen(false);
     }
-    setHydrated(true);
-  }, []);
-
-  // Persist sidebar state
-  useEffect(() => {
-    if (!hydrated) return;
-    window.localStorage.setItem('sidebar_open', JSON.stringify(sidebarOpen));
-  }, [sidebarOpen, hydrated]);
-
-  const handleToggleSidebar = () => {
-    setSidebarOpen(prev => !prev);
-  };
+  }, [isCanvasMode, sidebarOpen, setSidebarOpen]);
 
   return (
-    <div 
+    <div
       className="h-screen flex flex-col bg-[var(--color-background-primary)] text-[var(--color-text-primary)]"
-      style={{ fontFamily: 'var(--font-family-primary)' }}
+      style={{ fontFamily: "var(--font-family-primary)" }}
     >
-      {/* Header */}
-      <AppHeader
-        mode={mode}
-        projectId={projectId}
-        projectName={projectName}
-        shareToken={shareToken}
-        creatorEmail={creatorEmail}
-        isCreator={isCreator}
-        isCollaborator={isCollaborator}
-        isReadOnly={isReadOnly}
-        currentFolderId={currentFolderId}
-        folders={folders}
-        folderId={folderId}
-        folderName={folderName}
-        onBackToHome={onBackToHome}
-        onToggleSidebar={mode === 'canvas' ? handleToggleSidebar : undefined}
-        sidebarOpen={sidebarOpen}
-        onProjectNameUpdate={onProjectNameUpdate}
-        onMoveToFolder={onMoveToFolder}
-        onRemoveFromFolder={onRemoveFromFolder}
-        onArtifactAdded={onArtifactAdded}
-        onFolderNameUpdate={onFolderNameUpdate}
-        onFolderShare={onFolderShare}
-        onFolderRename={onFolderRename}
-        onFolderDelete={onFolderDelete}
-        onNewProject={onNewProject}
-        currentPageId={currentPageId}
-        columns={columns}
-        onColumnsChange={onColumnsChange}
-        showColumnControls={showColumnControls}
-        fitMode={fitMode}
-        onFitModeChange={onFitModeChange}
-      />
+      <AppHeader />
 
-      {/* Main Content Area */}
       <div className="flex flex-1 min-h-0 relative">
-        {/* Mobile backdrop overlay */}
-        {mode === 'canvas' && sidebarOpen && (
-          <div 
+        {isCanvasMode && sidebarOpen && (
+          <div
             className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
-            style={{ animationTimingFunction: 'var(--spring-elegant-easing-light)' }}
+            style={{
+              animationTimingFunction: "var(--spring-elegant-easing-light)",
+            }}
             onClick={() => setSidebarOpen(false)}
           />
         )}
-        
-        {/* Sidebar (Canvas mode only) - Always rendered for smooth animation */}
-        {mode === 'canvas' && (
-          <div 
+
+        {isCanvasMode && (
+          <div
             className={`absolute top-0 left-0 h-full z-10 ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
-            style={{ 
-              transition: 'transform 400ms var(--spring-elegant-easing-light)'
+            style={{
+              transition: "transform 400ms var(--spring-elegant-easing-light)",
             }}
           >
             <PageNavigationSidebar
-              isOpen={true}
-              pages={pages || []}
-              currentPageId={currentPageId}
-              onPageSelect={onPageSelect}
-              onPageRename={onPageRename}
-              onPageCreate={onPageCreate}
-              onPageDelete={onPageDelete}
-              isReadOnly={isReadOnly}
+              pages={pageSidebar?.pages || []}
+              currentPageId={pageSidebar?.currentPageId}
+              onPageSelect={pageSidebar?.onPageSelect}
+              onPageRename={pageSidebar?.onPageRename}
+              onPageCreate={pageSidebar?.onPageCreate}
+              onPageDelete={pageSidebar?.onPageDelete}
+              isReadOnly={pageSidebar?.isReadOnly}
             />
           </div>
         )}
 
-        {/* Main Content */}
-        <main 
+        <main
           className="flex-1 min-w-0"
           style={{
-            marginLeft: mode === 'canvas' && sidebarOpen ? 'var(--sidebar-width)' : '0',
-            transition: 'margin-left 400ms var(--spring-elegant-easing-light)'
+            marginLeft:
+              isCanvasMode && sidebarOpen ? "var(--sidebar-width)" : "0",
+            transition: "margin-left 400ms var(--spring-elegant-easing-light)",
           }}
         >
           {children}

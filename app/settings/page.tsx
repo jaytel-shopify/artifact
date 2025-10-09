@@ -2,18 +2,38 @@
 
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import { useAppShellConfig } from "@/components/layout/AppShellProvider";
 
 export default function SettingsPage() {
+  const router = useRouter();
+
+  useAppShellConfig(
+    () => ({
+      mode: "homepage",
+      navigation: {
+        onBackToHome: () => router.back(),
+      },
+    }),
+    [router]
+  );
+
   return (
     <main className="min-h-screen bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
       <div className="max-w-4xl mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -59,9 +79,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">
-                Version: 0.1.0
-              </p>
+              <p className="text-sm text-muted-foreground">Version: 0.1.0</p>
             </CardContent>
           </Card>
         </div>

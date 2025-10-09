@@ -12,8 +12,7 @@ import { Page } from "@/types";
 import { toast } from "sonner";
 
 interface PageNavigationSidebarProps {
-  isOpen: boolean;
-  pages: Page[];
+  pages?: Page[];
   currentPageId?: string;
   onPageSelect?: (pageId: string) => void;
   onPageRename?: (pageId: string, newName: string) => Promise<void>;
@@ -23,8 +22,7 @@ interface PageNavigationSidebarProps {
 }
 
 export default function PageNavigationSidebar({
-  isOpen,
-  pages,
+  pages = [],
   currentPageId,
   onPageSelect,
   onPageRename,
@@ -33,7 +31,7 @@ export default function PageNavigationSidebar({
   isReadOnly = false,
 }: PageNavigationSidebarProps) {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
+  const [editingName, setEditingName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
   const handlePageRename = (page: Page) => {
@@ -43,16 +41,16 @@ export default function PageNavigationSidebar({
 
   const handleNameSave = async (pageId: string) => {
     if (!editingName.trim() || !onPageRename) return;
-    
+
     setIsRenaming(true);
     try {
       await onPageRename(pageId, editingName.trim());
       setEditingPageId(null);
-      setEditingName('');
+      setEditingName("");
       toast.success("Page renamed successfully");
     } catch (error) {
       toast.error("Failed to rename page. Please try again.");
-      console.error('Failed to rename page:', error);
+      console.error("Failed to rename page:", error);
     } finally {
       setIsRenaming(false);
     }
@@ -60,7 +58,7 @@ export default function PageNavigationSidebar({
 
   const handleNameCancel = () => {
     setEditingPageId(null);
-    setEditingName('');
+    setEditingName("");
   };
 
   const handleDeletePage = (pageId: string) => {
@@ -69,21 +67,24 @@ export default function PageNavigationSidebar({
       toast.error("Cannot delete the last page");
       return;
     }
-    
+
     onPageDelete?.(pageId);
     toast.success("Page deleted successfully");
   };
 
   return (
-    <aside 
+    <aside
       className="bg-[var(--color-background-primary)] border-r border-[var(--color-border-primary)] h-full flex-shrink-0"
-      style={{ width: 'var(--sidebar-width)' }}
+      style={{ width: "var(--sidebar-width)" }}
     >
       <div className="flex flex-col h-full p-[var(--spacing-2xl)]">
         {/* Pages List */}
         <div className="flex-1 space-y-0 overflow-y-auto">
           {pages.length === 0 ? (
-            <div className="text-[var(--color-text-secondary)] text-center py-[var(--spacing-xl)]" style={{ fontSize: 'var(--font-size-sm)' }}>
+            <div
+              className="text-[var(--color-text-secondary)] text-center py-[var(--spacing-xl)]"
+              style={{ fontSize: "var(--font-size-sm)" }}
+            >
               No pages yet
             </div>
           ) : (
@@ -97,11 +98,11 @@ export default function PageNavigationSidebar({
                       onChange={(e) => setEditingName(e.target.value)}
                       onBlur={() => !isRenaming && handleNameSave(page.id)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleNameSave(page.id);
-                        if (e.key === 'Escape') handleNameCancel();
+                        if (e.key === "Enter") handleNameSave(page.id);
+                        if (e.key === "Escape") handleNameCancel();
                       }}
                       className="flex-1 bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] border-[var(--color-border-secondary)] focus:border-[var(--color-accent-primary)] focus:ring-[var(--color-accent-primary)]/20"
-                      style={{ fontSize: 'var(--font-size-sm)' }}
+                      style={{ fontSize: "var(--font-size-sm)" }}
                       disabled={isRenaming}
                       autoFocus
                     />
@@ -110,15 +111,15 @@ export default function PageNavigationSidebar({
                   // Read-only: No context menu, just clickable page
                   <div
                     className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
-                      currentPageId === page.id 
-                        ? 'bg-[var(--color-background-tertiary)]' 
-                        : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+                      currentPageId === page.id
+                        ? "bg-[var(--color-background-tertiary)]"
+                        : "hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100"
                     }`}
                     onClick={() => onPageSelect?.(page.id)}
                   >
-                    <span 
+                    <span
                       className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
-                      style={{ fontSize: 'var(--font-size-sm)' }}
+                      style={{ fontSize: "var(--font-size-sm)" }}
                     >
                       {page.name}
                     </span>
@@ -128,15 +129,15 @@ export default function PageNavigationSidebar({
                     <ContextMenuTrigger asChild>
                       <div
                         className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
-                          currentPageId === page.id 
-                            ? 'bg-[var(--color-background-tertiary)]' 
-                            : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+                          currentPageId === page.id
+                            ? "bg-[var(--color-background-tertiary)]"
+                            : "hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100"
                         }`}
                         onClick={() => onPageSelect?.(page.id)}
                       >
-                        <span 
+                        <span
                           className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
-                          style={{ fontSize: 'var(--font-size-sm)' }}
+                          style={{ fontSize: "var(--font-size-sm)" }}
                           onDoubleClick={(e) => {
                             e.stopPropagation();
                             handlePageRename(page);
@@ -151,7 +152,7 @@ export default function PageNavigationSidebar({
                         Rename
                       </ContextMenuItem>
                       {pages.length > 1 && (
-                        <ContextMenuItem 
+                        <ContextMenuItem
                           variant="destructive"
                           onClick={() => handleDeletePage(page.id)}
                         >
@@ -172,7 +173,7 @@ export default function PageNavigationSidebar({
             <button
               onClick={onPageCreate}
               className="flex items-center gap-[var(--spacing-sm)] w-full p-[var(--spacing-sm)] rounded-[var(--radius-md)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-background-secondary)] transition-all cursor-pointer"
-              style={{ fontSize: 'var(--font-size-sm)' }}
+              style={{ fontSize: "var(--font-size-sm)" }}
             >
               <span className="text-lg">+</span>
               <span>New Page</span>

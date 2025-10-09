@@ -11,7 +11,6 @@ import {
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
-import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { usePageArtifacts } from "@/hooks/usePageArtifacts";
@@ -26,6 +25,7 @@ import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
 import PageTransition from "@/components/transitions/PageTransition";
+import { useAppShellConfig } from "@/components/layout/AppShellProvider";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -136,7 +136,6 @@ function PresentationPageContent() {
   const isCreator = permissions.isCreator;
   const isCollaborator = permissions.isCollaborator;
 
-  // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage } = usePages(project?.id);
   const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
@@ -416,6 +415,73 @@ function PresentationPageContent() {
     }
   }, [router, project]);
 
+  useAppShellConfig(
+    () => ({
+      mode: "canvas",
+      navigation: {
+        onBackToHome: handleBackToHome,
+      },
+      project:
+        project && project.share_token
+          ? {
+              id: project.id,
+              name: project.name,
+              shareToken: project.share_token,
+              creatorEmail: project.creator_id,
+              isCreator,
+              isCollaborator,
+              isReadOnly,
+              currentFolderId: project.folder_id ?? null,
+              folders: userFolders,
+              onProjectNameUpdate: canEdit
+                ? handleProjectNameUpdate
+                : undefined,
+              onMoveToFolder: canEdit ? handleMoveToFolder : undefined,
+              onRemoveFromFolder: canEdit ? handleRemoveFromFolder : undefined,
+              onArtifactAdded: canEdit ? refetchArtifacts : undefined,
+            }
+          : undefined,
+      columnControls: {
+        columns,
+        onColumnsChange: setColumns,
+        showColumnControls: true,
+        fitMode,
+        onFitModeChange: setFitMode,
+      },
+      pageSidebar: {
+        pages,
+        currentPageId: currentPageId ?? undefined,
+        onPageSelect: selectPage,
+        onPageRename: canEdit ? handlePageRename : undefined,
+        onPageCreate: canEdit ? handlePageCreate : undefined,
+        onPageDelete: canEdit ? handlePageDelete : undefined,
+        isReadOnly,
+      },
+      folder: undefined,
+    }),
+    [
+      project,
+      isCreator,
+      isCollaborator,
+      isReadOnly,
+      userFolders,
+      canEdit,
+      refetchArtifacts,
+      columns,
+      fitMode,
+      pages,
+      currentPageId,
+      selectPage,
+      handlePageRename,
+      handlePageCreate,
+      handlePageDelete,
+      handleBackToHome,
+      handleProjectNameUpdate,
+      handleMoveToFolder,
+      handleRemoveFromFolder,
+    ]
+  );
+
   const isUploading = uploadState.uploading || isPending;
   const isPageLoading = !project || pages.length === 0;
 
@@ -426,125 +492,96 @@ function PresentationPageContent() {
 
   return (
     <PageTransition isLoading={false}>
-      <AppLayout
-        mode="canvas"
-        projectId={project.id}
-        projectName={project.name}
-        shareToken={project.share_token}
-        creatorEmail={project.creator_id}
-        isCreator={isCreator}
-        isCollaborator={isCollaborator}
-        isReadOnly={isReadOnly}
-        currentFolderId={project.folder_id}
-        folders={userFolders}
-        onProjectNameUpdate={canEdit ? handleProjectNameUpdate : undefined}
-        onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
-        onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
-        onArtifactAdded={canEdit ? refetchArtifacts : undefined}
-        columns={columns}
-        onColumnsChange={setColumns}
-        showColumnControls={true}
-        fitMode={fitMode}
-        onFitModeChange={setFitMode}
-        pages={pages}
-        currentPageId={currentPageId || undefined}
-        onPageSelect={selectPage}
-        onPageRename={handlePageRename}
-        onPageCreate={canEdit ? handlePageCreate : undefined}
-        onPageDelete={canEdit ? handlePageDelete : undefined}
-        onBackToHome={handleBackToHome}
-      >
-        <div className="h-full relative">
-          {/* Dropzone for file uploads (only for creators/editors) */}
-          {project?.id && currentPageId && canEdit && (
-            <DropzoneUploader
-              onFiles={handleFileUpload}
-              onUrl={handleUrlAdd}
-              onDragStateChange={setDragging}
-            />
-          )}
+      <div className="h-full relative">
+        {/* Dropzone for file uploads (only for creators/editors) */}
+        {project?.id && currentPageId && canEdit && (
+          <DropzoneUploader
+            onFiles={handleFileUpload}
+            onUrl={handleUrlAdd}
+            onDragStateChange={setDragging}
+          />
+        )}
 
-          {/* Loading/upload overlay */}
-          {(dragging || isUploading) && (
-            <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-              <div
-                className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
-                style={{ fontSize: "var(--font-size-sm)" }}
-              >
-                {dragging ? (
-                  <div className="text-center">
-                    <div className="font-medium">Drop to upload</div>
+        {/* Loading/upload overlay */}
+        {(dragging || isUploading) && (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+            <div
+              className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
+              style={{ fontSize: "var(--font-size-sm)" }}
+            >
+              {dragging ? (
+                <div className="text-center">
+                  <div className="font-medium">Drop to upload</div>
+                </div>
+              ) : (
+                <div className="text-center space-y-3 min-w-[200px]">
+                  <div className="font-medium">
+                    Uploading
+                    {uploadState.totalFiles > 1
+                      ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
+                      : ""}
+                    ...
                   </div>
-                ) : (
-                  <div className="text-center space-y-3 min-w-[200px]">
-                    <div className="font-medium">
-                      Uploading
-                      {uploadState.totalFiles > 1
-                        ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
-                        : ""}
-                      ...
-                    </div>
-                    {uploadState.uploading && (
-                      <div className="space-y-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
-                            style={{ width: `${uploadState.currentProgress}%` }}
-                          />
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          {uploadState.currentProgress}%
-                        </div>
+                  {uploadState.uploading && (
+                    <div className="space-y-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                          style={{ width: `${uploadState.currentProgress}%` }}
+                        />
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <div className="text-xs text-gray-600">
+                        {uploadState.currentProgress}%
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-
-          {/* Canvas */}
-          <div className="h-full pt-[var(--spacing-md)]">
-            <Canvas
-              columns={columns}
-              fitMode={fitMode}
-              artifacts={artifacts}
-              onReorder={async (reorderedArtifacts) => {
-                try {
-                  await reorderArtifacts(reorderedArtifacts);
-                } catch (error) {
-                  toast.error("Failed to reorder artifacts. Please try again.");
-                  console.error("Failed to reorder artifacts:", error);
-                }
-              }}
-              onUpdateArtifact={async (artifactId, updates) => {
-                await updateArtifact(artifactId, updates);
-              }}
-              onDeleteArtifact={async (artifactId) => {
-                await deleteArtifact(artifactId);
-              }}
-              isReadOnly={isReadOnly}
-            />
           </div>
-        </div>
+        )}
 
-        {/* Dev Debug Panel - Press '/' to toggle */}
-        <DevDebugPanel
-          isReadOnly={debugReadOnly}
-          onToggleReadOnly={setDebugReadOnly}
-          projectInfo={
-            project
-              ? {
-                  id: project.id,
-                  name: project.name,
-                  creator_id: project.creator_id,
-                  share_token: project.share_token,
-                }
-              : undefined
-          }
-          userEmail={user?.email}
-        />
-      </AppLayout>
+        {/* Canvas */}
+        <div className="h-full pt-[var(--spacing-md)]">
+          <Canvas
+            columns={columns}
+            fitMode={fitMode}
+            artifacts={artifacts}
+            onReorder={async (reorderedArtifacts) => {
+              try {
+                await reorderArtifacts(reorderedArtifacts);
+              } catch (error) {
+                toast.error("Failed to reorder artifacts. Please try again.");
+                console.error("Failed to reorder artifacts:", error);
+              }
+            }}
+            onUpdateArtifact={async (artifactId, updates) => {
+              await updateArtifact(artifactId, updates);
+            }}
+            onDeleteArtifact={async (artifactId) => {
+              await deleteArtifact(artifactId);
+            }}
+            isReadOnly={isReadOnly}
+          />
+        </div>
+      </div>
+
+      {/* Dev Debug Panel - Press '/' to toggle */}
+      <DevDebugPanel
+        isReadOnly={debugReadOnly}
+        onToggleReadOnly={setDebugReadOnly}
+        projectInfo={
+          project
+            ? {
+                id: project.id,
+                name: project.name,
+                creator_id: project.creator_id,
+                share_token: project.share_token,
+              }
+            : undefined
+        }
+        userEmail={user?.email}
+      />
     </PageTransition>
   );
 }
