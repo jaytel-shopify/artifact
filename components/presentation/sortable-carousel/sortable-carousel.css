@@ -164,35 +164,6 @@
   box-shadow: 0 0 0 2px #4c9ffe;
 }
 
-.carousel-item-remove {
-  display: flex;
-  visibility: hidden;
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  align-items: center;
-  justify-content: center;
-  background-color: rgba(0, 0, 0, 0.3);
-  border-radius: 50%;
-  appearance: none;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  font-size: 16px;
-  color: #fff;
-}
-
-.carousel-item-remove:hover {
-  background-color: rgba(0, 0, 0, 0.5);
-}
-
-.carousel-item-remove:active {
-  background-color: rgba(255, 70, 70, 0.9);
-}
-
 .carousel-item-header {
   display: flex;
   align-items: center;

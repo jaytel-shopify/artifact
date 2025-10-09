@@ -3,7 +3,22 @@ import type {
   UniqueIdentifier,
   DraggableSyntheticListeners,
 } from "@dnd-kit/core";
-import { GripVertical } from "lucide-react";
+import {
+  GripVertical,
+  Eye,
+  EyeOff,
+  RotateCcw,
+  Volume2,
+  VolumeX,
+  Check,
+} from "lucide-react";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { CarouselItemContent } from "./CarouselItemContent";
 
 export enum Position {
   Before = -1,
@@ -32,6 +47,18 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   dragHandleProps?: {
     ref: (element: HTMLElement | null) => void;
   } & DraggableSyntheticListeners;
+  metadata?: {
+    hideUI?: boolean;
+    loop?: boolean;
+    muted?: boolean;
+  };
+  onUpdateMetadata?: (updates: {
+    hideUI?: boolean;
+    loop?: boolean;
+    muted?: boolean;
+  }) => void;
+  onDelete?: () => void;
+  isReadOnly?: boolean;
 }
 
 // Mock content from your data (images and videos) with original dimensions
@@ -90,6 +117,10 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       height: propHeight,
       name: propName,
       dragHandleProps,
+      metadata,
+      onUpdateMetadata,
+      onDelete,
+      isReadOnly = false,
       ...props
     },
     ref
@@ -112,7 +143,10 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
           ? (mockItem.width / mockItem.height) * CAROUSEL_HEIGHT
           : 150; // fallback to default width
 
-    return (
+    const isVideo = type === "video";
+    const isUrl = type === "url";
+
+    const contentElement = (
       <li
         className={`
         carousel-item-wrapper
@@ -134,36 +168,85 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
           </div>
         )}
         <div className="carousel-item" data-id={id.toString()} {...props}>
-          {type === "image" && (
-            <img
-              src={url}
-              alt={`Item ${index}`}
-              className="carousel-item-content"
-              draggable={false}
-            />
-          )}
-          {type === "video" && (
-            <video
-              src={url}
-              className="carousel-item-content"
-              autoPlay
-              muted
-              loop
-              playsInline
-            />
-          )}
-          {type === "url" && (
-            <div className="carousel-item-content carousel-item-url-preview">
-              <span>🌐</span>
-            </div>
-          )}
+          <CarouselItemContent
+            type={type}
+            url={url}
+            alt={`Item ${index}`}
+            metadata={metadata}
+          />
         </div>
-        {!active && onRemove ? (
-          <button className="carousel-item-remove" onClick={onRemove}>
-            ×
-          </button>
-        ) : null}
       </li>
+    );
+
+    // If read-only or no handlers, just return the content without context menu
+    if (isReadOnly || (!onDelete && !onUpdateMetadata)) {
+      return contentElement;
+    }
+
+    // Wrap with context menu for interactive items (not URLs)
+    if (isUrl) {
+      return contentElement;
+    }
+
+    return (
+      <ContextMenu>
+        <ContextMenuTrigger asChild>{contentElement}</ContextMenuTrigger>
+        <ContextMenuContent>
+          {isVideo && onUpdateMetadata && (
+            <>
+              <ContextMenuItem
+                onClick={() => onUpdateMetadata({ hideUI: !metadata?.hideUI })}
+                className="flex items-center gap-2"
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {!metadata?.hideUI ? <Check className="w-3 h-3" /> : null}
+                </div>
+                {!metadata?.hideUI ? (
+                  <Eye className="w-4 h-4" />
+                ) : (
+                  <EyeOff className="w-4 h-4" />
+                )}
+                Show Controls
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={() => onUpdateMetadata({ loop: !metadata?.loop })}
+                className="flex items-center gap-2"
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {metadata?.loop ? <Check className="w-3 h-3" /> : null}
+                </div>
+                <RotateCcw className="w-4 h-4" />
+                Loop Video
+              </ContextMenuItem>
+              <ContextMenuItem
+                onClick={() => {
+                  const currentMuted = metadata?.muted !== false;
+                  onUpdateMetadata({ muted: !currentMuted });
+                }}
+                className="flex items-center gap-2"
+              >
+                <div className="w-4 h-4 flex items-center justify-center">
+                  {metadata?.muted === false ? (
+                    <Check className="w-3 h-3" />
+                  ) : null}
+                </div>
+                {metadata?.muted !== false ? (
+                  <VolumeX className="w-4 h-4" />
+                ) : (
+                  <Volume2 className="w-4 h-4" />
+                )}
+                Audio On
+              </ContextMenuItem>
+              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
+            </>
+          )}
+          {onDelete && (
+            <ContextMenuItem variant="destructive" onClick={onDelete}>
+              Delete
+            </ContextMenuItem>
+          )}
+        </ContextMenuContent>
+      </ContextMenu>
     );
   }
 );

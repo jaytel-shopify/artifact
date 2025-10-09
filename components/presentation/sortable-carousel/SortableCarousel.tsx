@@ -73,6 +73,9 @@ export function SortableCarousel({ layout }: Props) {
   const [items, setItems] = useState(() =>
     createRange<UniqueIdentifier>(20, (index) => `${index + 1}`)
   );
+  const [itemMetadata, setItemMetadata] = useState<
+    Record<string, { hideUI?: boolean; loop?: boolean; muted?: boolean }>
+  >({});
   const activeIndex = activeId != null ? items.indexOf(activeId) : -1;
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -97,9 +100,23 @@ export function SortableCarousel({ layout }: Props) {
               key={id}
               layout={layout}
               activeIndex={activeIndex}
+              metadata={itemMetadata[id.toString()]}
               onRemove={() =>
                 setItems((items) => items.filter((itemId) => itemId !== id))
               }
+              onDelete={() => {
+                console.log("Delete item:", id);
+                setItems((items) => items.filter((itemId) => itemId !== id));
+              }}
+              onUpdateMetadata={(updates) => {
+                setItemMetadata((prev) => ({
+                  ...prev,
+                  [id.toString()]: {
+                    ...prev[id.toString()],
+                    ...updates,
+                  },
+                }));
+              }}
             />
           ))}
         </ul>
