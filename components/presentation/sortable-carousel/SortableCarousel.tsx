@@ -123,7 +123,13 @@ export function SortableCarousel({
   const activeIndex =
     activeId != null ? itemIds.indexOf(activeId.toString()) : -1;
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before dragging starts
+      },
+      // Only activate on left mouse button (button 0), ignore right-click
+      button: 0,
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -320,7 +326,7 @@ function SortableCarouselItem({
       style={{
         transition,
         transform: isSorting ? undefined : CSS.Translate.toString(transform),
-        // @ts-ignore - CSS custom property
+        // @ts-expect-error - CSS custom property
         "--column-width": columnWidth,
       }}
       insertPosition={
