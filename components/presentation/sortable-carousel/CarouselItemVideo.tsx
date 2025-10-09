@@ -5,6 +5,7 @@ interface CarouselItemVideoProps {
   muted?: boolean;
   loop?: boolean;
   showControls?: boolean;
+  isDragging?: boolean;
 }
 
 export function CarouselItemVideo({
@@ -12,13 +13,14 @@ export function CarouselItemVideo({
   muted = true,
   loop = false,
   showControls = true,
+  isDragging = false,
 }: CarouselItemVideoProps) {
   return (
     <video
       src={url}
       className="carousel-item-content"
       style={{
-        pointerEvents: showControls ? "auto" : "none",
+        pointerEvents: isDragging ? "none" : showControls ? "auto" : "none",
       }}
       autoPlay
       muted={muted}

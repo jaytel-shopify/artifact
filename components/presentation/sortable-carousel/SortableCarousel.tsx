@@ -79,7 +79,11 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
   >({});
   const activeIndex = activeId != null ? items.indexOf(activeId) : -1;
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts
+      },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
@@ -114,6 +118,7 @@ export function SortableCarousel({ layout, columns = 3 }: Props) {
               activeIndex={activeIndex}
               metadata={itemMetadata[id.toString()]}
               columnWidth={columnWidth}
+              isAnyDragging={activeId !== null}
               onDelete={() => {
                 console.log("Delete item:", id);
                 setItems((items) => items.filter((itemId) => itemId !== id));
@@ -192,8 +197,13 @@ function SortableCarouselItem({
   id,
   activeIndex,
   columnWidth,
+  isAnyDragging,
   ...props
-}: CarouselItemProps & { activeIndex: number; columnWidth?: string }) {
+}: CarouselItemProps & {
+  activeIndex: number;
+  columnWidth?: string;
+  isAnyDragging?: boolean;
+}) {
   const {
     attributes,
     listeners,
@@ -215,6 +225,7 @@ function SortableCarouselItem({
       ref={setNodeRef}
       id={id}
       active={isDragging}
+      isAnyDragging={isAnyDragging}
       style={{
         transition,
         transform: isSorting ? undefined : CSS.Translate.toString(transform),

@@ -9,6 +9,7 @@ interface CarouselItemContentProps {
   alt: string;
   width?: number;
   height?: number;
+  isDragging?: boolean;
   metadata?: {
     hideUI?: boolean;
     loop?: boolean;
@@ -22,6 +23,7 @@ export function CarouselItemContent({
   alt,
   width,
   height,
+  isDragging = false,
   metadata,
 }: CarouselItemContentProps) {
   switch (type) {
@@ -34,10 +36,18 @@ export function CarouselItemContent({
           muted={metadata?.muted !== false}
           loop={metadata?.loop || false}
           showControls={!metadata?.hideUI}
+          isDragging={isDragging}
         />
       );
     case "url":
-      return <CarouselItemWebsite url={url} width={width} height={height} />;
+      return (
+        <CarouselItemWebsite
+          url={url}
+          width={width}
+          height={height}
+          isDragging={isDragging}
+        />
+      );
     default:
       return null;
   }

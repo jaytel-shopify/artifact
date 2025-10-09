@@ -4,12 +4,14 @@ interface CarouselItemWebsiteProps {
   url: string;
   width?: number;
   height?: number;
+  isDragging?: boolean;
 }
 
 export function CarouselItemWebsite({
   url,
   width = 1920,
   height = 1080,
+  isDragging = false,
 }: CarouselItemWebsiteProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -55,7 +57,7 @@ export function CarouselItemWebsite({
       className="carousel-item-content"
       style={{
         overflow: "hidden",
-        pointerEvents: "auto",
+        pointerEvents: isDragging ? "none" : "auto",
       }}
     >
       <iframe
@@ -66,7 +68,7 @@ export function CarouselItemWebsite({
           border: 0,
           transform: `scale(${scale})`,
           transformOrigin: "top left",
-          pointerEvents: "auto",
+          pointerEvents: isDragging ? "none" : "auto",
         }}
         allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
         referrerPolicy="no-referrer-when-downgrade"

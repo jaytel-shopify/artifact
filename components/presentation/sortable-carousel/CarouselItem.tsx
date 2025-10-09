@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX,
   Check,
+  ExternalLink,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -58,6 +59,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   }) => void;
   onDelete?: () => void;
   isReadOnly?: boolean;
+  isAnyDragging?: boolean;
 }
 
 // Mock content from your data (images and videos) with original dimensions
@@ -140,6 +142,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onUpdateMetadata,
       onDelete,
       isReadOnly = false,
+      isAnyDragging = false,
       ...props
     },
     ref
@@ -181,8 +184,22 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         {name && (
           <div className="carousel-item-header">
             <div className="carousel-item-title">{name}</div>
-            <div className="carousel-item-drag-handle" {...dragHandleProps}>
-              <GripVertical size={16} />
+            <div className="flex items-center gap-1">
+              {isUrl && (
+                <button
+                  className="carousel-item-external-link"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  }}
+                  title="Open in new tab"
+                >
+                  <ExternalLink size={16} />
+                </button>
+              )}
+              <div className="carousel-item-drag-handle" {...dragHandleProps}>
+                <GripVertical size={16} />
+              </div>
             </div>
           </div>
         )}
@@ -193,6 +210,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             alt={`Item ${index}`}
             width={contentWidth}
             height={contentHeight}
+            isDragging={isAnyDragging}
             metadata={metadata}
           />
         </div>
