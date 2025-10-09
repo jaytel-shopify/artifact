@@ -10,7 +10,7 @@
   grid-auto-flow: column;
   grid-auto-columns: max-content;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: visible;
   max-width: 100%;
   /* Better scrollbar styling */
   scrollbar-width: thin;
@@ -42,8 +42,8 @@
 .carousel-item-wrapper {
   position: relative;
   list-style: none;
-  width: 150px;
-  margin-bottom: 0.5rem;
+  /* Width is set dynamically via inline style based on aspect ratio */
+  margin-bottom: 1.5rem; /* Extra space for page number below */
 }
 
 .carousel-item-wrapper.active .carousel-item {
@@ -51,6 +51,10 @@
 }
 
 .carousel-item-wrapper.active .carousel-item .carousel-item-content {
+  opacity: 0.3;
+}
+
+.carousel-item-wrapper.active .carousel-item-header {
   opacity: 0.3;
 }
 
@@ -71,17 +75,16 @@
   visibility: visible;
 }
 
-.carousel-item-wrapper:not(.active):not(.clone).insert-before
-  .carousel-item::after,
-.carousel-item-wrapper:not(.active):not(.clone).insert-after
-  .carousel-item::after {
+.carousel-item-wrapper:not(.active):not(.clone).insert-before::after,
+.carousel-item-wrapper:not(.active):not(.clone).insert-after::after {
   content: "";
   position: absolute;
   background-color: #4c9ffe;
+  z-index: 10;
 }
 
-.carousel-item-wrapper:not(.vertical).insert-before .carousel-item::after,
-.carousel-item-wrapper:not(.vertical).insert-after .carousel-item::after {
+.carousel-item-wrapper:not(.vertical).insert-before::after,
+.carousel-item-wrapper:not(.vertical).insert-after::after {
   top: 0;
   bottom: 0;
   width: 2px;
@@ -91,7 +94,7 @@
   margin-left: -75px;
 }
 
-.carousel-item-wrapper:not(.vertical).insert-before .carousel-item::after {
+.carousel-item-wrapper:not(.vertical).insert-before::after {
   left: -9px;
 }
 
@@ -99,12 +102,12 @@
   margin-left: 75px;
 }
 
-.carousel-item-wrapper:not(.vertical).insert-after .carousel-item::after {
+.carousel-item-wrapper:not(.vertical).insert-after::after {
   right: -9px;
 }
 
-.carousel-item-wrapper.vertical.insert-before .carousel-item::after,
-.carousel-item-wrapper.vertical.insert-after .carousel-item::after {
+.carousel-item-wrapper.vertical.insert-before::after,
+.carousel-item-wrapper.vertical.insert-after::after {
   left: 0;
   right: 0;
   height: 2px;
@@ -114,7 +117,7 @@
   margin-top: -125px;
 }
 
-.carousel-item-wrapper.vertical.insert-before .carousel-item::after {
+.carousel-item-wrapper.vertical.insert-before::after {
   top: -15px;
 }
 
@@ -122,7 +125,7 @@
   margin-bottom: 125px;
 }
 
-.carousel-item-wrapper.vertical.insert-after .carousel-item::after {
+.carousel-item-wrapper.vertical.insert-after::after {
   bottom: -45px;
 }
 
@@ -137,10 +140,7 @@
     0 0 0 1px rgba(63, 63, 68, 0.05),
     0 1px 3px 0 rgba(34, 33, 81, 0.15);
   outline: none;
-  appearance: none;
   border: none;
-  touch-action: none;
-  cursor: grab;
   overflow: hidden;
 }
 
@@ -193,12 +193,59 @@
   background-color: rgba(255, 70, 70, 0.9);
 }
 
+.carousel-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  animation: fadeIn 1000ms ease;
+}
+
+.carousel-item-title {
+  flex: 1;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.875rem;
+  font-weight: 500;
+  user-select: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.carousel-item-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.4);
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 200ms ease;
+  padding: 2px;
+  border-radius: 3px;
+}
+
+.carousel-item-drag-handle:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.carousel-item-drag-handle:active {
+  cursor: grabbing;
+}
+
+.carousel-item-wrapper:hover .carousel-item-drag-handle {
+  opacity: 1;
+}
+
 .carousel-item-number {
-  display: inline-block;
+  display: block;
   width: 100%;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   text-align: center;
-  color: rgba(0, 0, 0, 0.5);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.75rem;
   user-select: none;
   animation: fadeIn 1000ms ease;
 }

@@ -176,6 +176,7 @@ function SortableCarouselItem({
     setNodeRef,
     transform,
     transition,
+    setActivatorNodeRef,
   } = useSortable({
     id,
     animateLayoutChanges: always,
@@ -199,7 +200,10 @@ function SortableCarouselItem({
       }
       {...props}
       {...attributes}
-      {...listeners}
+      dragHandleProps={{
+        ref: setActivatorNodeRef,
+        ...listeners,
+      }}
     />
   );
 }
