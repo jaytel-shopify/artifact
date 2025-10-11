@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import type { Project, Folder } from "@/types";
 import { getProjectByShareToken } from "@/lib/quick-db";
 import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
+import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
@@ -231,7 +232,7 @@ function PresentationPageContent() {
             upResult.fullUrl,
             file
           );
-          await createArtifact({
+          const artifact = await createArtifact({
             type,
             source_url: upResult.fullUrl, // Use fullUrl for display
             file_path: upResult.url, // Store relative url
@@ -239,6 +240,12 @@ function PresentationPageContent() {
             metadata: defaultMetadata,
           });
 
+          // Generate thumbnail asynchronously for videos (don't await)
+          if (type === "video" && artifact) {
+            generateAndUploadThumbnail(file, artifact.id).catch((err) => {
+              console.error("Thumbnail generation failed:", err);
+            });
+          }
           completedCount++;
           setUploadState((prev) => ({
             ...prev,

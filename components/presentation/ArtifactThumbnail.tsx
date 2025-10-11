@@ -1,23 +1,26 @@
-'use client'
+"use client";
 
-import { Globe, Play, FileText } from 'lucide-react'
-import type { Artifact } from '@/types'
+import { Globe, Play, FileText } from "lucide-react";
+import type { Artifact } from "@/types";
 
 interface ArtifactThumbnailProps {
-  artifact: Artifact
-  className?: string
+  artifact: Artifact;
+  className?: string;
 }
 
-export default function ArtifactThumbnail({ artifact, className = '' }: ArtifactThumbnailProps) {
+export default function ArtifactThumbnail({
+  artifact,
+  className = "",
+}: ArtifactThumbnailProps) {
   const baseClasses = `
     aspect-square rounded-2xl 
     flex items-center justify-center overflow-hidden
     shadow-sm
     ${className}
-  `
+  `;
 
   switch (artifact.type) {
-    case 'image':
+    case "image":
       return (
         <div className={baseClasses}>
           <img
@@ -27,27 +30,42 @@ export default function ArtifactThumbnail({ artifact, className = '' }: Artifact
             loading="lazy"
           />
         </div>
-      )
+      );
 
-    case 'url':
+    case "url":
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-blue-500/20 flex items-center justify-center">
             <Globe className="w-8 h-8 text-blue-400" />
           </div>
         </div>
-      )
+      );
 
-    case 'video':
+    case "video":
+      // Check if thumbnail is available in metadata
+      const thumbnailUrl = (artifact.metadata as any)?.thumbnail_url;
+      if (thumbnailUrl) {
+        return (
+          <div className={baseClasses}>
+            <img
+              src={thumbnailUrl}
+              alt={artifact.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        );
+      }
+      // Fallback to play icon if no thumbnail
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-red-500/20 flex items-center justify-center">
             <Play className="w-8 h-8 text-red-400" />
           </div>
         </div>
-      )
+      );
 
-    case 'figma':
+    case "figma":
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-purple-500/20 flex items-center justify-center">
@@ -56,7 +74,7 @@ export default function ArtifactThumbnail({ artifact, className = '' }: Artifact
             </div>
           </div>
         </div>
-      )
+      );
 
     default:
       return (
@@ -65,6 +83,6 @@ export default function ArtifactThumbnail({ artifact, className = '' }: Artifact
             <div className="w-8 h-8 bg-gray-400 rounded-lg" />
           </div>
         </div>
-      )
+      );
   }
 }

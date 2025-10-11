@@ -124,7 +124,7 @@ function init() {
       source_url: "https://shopify.com",
       file_path: null,
       name: "Shopify Website",
-      position: 4,
+      position: 5,
       metadata: {
         viewport: "laptop",
         width: 1512,
@@ -188,20 +188,14 @@ class Collection {
       items.filter((item) =>
         Object.entries(query).every(([k, v]) => item[k] === v)
       );
-
-    const createQuery: any = () => ({
+    const createQuery = (): any => ({
       find: async () => filter(db[this.name]),
-      limit: (n: number) => {
-        const limitQuery = {
-          find: async () => filter(db[this.name]).slice(0, n),
-          limit: (n2: number) => limitQuery,
-          select: (fields: string[]) => limitQuery,
-        };
-        return limitQuery;
-      },
+      limit: (n: number) => ({
+        find: async () => filter(db[this.name]).slice(0, n),
+        select: (fields: string[]) => createQuery(),
+      }),
       select: (fields: string[]) => createQuery(),
     });
-
     return createQuery();
   }
 
