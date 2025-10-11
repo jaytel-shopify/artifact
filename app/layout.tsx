@@ -44,6 +44,11 @@ export default function RootLayout({
       <head>
         {/* Quick Platform SDK - only works on deployed Quick sites */}
         <script src="/client/quick.js" async />
+        {/* Quicklytics Analytics - only works on deployed Quick sites */}
+        <script
+          src="https://quicklytics.quick.shopify.io/quicklytics.min.js"
+          async
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
