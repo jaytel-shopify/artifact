@@ -73,15 +73,18 @@ export default function EditableArtifactTitle({
     setIsEditing(false);
   }, [title]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleSave();
-    } else if (e.key === "Escape") {
-      e.preventDefault();
-      handleCancel();
-    }
-  }, [handleSave, handleCancel]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        handleSave();
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        handleCancel();
+      }
+    },
+    [handleSave, handleCancel]
+  );
 
   const handleBlur = useCallback(() => {
     handleSave();
@@ -101,12 +104,12 @@ export default function EditableArtifactTitle({
           onBlur={handleBlur}
           disabled={isUpdating}
           placeholder="Untitled"
-          className="h-6 text-xs text-center bg-transparent border-0 focus:bg-white focus:text-gray-800 focus:border-gray-300 px-1 py-0.5 min-w-0 w-full max-w-full"
-          style={{ 
-            fontSize: '14px',
-            lineHeight: '1.2',
-            minWidth: '60px',
-            maxWidth: '440px'
+          className="h-6 text-xs text-center bg-white/10 text-white border border-white/20 focus:border-white/40 focus:bg-white/20 px-1 py-0.5 min-w-0 w-full max-w-full"
+          style={{
+            fontSize: "14px",
+            lineHeight: "1.2",
+            minWidth: "60px",
+            maxWidth: "440px",
           }}
         />
       </div>
@@ -119,18 +122,18 @@ export default function EditableArtifactTitle({
       {isUrlArtifact && (
         <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
       )}
-      
+
       {/* Center: Title */}
-      <div 
+      <div
         className="cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200 flex-1 min-w-0"
         onDoubleClick={handleDoubleClick}
         title="Double-click to edit"
       >
-        <div 
+        <div
           className="text-xs text-gray-400 truncate select-none"
-          style={{ 
-            fontSize: '14px',
-            lineHeight: '1.2',
+          style={{
+            fontSize: "14px",
+            lineHeight: "1.2",
           }}
         >
           {currentTitle || "Untitled"}
@@ -145,7 +148,7 @@ export default function EditableArtifactTitle({
           className="h-6 w-6 p-0 flex-shrink-0 text-gray-500 hover:text-gray-300 hover:bg-white/10"
           onClick={(e) => {
             e.stopPropagation();
-            window.open(sourceUrl, '_blank', 'noopener,noreferrer');
+            window.open(sourceUrl, "_blank", "noopener,noreferrer");
           }}
           aria-label="Open in new tab"
         >

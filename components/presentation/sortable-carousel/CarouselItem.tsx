@@ -20,6 +20,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { CarouselItemContent } from "./CarouselItemContent";
+import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
 import { toast } from "sonner";
 
 export enum Position {
@@ -58,6 +59,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
     loop?: boolean;
     muted?: boolean;
   }) => Promise<void>;
+  onUpdateTitle?: (newTitle: string) => Promise<void>;
   onDelete?: () => void;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
@@ -83,6 +85,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       dragHandleProps,
       metadata,
       onUpdateMetadata,
+      onUpdateTitle,
       onDelete,
       isReadOnly = false,
       isAnyDragging = false,
@@ -131,7 +134,21 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       >
         {name && (
           <div className="carousel-item-header">
-            <div className="carousel-item-title">{name}</div>
+            <div className="carousel-item-title flex-1 min-w-0">
+              {isReadOnly || !onUpdateTitle ? (
+                <div className="text-xs text-gray-400 truncate px-2 py-1">
+                  {name}
+                </div>
+              ) : (
+                <EditableArtifactTitle
+                  title={name}
+                  artifactId={id.toString()}
+                  onUpdate={onUpdateTitle}
+                  artifactType={type}
+                  sourceUrl={url}
+                />
+              )}
+            </div>
             <div className="flex items-center gap-1">
               {isUrl && (
                 <button

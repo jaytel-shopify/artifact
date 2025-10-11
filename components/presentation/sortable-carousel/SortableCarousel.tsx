@@ -230,6 +230,12 @@ export function SortableCarousel({
                       })
                   : undefined
               }
+              onUpdateTitle={
+                onUpdateArtifact
+                  ? async (newTitle) =>
+                      await onUpdateArtifact(artifact.id, { name: newTitle })
+                  : undefined
+              }
             />
           ))}
         </ul>
