@@ -89,7 +89,7 @@ export function SortableCarousel({
   );
   const [items, setItems] = useState<Artifact[]>(artifacts);
 
-  // ONLY sync when artifacts change (add/remove), NEVER during animation
+  // Sync artifacts with local state (respecting animation state)
   const prevArtifactsRef = useRef(artifacts);
   useEffect(() => {
     // Block sync during animation - critical for smooth animation!
@@ -104,13 +104,42 @@ export function SortableCarousel({
       .sort()
       .join(",");
 
-    // Only sync if items added/removed (not just reordered)
+    // Sync if items added/removed
     if (prevIds !== newIds) {
       setItems(artifacts);
+      prevArtifactsRef.current = artifacts;
+      return;
+    }
+
+    // Also sync if artifact properties changed (name, metadata, etc.)
+    // But preserve the current order from items
+    const itemsChanged = artifacts.some((newArtifact) => {
+      const prevArtifact = prevArtifactsRef.current.find(
+        (a) => a.id === newArtifact.id
+      );
+      if (!prevArtifact) return true;
+
+      // Check if name or metadata changed
+      return (
+        newArtifact.name !== prevArtifact.name ||
+        JSON.stringify(newArtifact.metadata) !==
+          JSON.stringify(prevArtifact.metadata)
+      );
+    });
+
+    if (itemsChanged) {
+      // Update items while preserving order
+      const orderMap = new Map(items.map((item, idx) => [item.id, idx]));
+      const updatedItems = artifacts.slice().sort((a, b) => {
+        const aIdx = orderMap.get(a.id) ?? 0;
+        const bIdx = orderMap.get(b.id) ?? 0;
+        return aIdx - bIdx;
+      });
+      setItems(updatedItems);
     }
 
     prevArtifactsRef.current = artifacts;
-  }, [artifacts, isSettling]);
+  }, [artifacts, isSettling, items]);
 
   // Reset scroll position when columns change
   useEffect(() => {

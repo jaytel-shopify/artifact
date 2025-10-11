@@ -20,6 +20,7 @@ import {
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
 import { CarouselItemContent } from "./CarouselItemContent";
+import { toast } from "sonner";
 
 export enum Position {
   Before = -1,
@@ -56,7 +57,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
     hideUI?: boolean;
     loop?: boolean;
     muted?: boolean;
-  }) => void;
+  }) => Promise<void>;
   onDelete?: () => void;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
@@ -175,6 +176,41 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       return contentElement;
     }
 
+    const toggleVideoUI = async () => {
+      if (!onUpdateMetadata) return;
+      try {
+        await onUpdateMetadata({ hideUI: !metadata?.hideUI });
+        toast.success(
+          metadata?.hideUI ? "Video controls enabled" : "Video controls hidden"
+        );
+      } catch {
+        toast.error("Failed to update video settings");
+      }
+    };
+
+    const toggleVideoLoop = async () => {
+      if (!onUpdateMetadata) return;
+      try {
+        await onUpdateMetadata({ loop: !metadata?.loop });
+        toast.success(
+          metadata?.loop ? "Video loop disabled" : "Video loop enabled"
+        );
+      } catch {
+        toast.error("Failed to update video settings");
+      }
+    };
+
+    const toggleVideoMute = async () => {
+      if (!onUpdateMetadata) return;
+      const currentMuted = metadata?.muted !== false;
+      try {
+        await onUpdateMetadata({ muted: !currentMuted });
+        toast.success(currentMuted ? "Video unmuted" : "Video muted");
+      } catch {
+        toast.error("Failed to update video settings");
+      }
+    };
+
     return (
       <ContextMenu>
         <ContextMenuTrigger asChild>{contentElement}</ContextMenuTrigger>
@@ -182,7 +218,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
           {isVideo && onUpdateMetadata && (
             <>
               <ContextMenuItem
-                onClick={() => onUpdateMetadata({ hideUI: !metadata?.hideUI })}
+                onClick={toggleVideoUI}
                 className="flex items-center gap-2"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
@@ -196,7 +232,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                 Show Controls
               </ContextMenuItem>
               <ContextMenuItem
-                onClick={() => onUpdateMetadata({ loop: !metadata?.loop })}
+                onClick={toggleVideoLoop}
                 className="flex items-center gap-2"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
@@ -206,10 +242,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                 Loop Video
               </ContextMenuItem>
               <ContextMenuItem
-                onClick={() => {
-                  const currentMuted = metadata?.muted !== false;
-                  onUpdateMetadata({ muted: !currentMuted });
-                }}
+                onClick={toggleVideoMute}
                 className="flex items-center gap-2"
               >
                 <div className="w-4 h-4 flex items-center justify-center">
