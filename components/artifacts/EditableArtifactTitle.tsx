@@ -3,7 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Globe, SquareArrowOutUpRight } from "lucide-react";
+import { SquareArrowOutUpRight } from "lucide-react";
 import { toast } from "sonner";
 
 interface EditableArtifactTitleProps {
@@ -112,11 +112,6 @@ export default function EditableArtifactTitle({
 
   return (
     <div className={`flex items-center gap-2 ${className}`}>
-      {/* Left: Globe icon for URL artifacts */}
-      {isUrlArtifact && (
-        <Globe className="h-4 w-4 text-gray-400 flex-shrink-0" />
-      )}
-
       {/* Center: Title */}
       <div
         className="cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200 flex-1 min-w-0"

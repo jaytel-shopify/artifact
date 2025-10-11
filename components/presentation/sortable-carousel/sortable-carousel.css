@@ -201,30 +201,6 @@
   white-space: nowrap;
 }
 
-.carousel-item-external-link {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 200ms ease;
-  padding: 2px;
-  border-radius: 3px;
-  background: none;
-  border: none;
-  outline: none;
-}
-
-.carousel-item-external-link:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.carousel-item-wrapper:hover .carousel-item-external-link {
-  opacity: 1;
-}
-
 .carousel-item-drag-handle {
   display: flex;
   align-items: center;
@@ -247,6 +223,16 @@
 }
 
 .carousel-item-wrapper:hover .carousel-item-drag-handle {
+  opacity: 1;
+}
+
+/* External link button in title - hide/show on hover */
+.carousel-item-header button {
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.carousel-item-wrapper:hover .carousel-item-header button {
   opacity: 1;
 }
 

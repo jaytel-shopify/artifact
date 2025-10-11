@@ -11,7 +11,6 @@ import {
   Volume2,
   VolumeX,
   Check,
-  ExternalLink,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -150,18 +149,6 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               )}
             </div>
             <div className="flex items-center gap-1">
-              {isUrl && (
-                <button
-                  className="carousel-item-external-link"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    window.open(url, "_blank", "noopener,noreferrer");
-                  }}
-                  title="Open in new tab"
-                >
-                  <ExternalLink size={16} />
-                </button>
-              )}
               <div className="carousel-item-drag-handle" ref={dragHandleRef}>
                 <GripVertical size={16} />
               </div>
