@@ -1,3 +1,7 @@
+/* ==========================================================================
+   Carousel Container Layouts
+   ========================================================================== */
+
 .carousel {
   display: grid;
   gap: 2rem;
@@ -49,15 +53,17 @@
   grid-template-columns: repeat(auto-fill, 150px);
 }
 
+/* ==========================================================================
+   Carousel Item Wrapper & States
+   ========================================================================== */
+
 .carousel-item-wrapper {
   position: relative;
   list-style: none;
   /* Width is set via CSS custom property from columns slider */
   width: var(--column-width);
   margin-bottom: 1.5rem; /* Extra space for page number below */
-  /* Scroll snapping */
   scroll-snap-align: start;
-  /* scroll-snap-stop: normal; */
 }
 
 .carousel-item-wrapper.active .carousel-item {
@@ -95,6 +101,7 @@
   visibility: visible;
 }
 
+/* Drop indicator lines */
 .carousel-item-wrapper:not(.active):not(.clone).insert-before::after,
 .carousel-item-wrapper:not(.active):not(.clone).insert-after::after {
   content: "";
@@ -149,6 +156,10 @@
   bottom: -45px;
 }
 
+/* ==========================================================================
+   Carousel Item Content
+   ========================================================================== */
+
 .carousel-item {
   position: relative;
   display: block;
@@ -179,6 +190,10 @@
 .carousel-item:focus-visible:not(.carousel-item-wrapper.active .carousel-item) {
   box-shadow: 0 0 0 2px #4c9ffe;
 }
+
+/* ==========================================================================
+   Carousel Item Header & Controls
+   ========================================================================== */
 
 .carousel-item-header {
   display: flex;
@@ -235,7 +250,10 @@
   opacity: 1;
 }
 
-/* Fit mode: when columns = 1 and fit mode is enabled */
+/* ==========================================================================
+   Fit Mode (Full Viewport Mode)
+   ========================================================================== */
+
 .carousel-horizontal.fit-mode .carousel-item-wrapper.fit-mode {
   height: calc(100vh - 200px) !important;
   aspect-ratio: auto !important;
@@ -269,20 +287,3 @@
   align-items: center !important;
   justify-content: center !important;
 }
-
-/* @keyframes fadeIn {
-  0% {
-    opacity: 0;
-  }
-  100% {
-    opacity: 1;
-  }
-} */
-/* @keyframes pop {
-  0% {
-    transform: translate3d(0px, 0px, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(10px, 10px, 0) scale(1.025);
-  }
-} */
