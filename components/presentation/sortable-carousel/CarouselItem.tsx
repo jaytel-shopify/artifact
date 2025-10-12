@@ -124,9 +124,9 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         style={{
           ...style,
           aspectRatio:
-            contentWidth && contentHeight
+            isUrl && contentWidth && contentHeight
               ? `${contentWidth} / ${contentHeight}`
-              : "16 / 9",
+              : "",
         }}
         ref={ref}
         {...dragListeners}
@@ -155,7 +155,12 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             </div>
           </div>
         )}
-        <div className="carousel-item" data-id={id.toString()} {...props}>
+        <div
+          className="carousel-item"
+          data-id={id.toString()}
+          data-content-type={type}
+          {...props}
+        >
           <CarouselItemContent
             type={type}
             url={url}
