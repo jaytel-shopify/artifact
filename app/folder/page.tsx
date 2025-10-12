@@ -165,22 +165,7 @@ function FolderPageContent() {
     router.push(`/projects/new?folder=${folderId}`);
   }
 
-  function handleBack() {
-    router.push("/projects");
-  }
-
-  function handleProjectClick(
-    project: Project & { coverArtifacts: Artifact[] }
-  ) {
-    router.push(`/p?token=${project.share_token}`);
-  }
-
-  function handleProjectHover(
-    project: Project & { coverArtifacts: Artifact[] }
-  ) {
-    // Prefetch project page on hover
-    router.prefetch(`/p?token=${project.share_token}`);
-  }
+  const backUrl = "/projects/";
 
   function handleDeleteProject(
     project: Project & { coverArtifacts: Artifact[] }
@@ -252,7 +237,7 @@ function FolderPageContent() {
       mode="folder"
       folderId={folder.id}
       folderName={folder.name}
-      onBackToHome={handleBack}
+      backUrl={backUrl}
       onFolderNameUpdate={canEdit ? handleFolderRename : undefined}
       onFolderShare={() => setAccessDialogOpen(true)}
       onFolderRename={() => setRenameDialogOpen(true)}
@@ -279,8 +264,6 @@ function FolderPageContent() {
                   <div>
                     <ProjectCard
                       project={p}
-                      onClick={() => handleProjectClick(p)}
-                      onHover={() => handleProjectHover(p)}
                       onDelete={() => handleDeleteProject(p)}
                       menuItems={
                         <>

@@ -7,10 +7,10 @@ import { Page } from "@/types";
 
 interface AppLayoutProps {
   children: ReactNode;
-  
+
   // View mode
-  mode: 'homepage' | 'canvas' | 'folder';
-  
+  mode: "homepage" | "canvas" | "folder";
+
   // Project-specific props (for canvas mode)
   projectId?: string;
   projectName?: string;
@@ -25,7 +25,7 @@ interface AppLayoutProps {
   onMoveToFolder?: (folderId: string) => void;
   onRemoveFromFolder?: () => void;
   onArtifactAdded?: () => void;
-  
+
   // Folder-specific props (for folder mode)
   folderId?: string;
   folderName?: string;
@@ -34,14 +34,14 @@ interface AppLayoutProps {
   onFolderRename?: () => void;
   onFolderDelete?: () => void;
   onNewProject?: () => void;
-  
+
   // Column controls
   columns?: number;
   onColumnsChange?: (columns: number) => void;
   showColumnControls?: boolean;
   fitMode?: boolean;
   onFitModeChange?: (fit: boolean) => void;
-  
+
   // Page management (canvas mode)
   pages?: Page[];
   currentPageId?: string;
@@ -49,8 +49,9 @@ interface AppLayoutProps {
   onPageRename?: (pageId: string, newName: string) => Promise<void>;
   onPageCreate?: () => void;
   onPageDelete?: (pageId: string) => void;
-  
+
   // Navigation
+  backUrl?: string;
   onBackToHome?: () => void;
 }
 
@@ -66,6 +67,7 @@ export default function AppLayout({
   isReadOnly = false,
   currentFolderId,
   folders = [],
+  backUrl,
   onProjectNameUpdate,
   onMoveToFolder,
   onRemoveFromFolder,
@@ -88,15 +90,15 @@ export default function AppLayout({
   onPageRename,
   onPageCreate,
   onPageDelete,
-  onBackToHome
+  onBackToHome,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
 
   // Load sidebar state from localStorage
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const stored = window.localStorage.getItem('sidebar_open');
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("sidebar_open");
     if (stored !== null) {
       setSidebarOpen(JSON.parse(stored));
     }
@@ -106,17 +108,17 @@ export default function AppLayout({
   // Persist sidebar state
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem('sidebar_open', JSON.stringify(sidebarOpen));
+    window.localStorage.setItem("sidebar_open", JSON.stringify(sidebarOpen));
   }, [sidebarOpen, hydrated]);
 
   const handleToggleSidebar = () => {
-    setSidebarOpen(prev => !prev);
+    setSidebarOpen((prev) => !prev);
   };
 
   return (
-    <div 
+    <div
       className="h-screen flex flex-col bg-[var(--color-background-primary)] text-[var(--color-text-primary)]"
-      style={{ fontFamily: 'var(--font-family-primary)' }}
+      style={{ fontFamily: "var(--font-family-primary)" }}
     >
       {/* Header */}
       <AppHeader
@@ -132,8 +134,9 @@ export default function AppLayout({
         folders={folders}
         folderId={folderId}
         folderName={folderName}
+        backUrl={backUrl}
         onBackToHome={onBackToHome}
-        onToggleSidebar={mode === 'canvas' ? handleToggleSidebar : undefined}
+        onToggleSidebar={mode === "canvas" ? handleToggleSidebar : undefined}
         sidebarOpen={sidebarOpen}
         onProjectNameUpdate={onProjectNameUpdate}
         onMoveToFolder={onMoveToFolder}
@@ -155,22 +158,24 @@ export default function AppLayout({
       {/* Main Content Area */}
       <div className="flex flex-1 min-h-0 relative">
         {/* Mobile backdrop overlay */}
-        {mode === 'canvas' && sidebarOpen && (
-          <div 
+        {mode === "canvas" && sidebarOpen && (
+          <div
             className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
-            style={{ animationTimingFunction: 'var(--spring-elegant-easing-light)' }}
+            style={{
+              animationTimingFunction: "var(--spring-elegant-easing-light)",
+            }}
             onClick={() => setSidebarOpen(false)}
           />
         )}
-        
+
         {/* Sidebar (Canvas mode only) - Always rendered for smooth animation */}
-        {mode === 'canvas' && (
-          <div 
+        {mode === "canvas" && (
+          <div
             className={`absolute top-0 left-0 h-full z-10 ${
-              sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
-            style={{ 
-              transition: 'transform 400ms var(--spring-elegant-easing-light)'
+            style={{
+              transition: "transform 400ms var(--spring-elegant-easing-light)",
             }}
           >
             <PageNavigationSidebar
@@ -187,11 +192,12 @@ export default function AppLayout({
         )}
 
         {/* Main Content */}
-        <main 
+        <main
           className="flex-1 min-w-0"
           style={{
-            marginLeft: mode === 'canvas' && sidebarOpen ? 'var(--sidebar-width)' : '0',
-            transition: 'margin-left 400ms var(--spring-elegant-easing-light)'
+            marginLeft:
+              mode === "canvas" && sidebarOpen ? "var(--sidebar-width)" : "0",
+            transition: "margin-left 400ms var(--spring-elegant-easing-light)",
           }}
         >
           {children}

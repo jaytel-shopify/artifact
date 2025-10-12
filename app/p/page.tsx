@@ -15,7 +15,6 @@ import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { usePageArtifacts } from "@/hooks/usePageArtifacts";
-import { useRouter } from "next/navigation";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
 import type { Project, Folder } from "@/types";
@@ -40,7 +39,6 @@ async function fetchProject(shareToken: string): Promise<Project | null> {
 function PresentationPageContent() {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
-  const router = useRouter();
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
@@ -405,14 +403,10 @@ function PresentationPageContent() {
     }
   }, [project]);
 
-  const handleBackToHome = useCallback(() => {
-    // Smart back: Go to folder if project is in a folder, otherwise /projects
-    if (project?.folder_id) {
-      router.push(`/folder?id=${project.folder_id}`);
-    } else {
-      router.push("/projects");
-    }
-  }, [router, project]);
+  // Smart back URL: Go to folder if project is in a folder, otherwise /projects
+  const backUrl = project?.folder_id
+    ? `/folder/?id=${project.folder_id}`
+    : "/projects/";
 
   const isUploading = uploadState.uploading || isPending;
   const isPageLoading = !project || pages.length === 0;
@@ -449,7 +443,7 @@ function PresentationPageContent() {
       onPageRename={handlePageRename}
       onPageCreate={canEdit ? handlePageCreate : undefined}
       onPageDelete={canEdit ? handlePageDelete : undefined}
-      onBackToHome={handleBackToHome}
+      backUrl={backUrl}
     >
       <div className="h-full relative">
         {/* Dropzone for file uploads (only for creators/editors) */}

@@ -255,19 +255,6 @@ export default function ProjectsPage() {
     }
   }
 
-  function handleProjectClick(
-    project: Project & { coverArtifacts: Artifact[] }
-  ) {
-    router.push(`/p?token=${project.share_token}`);
-  }
-
-  function handleProjectHover(
-    project: Project & { coverArtifacts: Artifact[] }
-  ) {
-    // Prefetch project page on hover for instant navigation
-    router.prefetch(`/p?token=${project.share_token}`);
-  }
-
   function handleDeleteProject(
     project: Project & { coverArtifacts: Artifact[] }
   ) {
@@ -397,8 +384,6 @@ export default function ProjectsPage() {
                       <div>
                         <ProjectCard
                           project={p}
-                          onClick={() => handleProjectClick(p)}
-                          onHover={() => handleProjectHover(p)}
                           onDelete={() => handleDeleteProject(p)}
                           menuItems={
                             <>
