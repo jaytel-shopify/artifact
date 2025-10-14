@@ -10,6 +10,23 @@ import {
 } from "@/components/ui/context-menu";
 import { Page } from "@/types";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface PageNavigationSidebarProps {
   isOpen: boolean;
@@ -19,7 +36,137 @@ interface PageNavigationSidebarProps {
   onPageRename?: (pageId: string, newName: string) => Promise<void>;
   onPageCreate?: () => void;
   onPageDelete?: (pageId: string) => void;
+  onPageReorder?: (reorderedPages: Page[]) => void;
   isReadOnly?: boolean;
+}
+
+interface SortablePageItemProps {
+  page: Page;
+  isActive: boolean;
+  isEditing: boolean;
+  editingName: string;
+  isRenaming: boolean;
+  isReadOnly: boolean;
+  onSelect: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+  onEditNameChange: (name: string) => void;
+  onEditSave: () => void;
+  onEditCancel: () => void;
+}
+
+function SortablePageItem({
+  page,
+  isActive,
+  isEditing,
+  editingName,
+  isRenaming,
+  isReadOnly,
+  onSelect,
+  onRename,
+  onDelete,
+  onEditNameChange,
+  onEditSave,
+  onEditCancel,
+}: SortablePageItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: page.id, disabled: isReadOnly || isEditing });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  if (isEditing) {
+    return (
+      <div ref={setNodeRef} style={style} className="flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)]">
+        <Input
+          type="text"
+          value={editingName}
+          onChange={(e) => onEditNameChange(e.target.value)}
+          onBlur={() => !isRenaming && onEditSave()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onEditSave();
+            if (e.key === 'Escape') onEditCancel();
+          }}
+          className="flex-1 bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] border-[var(--color-border-secondary)] focus:border-[var(--color-accent-primary)] focus:ring-[var(--color-accent-primary)]/20"
+          style={{ fontSize: 'var(--font-size-sm)' }}
+          disabled={isRenaming}
+          autoFocus
+        />
+      </div>
+    );
+  }
+
+  if (isReadOnly) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
+          isActive 
+            ? 'bg-[var(--color-background-tertiary)]' 
+            : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+        }`}
+        onClick={onSelect}
+      >
+        <span 
+          className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
+          style={{ fontSize: 'var(--font-size-sm)' }}
+        >
+          {page.name}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          ref={setNodeRef}
+          style={style}
+          {...attributes}
+          {...listeners}
+          className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-grab active:cursor-grabbing transition-all ${
+            isActive 
+              ? 'bg-[var(--color-background-tertiary)]' 
+              : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+          }`}
+          onClick={onSelect}
+        >
+          <span 
+            className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
+            style={{ fontSize: 'var(--font-size-sm)' }}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onRename();
+            }}
+          >
+            {page.name}
+          </span>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent>
+        <ContextMenuItem onClick={onRename}>
+          Rename
+        </ContextMenuItem>
+        <ContextMenuItem 
+          variant="destructive"
+          onClick={onDelete}
+        >
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
 }
 
 export default function PageNavigationSidebar({
@@ -30,11 +177,23 @@ export default function PageNavigationSidebar({
   onPageRename,
   onPageCreate,
   onPageDelete,
+  onPageReorder,
   isReadOnly = false,
 }: PageNavigationSidebarProps) {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px movement before drag starts, allowing clicks to work
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handlePageRename = (page: Page) => {
     setEditingPageId(page.id);
@@ -74,6 +233,18 @@ export default function PageNavigationSidebar({
     toast.success("Page deleted successfully");
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = pages.findIndex((p) => p.id === active.id);
+      const newIndex = pages.findIndex((p) => p.id === over.id);
+
+      const reorderedPages = arrayMove(pages, oldIndex, newIndex);
+      onPageReorder?.(reorderedPages);
+    }
+  };
+
   return (
     <aside 
       className="bg-[var(--color-background-primary)] border-r border-[var(--color-border-primary)] h-full flex-shrink-0"
@@ -87,82 +258,34 @@ export default function PageNavigationSidebar({
               No pages yet
             </div>
           ) : (
-            pages.map((page) => (
-              <div key={page.id}>
-                {editingPageId === page.id ? (
-                  <div className="flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)]">
-                    <Input
-                      type="text"
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      onBlur={() => !isRenaming && handleNameSave(page.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleNameSave(page.id);
-                        if (e.key === 'Escape') handleNameCancel();
-                      }}
-                      className="flex-1 bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] border-[var(--color-border-secondary)] focus:border-[var(--color-accent-primary)] focus:ring-[var(--color-accent-primary)]/20"
-                      style={{ fontSize: 'var(--font-size-sm)' }}
-                      disabled={isRenaming}
-                      autoFocus
-                    />
-                  </div>
-                ) : isReadOnly ? (
-                  // Read-only: No context menu, just clickable page
-                  <div
-                    className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
-                      currentPageId === page.id 
-                        ? 'bg-[var(--color-background-tertiary)]' 
-                        : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
-                    }`}
-                    onClick={() => onPageSelect?.(page.id)}
-                  >
-                    <span 
-                      className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
-                      style={{ fontSize: 'var(--font-size-sm)' }}
-                    >
-                      {page.name}
-                    </span>
-                  </div>
-                ) : (
-                  <ContextMenu>
-                    <ContextMenuTrigger asChild>
-                      <div
-                        className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
-                          currentPageId === page.id 
-                            ? 'bg-[var(--color-background-tertiary)]' 
-                            : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
-                        }`}
-                        onClick={() => onPageSelect?.(page.id)}
-                      >
-                        <span 
-                          className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
-                          style={{ fontSize: 'var(--font-size-sm)' }}
-                          onDoubleClick={(e) => {
-                            e.stopPropagation();
-                            handlePageRename(page);
-                          }}
-                        >
-                          {page.name}
-                        </span>
-                      </div>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ContextMenuItem onClick={() => handlePageRename(page)}>
-                        Rename
-                      </ContextMenuItem>
-                      {pages.length > 1 && (
-                        <ContextMenuItem 
-                          variant="destructive"
-                          onClick={() => handleDeletePage(page.id)}
-                        >
-                          Delete
-                        </ContextMenuItem>
-                      )}
-                    </ContextMenuContent>
-                  </ContextMenu>
-                )}
-              </div>
-            ))
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={pages.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {pages.map((page) => (
+                  <SortablePageItem
+                    key={page.id}
+                    page={page}
+                    isActive={currentPageId === page.id}
+                    isEditing={editingPageId === page.id}
+                    editingName={editingName}
+                    isRenaming={isRenaming}
+                    isReadOnly={isReadOnly}
+                    onSelect={() => onPageSelect?.(page.id)}
+                    onRename={() => handlePageRename(page)}
+                    onDelete={() => handleDeletePage(page.id)}
+                    onEditNameChange={setEditingName}
+                    onEditSave={() => handleNameSave(page.id)}
+                    onEditCancel={handleNameCancel}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 

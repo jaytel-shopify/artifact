@@ -49,6 +49,10 @@ interface AppLayoutProps {
   onPageRename?: (pageId: string, newName: string) => Promise<void>;
   onPageCreate?: () => void;
   onPageDelete?: (pageId: string) => void;
+  onPageReorder?: (reorderedPages: Page[]) => void;
+
+  // Presentation mode
+  presentationMode?: boolean;
 
   // Navigation
   backUrl?: string;
@@ -90,6 +94,8 @@ export default function AppLayout({
   onPageRename,
   onPageCreate,
   onPageDelete,
+  onPageReorder,
+  presentationMode = false,
   onBackToHome,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -120,45 +126,47 @@ export default function AppLayout({
       className="h-screen flex flex-col bg-[var(--color-background-primary)] text-[var(--color-text-primary)]"
       style={{ fontFamily: "var(--font-family-primary)" }}
     >
-      {/* Header */}
-      <AppHeader
-        mode={mode}
-        projectId={projectId}
-        projectName={projectName}
-        shareToken={shareToken}
-        creatorEmail={creatorEmail}
-        isCreator={isCreator}
-        isCollaborator={isCollaborator}
-        isReadOnly={isReadOnly}
-        currentFolderId={currentFolderId}
-        folders={folders}
-        folderId={folderId}
-        folderName={folderName}
-        backUrl={backUrl}
-        onBackToHome={onBackToHome}
-        onToggleSidebar={mode === "canvas" ? handleToggleSidebar : undefined}
-        sidebarOpen={sidebarOpen}
-        onProjectNameUpdate={onProjectNameUpdate}
-        onMoveToFolder={onMoveToFolder}
-        onRemoveFromFolder={onRemoveFromFolder}
-        onArtifactAdded={onArtifactAdded}
-        onFolderNameUpdate={onFolderNameUpdate}
-        onFolderShare={onFolderShare}
-        onFolderRename={onFolderRename}
-        onFolderDelete={onFolderDelete}
-        onNewProject={onNewProject}
-        currentPageId={currentPageId}
-        columns={columns}
-        onColumnsChange={onColumnsChange}
-        showColumnControls={showColumnControls}
-        fitMode={fitMode}
-        onFitModeChange={onFitModeChange}
-      />
+      {/* Header - Hidden in presentation mode */}
+      {!presentationMode && (
+        <AppHeader
+          mode={mode}
+          projectId={projectId}
+          projectName={projectName}
+          shareToken={shareToken}
+          creatorEmail={creatorEmail}
+          isCreator={isCreator}
+          isCollaborator={isCollaborator}
+          isReadOnly={isReadOnly}
+          currentFolderId={currentFolderId}
+          folders={folders}
+          folderId={folderId}
+          folderName={folderName}
+          backUrl={backUrl}
+          onBackToHome={onBackToHome}
+          onToggleSidebar={mode === "canvas" ? handleToggleSidebar : undefined}
+          sidebarOpen={sidebarOpen}
+          onProjectNameUpdate={onProjectNameUpdate}
+          onMoveToFolder={onMoveToFolder}
+          onRemoveFromFolder={onRemoveFromFolder}
+          onArtifactAdded={onArtifactAdded}
+          onFolderNameUpdate={onFolderNameUpdate}
+          onFolderShare={onFolderShare}
+          onFolderRename={onFolderRename}
+          onFolderDelete={onFolderDelete}
+          onNewProject={onNewProject}
+          currentPageId={currentPageId}
+          columns={columns}
+          onColumnsChange={onColumnsChange}
+          showColumnControls={showColumnControls}
+          fitMode={fitMode}
+          onFitModeChange={onFitModeChange}
+        />
+      )}
 
       {/* Main Content Area */}
       <div className="flex flex-1 min-h-0 relative">
         {/* Mobile backdrop overlay */}
-        {mode === "canvas" && sidebarOpen && (
+        {mode === "canvas" && sidebarOpen && !presentationMode && (
           <div
             className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
             style={{
@@ -168,8 +176,8 @@ export default function AppLayout({
           />
         )}
 
-        {/* Sidebar (Canvas mode only) - Always rendered for smooth animation */}
-        {mode === "canvas" && (
+        {/* Sidebar (Canvas mode only) - Hidden in presentation mode */}
+        {mode === "canvas" && !presentationMode && (
           <div
             className={`absolute top-0 left-0 h-full z-10 ${
               sidebarOpen ? "translate-x-0" : "-translate-x-full"
@@ -186,6 +194,7 @@ export default function AppLayout({
               onPageRename={onPageRename}
               onPageCreate={onPageCreate}
               onPageDelete={onPageDelete}
+              onPageReorder={onPageReorder}
               isReadOnly={isReadOnly}
             />
           </div>
@@ -196,7 +205,7 @@ export default function AppLayout({
           className="flex-1 min-w-0"
           style={{
             marginLeft:
-              mode === "canvas" && sidebarOpen ? "var(--sidebar-width)" : "0",
+              mode === "canvas" && sidebarOpen && !presentationMode ? "var(--sidebar-width)" : "0",
             transition: "margin-left 400ms var(--spring-elegant-easing-light)",
           }}
         >

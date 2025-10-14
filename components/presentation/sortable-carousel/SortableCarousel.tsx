@@ -45,6 +45,7 @@ interface Props {
     updates: { name?: string; metadata?: Record<string, unknown> }
   ) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
+  onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;
   isReadOnly?: boolean;
 }
 
@@ -78,6 +79,7 @@ export function SortableCarousel({
   onReorder,
   onUpdateArtifact,
   onDeleteArtifact,
+  onReplaceMedia,
   isReadOnly = false,
 }: Props) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -234,6 +236,11 @@ export function SortableCarousel({
                 onUpdateArtifact
                   ? async (newTitle) =>
                       await onUpdateArtifact(artifact.id, { name: newTitle })
+                  : undefined
+              }
+              onReplaceMedia={
+                onReplaceMedia
+                  ? async (file) => await onReplaceMedia(artifact.id, file)
                   : undefined
               }
             />

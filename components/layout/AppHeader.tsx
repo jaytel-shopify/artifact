@@ -185,41 +185,6 @@ export default function AppHeader({
                   onAdded={onArtifactAdded}
                 />
               )}
-
-              {/* Column Count Slider */}
-              {showColumnControls && onColumnsChange && (
-                <>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground font-medium min-w-[12px]">
-                      {columns}
-                    </span>
-                    <div className="w-24">
-                      <Slider
-                        min={1}
-                        max={8}
-                        value={[columns]}
-                        onValueChange={(value: number[]) =>
-                          onColumnsChange(value[0] ?? columns)
-                        }
-                        className="w-full"
-                      />
-                    </div>
-
-                    {/* Fit toggle (only when columns === 1) */}
-                    {columns === 1 && onFitModeChange && (
-                      <div className="flex items-center gap-2 ml-2">
-                        <span className="text-xs text-muted-foreground font-medium">
-                          Fit
-                        </span>
-                        <Switch
-                          checked={fitMode}
-                          onCheckedChange={onFitModeChange}
-                        />
-                      </div>
-                    )}
-                  </div>
-                </>
-              )}
             </>
           )}
         </div>
@@ -350,6 +315,39 @@ export default function AppHeader({
 
               {/* Read-Only Badge (shown for viewers) */}
               {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
+
+              {/* Column Count Slider */}
+              {showColumnControls && onColumnsChange && (
+                <div className="flex items-center gap-3">
+                  {/* Fit toggle (only when columns === 1) */}
+                  {columns === 1 && onFitModeChange && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground font-medium">
+                        Fit
+                      </span>
+                      <Switch
+                        checked={fitMode}
+                        onCheckedChange={onFitModeChange}
+                      />
+                    </div>
+                  )}
+
+                  <span className="text-xs text-muted-foreground font-medium min-w-[12px]">
+                    {columns}
+                  </span>
+                  <div className="w-[120px]">
+                    <Slider
+                      min={1}
+                      max={8}
+                      value={[columns]}
+                      onValueChange={(value: number[]) =>
+                        onColumnsChange(value[0] ?? columns)
+                      }
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Share Button */}
               {shareToken && projectId && (

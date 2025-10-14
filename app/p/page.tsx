@@ -18,7 +18,7 @@ import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
 import type { Project, Folder } from "@/types";
-import { getProjectByShareToken } from "@/lib/quick-db";
+import { getProjectByShareToken, updateArtifact as updateArtifactDB } from "@/lib/quick-db";
 import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
@@ -48,6 +48,9 @@ function PresentationPageContent() {
 
   // Debug mode: Override read-only state for testing
   const [debugReadOnly, setDebugReadOnly] = useState(false);
+
+  // Presentation mode: Hide header and sidebar
+  const [presentationMode, setPresentationMode] = useState(false);
 
   // Load user's folders for folder dropdown
   const [userFolders, setUserFolders] = useState<Folder[]>([]);
@@ -117,6 +120,30 @@ function PresentationPageContent() {
     }
   }, [columns, fitMode]);
 
+  // Keyboard shortcut: CMD+. or CMD+/ to toggle presentation mode
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      // Check for CMD+. or CMD+/ (also support Ctrl for Windows/Linux)
+      if ((e.metaKey || e.ctrlKey) && (e.key === '.' || e.key === '/')) {
+        // Don't trigger if user is typing in an input
+        const target = e.target as HTMLElement;
+        if (
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.isContentEditable
+        ) {
+          return;
+        }
+
+        e.preventDefault();
+        setPresentationMode((prev) => !prev);
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   // Fetch project data
   const { data: project } = useSWR<Project | null>(
     shareToken ? `project-token-${shareToken}` : null,
@@ -134,7 +161,7 @@ function PresentationPageContent() {
   const isCollaborator = permissions.isCollaborator;
 
   // Fetch and manage pages
-  const { pages, createPage, updatePage, deletePage } = usePages(project?.id);
+  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(project?.id);
   const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
   // Fetch page-specific artifacts
@@ -403,6 +430,75 @@ function PresentationPageContent() {
     }
   }, [project]);
 
+  // Replace media handler
+  const handleReplaceMedia = useCallback(
+    async (artifactId: string, file: File) => {
+      if (!project?.id || !currentPageId) return;
+
+      try {
+        // Find the artifact to get its type
+        const artifact = artifacts.find((a) => a.id === artifactId);
+        if (!artifact) {
+          toast.error("Artifact not found");
+          return;
+        }
+
+        // Validate file
+        const { validateFile, getArtifactTypeFromMimeType } = await import(
+          "@/lib/quick-storage"
+        );
+        const validation = validateFile(file, { maxSizeMB: 50 });
+        if (!validation.valid) {
+          toast.error(validation.error || "Invalid file");
+          return;
+        }
+
+        // Verify MIME type matches artifact type
+        const newFileType = getArtifactTypeFromMimeType(file.type);
+        if (newFileType !== artifact.type) {
+          toast.error(
+            `File type mismatch. Please select a ${artifact.type} file.`
+          );
+          return;
+        }
+
+        // Show uploading toast
+        toast.loading("Replacing media...", { id: "replace-media" });
+
+        // Upload new file
+        const uploadResult = await uploadFile(file);
+
+        // Add cache-busting timestamp to force browser reload
+        const cacheBuster = `?t=${Date.now()}`;
+        const sourceUrlWithCacheBuster = uploadResult.fullUrl + cacheBuster;
+
+        // Update artifact in database with new source
+        await updateArtifactDB(artifactId, {
+          source_url: sourceUrlWithCacheBuster,
+          file_path: uploadResult.url,
+        });
+
+        // For videos, generate new thumbnail (happens asynchronously)
+        if (artifact.type === "video") {
+          generateAndUploadThumbnail(file, artifactId).catch((err) => {
+            console.error("Thumbnail generation failed:", err);
+          });
+        }
+
+        // Refresh artifacts
+        await refetchArtifacts();
+
+        toast.success("Media replaced successfully", { id: "replace-media" });
+      } catch (error) {
+        console.error("Failed to replace media:", error);
+        toast.error("Failed to replace media. Please try again.", {
+          id: "replace-media",
+        });
+      }
+    },
+    [project?.id, currentPageId, artifacts, refetchArtifacts]
+  );
+
   // Smart back URL: Go to folder if project is in a folder, otherwise /projects
   const backUrl = project?.folder_id
     ? `/folder/?id=${project.folder_id}`
@@ -443,6 +539,8 @@ function PresentationPageContent() {
       onPageRename={handlePageRename}
       onPageCreate={canEdit ? handlePageCreate : undefined}
       onPageDelete={canEdit ? handlePageDelete : undefined}
+      onPageReorder={canEdit ? reorderPages : undefined}
+      presentationMode={presentationMode}
       backUrl={backUrl}
     >
       <div className="h-full relative">
@@ -514,6 +612,7 @@ function PresentationPageContent() {
             onDeleteArtifact={async (artifactId) => {
               await deleteArtifact(artifactId);
             }}
+            onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
             isReadOnly={isReadOnly}
           />
         </div>

@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX,
   Check,
+  Upload,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -60,6 +61,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   }) => Promise<void>;
   onUpdateTitle?: (newTitle: string) => Promise<void>;
   onDelete?: () => void;
+  onReplaceMedia?: (file: File) => Promise<void>;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
   isSettling?: boolean;
@@ -86,6 +88,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onUpdateMetadata,
       onUpdateTitle,
       onDelete,
+      onReplaceMedia,
       isReadOnly = false,
       isAnyDragging = false,
       isSettling = false,
@@ -176,7 +179,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     );
 
     // If read-only or no handlers, just return the content without context menu
-    if (isReadOnly || (!onDelete && !onUpdateMetadata)) {
+    if (isReadOnly || (!onDelete && !onUpdateMetadata && !onReplaceMedia)) {
       return contentElement;
     }
 
@@ -184,6 +187,34 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     if (isUrl) {
       return contentElement;
     }
+
+    const handleReplaceMedia = () => {
+      if (!onReplaceMedia) return;
+      
+      // Create a temporary file input
+      const input = document.createElement('input');
+      input.type = 'file';
+      
+      // Set accept attribute based on content type
+      if (isVideo) {
+        input.accept = '.mp4,.mov,.webm,video/*';
+      } else {
+        input.accept = '.jpg,.jpeg,.png,.gif,.webp,image/*';
+      }
+      
+      input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+          try {
+            await onReplaceMedia(file);
+          } catch (error) {
+            console.error('Failed to replace media:', error);
+          }
+        }
+      };
+      
+      input.click();
+    };
 
     const toggleVideoUI = async () => {
       if (!onUpdateMetadata) return;
@@ -268,6 +299,15 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               </ContextMenuItem>
               <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
             </>
+          )}
+          {onReplaceMedia && (
+            <ContextMenuItem onClick={handleReplaceMedia} className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Replace Media
+            </ContextMenuItem>
+          )}
+          {onReplaceMedia && onDelete && (
+            <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
           )}
           {onDelete && (
             <ContextMenuItem variant="destructive" onClick={onDelete}>
