@@ -1,16 +1,13 @@
 Still to implement:
 
+- Refactor the '+' button to give a dropdown of Title Card, URL, Media
+- Figure out Figma implementation
+- Add title card feature
+- Add collection stacks
+- Fix small carousel 'fit' bugs
+- Slider when zooming in, should have logic to zoom into what's in view, just jump to slide 1
+
 - simple search for projects
-- nicer card thumbnails for projects. that dynamically pull in actual frames of videos and screenshots of iframes. not just icons
-
-- on project view, add stacking of collections for artifacts
-- jespers help to make drag and drop and stacking collections interaction nicer
-
-- logo design by mclane or melike or marv
-
-- page renaming, smoother input field transition when doubleclicking
-
-- FIGMA SUPPORT. think through this one
 
 - mobile responsiveness
 
@@ -21,8 +18,3 @@ Still to implement:
 - hitting ENTER after pasting in a URL should submit the URL
 
 - live follow mode feature
-
-- delete PDF artifacts
-
-- fit height feature
-
