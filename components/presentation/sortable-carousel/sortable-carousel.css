@@ -20,9 +20,8 @@
   scroll-snap-type: x mandatory;
   scroll-padding-left: 1rem;
   scroll-behavior: smooth;
-  /* Better scrollbar styling */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+  /* Hide scrollbars */
+  scrollbar-width: none;
 }
 
 /* Disable snap scrolling during item reorder to prevent jump */
@@ -32,20 +31,9 @@
 }
 
 .carousel-horizontal::-webkit-scrollbar {
-  height: 8px;
-}
-
-.carousel-horizontal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.carousel-horizontal::-webkit-scrollbar-thumb {
-  background-color: rgba(10, 10, 10, 0.5);
-  border-radius: 20px;
-}
-
-.carousel-horizontal::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(10, 10, 10, 0.7);
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .carousel-grid {
