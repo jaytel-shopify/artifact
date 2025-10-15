@@ -1,14 +1,14 @@
 "use client";
 
 import { waitForQuick } from "./quick";
-import type { Project, Page, Artifact } from "@/types";
+import type { Project, Page, Artifact, ArtifactType } from "@/types";
 
 /**
  * Quick.db Service Layer
- * 
+ *
  * This module provides a clean interface to interact with Quick's JSON database.
  * Collections: projects, pages, artifacts, project_access
- * 
+ *
  * Note: Quick.db automatically adds these fields to all documents:
  * - id (string): Unique identifier
  * - created_at (string): ISO timestamp
@@ -45,7 +45,7 @@ export async function getProjects(creatorEmail?: string): Promise<Project[]> {
 export async function getProjectById(id: string): Promise<Project | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
-  
+
   try {
     return await collection.findById(id);
   } catch (error) {
@@ -57,13 +57,15 @@ export async function getProjectById(id: string): Promise<Project | null> {
 /**
  * Get a project by its share token
  */
-export async function getProjectByShareToken(token: string): Promise<Project | null> {
+export async function getProjectByShareToken(
+  token: string
+): Promise<Project | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
-  
+
   const projects = await collection.find();
   const project = projects.find((p: Project) => p.share_token === token);
-  
+
   return project || null;
 }
 
@@ -113,11 +115,13 @@ export async function createProject(data: {
  */
 export async function updateProject(
   id: string,
-  updates: Partial<Pick<Project, "name" | "settings" | "last_accessed_at" | "folder_id">>
+  updates: Partial<
+    Pick<Project, "name" | "settings" | "last_accessed_at" | "folder_id">
+  >
 ): Promise<Project> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
-  
+
   await collection.update(id, updates);
   return await collection.findById(id);
 }
@@ -146,10 +150,13 @@ export async function deleteProject(id: string): Promise<void> {
  * Future: Will check project_access table
  * Current: Only creator can edit
  */
-export async function canEditProject(projectId: string, userEmail: string): Promise<boolean> {
+export async function canEditProject(
+  projectId: string,
+  userEmail: string
+): Promise<boolean> {
   const project = await getProjectById(projectId);
   if (!project) return false;
-  
+
   // For now, only creator can edit
   // Future: Check project_access table for additional editors
   return project.creator_id === userEmail;
@@ -163,10 +170,10 @@ export async function canEditProject(projectId: string, userEmail: string): Prom
 export async function getPages(projectId: string): Promise<Page[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
-  
+
   const allPages = await collection.find();
   const projectPages = allPages.filter((p: Page) => p.project_id === projectId);
-  
+
   // Sort by position ascending
   return projectPages.sort((a: Page, b: Page) => a.position - b.position);
 }
@@ -177,7 +184,7 @@ export async function getPages(projectId: string): Promise<Page[]> {
 export async function getPageById(id: string): Promise<Page | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
-  
+
   try {
     return await collection.findById(id);
   } catch (error) {
@@ -196,7 +203,7 @@ export async function createPage(data: {
 }): Promise<Page> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
-  
+
   return await collection.create(data);
 }
 
@@ -209,7 +216,7 @@ export async function updatePage(
 ): Promise<Page> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
-  
+
   await collection.update(id, updates);
   return await collection.findById(id);
 }
@@ -232,10 +239,12 @@ export async function deletePage(id: string): Promise<void> {
 /**
  * Reorder pages (batch update positions)
  */
-export async function reorderPages(updates: Array<{ id: string; position: number }>): Promise<void> {
+export async function reorderPages(
+  updates: Array<{ id: string; position: number }>
+): Promise<void> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
-  
+
   await Promise.all(
     updates.map(({ id, position }) => collection.update(id, { position }))
   );
@@ -246,15 +255,21 @@ export async function reorderPages(updates: Array<{ id: string; position: number
 /**
  * Get all artifacts for a project
  */
-export async function getArtifactsByProject(projectId: string): Promise<Artifact[]> {
+export async function getArtifactsByProject(
+  projectId: string
+): Promise<Artifact[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   const allArtifacts = await collection.find();
-  const projectArtifacts = allArtifacts.filter((a: Artifact) => a.project_id === projectId);
-  
+  const projectArtifacts = allArtifacts.filter(
+    (a: Artifact) => a.project_id === projectId
+  );
+
   // Sort by position ascending
-  return projectArtifacts.sort((a: Artifact, b: Artifact) => a.position - b.position);
+  return projectArtifacts.sort(
+    (a: Artifact, b: Artifact) => a.position - b.position
+  );
 }
 
 /**
@@ -263,12 +278,16 @@ export async function getArtifactsByProject(projectId: string): Promise<Artifact
 export async function getArtifactsByPage(pageId: string): Promise<Artifact[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   const allArtifacts = await collection.find();
-  const pageArtifacts = allArtifacts.filter((a: Artifact) => a.page_id === pageId);
-  
+  const pageArtifacts = allArtifacts.filter(
+    (a: Artifact) => a.page_id === pageId
+  );
+
   // Sort by position ascending
-  return pageArtifacts.sort((a: Artifact, b: Artifact) => a.position - b.position);
+  return pageArtifacts.sort(
+    (a: Artifact, b: Artifact) => a.position - b.position
+  );
 }
 
 /**
@@ -277,7 +296,7 @@ export async function getArtifactsByPage(pageId: string): Promise<Artifact[]> {
 export async function getArtifactById(id: string): Promise<Artifact | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   try {
     return await collection.findById(id);
   } catch (error) {
@@ -292,7 +311,7 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
 export async function createArtifact(data: {
   project_id: string;
   page_id: string;
-  type: "figma" | "url" | "image" | "video" | "pdf";
+  type: ArtifactType;
   source_url: string;
   file_path?: string | null;
   name: string;
@@ -301,7 +320,7 @@ export async function createArtifact(data: {
 }): Promise<Artifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   const artifactData = {
     project_id: data.project_id,
     page_id: data.page_id,
@@ -312,7 +331,7 @@ export async function createArtifact(data: {
     position: data.position,
     metadata: data.metadata || {},
   };
-  
+
   return await collection.create(artifactData);
 }
 
@@ -325,7 +344,7 @@ export async function updateArtifact(
 ): Promise<Artifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   await collection.update(id, updates);
   return await collection.findById(id);
 }
@@ -336,17 +355,19 @@ export async function updateArtifact(
 export async function deleteArtifact(id: string): Promise<void> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   await collection.delete(id);
 }
 
 /**
  * Reorder artifacts (batch update positions)
  */
-export async function reorderArtifacts(updates: Array<{ id: string; position: number }>): Promise<void> {
+export async function reorderArtifacts(
+  updates: Array<{ id: string; position: number }>
+): Promise<void> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
-  
+
   await Promise.all(
     updates.map(({ id, position }) => collection.update(id, { position }))
   );
@@ -365,13 +386,13 @@ export async function grantProjectAccess(
 ): Promise<void> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("project_access");
-  
+
   // Check if access already exists
   const allAccess = await collection.find();
   const existing = allAccess.find(
     (a: any) => a.project_id === projectId && a.user_email === userEmail
   );
-  
+
   if (existing) {
     // Update existing access
     await collection.update(existing.id, { role });
@@ -395,12 +416,12 @@ export async function revokeProjectAccess(
 ): Promise<void> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("project_access");
-  
+
   const allAccess = await collection.find();
   const existing = allAccess.find(
     (a: any) => a.project_id === projectId && a.user_email === userEmail
   );
-  
+
   if (existing) {
     await collection.delete(existing.id);
   }
@@ -410,13 +431,15 @@ export async function revokeProjectAccess(
  * Get all users with access to a project
  * Note: Not implemented yet, placeholder for future functionality
  */
-export async function getProjectAccessList(projectId: string): Promise<Array<{
-  user_email: string;
-  role: string;
-}>> {
+export async function getProjectAccessList(projectId: string): Promise<
+  Array<{
+    user_email: string;
+    role: string;
+  }>
+> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("project_access");
-  
+
   const allAccess = await collection.find();
   return allAccess.filter((a: any) => a.project_id === projectId);
 }
@@ -433,14 +456,16 @@ export async function getNextPosition(
 ): Promise<number> {
   const quick = await waitForQuick();
   const col = quick.db.collection(collection);
-  
+
   const allItems = await col.find();
-  const filteredItems = allItems.filter((item: any) => item[parentField] === parentId);
-  
+  const filteredItems = allItems.filter(
+    (item: any) => item[parentField] === parentId
+  );
+
   if (filteredItems.length === 0) return 0;
-  
-  const maxPosition = Math.max(...filteredItems.map((item: any) => item.position || 0));
+
+  const maxPosition = Math.max(
+    ...filteredItems.map((item: any) => item.position || 0)
+  );
   return maxPosition + 1;
 }
-
-

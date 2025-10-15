@@ -10,7 +10,7 @@ import {
   reorderArtifacts as reorderArtifactsDB,
   getNextPosition,
 } from "@/lib/quick-db";
-import type { Artifact } from "@/types";
+import type { Artifact, ArtifactType } from "@/types";
 
 /**
  * Fetcher function for SWR
@@ -22,8 +22,16 @@ async function fetcher(pageId: string): Promise<Artifact[]> {
 /**
  * Hook to manage artifacts for a specific page
  */
-export function useArtifacts(projectId: string | undefined, pageId: string | undefined) {
-  const { data: artifacts = [], error, isLoading, mutate } = useSWR<Artifact[]>(
+export function useArtifacts(
+  projectId: string | undefined,
+  pageId: string | undefined
+) {
+  const {
+    data: artifacts = [],
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<Artifact[]>(
     pageId ? `artifacts-${pageId}` : null,
     () => (pageId ? fetcher(pageId) : []),
     { revalidateOnFocus: false }
@@ -34,7 +42,7 @@ export function useArtifacts(projectId: string | undefined, pageId: string | und
    */
   const createArtifact = useCallback(
     async (data: {
-      type: "figma" | "url" | "image" | "video" | "pdf";
+      type: ArtifactType;
       source_url: string;
       file_path?: string;
       name: string;
@@ -44,7 +52,11 @@ export function useArtifacts(projectId: string | undefined, pageId: string | und
 
       try {
         // Get next available position
-        const nextPosition = await getNextPosition("artifacts", pageId, "page_id");
+        const nextPosition = await getNextPosition(
+          "artifacts",
+          pageId,
+          "page_id"
+        );
 
         // Create the artifact
         const artifact = await createArtifactDB({
@@ -140,5 +152,3 @@ export function useArtifacts(projectId: string | undefined, pageId: string | und
     refetch: mutate,
   };
 }
-
-

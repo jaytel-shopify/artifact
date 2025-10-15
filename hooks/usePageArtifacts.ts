@@ -10,7 +10,7 @@ import {
   reorderArtifacts as reorderArtifactsDB,
   getNextPosition,
 } from "@/lib/quick-db";
-import { Artifact } from "@/types";
+import { Artifact, ArtifactType } from "@/types";
 
 /**
  * Fetcher function for SWR
@@ -19,20 +19,28 @@ async function fetcher(pageId: string): Promise<Artifact[]> {
   return await getArtifactsByPage(pageId);
 }
 
-export function usePageArtifacts(projectId: string | undefined, pageId: string | undefined) {
-  const { data: artifacts = [], error, isLoading, mutate } = useSWR<Artifact[]>(
+export function usePageArtifacts(
+  projectId: string | undefined,
+  pageId: string | undefined
+) {
+  const {
+    data: artifacts = [],
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<Artifact[]>(
     pageId ? `page-artifacts-${pageId}` : null,
     () => (pageId ? fetcher(pageId) : []),
-    { 
+    {
       revalidateOnFocus: false,
-      dedupingInterval: 300000,    // 5 minutes - cache artifacts per page
-      keepPreviousData: true,      // Show old data while loading new (smooth transitions)
+      dedupingInterval: 300000, // 5 minutes - cache artifacts per page
+      keepPreviousData: true, // Show old data while loading new (smooth transitions)
     }
   );
 
   const createArtifact = useCallback(
     async (artifactData: {
-      type: "figma" | "url" | "image" | "video" | "pdf";
+      type: ArtifactType;
       source_url: string;
       file_path?: string | null;
       name?: string;
@@ -42,7 +50,11 @@ export function usePageArtifacts(projectId: string | undefined, pageId: string |
 
       try {
         // Get next available position
-        const nextPosition = await getNextPosition("artifacts", pageId, "page_id");
+        const nextPosition = await getNextPosition(
+          "artifacts",
+          pageId,
+          "page_id"
+        );
 
         // Create the artifact
         const artifact = await createArtifactDB({
@@ -94,7 +106,10 @@ export function usePageArtifacts(projectId: string | undefined, pageId: string |
   );
 
   const updateArtifact = useCallback(
-    async (artifactId: string, updates: { name?: string; metadata?: Record<string, unknown> }) => {
+    async (
+      artifactId: string,
+      updates: { name?: string; metadata?: Record<string, unknown> }
+    ) => {
       if (!projectId) return null;
 
       try {
