@@ -3,26 +3,10 @@ import type {
   UniqueIdentifier,
   DraggableSyntheticListeners,
 } from "@dnd-kit/core";
-import {
-  GripVertical,
-  Eye,
-  EyeOff,
-  RotateCcw,
-  Volume2,
-  VolumeX,
-  Check,
-  Upload,
-  Edit,
-} from "lucide-react";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
+import { GripVertical } from "lucide-react";
 import { CarouselItemContent } from "./CarouselItemContent";
+import { CarouselItemContextMenu } from "./CarouselItemContextMenu";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
-import { toast } from "sonner";
 
 export enum Position {
   Before = -1,
@@ -111,9 +95,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const contentWidth = propWidth;
     const contentHeight = propHeight;
 
-    const isVideo = type === "video";
     const isUrl = type === "url";
-    const isTitleCard = type === "titleCard";
 
     // Extract ref from dragHandleProps to apply to the entire item
     const { ref: dragHandleRef, ...dragListeners } = dragHandleProps || {};
@@ -184,163 +166,18 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       </li>
     );
 
-    // If read-only or no handlers, just return the content without context menu
-    if (
-      isReadOnly ||
-      (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit)
-    ) {
-      return contentElement;
-    }
-
-    // Wrap with context menu for interactive items (not URLs)
-    if (isUrl) {
-      return contentElement;
-    }
-
-    const handleReplaceMedia = () => {
-      if (!onReplaceMedia) return;
-
-      // Create a temporary file input
-      const input = document.createElement("input");
-      input.type = "file";
-
-      // Set accept attribute based on content type
-      if (isVideo) {
-        input.accept = ".mp4,.mov,.webm,video/*";
-      } else {
-        input.accept = ".jpg,.jpeg,.png,.gif,.webp,image/*";
-      }
-
-      input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-          try {
-            await onReplaceMedia(file);
-          } catch (error) {
-            console.error("Failed to replace media:", error);
-          }
-        }
-      };
-
-      input.click();
-    };
-
-    const toggleVideoUI = async () => {
-      if (!onUpdateMetadata) return;
-      try {
-        await onUpdateMetadata({ hideUI: !metadata?.hideUI });
-        toast.success(
-          metadata?.hideUI ? "Video controls enabled" : "Video controls hidden"
-        );
-      } catch {
-        toast.error("Failed to update video settings");
-      }
-    };
-
-    const toggleVideoLoop = async () => {
-      if (!onUpdateMetadata) return;
-      try {
-        await onUpdateMetadata({ loop: !metadata?.loop });
-        toast.success(
-          metadata?.loop ? "Video loop disabled" : "Video loop enabled"
-        );
-      } catch {
-        toast.error("Failed to update video settings");
-      }
-    };
-
-    const toggleVideoMute = async () => {
-      if (!onUpdateMetadata) return;
-      const currentMuted = metadata?.muted !== false;
-      try {
-        await onUpdateMetadata({ muted: !currentMuted });
-        toast.success(currentMuted ? "Video unmuted" : "Video muted");
-      } catch {
-        toast.error("Failed to update video settings");
-      }
-    };
-
     return (
-      <ContextMenu>
-        <ContextMenuTrigger asChild>{contentElement}</ContextMenuTrigger>
-        <ContextMenuContent>
-          {isTitleCard && onEdit && (
-            <>
-              <ContextMenuItem
-                onClick={onEdit}
-                className="flex items-center gap-2"
-              >
-                <Edit className="w-4 h-4" />
-                Edit
-              </ContextMenuItem>
-              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
-            </>
-          )}
-          {isVideo && onUpdateMetadata && (
-            <>
-              <ContextMenuItem
-                onClick={toggleVideoUI}
-                className="flex items-center gap-2"
-              >
-                <div className="w-4 h-4 flex items-center justify-center">
-                  {!metadata?.hideUI ? <Check className="w-3 h-3" /> : null}
-                </div>
-                {!metadata?.hideUI ? (
-                  <Eye className="w-4 h-4" />
-                ) : (
-                  <EyeOff className="w-4 h-4" />
-                )}
-                Show Controls
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={toggleVideoLoop}
-                className="flex items-center gap-2"
-              >
-                <div className="w-4 h-4 flex items-center justify-center">
-                  {metadata?.loop ? <Check className="w-3 h-3" /> : null}
-                </div>
-                <RotateCcw className="w-4 h-4" />
-                Loop Video
-              </ContextMenuItem>
-              <ContextMenuItem
-                onClick={toggleVideoMute}
-                className="flex items-center gap-2"
-              >
-                <div className="w-4 h-4 flex items-center justify-center">
-                  {metadata?.muted === false ? (
-                    <Check className="w-3 h-3" />
-                  ) : null}
-                </div>
-                {metadata?.muted !== false ? (
-                  <VolumeX className="w-4 h-4" />
-                ) : (
-                  <Volume2 className="w-4 h-4" />
-                )}
-                Audio On
-              </ContextMenuItem>
-              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
-            </>
-          )}
-          {onReplaceMedia && !isTitleCard && (
-            <ContextMenuItem
-              onClick={handleReplaceMedia}
-              className="flex items-center gap-2"
-            >
-              <Upload className="w-4 h-4" />
-              Replace Media
-            </ContextMenuItem>
-          )}
-          {((onReplaceMedia && !isTitleCard) || (isTitleCard && onEdit)) &&
-            onDelete && (
-              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
-            )}
-          {onDelete && (
-            <ContextMenuItem variant="destructive" onClick={onDelete}>
-              Delete
-            </ContextMenuItem>
-          )}
-        </ContextMenuContent>
-      </ContextMenu>
+      <CarouselItemContextMenu
+        contentType={type}
+        metadata={metadata}
+        onUpdateMetadata={onUpdateMetadata}
+        onReplaceMedia={onReplaceMedia}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        isReadOnly={isReadOnly}
+      >
+        {contentElement}
+      </CarouselItemContextMenu>
     );
   }
 );
