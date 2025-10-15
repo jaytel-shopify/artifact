@@ -25,7 +25,11 @@ export default function DropzoneUploader({
   useEffect(() => {
     function hasFilesOrUrl(evt: DragEvent) {
       const types = Array.from(evt.dataTransfer?.types ?? []);
-      return types.includes("Files") || types.includes("text/uri-list") || types.includes("text/plain");
+      return (
+        types.includes("Files") ||
+        types.includes("text/uri-list") ||
+        types.includes("text/plain")
+      );
     }
 
     function handleDragEnter(evt: DragEvent) {
@@ -59,7 +63,9 @@ export default function DropzoneUploader({
         return;
       }
 
-      const uri = evt.dataTransfer?.getData("text/uri-list") || evt.dataTransfer?.getData("text/plain");
+      const uri =
+        evt.dataTransfer?.getData("text/uri-list") ||
+        evt.dataTransfer?.getData("text/plain");
       if (uri && onUrl) {
         await onUrl(uri.trim());
       }
@@ -87,13 +93,33 @@ export default function DropzoneUploader({
         <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-lg text-white/90 pointer-events-none">
           <div className="text-center space-y-3 w-full max-w-xs px-6">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/10 border border-white/20">
-              <svg viewBox="0 0 24 24" fill="none" className="h-6 w-6 text-white/90">
-                <path d="M12 16v-8m0 0 3 3m-3-3-3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M6 17.5V18a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                className="h-6 w-6 text-white/90"
+              >
+                <path
+                  d="M12 16v-8m0 0 3 3m-3-3-3 3"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M6 17.5V18a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-.5"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
-            <div className="text-sm font-medium">Drop to upload your artifacts</div>
-            <div className="text-xs text-white/70">Images or videos up to 50MB each</div>
+            <div className="text-sm font-medium">
+              Drop to upload your artifacts
+            </div>
+            <div className="text-xs text-white/70">
+              Images or videos up to 50MB each
+            </div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
               <div className="h-full w-full animate-[progress_1.2s_linear_infinite] bg-white/70" />
             </div>
@@ -103,5 +129,3 @@ export default function DropzoneUploader({
     </div>
   );
 }
-
-

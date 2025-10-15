@@ -16,13 +16,17 @@
   overflow-x: auto;
   overflow-y: visible;
   max-width: 100%;
-  height: 100%;
   /* Scroll snapping */
   scroll-snap-type: x mandatory;
   scroll-padding-left: 1rem;
   scroll-behavior: smooth;
   /* Hide scrollbars */
   scrollbar-width: none;
+}
+
+/* Only apply 100% height when columns is set to 1 */
+.carousel-horizontal.single-column {
+  height: 100%;
 }
 
 /* Disable snap scrolling during item reorder to prevent jump */

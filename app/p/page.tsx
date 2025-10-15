@@ -18,7 +18,10 @@ import { usePageArtifacts } from "@/hooks/usePageArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
 import type { Project, Folder } from "@/types";
-import { getProjectByShareToken, updateArtifact as updateArtifactDB } from "@/lib/quick-db";
+import {
+  getProjectByShareToken,
+  updateArtifact as updateArtifactDB,
+} from "@/lib/quick-db";
 import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
@@ -124,7 +127,7 @@ function PresentationPageContent() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       // Check for CMD+. or CMD+/ (also support Ctrl for Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && (e.key === '.' || e.key === '/')) {
+      if ((e.metaKey || e.ctrlKey) && (e.key === "." || e.key === "/")) {
         // Don't trigger if user is typing in an input
         const target = e.target as HTMLElement;
         if (
@@ -161,7 +164,9 @@ function PresentationPageContent() {
   const isCollaborator = permissions.isCollaborator;
 
   // Fetch and manage pages
-  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(project?.id);
+  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
+    project?.id
+  );
   const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
   // Fetch page-specific artifacts

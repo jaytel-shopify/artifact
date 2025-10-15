@@ -192,7 +192,7 @@ export function SortableCarousel({
       <SortableContext items={itemIds} strategy={horizontalListSortingStrategy}>
         <ul
           ref={containerRef}
-          className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""}`}
+          className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""}`}
         >
           {items.map((artifact, index) => (
             <SortableCarouselItem
