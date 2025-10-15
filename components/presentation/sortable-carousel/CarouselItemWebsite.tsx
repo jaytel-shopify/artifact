@@ -74,7 +74,7 @@ export function CarouselItemWebsite({
         style={{
           border: 0,
           transform: `scale(${scale})`,
-          transformOrigin: fitMode ? "center center" : "top left",
+          transformOrigin: fitMode ? "top center" : "top left",
           pointerEvents: isDragging ? "none" : "auto",
         }}
         allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"

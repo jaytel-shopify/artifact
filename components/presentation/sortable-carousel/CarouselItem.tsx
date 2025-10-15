@@ -190,29 +190,29 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
 
     const handleReplaceMedia = () => {
       if (!onReplaceMedia) return;
-      
+
       // Create a temporary file input
-      const input = document.createElement('input');
-      input.type = 'file';
-      
+      const input = document.createElement("input");
+      input.type = "file";
+
       // Set accept attribute based on content type
       if (isVideo) {
-        input.accept = '.mp4,.mov,.webm,video/*';
+        input.accept = ".mp4,.mov,.webm,video/*";
       } else {
-        input.accept = '.jpg,.jpeg,.png,.gif,.webp,image/*';
+        input.accept = ".jpg,.jpeg,.png,.gif,.webp,image/*";
       }
-      
+
       input.onchange = async (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
           try {
             await onReplaceMedia(file);
           } catch (error) {
-            console.error('Failed to replace media:', error);
+            console.error("Failed to replace media:", error);
           }
         }
       };
-      
+
       input.click();
     };
 
@@ -301,7 +301,10 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             </>
           )}
           {onReplaceMedia && (
-            <ContextMenuItem onClick={handleReplaceMedia} className="flex items-center gap-2">
+            <ContextMenuItem
+              onClick={handleReplaceMedia}
+              className="flex items-center gap-2"
+            >
               <Upload className="w-4 h-4" />
               Replace Media
             </ContextMenuItem>

@@ -143,11 +143,10 @@ export function SortableCarousel({
     prevArtifactsRef.current = artifacts;
   }, [artifacts, isSettling, items]);
 
-  // Reset scroll position when columns change
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollLeft = 0;
-    }
+    const container = containerRef.current;
+    if (!container) return;
+    container.scrollLeft = container.scrollLeft;
   }, [columns]);
 
   const itemIds = items.map((artifact) => artifact.id);
@@ -164,16 +163,10 @@ export function SortableCarousel({
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // Calculate column width in vw based on number of columns
-  // Padding: 1rem on each side = 2rem total
-  // Gaps: 2rem between each item = 2rem * (columns - 1)
   const totalPaddingRem = 2;
   const totalGapRem = 2 * (columns - 1);
   const totalSpacingRem = totalPaddingRem + totalGapRem;
-  // Convert rem to vw (assuming 16px = 1rem and using viewport width)
-  const remToVw = (rem: number) =>
-    `${((rem * 16) / window.innerWidth) * 100}vw`;
-  const columnWidth = `calc((100vw - ${remToVw(totalSpacingRem)}) / ${columns})`;
+  const columnWidth = `calc((100vw - ${totalSpacingRem}rem) / ${columns})`;
 
   // Fit mode is ONLY enabled when columns is 1
   // Regardless of fitMode prop, it's disabled for multi-column layouts
