@@ -17,6 +17,7 @@ interface CanvasProps {
   ) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;
+  onEditTitleCard?: (artifactId: string) => void;
   isReadOnly?: boolean;
   fitMode?: boolean;
 }
@@ -28,6 +29,7 @@ export default function Canvas({
   onUpdateArtifact,
   onDeleteArtifact,
   onReplaceMedia,
+  onEditTitleCard,
   isReadOnly = false,
   fitMode = false,
 }: CanvasProps) {
@@ -42,6 +44,7 @@ export default function Canvas({
         onUpdateArtifact={onUpdateArtifact}
         onDeleteArtifact={onDeleteArtifact}
         onReplaceMedia={onReplaceMedia}
+        onEditTitleCard={onEditTitleCard}
         isReadOnly={isReadOnly}
       />
     </div>

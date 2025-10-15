@@ -27,6 +27,15 @@ import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -86,6 +95,14 @@ function PresentationPageContent() {
     completedFiles: 0,
     currentProgress: 0,
   });
+
+  // Title card edit state
+  const [editingTitleCard, setEditingTitleCard] = useState<{
+    artifactId: string;
+    headline: string;
+    subheadline: string;
+  } | null>(null);
+  const [titleCardError, setTitleCardError] = useState("");
 
   // Load column and fit mode preferences
   useEffect(() => {
@@ -435,6 +452,54 @@ function PresentationPageContent() {
     }
   }, [project]);
 
+  // Title card edit handlers
+  const handleEditTitleCard = useCallback(
+    (artifactId: string) => {
+      const artifact = artifacts.find((a) => a.id === artifactId);
+      if (!artifact) return;
+
+      const metadata = artifact.metadata as
+        | { headline?: string; subheadline?: string }
+        | undefined;
+
+      setEditingTitleCard({
+        artifactId,
+        headline: metadata?.headline || "",
+        subheadline: metadata?.subheadline || "",
+      });
+      setTitleCardError("");
+    },
+    [artifacts]
+  );
+
+  const handleTitleCardSubmit = useCallback(async () => {
+    if (!editingTitleCard) return;
+
+    const { headline, subheadline, artifactId } = editingTitleCard;
+
+    if (!headline && !subheadline) {
+      setTitleCardError("Please enter at least a headline or subheadline");
+      return;
+    }
+
+    try {
+      await updateArtifact(artifactId, {
+        name: headline || "Title Card",
+        metadata: {
+          headline,
+          subheadline,
+        },
+      });
+
+      toast.success("Title card updated");
+      setEditingTitleCard(null);
+      setTitleCardError("");
+    } catch (err) {
+      toast.error("Failed to update title card. Please try again.");
+      console.error(err);
+    }
+  }, [editingTitleCard, updateArtifact]);
+
   // Replace media handler
   const handleReplaceMedia = useCallback(
     async (artifactId: string, file: File) => {
@@ -618,10 +683,87 @@ function PresentationPageContent() {
               await deleteArtifact(artifactId);
             }}
             onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
+            onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
             isReadOnly={isReadOnly}
           />
         </div>
       </div>
+
+      {/* Title Card Edit Dialog */}
+      <Dialog
+        open={editingTitleCard !== null}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setEditingTitleCard(null);
+            setTitleCardError("");
+          }
+        }}
+      >
+        <DialogContent
+          className="w-full max-w-2xl text-white border-white/10"
+          style={{ backgroundColor: "var(--color-background-secondary)" }}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Edit Title Card</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm text-white/70">Headline</label>
+              <Input
+                value={editingTitleCard?.headline || ""}
+                onChange={(e) =>
+                  setEditingTitleCard((prev) =>
+                    prev ? { ...prev, headline: e.target.value } : null
+                  )
+                }
+                placeholder="Enter headline"
+                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm text-white/70">Subheadline</label>
+              <Input
+                value={editingTitleCard?.subheadline || ""}
+                onChange={(e) =>
+                  setEditingTitleCard((prev) =>
+                    prev ? { ...prev, subheadline: e.target.value } : null
+                  )
+                }
+                placeholder="Enter subheadline"
+                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+              />
+            </div>
+
+            {titleCardError && (
+              <div className="text-sm text-red-400">{titleCardError}</div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setEditingTitleCard(null);
+                setTitleCardError("");
+              }}
+              className="text-white hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTitleCardSubmit}
+              disabled={
+                !editingTitleCard?.headline && !editingTitleCard?.subheadline
+              }
+              className="bg-white text-black hover:bg-white/90"
+            >
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Dev Debug Panel - Press '/' to toggle */}
       <DevDebugPanel

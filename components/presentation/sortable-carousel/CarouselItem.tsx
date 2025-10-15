@@ -12,6 +12,7 @@ import {
   VolumeX,
   Check,
   Upload,
+  Edit,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -64,6 +65,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   onUpdateTitle?: (newTitle: string) => Promise<void>;
   onDelete?: () => void;
   onReplaceMedia?: (file: File) => Promise<void>;
+  onEdit?: () => void;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
   isSettling?: boolean;
@@ -91,6 +93,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onUpdateTitle,
       onDelete,
       onReplaceMedia,
+      onEdit,
       isReadOnly = false,
       isAnyDragging = false,
       isSettling = false,
@@ -182,12 +185,15 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     );
 
     // If read-only or no handlers, just return the content without context menu
-    if (isReadOnly || (!onDelete && !onUpdateMetadata && !onReplaceMedia)) {
+    if (
+      isReadOnly ||
+      (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit)
+    ) {
       return contentElement;
     }
 
-    // Wrap with context menu for interactive items (not URLs or title cards)
-    if (isUrl || isTitleCard) {
+    // Wrap with context menu for interactive items (not URLs)
+    if (isUrl) {
       return contentElement;
     }
 
@@ -258,6 +264,18 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       <ContextMenu>
         <ContextMenuTrigger asChild>{contentElement}</ContextMenuTrigger>
         <ContextMenuContent>
+          {isTitleCard && onEdit && (
+            <>
+              <ContextMenuItem
+                onClick={onEdit}
+                className="flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" />
+                Edit
+              </ContextMenuItem>
+              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
+            </>
+          )}
           {isVideo && onUpdateMetadata && (
             <>
               <ContextMenuItem
@@ -303,7 +321,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
             </>
           )}
-          {onReplaceMedia && (
+          {onReplaceMedia && !isTitleCard && (
             <ContextMenuItem
               onClick={handleReplaceMedia}
               className="flex items-center gap-2"
@@ -312,9 +330,10 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               Replace Media
             </ContextMenuItem>
           )}
-          {onReplaceMedia && onDelete && (
-            <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
-          )}
+          {((onReplaceMedia && !isTitleCard) || (isTitleCard && onEdit)) &&
+            onDelete && (
+              <ContextMenuItem disabled className="h-px bg-border p-0 m-1" />
+            )}
           {onDelete && (
             <ContextMenuItem variant="destructive" onClick={onDelete}>
               Delete

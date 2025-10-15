@@ -46,6 +46,7 @@ interface Props {
   ) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;
+  onEditTitleCard?: (artifactId: string) => void;
   isReadOnly?: boolean;
 }
 
@@ -80,6 +81,7 @@ export function SortableCarousel({
   onUpdateArtifact,
   onDeleteArtifact,
   onReplaceMedia,
+  onEditTitleCard,
   isReadOnly = false,
 }: Props) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -251,6 +253,11 @@ export function SortableCarousel({
               onReplaceMedia={
                 onReplaceMedia
                   ? async (file) => await onReplaceMedia(artifact.id, file)
+                  : undefined
+              }
+              onEdit={
+                onEditTitleCard && artifact.type === "titleCard"
+                  ? () => onEditTitleCard(artifact.id)
                   : undefined
               }
             />
