@@ -91,6 +91,7 @@
   position: absolute;
   background-color: #fff;
   z-index: 10;
+  max-height: 500px;
 }
 
 .carousel-item-wrapper:not(.vertical).insert-before::after,
