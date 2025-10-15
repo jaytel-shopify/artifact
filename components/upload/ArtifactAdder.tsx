@@ -218,7 +218,7 @@ export default function ArtifactAdder({
             <Plus className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuItem
             onClick={() => fileInputRef.current?.click()}
             className="cursor-pointer"
