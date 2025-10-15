@@ -1,18 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus } from "lucide-react";
+import { Plus, Image, Link, Type } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   VIEWPORTS,
   DEFAULT_VIEWPORT_KEY,
@@ -29,6 +33,8 @@ import {
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { toast } from "sonner";
 
+type DialogType = "url" | "titleCard" | null;
+
 export default function ArtifactAdder({
   projectId,
   pageId,
@@ -38,301 +44,349 @@ export default function ArtifactAdder({
   pageId: string;
   onAdded?: () => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const [url, setUrl] = useState("");
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploadState, setUploadState] = useState<{
-    uploading: boolean;
-    totalFiles: number;
-    completedFiles: number;
-    currentProgress: number;
-  }>({
-    uploading: false,
-    totalFiles: 0,
-    completedFiles: 0,
-    currentProgress: 0,
-  });
-  const [error, setError] = useState<string | null>(null);
   const [viewport, setViewport] = useState<ViewportKey>(DEFAULT_VIEWPORT_KEY);
+  const [headline, setHeadline] = useState("");
+  const [subheadline, setSubheadline] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { createArtifact } = usePageArtifacts(projectId, pageId);
 
-  function resetState() {
+  function resetUrlState() {
     setUrl("");
-    setFiles([]);
-    setError(null);
     setViewport(DEFAULT_VIEWPORT_KEY);
-    setUploadState({
-      uploading: false,
-      totalFiles: 0,
-      completedFiles: 0,
-      currentProgress: 0,
-    });
+    setError(null);
   }
 
-  async function handleAdd() {
+  function resetTitleCardState() {
+    setHeadline("");
+    setSubheadline("");
     setError(null);
+  }
+
+  // Handle media file selection
+  async function handleMediaFiles(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    setError(null);
+    setUploading(true);
 
     try {
-      if (files.length) {
-        // Validate all files first (50MB limit)
-        for (const file of files) {
-          const validation = validateFile(file, { maxSizeMB: 50 });
-          if (!validation.valid) {
-            setError(validation.error || "File too large");
-            toast.error(validation.error || "File too large");
-            return;
-          }
-        }
-
-        // Initialize upload state for files
-        setUploadState({
-          uploading: true,
-          totalFiles: files.length,
-          completedFiles: 0,
-          currentProgress: 0,
-        });
-
-        let completedCount = 0;
-
-        for (const file of files) {
-          // Upload file to Quick.fs with progress tracking
-          const upResult = await uploadFile(file, (progress) => {
-            const fileProgress = progress.percentage;
-            const overallProgress = Math.round(
-              (completedCount * 100 + fileProgress) / files.length
-            );
-
-            setUploadState((prev) => ({
-              ...prev,
-              currentProgress: overallProgress,
-            }));
-          });
-
-          // Determine file type from MIME type
-          const type = getArtifactTypeFromMimeType(upResult.mimeType);
-
-          // Set default metadata for videos (muted, loop, hide controls)
-          const defaultMetadata =
-            type === "video" ? { hideUI: true, loop: true, muted: true } : {};
-
-          // Create artifact using the hook with generated name
-          const artifactName = generateArtifactName(
-            type,
-            upResult.fullUrl,
-            file
-          );
-          const artifact = await createArtifact({
-            type,
-            source_url: upResult.fullUrl, // Use fullUrl for display
-            file_path: upResult.url, // Store relative url
-            name: artifactName,
-            metadata: defaultMetadata,
-          });
-
-          // Generate thumbnail asynchronously for videos (don't await)
-          if (type === "video" && artifact) {
-            generateAndUploadThumbnail(file, artifact.id).catch((err) => {
-              console.error("Thumbnail generation failed:", err);
-            });
-          }
-
-          completedCount++;
-          setUploadState((prev) => ({
-            ...prev,
-            completedFiles: completedCount,
-            currentProgress: Math.round((completedCount / files.length) * 100),
-          }));
+      // Validate all files first (50MB limit)
+      for (const file of files) {
+        const validation = validateFile(file, { maxSizeMB: 50 });
+        if (!validation.valid) {
+          toast.error(validation.error || "File too large");
+          return;
         }
       }
 
-      if (!files.length && url) {
-        // For URL artifacts, just show a simple uploading state
-        setUploadState({
-          uploading: true,
-          totalFiles: 1,
-          completedFiles: 0,
-          currentProgress: 50,
-        });
+      for (const file of files) {
+        // Upload file to Quick.fs
+        const upResult = await uploadFile(file);
 
-        const dims = getViewportDimensions(viewport);
+        // Determine file type from MIME type
+        const type = getArtifactTypeFromMimeType(upResult.mimeType);
 
-        // Create URL artifact using the hook with generated name
-        const artifactName = generateArtifactName("url", url);
-        await createArtifact({
-          type: "url",
-          source_url: url,
+        // Set default metadata for videos (muted, loop, hide controls)
+        const defaultMetadata =
+          type === "video" ? { hideUI: true, loop: true, muted: true } : {};
+
+        // Create artifact using the hook with generated name
+        const artifactName = generateArtifactName(type, upResult.fullUrl, file);
+        const artifact = await createArtifact({
+          type,
+          source_url: upResult.fullUrl, // Use fullUrl for display
+          file_path: upResult.url, // Store relative url
           name: artifactName,
-          metadata: {
-            viewport,
-            width: dims.width,
-            height: dims.height,
-          },
+          metadata: defaultMetadata,
         });
 
-        setUploadState((prev) => ({
-          ...prev,
-          completedFiles: 1,
-          currentProgress: 100,
-        }));
+        // Generate thumbnail asynchronously for videos (don't await)
+        if (type === "video" && artifact) {
+          generateAndUploadThumbnail(file, artifact.id).catch((err) => {
+            console.error("Thumbnail generation failed:", err);
+          });
+        }
       }
 
-      if (files.length) {
-        toast.success(
-          `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}`
-        );
-      } else if (url) {
-        toast.success("Successfully added URL artifact");
-      }
-
-      setOpen(false);
-      resetState();
+      toast.success(
+        `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}`
+      );
       onAdded?.();
     } catch (e: any) {
       setError(e.message);
       toast.error(e.message || "Upload failed. Please try again.");
-      setUploadState({
-        uploading: false,
-        totalFiles: 0,
-        completedFiles: 0,
-        currentProgress: 0,
-      });
+    } finally {
+      setUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   }
 
-  function onFileInputChange(event: React.ChangeEvent<HTMLInputElement>) {
-    setFiles(Array.from(event.target.files || []));
+  // Handle URL submission
+  async function handleUrlSubmit() {
+    if (!url) return;
+
+    setError(null);
+    setUploading(true);
+
+    try {
+      const dims = getViewportDimensions(viewport);
+
+      // Create URL artifact using the hook with generated name
+      const artifactName = generateArtifactName("url", url);
+      await createArtifact({
+        type: "url",
+        source_url: url,
+        name: artifactName,
+        metadata: {
+          viewport,
+          width: dims.width,
+          height: dims.height,
+        },
+      });
+
+      toast.success("Successfully added URL artifact");
+      setOpenDialog(null);
+      resetUrlState();
+      onAdded?.();
+    } catch (e: any) {
+      setError(e.message);
+      toast.error(e.message || "Failed to add URL. Please try again.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  // Handle Title Card submission
+  async function handleTitleCardSubmit() {
+    if (!headline && !subheadline) {
+      setError("Please enter at least a headline or subheadline");
+      return;
+    }
+
+    setError(null);
+    setUploading(true);
+
+    try {
+      // Create title card artifact
+      await createArtifact({
+        type: "titleCard",
+        source_url: "", // No source URL for title cards
+        name: headline || "Title Card",
+        metadata: {
+          headline,
+          subheadline,
+        },
+      });
+
+      toast.success("Successfully added title card");
+      setOpenDialog(null);
+      resetTitleCardState();
+      onAdded?.();
+    } catch (e: any) {
+      setError(e.message);
+      toast.error(e.message || "Failed to add title card. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        setOpen(isOpen);
-        if (!isOpen) {
-          resetState();
-        }
-      }}
-    >
-      <DialogTrigger asChild>
-        <Button variant="outline" size="icon" aria-label="Add artifact">
-          <Plus className="h-4 w-4" />
-        </Button>
-      </DialogTrigger>
+    <>
+      {/* Hidden file input for media uploads */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,video/*"
+        className="hidden"
+        onChange={handleMediaFiles}
+      />
 
-      <DialogContent
-        className="w-full max-w-2xl text-white border-white/10"
-        style={{ backgroundColor: "var(--color-background-secondary)" }}
-        showCloseButton={!uploadState.uploading}
+      {/* Dropdown Menu */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="icon" aria-label="Add artifact">
+            <Plus className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem
+            onClick={() => fileInputRef.current?.click()}
+            className="cursor-pointer"
+          >
+            <Image className="h-4 w-4 mr-2" />
+            Media
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setOpenDialog("url")}
+            className="cursor-pointer"
+          >
+            <Link className="h-4 w-4 mr-2" />
+            URL
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setOpenDialog("titleCard")}
+            className="cursor-pointer"
+          >
+            <Type className="h-4 w-4 mr-2" />
+            Title Card
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {/* URL Dialog */}
+      <Dialog
+        open={openDialog === "url"}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setOpenDialog(null);
+            resetUrlState();
+          }
+        }}
       >
-        <DialogHeader>
-          <DialogTitle className="text-white">Add Artifact</DialogTitle>
-        </DialogHeader>
+        <DialogContent
+          className="w-full max-w-2xl text-white border-white/10"
+          style={{ backgroundColor: "var(--color-background-secondary)" }}
+          showCloseButton={!uploading}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Embed via URL</DialogTitle>
+          </DialogHeader>
 
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <p className="text-sm text-white/70">Upload files</p>
-            <label className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-white/20 bg-white/5 py-12 cursor-pointer transition hover:border-white/40">
-              <span className="text-sm font-medium">Browse files</span>
-              <span className="text-xs text-white/60">
-                Images or videos up to 50MB
-              </span>
-              <input
-                type="file"
-                multiple
-                accept="image/*,video/*"
-                className="hidden"
-                onChange={onFileInputChange}
-              />
-            </label>
-            {files.length > 0 && (
-              <div className="text-xs text-white/60">
-                {files.length} file{files.length > 1 ? "s" : ""} selected
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-3 text-sm text-white/40">
-            <div className="flex-1 h-px bg-white/15" />
-            or
-            <div className="flex-1 h-px bg-white/15" />
-          </div>
-
-          <div className="space-y-3">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <p className="text-sm text-white/70">Embed via URL</p>
               <Input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com/artifact"
                 className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                disabled={uploading}
               />
             </div>
-            <div className="flex flex-wrap gap-2 text-xs text-white/70">
-              {Object.entries(VIEWPORTS).map(([key, vp]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setViewport(key as ViewportKey)}
-                  className={`rounded-full px-3 py-1 border transition cursor-pointer ${
-                    viewport === key
-                      ? "border-white/40 bg-white/20 text-white"
-                      : "border-white/15 bg-white/5 text-white/70 hover:border-white/30"
-                  }`}
-                >
-                  {vp.label}
-                </button>
-              ))}
+
+            <div className="space-y-2">
+              <p className="text-sm text-white/70">Viewport</p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                {Object.entries(VIEWPORTS).map(([key, vp]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setViewport(key as ViewportKey)}
+                    disabled={uploading}
+                    className={`rounded-full px-3 py-1 border transition cursor-pointer ${
+                      viewport === key
+                        ? "border-white/40 bg-white/20 text-white"
+                        : "border-white/15 bg-white/5 text-white/70 hover:border-white/30"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  >
+                    {vp.label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {error && <div className="text-sm text-red-400">{error}</div>}
           </div>
 
-          {uploadState.uploading && (
-            <div className="space-y-3">
-              <div className="text-center text-sm text-white/80">
-                Uploading
-                {uploadState.totalFiles > 1
-                  ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
-                  : ""}
-                ...
-              </div>
-              <div className="space-y-2">
-                <div className="w-full bg-white/20 rounded-full h-2">
-                  <div
-                    className="bg-white h-2 rounded-full transition-all duration-300 ease-out"
-                    style={{ width: `${uploadState.currentProgress}%` }}
-                  />
-                </div>
-                <div className="text-center text-xs text-white/60">
-                  {uploadState.currentProgress}%
-                </div>
-              </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setOpenDialog(null);
+                resetUrlState();
+              }}
+              disabled={uploading}
+              className="text-white hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUrlSubmit}
+              disabled={uploading || !url}
+              className="bg-white text-black hover:bg-white/90"
+            >
+              {uploading ? "Adding…" : "Add"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Title Card Dialog */}
+      <Dialog
+        open={openDialog === "titleCard"}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setOpenDialog(null);
+            resetTitleCardState();
+          }
+        }}
+      >
+        <DialogContent
+          className="w-full max-w-2xl text-white border-white/10"
+          style={{ backgroundColor: "var(--color-background-secondary)" }}
+          showCloseButton={!uploading}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Create Title Card</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm text-white/70">Headline</label>
+              <Input
+                value={headline}
+                onChange={(e) => setHeadline(e.target.value)}
+                placeholder="Enter headline"
+                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                disabled={uploading}
+              />
             </div>
-          )}
 
-          {error && <div className="text-sm text-red-400">{error}</div>}
-        </div>
+            <div className="space-y-2">
+              <label className="text-sm text-white/70">Subheadline</label>
+              <Input
+                value={subheadline}
+                onChange={(e) => setSubheadline(e.target.value)}
+                placeholder="Enter subheadline"
+                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                disabled={uploading}
+              />
+            </div>
 
-        <DialogFooter>
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setOpen(false);
-              resetState();
-            }}
-            disabled={uploadState.uploading}
-            className="text-white hover:bg-white/10"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleAdd}
-            disabled={uploadState.uploading || (!files.length && !url)}
-            className="bg-white text-black hover:bg-white/90"
-          >
-            {uploadState.uploading ? "Uploading…" : "Add"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+            {error && <div className="text-sm text-red-400">{error}</div>}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setOpenDialog(null);
+                resetTitleCardState();
+              }}
+              disabled={uploading}
+              className="text-white hover:bg-white/10"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleTitleCardSubmit}
+              disabled={uploading || (!headline && !subheadline)}
+              className="bg-white text-black hover:bg-white/90"
+            >
+              {uploading ? "Creating…" : "Create"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

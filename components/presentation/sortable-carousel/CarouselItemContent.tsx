@@ -2,9 +2,10 @@ import React from "react";
 import { CarouselItemImage } from "./CarouselItemImage";
 import { CarouselItemVideo } from "./CarouselItemVideo";
 import { CarouselItemWebsite } from "./CarouselItemWebsite";
+import { CarouselItemTitleCard } from "./CarouselItemTitleCard";
 
 interface CarouselItemContentProps {
-  type: "image" | "video" | "url";
+  type: "image" | "video" | "url" | "titleCard";
   url: string;
   alt: string;
   width?: number;
@@ -14,6 +15,8 @@ interface CarouselItemContentProps {
     hideUI?: boolean;
     loop?: boolean;
     muted?: boolean;
+    headline?: string;
+    subheadline?: string;
   };
   fitMode?: boolean;
 }
@@ -49,6 +52,13 @@ export function CarouselItemContent({
           height={height}
           isDragging={isDragging}
           fitMode={fitMode}
+        />
+      );
+    case "titleCard":
+      return (
+        <CarouselItemTitleCard
+          headline={metadata?.headline}
+          subheadline={metadata?.subheadline}
         />
       );
     default:

@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, Play, FileText } from "lucide-react";
+import { Globe, Play, FileText, Type } from "lucide-react";
 import type { Artifact } from "@/types";
 
 interface ArtifactThumbnailProps {
@@ -72,6 +72,15 @@ export default function ArtifactThumbnail({
             <div className="w-8 h-8 bg-purple-500 text-white font-bold rounded-lg flex items-center justify-center text-lg">
               F
             </div>
+          </div>
+        </div>
+      );
+
+    case "titleCard":
+      return (
+        <div className={baseClasses}>
+          <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+            <Type className="w-8 h-8 text-white" />
           </div>
         </div>
       );

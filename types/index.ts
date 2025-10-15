@@ -16,7 +16,7 @@ export type Project = {
   settings: ProjectSettings;
 };
 
-export type ArtifactType = "figma" | "url" | "image" | "video";
+export type ArtifactType = "figma" | "url" | "image" | "video" | "titleCard";
 
 export type UrlViewportMetadata = {
   viewport?: string;
@@ -29,6 +29,11 @@ export type VideoMetadata = {
   hideUI?: boolean;
   loop?: boolean;
   muted?: boolean;
+};
+
+export type TitleCardMetadata = {
+  headline?: string;
+  subheadline?: string;
 };
 
 export type Page = {

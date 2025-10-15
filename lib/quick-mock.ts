@@ -133,6 +133,23 @@ function init() {
       created_at: now,
       updated_at: now,
     },
+    {
+      id: "art-7",
+      project_id: projectId,
+      page_id: pageId,
+      type: "titleCard",
+      source_url: "",
+      file_path: null,
+      name: "Sample Title Card",
+      position: 6,
+      metadata: {
+        headline: "Welcome to the Project",
+        subheadline:
+          "This is a sample title card with a headline and subheadline",
+      },
+      created_at: now,
+      updated_at: now,
+    },
   ];
 
   db.folders = [];

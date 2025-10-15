@@ -42,7 +42,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   index?: number;
   layout: Layout;
   contentUrl?: string;
-  contentType?: "image" | "video" | "url";
+  contentType?: "image" | "video" | "url" | "titleCard";
   width?: number;
   height?: number;
   name?: string;
@@ -53,6 +53,8 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
     hideUI?: boolean;
     loop?: boolean;
     muted?: boolean;
+    headline?: string;
+    subheadline?: string;
   };
   onUpdateMetadata?: (updates: {
     hideUI?: boolean;
@@ -108,6 +110,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
 
     const isVideo = type === "video";
     const isUrl = type === "url";
+    const isTitleCard = type === "titleCard";
 
     // Extract ref from dragHandleProps to apply to the entire item
     const { ref: dragHandleRef, ...dragListeners } = dragHandleProps || {};
@@ -183,8 +186,8 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       return contentElement;
     }
 
-    // Wrap with context menu for interactive items (not URLs)
-    if (isUrl) {
+    // Wrap with context menu for interactive items (not URLs or title cards)
+    if (isUrl || isTitleCard) {
       return contentElement;
     }
 

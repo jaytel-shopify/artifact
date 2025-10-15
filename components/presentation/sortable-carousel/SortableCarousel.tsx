@@ -108,8 +108,23 @@ export function SortableCarousel({
 
     // Sync if items added/removed
     if (prevIds !== newIds) {
+      // Check if items were added (not removed)
+      const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
+
       setItems(artifacts);
       prevArtifactsRef.current = artifacts;
+
+      // Scroll to end if items were added
+      if (itemsAdded && containerRef.current) {
+        setTimeout(() => {
+          if (containerRef.current) {
+            containerRef.current.scrollTo({
+              left: containerRef.current.scrollWidth,
+              behavior: "smooth",
+            });
+          }
+        }, 100);
+      }
       return;
     }
 
@@ -202,7 +217,9 @@ export function SortableCarousel({
               layout={layout}
               activeIndex={activeIndex}
               contentUrl={artifact.source_url}
-              contentType={artifact.type as "image" | "video" | "url"}
+              contentType={
+                artifact.type as "image" | "video" | "url" | "titleCard"
+              }
               width={artifact.metadata?.width as number}
               height={artifact.metadata?.height as number}
               name={artifact.name}
@@ -301,7 +318,7 @@ function CarouselItemOverlay({
     <CarouselItem
       id={id}
       contentUrl={artifact.source_url}
-      contentType={artifact.type as "image" | "video" | "url"}
+      contentType={artifact.type as "image" | "video" | "url" | "titleCard"}
       width={artifact.metadata?.width as number}
       height={artifact.metadata?.height as number}
       name={artifact.name}
