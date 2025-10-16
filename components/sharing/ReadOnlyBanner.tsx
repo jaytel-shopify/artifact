@@ -4,7 +4,7 @@ import { Eye } from "lucide-react";
 
 /**
  * ReadOnlyBadge
- * 
+ *
  * Compact badge displayed in the header when viewing someone else's project.
  * Matches the size and style of other header buttons.
  */
@@ -16,4 +16,3 @@ export default function ReadOnlyBadge() {
     </div>
   );
 }
-

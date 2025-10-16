@@ -8,6 +8,7 @@ import {
   useTransition,
   useCallback,
 } from "react";
+import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
@@ -57,6 +58,14 @@ function PresentationPageContent() {
   const [dragging, setDragging] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [hydrated, setHydrated] = useState(false);
+  const [focusedArtifactId, setFocusedArtifactId] = useState<string | null>(
+    null
+  );
+  const [previousViewState, setPreviousViewState] = useState<{
+    columns: number;
+    fitMode: boolean;
+    scrollLeft: number;
+  } | null>(null);
 
   // Debug mode: Override read-only state for testing
   const [debugReadOnly, setDebugReadOnly] = useState(false);
@@ -139,6 +148,52 @@ function PresentationPageContent() {
       setFitMode(false);
     }
   }, [columns, fitMode]);
+
+  // Restore previous view state
+  const restorePreviousView = useCallback(() => {
+    if (previousViewState) {
+      const savedScrollLeft = previousViewState.scrollLeft;
+
+      flushSync(() => {
+        setColumns(previousViewState.columns);
+        setFitMode(previousViewState.fitMode);
+      });
+
+      // Restore scroll position instantly (disable smooth scrolling temporarily)
+      const container = document.querySelector(
+        ".carousel-horizontal"
+      ) as HTMLElement;
+      if (container) {
+        const originalScrollBehavior = container.style.scrollBehavior;
+        container.style.scrollBehavior = "auto";
+        container.scrollLeft = savedScrollLeft;
+        container.style.scrollBehavior = originalScrollBehavior;
+      }
+
+      setPreviousViewState(null);
+      setFocusedArtifactId(null);
+    } else {
+      // No previous state, default to 3 columns
+      flushSync(() => {
+        setColumns(3);
+        setFitMode(false);
+      });
+      setFocusedArtifactId(null);
+    }
+  }, [previousViewState]);
+
+  // Escape key handler
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && columns === 1 && fitMode) {
+        e.preventDefault();
+        restorePreviousView();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [columns, fitMode, restorePreviousView]);
 
   // Keyboard shortcut: CMD+. or CMD+/ to toggle presentation mode
   useEffect(() => {
@@ -684,6 +739,38 @@ function PresentationPageContent() {
             }}
             onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
             onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
+            onFocusArtifact={(artifactId) => {
+              // If already in focused mode (columns=1, fitMode=true), restore
+              if (columns === 1 && fitMode) {
+                restorePreviousView();
+                return;
+              }
+
+              // Save current state before focusing (including scroll position)
+              const container = document.querySelector(".carousel-horizontal");
+              const scrollLeft = container ? container.scrollLeft : 0;
+              setPreviousViewState({ columns, fitMode, scrollLeft });
+              setFocusedArtifactId(artifactId);
+
+              // Force synchronous rendering to prevent flicker
+              flushSync(() => {
+                setColumns(1);
+                setFitMode(true);
+              });
+
+              // Immediately scroll after synchronous render
+              const element = document.querySelector(
+                `[data-id="${artifactId}"]`
+              );
+              if (element) {
+                element.scrollIntoView({
+                  behavior: "instant",
+                  block: "nearest",
+                  inline: "start",
+                });
+              }
+            }}
+            focusedArtifactId={focusedArtifactId}
             isReadOnly={isReadOnly}
           />
         </div>

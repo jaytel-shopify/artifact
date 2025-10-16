@@ -3,16 +3,48 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { SquareArrowOutUpRight } from "lucide-react";
+import {
+  SquareArrowOutUpRight,
+  Globe,
+  Image as ImageIcon,
+  Video,
+  FileText,
+  Figma,
+  Type,
+} from "lucide-react";
 import { toast } from "sonner";
+
+// Get icon based on artifact type
+function getArtifactIcon(
+  artifactType?: string,
+  className: string = "h-3.5 w-3.5 flex-shrink-0"
+) {
+  switch (artifactType) {
+    case "url":
+      return <Globe className={className} />;
+    case "image":
+      return <ImageIcon className={className} />;
+    case "video":
+      return <Video className={className} />;
+    case "pdf":
+      return <FileText className={className} />;
+    case "figma":
+      return <Figma className={className} />;
+    case "titleCard":
+      return <Type className={className} />;
+    default:
+      return <FileText className={className} />;
+  }
+}
 
 interface EditableArtifactTitleProps {
   title: string;
   artifactId: string;
-  onUpdate: (newTitle: string) => Promise<void>;
+  onUpdate?: (newTitle: string) => Promise<void>;
   className?: string;
   artifactType?: string;
   sourceUrl?: string;
+  readOnly?: boolean;
 }
 
 export default function EditableArtifactTitle({
@@ -22,6 +54,7 @@ export default function EditableArtifactTitle({
   className = "",
   artifactType,
   sourceUrl,
+  readOnly = false,
 }: EditableArtifactTitleProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [currentTitle, setCurrentTitle] = useState(title);
@@ -42,11 +75,13 @@ export default function EditableArtifactTitle({
   }, [isEditing]);
 
   const handleDoubleClick = useCallback(() => {
-    setIsEditing(true);
-  }, []);
+    if (!readOnly && onUpdate) {
+      setIsEditing(true);
+    }
+  }, [readOnly, onUpdate]);
 
   const handleSave = useCallback(async () => {
-    if (currentTitle.trim() === title.trim()) {
+    if (!onUpdate || currentTitle.trim() === title.trim()) {
       setIsEditing(false);
       return;
     }
@@ -94,7 +129,8 @@ export default function EditableArtifactTitle({
 
   if (isEditing) {
     return (
-      <div className={className}>
+      <div className={`flex items-center gap-2 ${className}`}>
+        <div className="text-gray-500">{getArtifactIcon(artifactType)}</div>
         <Input
           ref={inputRef}
           type="text"
@@ -111,12 +147,21 @@ export default function EditableArtifactTitle({
   }
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-1 ${className}`}>
+      {/* Left: Icon */}
+      <div className="text-gray-500 flex-shrink-0">
+        {getArtifactIcon(artifactType)}
+      </div>
+
       {/* Center: Title */}
       <div
-        className="cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200 flex-1 min-w-0"
+        className={`${
+          readOnly
+            ? "px-2 py-1"
+            : "cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200"
+        } flex-1 min-w-0`}
         onDoubleClick={handleDoubleClick}
-        title="Double-click to edit"
+        title={readOnly ? undefined : "Double-click to edit"}
       >
         <div className="text-xs text-gray-400 truncate select-none">
           {currentTitle || "Untitled"}

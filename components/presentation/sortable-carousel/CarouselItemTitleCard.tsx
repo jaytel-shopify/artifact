@@ -10,17 +10,17 @@ export function CarouselItemTitleCard({
   subheadline,
 }: CarouselItemTitleCardProps) {
   return (
-    <div className="@container w-full h-full aspect-video flex flex-col items-start justify-start bg-neutral-900 p-4 text-left">
-      {headline && (
-        <h1 className="text-[11px] @xs:text-sm @sm:text-base @md:text-lg @lg:text-xl font-bold text-white mb-2 leading-tight">
-          {headline}
-        </h1>
-      )}
-      {subheadline && (
-        <p className="text-[9px] @xs:text-xs @sm:text-sm @md:text-base @lg:text-lg text-white leading-relaxed">
-          {subheadline}
-        </p>
-      )}
+    <div className="@container w-full h-full aspect-video bg-neutral-900">
+      <div className="w-full h-full flex flex-col items-center justify-center p-2 @[400px]:p-4 @[600px]:p-4 @[800px]:p-6 text-center">
+        {headline && (
+          <h1 className="text-[4cqw] font-bold text-white mb-2">{headline}</h1>
+        )}
+        {subheadline && (
+          <p className="text-[2.5cqw] font-bold text-neutral-400 leading-relaxed">
+            {subheadline}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

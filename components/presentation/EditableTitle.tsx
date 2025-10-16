@@ -63,8 +63,11 @@ export default function EditableTitle({
         toast.success("Project name updated");
       }
     } catch (err) {
-      console.error(`Failed to update ${isFolder ? 'folder' : 'project'} name:`, err);
-      toast.error(`Failed to update ${isFolder ? 'folder' : 'project'} name`);
+      console.error(
+        `Failed to update ${isFolder ? "folder" : "project"} name:`,
+        err
+      );
+      toast.error(`Failed to update ${isFolder ? "folder" : "project"} name`);
       setValue(initialValue);
     } finally {
       setSaving(false);
@@ -74,7 +77,10 @@ export default function EditableTitle({
 
   // Filter folders (exclude current folder)
   const availableFolders = folders.filter((f) => f.id !== currentFolderId);
-  const showFolderActions = !isReadOnly && onMoveToFolder && (availableFolders.length > 0 || currentFolderId);
+  const showFolderActions =
+    !isReadOnly &&
+    onMoveToFolder &&
+    (availableFolders.length > 0 || currentFolderId);
 
   // If read-only, just show the title (not editable)
   if (isReadOnly) {
@@ -129,7 +135,7 @@ export default function EditableTitle({
         </button>
       )}
       {saving && <span className="text-xs text-white/60 ml-2">Saving…</span>}
-      
+
       {/* Folder Actions Dropdown */}
       {showFolderActions && (
         <DropdownMenu>
@@ -144,17 +150,18 @@ export default function EditableTitle({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
             {/* Move to Folder options */}
-            {availableFolders.length > 0 && availableFolders.map((folder) => (
-              <DropdownMenuItem
-                key={folder.id}
-                onClick={() => onMoveToFolder?.(folder.id)}
-                className="flex items-center gap-2"
-              >
-                <FolderIcon className="h-4 w-4" />
-                Move to {folder.name}
-              </DropdownMenuItem>
-            ))}
-            
+            {availableFolders.length > 0 &&
+              availableFolders.map((folder) => (
+                <DropdownMenuItem
+                  key={folder.id}
+                  onClick={() => onMoveToFolder?.(folder.id)}
+                  className="flex items-center gap-2"
+                >
+                  <FolderIcon className="h-4 w-4" />
+                  Move to {folder.name}
+                </DropdownMenuItem>
+              ))}
+
             {/* Remove from Folder option */}
             {currentFolderId && onRemoveFromFolder && (
               <>
@@ -176,4 +183,3 @@ export default function EditableTitle({
     </div>
   );
 }
-

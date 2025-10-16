@@ -47,6 +47,8 @@ interface Props {
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;
   onEditTitleCard?: (artifactId: string) => void;
+  onFocusArtifact?: (artifactId: string) => void;
+  focusedArtifactId?: string | null;
   isReadOnly?: boolean;
 }
 
@@ -82,6 +84,8 @@ export function SortableCarousel({
   onDeleteArtifact,
   onReplaceMedia,
   onEditTitleCard,
+  onFocusArtifact,
+  focusedArtifactId,
   isReadOnly = false,
 }: Props) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -260,6 +264,10 @@ export function SortableCarousel({
                   ? () => onEditTitleCard(artifact.id)
                   : undefined
               }
+              onFocus={
+                onFocusArtifact ? () => onFocusArtifact(artifact.id) : undefined
+              }
+              isFocused={focusedArtifactId === artifact.id}
             />
           ))}
         </ul>

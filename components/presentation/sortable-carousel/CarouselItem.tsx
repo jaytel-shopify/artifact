@@ -3,10 +3,11 @@ import type {
   UniqueIdentifier,
   DraggableSyntheticListeners,
 } from "@dnd-kit/core";
-import { GripVertical } from "lucide-react";
+import { GripVertical, Maximize2, Minimize2 } from "lucide-react";
 import { CarouselItemContent } from "./CarouselItemContent";
 import { CarouselItemContextMenu } from "./CarouselItemContextMenu";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
+import { Button } from "@/components/ui/button";
 
 export enum Position {
   Before = -1,
@@ -27,7 +28,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   index?: number;
   layout: Layout;
   contentUrl?: string;
-  contentType?: "image" | "video" | "url" | "titleCard";
+  contentType?: "image" | "video" | "url" | "titleCard" | "pdf" | "figma";
   width?: number;
   height?: number;
   name?: string;
@@ -50,6 +51,8 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   onDelete?: () => void;
   onReplaceMedia?: (file: File) => Promise<void>;
   onEdit?: () => void;
+  onFocus?: () => void;
+  isFocused?: boolean;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
   isSettling?: boolean;
@@ -78,6 +81,8 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onDelete,
       onReplaceMedia,
       onEdit,
+      onFocus,
+      isFocused = false,
       isReadOnly = false,
       isAnyDragging = false,
       isSettling = false,
@@ -125,21 +130,30 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         {name && (
           <div className="carousel-item-header">
             <div className="carousel-item-title flex-1 min-w-0">
-              {isReadOnly || !onUpdateTitle ? (
-                <div className="text-xs text-gray-400 truncate px-2 py-1">
-                  {name}
-                </div>
-              ) : (
-                <EditableArtifactTitle
-                  title={name}
-                  artifactId={id.toString()}
-                  onUpdate={onUpdateTitle}
-                  artifactType={type}
-                  sourceUrl={url}
-                />
-              )}
+              <EditableArtifactTitle
+                title={name}
+                artifactId={id.toString()}
+                onUpdate={onUpdateTitle}
+                artifactType={type}
+                sourceUrl={url}
+                readOnly={isReadOnly || !onUpdateTitle}
+              />
             </div>
             <div className="flex items-center gap-1">
+              {onFocus && !isReadOnly && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-300 hover:bg-white/10"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFocus();
+                  }}
+                  aria-label={fitMode ? "Restore view" : "Focus on this item"}
+                >
+                  {fitMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                </Button>
+              )}
               <div className="carousel-item-drag-handle" ref={dragHandleRef}>
                 <GripVertical size={16} />
               </div>
