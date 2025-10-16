@@ -19,7 +19,7 @@ import { toast } from "sonner";
 
 interface CarouselItemContextMenuProps {
   children: React.ReactNode;
-  contentType: "image" | "video" | "url" | "titleCard";
+  contentType: "image" | "video" | "url" | "titleCard" | "pdf" | "figma";
   metadata?: {
     hideUI?: boolean;
     loop?: boolean;

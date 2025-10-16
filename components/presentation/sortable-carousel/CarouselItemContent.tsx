@@ -5,7 +5,7 @@ import { CarouselItemWebsite } from "./CarouselItemWebsite";
 import { CarouselItemTitleCard } from "./CarouselItemTitleCard";
 
 interface CarouselItemContentProps {
-  type: "image" | "video" | "url" | "titleCard";
+  type: "image" | "video" | "url" | "titleCard" | "pdf" | "figma";
   url: string;
   alt: string;
   width?: number;
@@ -33,6 +33,8 @@ export function CarouselItemContent({
 }: CarouselItemContentProps) {
   switch (type) {
     case "image":
+    case "pdf":
+    case "figma":
       return <CarouselItemImage url={url} alt={alt} />;
     case "video":
       return (
