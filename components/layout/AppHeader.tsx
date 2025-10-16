@@ -28,6 +28,7 @@ import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/auth/UserAvatar";
 import { useRouter } from "next/navigation";
+import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
 
 interface AppHeaderProps {
   // Navigation props
@@ -72,6 +73,11 @@ interface AppHeaderProps {
 
   // View mode
   mode: "homepage" | "canvas" | "folder";
+
+  // Sync status (for canvas mode)
+  isSyncReady?: boolean;
+  getUsersCount?: () => number;
+  getUsers?: () => any[];
 }
 
 export default function AppHeader({
@@ -106,6 +112,9 @@ export default function AppHeader({
   fitMode = false,
   onFitModeChange,
   mode,
+  isSyncReady = false,
+  getUsersCount,
+  getUsers,
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { user, signIn, signOut, loading } = useAuth();
@@ -268,7 +277,9 @@ export default function AppHeader({
               )}
 
               {/* User Avatar */}
-              {user ? (
+              {loading ? (
+                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
+              ) : user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2">
@@ -315,6 +326,14 @@ export default function AppHeader({
 
               {/* Read-Only Badge (shown for viewers) */}
               {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
+
+              {/* Sync Status Indicator */}
+              {getUsers && (
+                <SyncStatusIndicator
+                  isSyncReady={isSyncReady}
+                  getUsers={getUsers}
+                />
+              )}
 
               {/* Column Count Slider */}
               {showColumnControls && onColumnsChange && (
@@ -374,7 +393,9 @@ export default function AppHeader({
                 </>
               )}
 
-              {user ? (
+              {loading ? (
+                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
+              ) : user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2">
@@ -420,7 +441,9 @@ export default function AppHeader({
                   New Project
                 </Button>
               )}
-              {user ? (
+              {loading ? (
+                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
+              ) : user ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button className="flex items-center gap-2">

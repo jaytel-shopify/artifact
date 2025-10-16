@@ -57,9 +57,14 @@ interface AppLayoutProps {
   // Navigation
   backUrl?: string;
   onBackToHome?: () => void;
+
+  // Sync status (for canvas mode)
+  isSyncReady?: boolean;
+  getUsersCount?: () => number;
+  getUsers?: () => any[];
 }
 
-export default function AppLayout({
+function AppLayout({
   children,
   mode,
   projectId,
@@ -97,6 +102,9 @@ export default function AppLayout({
   onPageReorder,
   presentationMode = false,
   onBackToHome,
+  isSyncReady,
+  getUsersCount,
+  getUsers,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -160,6 +168,9 @@ export default function AppLayout({
           showColumnControls={showColumnControls}
           fitMode={fitMode}
           onFitModeChange={onFitModeChange}
+          isSyncReady={isSyncReady}
+          getUsersCount={getUsersCount}
+          getUsers={getUsers}
         />
       )}
 
@@ -205,7 +216,9 @@ export default function AppLayout({
           className="flex-1 min-w-0"
           style={{
             marginLeft:
-              mode === "canvas" && sidebarOpen && !presentationMode ? "var(--sidebar-width)" : "0",
+              mode === "canvas" && sidebarOpen && !presentationMode
+                ? "var(--sidebar-width)"
+                : "0",
             transition: "margin-left 400ms var(--spring-elegant-easing-light)",
           }}
         >
@@ -215,3 +228,5 @@ export default function AppLayout({
     </div>
   );
 }
+
+export default AppLayout;

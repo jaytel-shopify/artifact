@@ -4,7 +4,6 @@ import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import LocalDevWarning from "@/components/LocalDevWarning";
-import QuickMultiplayerCursorsProvider from "@/components/QuickMultiplayerCursorsProvider";
 import "./globals.css";
 
 const inter = Inter({
@@ -48,9 +47,6 @@ export default function RootLayout({
       <body className={`${inter.variable} antialiased`}>
         {/* Show warning when running on localhost */}
         <LocalDevWarning />
-
-        {/* Initialize multiplayer cursors globally */}
-        <QuickMultiplayerCursorsProvider />
 
         <AuthProvider>
           <ThemeProvider

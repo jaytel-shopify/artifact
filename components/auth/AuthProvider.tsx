@@ -36,16 +36,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initUser() {
       try {
+        console.log('[AuthProvider] Waiting for Quick SDK...');
         // Wait for Quick SDK to load
         const quick = await waitForQuick();
+        console.log('[AuthProvider] Quick SDK loaded');
         
         // Get user identity from Quick
+        console.log('[AuthProvider] Waiting for user identity...');
         const userData = await quick.id.waitForUser();
         
-        console.log('Quick user loaded:', userData);
+        console.log('[AuthProvider] User loaded:', {
+          email: userData.email,
+          fullName: userData.fullName,
+          hasSlackImage: !!userData.slackImageUrl,
+        });
         
         if (isMounted) {
-          setUser({
+          const user = {
             email: userData.email,
             fullName: userData.fullName,
             firstName: userData.firstName,
@@ -54,11 +61,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             slackImageUrl: userData.slackImageUrl,
             title: userData.title,
             github: userData.github,
-          });
+          };
+          console.log('[AuthProvider] Setting user state:', user);
+          setUser(user);
           setLoading(false);
         }
       } catch (err) {
-        console.error('Failed to load Quick user:', err);
+        console.error('[AuthProvider] Failed to load Quick user:', err);
         if (isMounted) {
           setLoading(false);
         }

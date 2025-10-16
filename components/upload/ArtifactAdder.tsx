@@ -23,7 +23,7 @@ import {
   getViewportDimensions,
   type ViewportKey,
 } from "@/lib/viewports";
-import { usePageArtifacts } from "@/hooks/usePageArtifacts";
+import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
 import {
   uploadFile,
@@ -53,7 +53,7 @@ export default function ArtifactAdder({
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { createArtifact } = usePageArtifacts(projectId, pageId);
+  const { createArtifact } = useSyncedArtifacts(projectId, pageId);
 
   function resetUrlState() {
     setUrl("");

@@ -78,6 +78,7 @@ export default function QuickFollowProvider({
   useEffect(() => {
     let manager: QuickFollowManager | null = null;
     let updateInterval: NodeJS.Timeout | null = null;
+    const cleanupFunctions: (() => void)[] = [];
 
     async function initialize() {
       manager = new QuickFollowManager({
@@ -124,11 +125,20 @@ export default function QuickFollowProvider({
         setFollowManager(manager);
         setIsInitialized(true);
 
-        // Update available users periodically
-        updateInterval = setInterval(() => {
+        // Initial update
+        updateAvailableUsers();
+        updateFollowersList();
+
+        // Listen for user changes via WebSocket events (not polling!)
+        const handleUserChange = () => {
           updateAvailableUsers();
           updateFollowersList();
-        }, 2000);
+        };
+        
+        window.addEventListener('followUserChange', handleUserChange);
+        cleanupFunctions.push(() => {
+          window.removeEventListener('followUserChange', handleUserChange);
+        });
       }
     }
 
@@ -157,6 +167,7 @@ export default function QuickFollowProvider({
       if (updateInterval) {
         clearInterval(updateInterval);
       }
+      cleanupFunctions.forEach(fn => fn());
       if (manager) {
         manager.destroy();
       }

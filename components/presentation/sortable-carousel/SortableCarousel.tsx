@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   closestCenter,
   DndContext,
@@ -134,8 +134,12 @@ export function SortableCarousel({
       return;
     }
 
-    // Also sync if artifact properties changed (name, metadata, etc.)
-    // But preserve the current order from items
+    // Check if order changed OR properties changed
+    const orderChanged = artifacts.some((artifact, idx) => {
+      const prevArtifact = prevArtifactsRef.current[idx];
+      return !prevArtifact || prevArtifact.id !== artifact.id;
+    });
+
     const itemsChanged = artifacts.some((newArtifact) => {
       const prevArtifact = prevArtifactsRef.current.find(
         (a) => a.id === newArtifact.id
@@ -150,15 +154,21 @@ export function SortableCarousel({
       );
     });
 
-    if (itemsChanged) {
-      // Update items while preserving order
-      const orderMap = new Map(items.map((item, idx) => [item.id, idx]));
-      const updatedItems = artifacts.slice().sort((a, b) => {
-        const aIdx = orderMap.get(a.id) ?? 0;
-        const bIdx = orderMap.get(b.id) ?? 0;
-        return aIdx - bIdx;
-      });
-      setItems(updatedItems);
+    if (orderChanged || itemsChanged) {
+      // If order changed, use the new order from artifacts
+      // If only properties changed, preserve current order
+      if (orderChanged) {
+        setItems(artifacts);
+      } else {
+        // Update items while preserving order
+        const orderMap = new Map(items.map((item, idx) => [item.id, idx]));
+        const updatedItems = artifacts.slice().sort((a, b) => {
+          const aIdx = orderMap.get(a.id) ?? 0;
+          const bIdx = orderMap.get(b.id) ?? 0;
+          return aIdx - bIdx;
+        });
+        setItems(updatedItems);
+      }
     }
 
     prevArtifactsRef.current = artifacts;
@@ -192,6 +202,43 @@ export function SortableCarousel({
   // Fit mode is ONLY enabled when columns is 1
   // Regardless of fitMode prop, it's disabled for multi-column layouts
   const isFitMode = columns === 1 ? fitMode : false;
+
+  const handleDragStart = useCallback(({ active }: DragStartEvent) => {
+    setActiveId(active.id);
+  }, []);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    ({ over }: DragEndEvent) => {
+      if (over) {
+        const overIndex = itemIds.indexOf(over.id.toString());
+
+        if (activeIndex !== overIndex && activeIndex !== -1) {
+          // Set settling to block parent updates during animation
+          setIsSettling(true);
+          setSettlingId(activeId); // Track which item is settling
+
+          // Update local state immediately for smooth animation
+          const reorderedItems = arrayMove(items, activeIndex, overIndex);
+          setItems(reorderedItems);
+
+          // Delay notifying parent until AFTER animation completes
+          if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
+          settleTimeoutRef.current = setTimeout(() => {
+            onReorder?.(reorderedItems);
+            setIsSettling(false);
+            setSettlingId(null);
+          }, 250); // Match dnd-kit's default animation duration
+        }
+      }
+
+      setActiveId(null);
+    },
+    [itemIds, activeIndex, activeId, items, onReorder]
+  );
 
   if (items.length === 0) {
     return (
@@ -279,40 +326,6 @@ export function SortableCarousel({
       </DragOverlay>
     </DndContext>
   );
-
-  function handleDragStart({ active }: DragStartEvent) {
-    setActiveId(active.id);
-  }
-
-  function handleDragCancel() {
-    setActiveId(null);
-  }
-
-  function handleDragEnd({ over }: DragEndEvent) {
-    if (over) {
-      const overIndex = itemIds.indexOf(over.id.toString());
-
-      if (activeIndex !== overIndex && activeIndex !== -1) {
-        // Set settling to block parent updates during animation
-        setIsSettling(true);
-        setSettlingId(activeId); // Track which item is settling
-
-        // Update local state immediately for smooth animation
-        const reorderedItems = arrayMove(items, activeIndex, overIndex);
-        setItems(reorderedItems);
-
-        // Delay notifying parent until AFTER animation completes
-        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-        settleTimeoutRef.current = setTimeout(() => {
-          onReorder?.(reorderedItems);
-          setIsSettling(false);
-          setSettlingId(null);
-        }, 250); // Match dnd-kit's default animation duration
-      }
-    }
-
-    setActiveId(null);
-  }
 }
 
 function CarouselItemOverlay({

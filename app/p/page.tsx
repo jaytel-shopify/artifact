@@ -15,14 +15,11 @@ import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
-import { usePageArtifacts } from "@/hooks/usePageArtifacts";
+import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
 import type { Project, Folder } from "@/types";
-import {
-  getProjectByShareToken,
-  updateArtifact as updateArtifactDB,
-} from "@/lib/quick-db";
+import { getProjectByShareToken } from "@/lib/quick-db";
 import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
@@ -241,15 +238,19 @@ function PresentationPageContent() {
   );
   const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
-  // Fetch page-specific artifacts
+  // Fetch page-specific artifacts with real-time sync
   const {
     artifacts,
     createArtifact,
     reorderArtifacts,
     updateArtifact,
     deleteArtifact,
+    replaceMedia: replaceMediaSync,
     refetch: refetchArtifacts,
-  } = usePageArtifacts(project?.id, currentPageId || undefined);
+    isSyncReady,
+    getUsersCount,
+    getUsers,
+  } = useSyncedArtifacts(project?.id, currentPageId || undefined);
 
   // Set document title
   useEffect(() => {
@@ -597,8 +598,8 @@ function PresentationPageContent() {
         const cacheBuster = `?t=${Date.now()}`;
         const sourceUrlWithCacheBuster = uploadResult.fullUrl + cacheBuster;
 
-        // Update artifact in database with new source
-        await updateArtifactDB(artifactId, {
+        // Update artifact in database with new source (synced with other users)
+        await replaceMediaSync(artifactId, {
           source_url: sourceUrlWithCacheBuster,
           file_path: uploadResult.url,
         });
@@ -610,9 +611,6 @@ function PresentationPageContent() {
           });
         }
 
-        // Refresh artifacts
-        await refetchArtifacts();
-
         toast.success("Media replaced successfully", { id: "replace-media" });
       } catch (error) {
         console.error("Failed to replace media:", error);
@@ -621,7 +619,7 @@ function PresentationPageContent() {
         });
       }
     },
-    [project?.id, currentPageId, artifacts, refetchArtifacts]
+    [project?.id, currentPageId, artifacts, replaceMediaSync]
   );
 
   // Smart back URL: Go to folder if project is in a folder, otherwise /projects
@@ -667,6 +665,9 @@ function PresentationPageContent() {
       onPageReorder={canEdit ? reorderPages : undefined}
       presentationMode={presentationMode}
       backUrl={backUrl}
+      isSyncReady={isSyncReady}
+      getUsersCount={getUsersCount}
+      getUsers={getUsers}
     >
       <div className="h-full relative">
         {/* Dropzone for file uploads (only for creators/editors) */}
