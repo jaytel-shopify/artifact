@@ -29,7 +29,9 @@ export default function SyncStatusIndicator({
       return;
     }
 
-    setUsers(getUsers());
+    const usersList = getUsers();
+    console.log("[SyncStatusIndicator] Users data:", usersList);
+    setUsers(usersList);
   }, [isSyncReady, getUsers, updateTrigger]);
 
   // Expose update function to parent via window event
@@ -51,28 +53,45 @@ export default function SyncStatusIndicator({
       {isSyncReady && viewersCount > 0 && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border bg-blue-500/10 border-blue-500/20 text-blue-600">
           <div className="flex items-center -space-x-2">
-            {users.slice(0, 5).map((user, index) => (
-              <div
-                key={user.socketId}
-                className="relative group"
-                style={{ zIndex: 5 - index }}
-                title={user.name || user.email}
-              >
-                {user.slackImageUrl ? (
-                  <img
-                    src={user.slackImageUrl}
-                    alt={user.name || user.email}
-                    className="w-6 h-6 rounded-full border-2 border-white ring-1 ring-blue-500/20 hover:ring-blue-500/40 transition-all"
-                  />
-                ) : (
-                  <div className="w-6 h-6 rounded-full border-2 border-white ring-1 ring-blue-500/20 bg-blue-500 flex items-center justify-center text-[10px] font-semibold text-white">
-                    {(user.name || user.email || "?")[0].toUpperCase()}
+            {users.slice(0, 5).map((user, index) => {
+              const displayName = user.name || user.email || "Unknown";
+              const initial = displayName[0].toUpperCase();
+
+              return (
+                <div
+                  key={user.socketId}
+                  className="relative group"
+                  style={{ zIndex: 5 - index }}
+                >
+                  {user.slackImageUrl ? (
+                    <img
+                      src={user.slackImageUrl}
+                      alt={displayName}
+                      title={displayName}
+                      width={24}
+                      height={24}
+                      className="w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 border-white ring-1 ring-blue-500/20 hover:ring-2 hover:ring-blue-500/40 transition-all cursor-pointer object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 border-white ring-1 ring-blue-500/20 bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[10px] font-semibold text-white hover:ring-2 hover:ring-blue-500/40 transition-all cursor-pointer"
+                      title={displayName}
+                    >
+                      {initial}
+                    </div>
+                  )}
+                  {/* Tooltip on hover */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-900 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                    {displayName}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
             {viewersCount > 5 && (
-              <div className="w-6 h-6 rounded-full border-2 border-white ring-1 ring-blue-500/20 bg-blue-600 flex items-center justify-center text-[10px] font-semibold text-white">
+              <div
+                className="w-6 h-6 rounded-full border-2 border-white ring-1 ring-blue-500/20 bg-gradient-to-br from-blue-600 to-blue-700 flex items-center justify-center text-[10px] font-semibold text-white"
+                title={`${viewersCount - 5} more viewer${viewersCount - 5 === 1 ? "" : "s"}`}
+              >
                 +{viewersCount - 5}
               </div>
             )}

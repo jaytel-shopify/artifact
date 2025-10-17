@@ -41,7 +41,7 @@ export class ArtifactSyncManager {
     try {
       const quick = await waitForQuick();
 
-      // Get user identity
+      // Get user identity with full profile (including slack data)
       const user = await quick.id.waitForUser();
       this.userId = user.email;
 
@@ -58,6 +58,15 @@ export class ArtifactSyncManager {
 
       // Store our socket ID for filtering our own events
       this.socketId = this.room.user?.socketId || "";
+
+      // Update user state with full profile info (including slack avatar)
+      this.room.updateUserState({
+        slackImageUrl: user.slackImageUrl,
+        slackHandle: user.slackHandle,
+        slackId: user.slackId,
+        fullName: user.fullName,
+        title: user.title,
+      });
 
       // Trigger UI update to show other users already in the room
       if (typeof window !== "undefined") {
@@ -92,6 +101,14 @@ export class ArtifactSyncManager {
     // Connection lifecycle
     this.room.on("connect", () => {
       this.isConnected = true;
+      // Reset user count cache on reconnect
+      this.lastUserCount = undefined;
+      // Trigger UI update
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
+        }, 100);
+      }
     });
 
     this.room.on("disconnect", () => {
@@ -100,16 +117,24 @@ export class ArtifactSyncManager {
 
     // User presence events
     this.room.on("user:join", () => {
-      // Trigger UI update via custom event
+      // Reset cache to force new log
+      this.lastUserCount = undefined;
+      // Trigger UI update via custom event (use setTimeout to ensure room.users is updated)
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
+        }, 50);
       }
     });
 
     this.room.on("user:leave", () => {
-      // Trigger UI update via custom event
+      // Reset cache to force new log
+      this.lastUserCount = undefined;
+      // Trigger UI update via custom event (use setTimeout to ensure room.users is updated)
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
+        }, 50);
       }
     });
   }
@@ -204,25 +229,49 @@ export class ArtifactSyncManager {
    * Get list of connected users (excluding self)
    */
   getUsers(): any[] {
-    if (!this.room || !this.room.users) return [];
+    if (!this.room || !this.room.users) {
+      // Reset cache when room is not available
+      this.lastUserCount = undefined;
+      return [];
+    }
+
+    // Get all users and filter out self
     const allUsers = Array.from(this.room.users.values());
     const currentSocketId = this.room.user?.socketId;
 
-    // Filter out current user
-    const otherUsers = allUsers.filter(
-      (user: any) => user.socketId !== currentSocketId
-    );
+    // Merge user base data with their state (which contains slack profile info)
+    const enrichedUsers = allUsers
+      .filter((user: any) => user.socketId !== currentSocketId)
+      .map((user: any) => ({
+        socketId: user.socketId,
+        name: user.name,
+        email: user.email,
+        // Get slack data from user state (set during init)
+        slackImageUrl: user.state?.slackImageUrl,
+        slackHandle: user.state?.slackHandle,
+        slackId: user.state?.slackId,
+        fullName: user.state?.fullName || user.name,
+        title: user.state?.title || user.title,
+      }));
 
-    // Only log if count changes (reduce noise)
-    const currentCount = otherUsers.length;
-    if (!this.lastUserCount || this.lastUserCount !== currentCount) {
+    // Log current count (always log if cache was reset)
+    const currentCount = enrichedUsers.length;
+    if (
+      this.lastUserCount === undefined ||
+      this.lastUserCount !== currentCount
+    ) {
       console.log(
         `[ArtifactSync] 👥 ${currentCount} viewer${currentCount === 1 ? "" : "s"} connected`
       );
+      // Log first user's data structure to debug avatar issues
+      if (enrichedUsers.length > 0) {
+        console.log("[ArtifactSync] Sample user data:", enrichedUsers[0]);
+      }
       this.lastUserCount = currentCount;
     }
 
-    return otherUsers;
+    // Return a new array reference each time to ensure React detects changes
+    return enrichedUsers;
   }
 
   private lastUserCount?: number;
