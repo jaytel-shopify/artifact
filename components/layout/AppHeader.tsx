@@ -78,6 +78,10 @@ interface AppHeaderProps {
   isSyncReady?: boolean;
   getUsersCount?: () => number;
   getUsers?: () => any[];
+
+  // Follow functionality
+  onFollowUser?: (socketId: string) => void;
+  followingUserId?: string | null;
 }
 
 export default function AppHeader({
@@ -115,6 +119,8 @@ export default function AppHeader({
   isSyncReady = false,
   getUsersCount,
   getUsers,
+  onFollowUser,
+  followingUserId,
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { user, signIn, signOut, loading } = useAuth();
@@ -365,6 +371,8 @@ export default function AppHeader({
                 <SyncStatusIndicator
                   isSyncReady={isSyncReady}
                   getUsers={getUsers}
+                  onFollowUser={onFollowUser}
+                  followingUserId={followingUserId}
                 />
               )}
 

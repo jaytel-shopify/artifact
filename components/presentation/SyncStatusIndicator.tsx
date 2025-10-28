@@ -13,11 +13,15 @@ interface User {
 interface SyncStatusIndicatorProps {
   isSyncReady: boolean;
   getUsers: () => User[];
+  onFollowUser?: (socketId: string) => void;
+  followingUserId?: string | null;
 }
 
 export default function SyncStatusIndicator({
   isSyncReady,
   getUsers,
+  onFollowUser,
+  followingUserId,
 }: SyncStatusIndicatorProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [updateTrigger, setUpdateTrigger] = useState(0);
@@ -30,8 +34,23 @@ export default function SyncStatusIndicator({
     }
 
     const usersList = getUsers();
-    console.log("[SyncStatusIndicator] Users data:", usersList);
-    setUsers(usersList);
+    console.log("[SyncStatusIndicator] Raw users data:", usersList);
+
+    // Deduplicate by email, preferring connections with more complete profile data
+    // Note: This allows you to see yourself from other browser windows (for testing)
+    const usersByEmail = new Map<string, any>();
+    usersList.forEach((user) => {
+      const existing = usersByEmail.get(user.email);
+      // Prefer user objects that have slackImageUrl (more complete profile)
+      if (!existing || (!existing.slackImageUrl && user.slackImageUrl)) {
+        usersByEmail.set(user.email, user);
+      }
+    });
+
+    const uniqueUsers = Array.from(usersByEmail.values());
+    console.log("[SyncStatusIndicator] Deduplicated users:", uniqueUsers);
+
+    setUsers(uniqueUsers);
   }, [isSyncReady, getUsers, updateTrigger]);
 
   // Expose update function to parent via window event
@@ -56,12 +75,14 @@ export default function SyncStatusIndicator({
             {users.slice(0, 5).map((user, index) => {
               const displayName = user.name || user.email || "Unknown";
               const initial = displayName[0].toUpperCase();
+              const isFollowing = followingUserId === user.socketId;
 
               return (
                 <div
                   key={user.socketId}
                   className="relative group"
                   style={{ zIndex: 5 - index }}
+                  onClick={() => onFollowUser?.(user.socketId)}
                 >
                   {user.slackImageUrl ? (
                     <img
@@ -70,11 +91,19 @@ export default function SyncStatusIndicator({
                       title={displayName}
                       width={24}
                       height={24}
-                      className="w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 border-white ring-1 ring-blue-500/20 hover:ring-2 hover:ring-blue-500/40 transition-all cursor-pointer object-cover"
+                      className={`w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 transition-all cursor-pointer object-cover ${
+                        isFollowing
+                          ? "border-white ring-2 ring-red-500"
+                          : "border-white ring-1 ring-blue-500/20 hover:ring-2 hover:ring-blue-500/40"
+                      }`}
                     />
                   ) : (
                     <div
-                      className="w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 border-white ring-1 ring-blue-500/20 bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[10px] font-semibold text-white hover:ring-2 hover:ring-blue-500/40 transition-all cursor-pointer"
+                      className={`w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-[10px] font-semibold text-white transition-all cursor-pointer ${
+                        isFollowing
+                          ? "border-white ring-2 ring-red-500"
+                          : "border-white ring-1 ring-blue-500/20 hover:ring-2 hover:ring-blue-500/40"
+                      }`}
                       title={displayName}
                     >
                       {initial}
