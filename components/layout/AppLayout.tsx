@@ -62,9 +62,13 @@ interface AppLayoutProps {
   isSyncReady?: boolean;
   getUsersCount?: () => number;
   getUsers?: () => any[];
+
+  // Follow functionality
+  onFollowUser?: (socketId: string) => void;
+  followingUserId?: string | null;
 }
 
-function AppLayout({
+export default function AppLayout({
   children,
   mode,
   projectId,
@@ -105,6 +109,8 @@ function AppLayout({
   isSyncReady,
   getUsersCount,
   getUsers,
+  onFollowUser,
+  followingUserId,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -171,6 +177,8 @@ function AppLayout({
           isSyncReady={isSyncReady}
           getUsersCount={getUsersCount}
           getUsers={getUsers}
+          onFollowUser={onFollowUser}
+          followingUserId={followingUserId}
         />
       )}
 
@@ -228,5 +236,3 @@ function AppLayout({
     </div>
   );
 }
-
-export default AppLayout;

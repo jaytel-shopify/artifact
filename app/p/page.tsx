@@ -8,7 +8,6 @@ import {
   useTransition,
   useCallback,
 } from "react";
-import { flushSync } from "react-dom";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
@@ -16,15 +15,25 @@ import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
-import { generateArtifactName } from "@/lib/artifactNames";
 import { toast } from "sonner";
-import type { Project, Folder } from "@/types";
+import type { Project } from "@/types";
 import { getProjectByShareToken } from "@/lib/quick-db";
-import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
-import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
+import QuickFollowProvider, {
+  useFollow,
+} from "@/components/QuickFollowProvider";
+import { useFollowSync } from "@/hooks/useFollowSync";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import { useArtifactFocus } from "@/hooks/useArtifactFocus";
+import { useProjectTracking } from "@/hooks/useProjectTracking";
+import { useUserFolders } from "@/hooks/useUserFolders";
+import { useArtifactUpload } from "@/hooks/useArtifactUpload";
+import { useTitleCardEditor } from "@/hooks/useTitleCardEditor";
+import { useMediaReplacement } from "@/hooks/useMediaReplacement";
+import { usePageHandlers } from "@/hooks/usePageHandlers";
+import { useFolderActions } from "@/hooks/useFolderActions";
 import {
   Dialog,
   DialogContent,
@@ -47,22 +56,45 @@ async function fetchProject(shareToken: string): Promise<Project | null> {
 }
 
 function PresentationPageContent() {
+  console.log("[Follow] PresentationPageContent rendering");
+
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
-  const [isPending, startTransition] = useTransition();
   const [hydrated, setHydrated] = useState(false);
-  const [focusedArtifactId, setFocusedArtifactId] = useState<string | null>(
-    null
-  );
-  const [previousViewState, setPreviousViewState] = useState<{
-    columns: number;
-    fitMode: boolean;
-    scrollLeft: number;
-  } | null>(null);
+
+  // Follow functionality
+  const {
+    followUser,
+    stopFollowing,
+    isFollowing,
+    followedUser,
+    followManager,
+    isInitialized: followInitialized,
+  } = useFollow();
+
+  console.log("[Follow] useFollow returned:", {
+    followInitialized,
+    isFollowing,
+    followedUser: followedUser?.email,
+    hasManager: !!followManager,
+  });
+
+  // Debug: Log follow state changes
+  useEffect(() => {
+    console.log("[Follow] Follow state effect:", {
+      followInitialized,
+      isFollowing,
+      followedUser: followedUser?.email,
+      isLeading: followManager?.isLeading(),
+    });
+  }, [followInitialized, isFollowing, followedUser, followManager]);
+  // Artifact focus mode
+  const { focusedArtifactId, focusArtifact, unfocusArtifact } =
+    useArtifactFocus(columns, setColumns, setFitMode);
 
   // Debug mode: Override read-only state for testing
   const [debugReadOnly, setDebugReadOnly] = useState(false);
@@ -71,44 +103,7 @@ function PresentationPageContent() {
   const [presentationMode, setPresentationMode] = useState(false);
 
   // Load user's folders for folder dropdown
-  const [userFolders, setUserFolders] = useState<Folder[]>([]);
-
-  useEffect(() => {
-    if (!user?.email) return;
-
-    async function loadFolders() {
-      if (!user) return;
-
-      try {
-        const { getUserFolders } = await import("@/lib/quick-folders");
-        const folders = await getUserFolders(user.email);
-        setUserFolders(folders);
-      } catch (error) {
-        console.error("Failed to load folders:", error);
-      }
-    }
-
-    loadFolders();
-  }, [user]);
-  const [uploadState, setUploadState] = useState<{
-    uploading: boolean;
-    totalFiles: number;
-    completedFiles: number;
-    currentProgress: number;
-  }>({
-    uploading: false,
-    totalFiles: 0,
-    completedFiles: 0,
-    currentProgress: 0,
-  });
-
-  // Title card edit state
-  const [editingTitleCard, setEditingTitleCard] = useState<{
-    artifactId: string;
-    headline: string;
-    subheadline: string;
-  } | null>(null);
-  const [titleCardError, setTitleCardError] = useState("");
+  const userFolders = useUserFolders(user?.email);
 
   // Load column and fit mode preferences
   useEffect(() => {
@@ -139,6 +134,36 @@ function PresentationPageContent() {
     window.localStorage.setItem("fit_mode", String(fitMode));
   }, [fitMode, hydrated]);
 
+  // Use follow sync hook to handle all follow broadcast/receive logic
+  useFollowSync({
+    followManager,
+    isFollowing,
+    followInitialized,
+    columns,
+    fitMode,
+    setColumns,
+    setFitMode,
+  });
+
+  // Handle follow user click
+  const handleFollowUser = useCallback(
+    async (socketId: string) => {
+      if (isFollowing && followedUser?.socketId === socketId) {
+        stopFollowing();
+        // Re-enable scroll snapping when stopping follow
+        const carouselContainer = document.querySelector(
+          ".carousel-horizontal"
+        ) as HTMLElement;
+        if (carouselContainer) {
+          carouselContainer.style.scrollSnapType = "";
+        }
+      } else {
+        await followUser(socketId);
+      }
+    },
+    [isFollowing, followedUser, followUser, stopFollowing]
+  );
+
   // Auto-disable fit mode when columns > 1
   useEffect(() => {
     if (columns > 1 && fitMode) {
@@ -146,75 +171,12 @@ function PresentationPageContent() {
     }
   }, [columns, fitMode]);
 
-  // Restore previous view state
-  const restorePreviousView = useCallback(() => {
-    if (previousViewState) {
-      const savedScrollLeft = previousViewState.scrollLeft;
-
-      flushSync(() => {
-        setColumns(previousViewState.columns);
-        setFitMode(previousViewState.fitMode);
-      });
-
-      // Restore scroll position instantly (disable smooth scrolling temporarily)
-      const container = document.querySelector(
-        ".carousel-horizontal"
-      ) as HTMLElement;
-      if (container) {
-        const originalScrollBehavior = container.style.scrollBehavior;
-        container.style.scrollBehavior = "auto";
-        container.scrollLeft = savedScrollLeft;
-        container.style.scrollBehavior = originalScrollBehavior;
-      }
-
-      setPreviousViewState(null);
-      setFocusedArtifactId(null);
-    } else {
-      // No previous state, default to 3 columns
-      flushSync(() => {
-        setColumns(3);
-        setFitMode(false);
-      });
-      setFocusedArtifactId(null);
-    }
-  }, [previousViewState]);
-
-  // Escape key handler
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && columns === 1 && fitMode) {
-        e.preventDefault();
-        restorePreviousView();
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [columns, fitMode, restorePreviousView]);
-
-  // Keyboard shortcut: CMD+. or CMD+/ to toggle presentation mode
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      // Check for CMD+. or CMD+/ (also support Ctrl for Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && (e.key === "." || e.key === "/")) {
-        // Don't trigger if user is typing in an input
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable
-        ) {
-          return;
-        }
-
-        e.preventDefault();
-        setPresentationMode((prev) => !prev);
-      }
-    }
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    onEscape: unfocusArtifact,
+    canEscape: columns === 1 && fitMode,
+    onTogglePresentationMode: () => setPresentationMode((prev) => !prev),
+  });
 
   // Fetch project data
   const { data: project } = useSWR<Project | null>(
@@ -252,374 +214,45 @@ function PresentationPageContent() {
     getUsers,
   } = useSyncedArtifacts(project?.id, currentPageId || undefined);
 
-  // Set document title
-  useEffect(() => {
-    if (!project?.name) return;
-    document.title = `${project.name} | Artifact`;
-  }, [project?.name]);
+  // Track project access and set document title
+  useProjectTracking(project);
 
-  // Track when project is accessed (for "last opened" sorting)
-  useEffect(() => {
-    if (!project?.id) return;
-
-    async function trackAccess() {
-      if (!project) return;
-
-      try {
-        const { updateProject } = await import("@/lib/quick-db");
-        await updateProject(project.id, {
-          last_accessed_at: new Date().toISOString(),
-        });
-      } catch (error) {
-        // Silent fail - tracking is not critical
-        console.debug("Failed to track project access:", error);
-      }
-    }
-
-    // Track after a short delay to ensure project loaded
-    const timer = setTimeout(trackAccess, 1000);
-    return () => clearTimeout(timer);
-  }, [project]);
-
-  // File upload handler with progress tracking
-  const handleFileUpload = useCallback(
-    async (files: File[]) => {
-      if (!project?.id || !currentPageId) return;
-      if (files.length === 0) return;
-
-      // Validate all files first (50MB limit)
-      const { validateFile } = await import("@/lib/quick-storage");
-      for (const file of files) {
-        const validation = validateFile(file, { maxSizeMB: 50 });
-        if (!validation.valid) {
-          toast.error(validation.error || "File too large");
-          return;
-        }
-      }
-
-      // Initialize upload state
-      setUploadState({
-        uploading: true,
-        totalFiles: files.length,
-        completedFiles: 0,
-        currentProgress: 0,
-      });
-
-      try {
-        let completedCount = 0;
-
-        for (const file of files) {
-          // Upload file to Quick.fs with progress tracking
-          const upResult = await uploadFile(file, (progress) => {
-            const fileProgress = progress.percentage;
-            const overallProgress = Math.round(
-              (completedCount * 100 + fileProgress) / files.length
-            );
-
-            setUploadState((prev) => ({
-              ...prev,
-              currentProgress: overallProgress,
-            }));
-          });
-
-          // Determine file type from MIME type
-          const type = getArtifactTypeFromMimeType(upResult.mimeType);
-
-          // Set default metadata for videos (muted, loop, hide controls)
-          const defaultMetadata =
-            type === "video" ? { hideUI: true, loop: true, muted: true } : {};
-
-          // Create artifact with generated name
-          const artifactName = generateArtifactName(
-            type,
-            upResult.fullUrl,
-            file
-          );
-          const artifact = await createArtifact({
-            type,
-            source_url: upResult.fullUrl, // Use fullUrl for display
-            file_path: upResult.url, // Store relative url
-            name: artifactName,
-            metadata: defaultMetadata,
-          });
-
-          // Generate thumbnail asynchronously for videos (don't await)
-          if (type === "video" && artifact) {
-            generateAndUploadThumbnail(file, artifact.id).catch((err) => {
-              console.error("Thumbnail generation failed:", err);
-            });
-          }
-          completedCount++;
-          setUploadState((prev) => ({
-            ...prev,
-            completedFiles: completedCount,
-            currentProgress: Math.round((completedCount / files.length) * 100),
-          }));
-        }
-
-        toast.success(
-          `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}`
-        );
-
-        startTransition(() => {
-          refetchArtifacts();
-        });
-      } catch (err) {
-        toast.error("Failed to upload files. Please try again.");
-        console.error(err);
-      } finally {
-        setUploadState({
-          uploading: false,
-          totalFiles: 0,
-          completedFiles: 0,
-          currentProgress: 0,
-        });
-      }
-    },
-    [project?.id, currentPageId, createArtifact, refetchArtifacts]
-  );
-
-  // URL add handler
-  const handleUrlAdd = useCallback(
-    async (url: string) => {
-      if (!project?.id || !currentPageId) return;
-
-      setUploadState({
-        uploading: true,
-        totalFiles: 1,
-        completedFiles: 0,
-        currentProgress: 50,
-      });
-
-      try {
-        const artifactName = generateArtifactName("url", url);
-        await createArtifact({
-          type: "url",
-          source_url: url,
-          name: artifactName,
-        });
-
-        setUploadState((prev) => ({
-          ...prev,
-          completedFiles: 1,
-          currentProgress: 100,
-        }));
-
-        toast.success("Successfully added URL artifact");
-
-        startTransition(() => {
-          refetchArtifacts();
-        });
-      } catch (err) {
-        toast.error("Failed to add URL artifact. Please try again.");
-        console.error(err);
-      } finally {
-        setUploadState({
-          uploading: false,
-          totalFiles: 0,
-          completedFiles: 0,
-          currentProgress: 0,
-        });
-      }
-    },
-    [project?.id, currentPageId, createArtifact, refetchArtifacts]
-  );
+  // Artifact upload handlers
+  const { uploadState, handleFileUpload, handleUrlAdd, isPending } =
+    useArtifactUpload({
+      projectId: project?.id,
+      currentPageId: currentPageId || undefined,
+      createArtifact,
+      refetchArtifacts,
+    });
 
   // Page management handlers
-  const handlePageCreate = useCallback(async () => {
-    try {
-      const newPage = await createPage(
-        `Page ${String(pages.length + 1).padStart(2, "0")}`
-      );
-      if (newPage) {
-        selectPage(newPage.id);
-      }
-    } catch (err) {
-      toast.error("Failed to create page. Please try again.");
-      console.error("Failed to create page:", err);
-    }
-  }, [createPage, pages.length, selectPage]);
+  const { handlePageCreate, handlePageDelete, handlePageRename } =
+    usePageHandlers(pages, createPage, updatePage, deletePage, selectPage);
 
-  const handlePageDelete = useCallback(
-    async (pageId: string) => {
-      try {
-        await deletePage(pageId);
-        // selectPage will be handled automatically by useCurrentPage hook
-      } catch (err) {
-        toast.error("Failed to delete page. Please try again.");
-        console.error("Failed to delete page:", err);
-      }
-    },
-    [deletePage]
-  );
+  // Folder actions
+  const {
+    handleProjectNameUpdate,
+    handleMoveToFolder,
+    handleRemoveFromFolder,
+  } = useFolderActions(project, userFolders);
 
-  const handlePageRename = useCallback(
-    async (pageId: string, newName: string) => {
-      try {
-        await updatePage(pageId, { name: newName });
-      } catch (err) {
-        toast.error("Failed to rename page. Please try again.");
-        console.error("Failed to rename page:", err);
-        throw err; // Re-throw so the component can handle the error
-      }
-    },
-    [updatePage]
-  );
+  // Title card editor
+  const {
+    editingTitleCard,
+    setEditingTitleCard,
+    titleCardError,
+    setTitleCardError,
+    handleEditTitleCard,
+    handleTitleCardSubmit,
+  } = useTitleCardEditor(artifacts, updateArtifact);
 
-  const handleProjectNameUpdate = useCallback(
-    (name: string) => {
-      if (!project) return;
-      project.name = name;
-    },
-    [project]
-  );
-
-  const handleMoveToFolder = useCallback(
-    async (folderId: string) => {
-      if (!project) return;
-
-      try {
-        const { moveProjectToFolder } = await import("@/lib/quick-folders");
-        await moveProjectToFolder(project.id, folderId);
-        const folder = userFolders.find((f) => f.id === folderId);
-        toast.success(`Moved to ${folder?.name || "folder"}`);
-        // Update local project state
-        project.folder_id = folderId;
-      } catch (error) {
-        toast.error("Failed to move project");
-        console.error(error);
-      }
-    },
-    [project, userFolders]
-  );
-
-  const handleRemoveFromFolder = useCallback(async () => {
-    if (!project) return;
-
-    try {
-      const { removeProjectFromFolder } = await import("@/lib/quick-folders");
-      await removeProjectFromFolder(project.id);
-      toast.success("Removed from folder");
-      // Update local project state
-      project.folder_id = null;
-    } catch (error) {
-      toast.error("Failed to remove from folder");
-      console.error(error);
-    }
-  }, [project]);
-
-  // Title card edit handlers
-  const handleEditTitleCard = useCallback(
-    (artifactId: string) => {
-      const artifact = artifacts.find((a) => a.id === artifactId);
-      if (!artifact) return;
-
-      const metadata = artifact.metadata as
-        | { headline?: string; subheadline?: string }
-        | undefined;
-
-      setEditingTitleCard({
-        artifactId,
-        headline: metadata?.headline || "",
-        subheadline: metadata?.subheadline || "",
-      });
-      setTitleCardError("");
-    },
-    [artifacts]
-  );
-
-  const handleTitleCardSubmit = useCallback(async () => {
-    if (!editingTitleCard) return;
-
-    const { headline, subheadline, artifactId } = editingTitleCard;
-
-    if (!headline && !subheadline) {
-      setTitleCardError("Please enter at least a headline or subheadline");
-      return;
-    }
-
-    try {
-      await updateArtifact(artifactId, {
-        name: headline || "Title Card",
-        metadata: {
-          headline,
-          subheadline,
-        },
-      });
-
-      toast.success("Title card updated");
-      setEditingTitleCard(null);
-      setTitleCardError("");
-    } catch (err) {
-      toast.error("Failed to update title card. Please try again.");
-      console.error(err);
-    }
-  }, [editingTitleCard, updateArtifact]);
-
-  // Replace media handler
-  const handleReplaceMedia = useCallback(
-    async (artifactId: string, file: File) => {
-      if (!project?.id || !currentPageId) return;
-
-      try {
-        // Find the artifact to get its type
-        const artifact = artifacts.find((a) => a.id === artifactId);
-        if (!artifact) {
-          toast.error("Artifact not found");
-          return;
-        }
-
-        // Validate file
-        const { validateFile, getArtifactTypeFromMimeType } = await import(
-          "@/lib/quick-storage"
-        );
-        const validation = validateFile(file, { maxSizeMB: 50 });
-        if (!validation.valid) {
-          toast.error(validation.error || "Invalid file");
-          return;
-        }
-
-        // Verify MIME type matches artifact type
-        const newFileType = getArtifactTypeFromMimeType(file.type);
-        if (newFileType !== artifact.type) {
-          toast.error(
-            `File type mismatch. Please select a ${artifact.type} file.`
-          );
-          return;
-        }
-
-        // Show uploading toast
-        toast.loading("Replacing media...", { id: "replace-media" });
-
-        // Upload new file
-        const uploadResult = await uploadFile(file);
-
-        // Add cache-busting timestamp to force browser reload
-        const cacheBuster = `?t=${Date.now()}`;
-        const sourceUrlWithCacheBuster = uploadResult.fullUrl + cacheBuster;
-
-        // Update artifact in database with new source (synced with other users)
-        await replaceMediaSync(artifactId, {
-          source_url: sourceUrlWithCacheBuster,
-          file_path: uploadResult.url,
-        });
-
-        // For videos, generate new thumbnail (happens asynchronously)
-        if (artifact.type === "video") {
-          generateAndUploadThumbnail(file, artifactId).catch((err) => {
-            console.error("Thumbnail generation failed:", err);
-          });
-        }
-
-        toast.success("Media replaced successfully", { id: "replace-media" });
-      } catch (error) {
-        console.error("Failed to replace media:", error);
-        toast.error("Failed to replace media. Please try again.", {
-          id: "replace-media",
-        });
-      }
-    },
-    [project?.id, currentPageId, artifacts, replaceMediaSync]
+  // Media replacement
+  const { handleReplaceMedia } = useMediaReplacement(
+    project?.id,
+    currentPageId || undefined,
+    artifacts,
+    replaceMediaSync
   );
 
   // Smart back URL: Go to folder if project is in a folder, otherwise /projects
@@ -668,6 +301,8 @@ function PresentationPageContent() {
       isSyncReady={isSyncReady}
       getUsersCount={getUsersCount}
       getUsers={getUsers}
+      onFollowUser={handleFollowUser}
+      followingUserId={followedUser?.socketId || null}
     >
       <div className="h-full relative">
         {/* Dropzone for file uploads (only for creators/editors) */}
@@ -743,33 +378,25 @@ function PresentationPageContent() {
             onFocusArtifact={(artifactId) => {
               // If already in focused mode (columns=1, fitMode=true), restore
               if (columns === 1 && fitMode) {
-                restorePreviousView();
+                unfocusArtifact();
                 return;
               }
 
-              // Save current state before focusing (including scroll position)
-              const container = document.querySelector(".carousel-horizontal");
-              const scrollLeft = container ? container.scrollLeft : 0;
-              setPreviousViewState({ columns, fitMode, scrollLeft });
-              setFocusedArtifactId(artifactId);
-
-              // Force synchronous rendering to prevent flicker
-              flushSync(() => {
-                setColumns(1);
-                setFitMode(true);
-              });
+              focusArtifact(artifactId);
 
               // Immediately scroll after synchronous render
-              const element = document.querySelector(
-                `[data-id="${artifactId}"]`
-              );
-              if (element) {
-                element.scrollIntoView({
-                  behavior: "instant",
-                  block: "nearest",
-                  inline: "start",
-                });
-              }
+              requestAnimationFrame(() => {
+                const element = document.querySelector(
+                  `[data-id="${artifactId}"]`
+                );
+                if (element) {
+                  element.scrollIntoView({
+                    behavior: "instant",
+                    block: "nearest",
+                    inline: "start",
+                  });
+                }
+              });
             }}
             focusedArtifactId={focusedArtifactId}
             isReadOnly={isReadOnly}
@@ -873,10 +500,44 @@ function PresentationPageContent() {
   );
 }
 
+function PresentationPageWithProvider() {
+  const searchParams = useSearchParams();
+  const shareToken = searchParams.get("token") || "";
+
+  // Fetch project to get page info
+  const { data: project } = useSWR<Project | null>(
+    shareToken ? `project-token-${shareToken}` : null,
+    () => (shareToken ? fetchProject(shareToken) : null),
+    { revalidateOnFocus: false }
+  );
+
+  const { pages } = usePages(project?.id);
+  const { currentPageId } = useCurrentPage(pages, project?.id);
+
+  // Use the same room name as artifact sync: "artifacts-{pageId}"
+  const roomName = currentPageId
+    ? `artifacts-${currentPageId}`
+    : "artifact-view-default";
+
+  return (
+    <QuickFollowProvider
+      roomName={roomName}
+      key={roomName}
+      captureOptions={{
+        captureScroll: false, // We handle scroll manually
+        captureClick: false,
+        captureInput: false,
+      }}
+    >
+      <PresentationPageContent />
+    </QuickFollowProvider>
+  );
+}
+
 export default function PresentationPage() {
   return (
     <Suspense fallback={null}>
-      <PresentationPageContent />
+      <PresentationPageWithProvider />
     </Suspense>
   );
 }
