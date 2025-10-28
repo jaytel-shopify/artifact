@@ -47,13 +47,11 @@ export function CarouselItemContextMenu({
   isReadOnly = false,
 }: CarouselItemContextMenuProps) {
   const isVideo = contentType === "video";
-  const isUrl = contentType === "url";
   const isTitleCard = contentType === "titleCard";
 
-  // If read-only, no handlers, or URL type, just return children without context menu
+  // If read-only or no handlers, just return children without context menu
   if (
     isReadOnly ||
-    isUrl ||
     (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit)
   ) {
     return <>{children}</>;
