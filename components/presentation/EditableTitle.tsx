@@ -94,7 +94,7 @@ export default function EditableTitle({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-0">
       {editing ? (
         <div className="flex items-center gap-2">
           <Input
