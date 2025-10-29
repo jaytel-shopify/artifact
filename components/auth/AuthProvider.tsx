@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { waitForQuick, type QuickIdentity } from "@/lib/quick";
+import { UnauthorizedAccess } from "./UnauthorizedAccess";
 
 /**
  * Quick User type - extends QuickIdentity with our app-specific fields
@@ -21,6 +22,7 @@ interface AuthContextValue {
   user: QuickUser | null;
   loading: boolean;
   isAuthenticated: boolean;
+  isAuthorized: boolean | null;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -30,9 +32,45 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<QuickUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     let isMounted = true;
+
+    async function checkAllowlist(email: string): Promise<boolean> {
+      try {
+        console.log('[AuthProvider] Checking allowlist for:', email);
+        
+        // Force fresh fetch with cache-busting - no caching allowed
+        const timestamp = Date.now();
+        const response = await fetch(`/allowed-users.json?t=${timestamp}`, {
+          cache: 'no-store',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+          },
+        });
+        
+        if (!response.ok) {
+          console.error('[AuthProvider] Failed to fetch allowlist:', response.status);
+          return false;
+        }
+        
+        const allowedUsers: string[] = await response.json();
+        const isAllowed = allowedUsers.includes(email);
+        
+        console.log('[AuthProvider] Allowlist check result:', {
+          email,
+          isAllowed,
+          totalAllowedUsers: allowedUsers.length,
+        });
+        
+        return isAllowed;
+      } catch (err) {
+        console.error('[AuthProvider] Error checking allowlist:', err);
+        return false;
+      }
+    }
 
     async function initUser() {
       try {
@@ -51,24 +89,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           hasSlackImage: !!userData.slackImageUrl,
         });
         
+        if (!isMounted) return;
+        
+        const user = {
+          email: userData.email,
+          fullName: userData.fullName,
+          firstName: userData.firstName,
+          slackHandle: userData.slackHandle,
+          slackId: userData.slackId,
+          slackImageUrl: userData.slackImageUrl,
+          title: userData.title,
+          github: userData.github,
+        };
+        
+        // STRICT: Check allowlist BEFORE setting user or showing any content
+        const authorized = await checkAllowlist(user.email);
+        
         if (isMounted) {
-          const user = {
-            email: userData.email,
-            fullName: userData.fullName,
-            firstName: userData.firstName,
-            slackHandle: userData.slackHandle,
-            slackId: userData.slackId,
-            slackImageUrl: userData.slackImageUrl,
-            title: userData.title,
-            github: userData.github,
-          };
-          console.log('[AuthProvider] Setting user state:', user);
           setUser(user);
+          setIsAuthorized(authorized);
           setLoading(false);
+          console.log('[AuthProvider] Authorization complete:', {
+            email: user.email,
+            authorized,
+          });
         }
       } catch (err) {
         console.error('[AuthProvider] Failed to load Quick user:', err);
         if (isMounted) {
+          setIsAuthorized(false);
           setLoading(false);
         }
       }
@@ -85,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     isAuthenticated: !!user,
+    isAuthorized,
     signIn: async () => {
       // Quick handles authentication automatically via Google OAuth
       // If the user isn't authenticated, they'll be redirected to sign in
@@ -101,6 +151,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
   };
 
+  // Show loading state while checking authorization
+  if (loading || isAuthorized === null) {
+    return (
+      <AuthContext.Provider value={value}>
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
+            <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </AuthContext.Provider>
+    );
+  }
+
+  // Show unauthorized page if user is not on allowlist
+  if (isAuthorized === false) {
+    return (
+      <AuthContext.Provider value={value}>
+        <UnauthorizedAccess userEmail={user?.email} />
+      </AuthContext.Provider>
+    );
+  }
+
+  // Only render app content if user is authorized
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
