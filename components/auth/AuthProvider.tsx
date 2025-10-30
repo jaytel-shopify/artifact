@@ -3,6 +3,8 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { waitForQuick, type QuickIdentity } from "@/lib/quick";
 import { UnauthorizedAccess } from "./UnauthorizedAccess";
+import { isAdmin } from "@/lib/admin-config";
+import { isUserAllowed } from "@/lib/allowed-users-db";
 
 /**
  * Quick User type - extends QuickIdentity with our app-specific fields
@@ -23,6 +25,7 @@ interface AuthContextValue {
   loading: boolean;
   isAuthenticated: boolean;
   isAuthorized: boolean | null;
+  isAdmin: boolean;
   signIn: () => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -33,41 +36,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<QuickUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [userIsAdmin, setUserIsAdmin] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    async function checkAllowlist(email: string): Promise<boolean> {
+    async function checkAuthorization(email: string): Promise<boolean> {
       try {
-        console.log('[AuthProvider] Checking allowlist for:', email);
+        console.log('[AuthProvider] Checking authorization for:', email);
         
-        // Force fresh fetch with cache-busting - no caching allowed
-        const timestamp = Date.now();
-        const response = await fetch(`/allowed-users.json?t=${timestamp}`, {
-          cache: 'no-store',
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-          },
-        });
-        
-        if (!response.ok) {
-          console.error('[AuthProvider] Failed to fetch allowlist:', response.status);
-          return false;
+        // FIRST: Check if user is admin (hardcoded)
+        if (isAdmin(email)) {
+          console.log('[AuthProvider] ✅ User is ADMIN:', email);
+          return true;
         }
         
-        const allowedUsers: string[] = await response.json();
-        const isAllowed = allowedUsers.includes(email);
+        // SECOND: Check database for allowed users
+        const allowed = await isUserAllowed(email);
         
-        console.log('[AuthProvider] Allowlist check result:', {
+        console.log('[AuthProvider] Authorization check result:', {
           email,
-          isAllowed,
-          totalAllowedUsers: allowedUsers.length,
+          isAdmin: false,
+          isAllowed: allowed,
         });
         
-        return isAllowed;
+        return allowed;
       } catch (err) {
-        console.error('[AuthProvider] Error checking allowlist:', err);
+        console.error('[AuthProvider] Error checking authorization:', err);
         return false;
       }
     }
@@ -102,15 +97,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           github: userData.github,
         };
         
-        // STRICT: Check allowlist BEFORE setting user or showing any content
-        const authorized = await checkAllowlist(user.email);
+        // Check if user is admin
+        const adminStatus = isAdmin(user.email);
+        
+        // STRICT: Check authorization BEFORE setting user or showing any content
+        const authorized = await checkAuthorization(user.email);
         
         if (isMounted) {
           setUser(user);
+          setUserIsAdmin(adminStatus);
           setIsAuthorized(authorized);
           setLoading(false);
           console.log('[AuthProvider] Authorization complete:', {
             email: user.email,
+            isAdmin: adminStatus,
             authorized,
           });
         }
@@ -135,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isAuthenticated: !!user,
     isAuthorized,
+    isAdmin: userIsAdmin,
     signIn: async () => {
       // Quick handles authentication automatically via Google OAuth
       // If the user isn't authenticated, they'll be redirected to sign in

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { AdminPanelWrapper } from "@/components/admin/AdminPanelWrapper";
 import LocalDevWarning from "@/components/LocalDevWarning";
 import "./globals.css";
 
@@ -57,6 +58,7 @@ export default function RootLayout({
           >
             {children}
             <Toaster />
+            <AdminPanelWrapper />
           </ThemeProvider>
         </AuthProvider>
       </body>
