@@ -41,6 +41,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let isMounted = true;
 
+    // Check if we're on localhost - bypass all auth if true
+    const isLocalhost = typeof window !== 'undefined' && 
+      (window.location.hostname === 'localhost' || 
+       window.location.hostname === '127.0.0.1' ||
+       window.location.hostname.startsWith('192.168.') ||
+       window.location.hostname.endsWith('.local'));
+
+    if (isLocalhost) {
+      console.log('[AuthProvider] 🔓 Running on localhost - bypassing authentication');
+      // Create a mock local dev user with admin privileges
+      const localDevUser: QuickUser = {
+        email: 'local-dev@localhost',
+        fullName: 'Local Developer',
+        firstName: 'Local',
+      };
+      
+      setUser(localDevUser);
+      setUserIsAdmin(true); // Grant admin access for local dev
+      setIsAuthorized(true);
+      setLoading(false);
+      return; // Skip all auth logic
+    }
+
     async function checkAuthorization(email: string): Promise<boolean> {
       try {
         console.log('[AuthProvider] Checking authorization for:', email);
