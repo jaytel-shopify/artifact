@@ -27,10 +27,10 @@ interface DevDebugPanelProps {
 
 /**
  * DevDebugPanel
- * 
+ *
  * Developer debug panel for testing different view modes.
  * Triggered by pressing '/' key anywhere.
- * 
+ *
  * Features:
  * - Toggle read-only mode (simulate being a viewer)
  * - Show project info
@@ -59,7 +59,7 @@ export default function DevDebugPanel({
         ) {
           return;
         }
-        
+
         e.preventDefault();
         setIsOpen((prev) => !prev);
       }
@@ -80,7 +80,11 @@ export default function DevDebugPanel({
               Dev Debug Panel
             </DialogTitle>
             <DialogDescription>
-              Press <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">/</kbd> to toggle this panel
+              Press{" "}
+              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+                /
+              </kbd>{" "}
+              to toggle this panel
             </DialogDescription>
           </DialogHeader>
 
@@ -88,12 +92,15 @@ export default function DevDebugPanel({
             {/* Permission Testing */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Permission Testing</h3>
-              
+
               <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="space-y-1">
-                  <div className="text-sm font-medium">Simulate Read-Only Mode</div>
+                  <div className="text-sm font-medium">
+                    Simulate Read-Only Mode
+                  </div>
                   <div className="text-xs text-muted-foreground">
-                    Test the viewer experience without logging into a different account
+                    Test the viewer experience without logging into a different
+                    account
                   </div>
                 </div>
                 <Switch
@@ -134,8 +141,12 @@ export default function DevDebugPanel({
             <div className="space-y-3">
               <h3 className="text-sm font-semibold">Current User</h3>
               <div className="bg-muted p-3 rounded-lg space-y-1">
-                <div className="text-xs font-mono text-muted-foreground">Email:</div>
-                <div className="text-sm font-medium">{userEmail || "Not loaded"}</div>
+                <div className="text-xs font-mono text-muted-foreground">
+                  Email:
+                </div>
+                <div className="text-sm font-medium">
+                  {userEmail || "Not loaded"}
+                </div>
               </div>
             </div>
 
@@ -154,7 +165,9 @@ export default function DevDebugPanel({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Owner:</span>{" "}
-                    <span className="font-medium">{projectInfo.creator_id}</span>
+                    <span className="font-medium">
+                      {projectInfo.creator_id}
+                    </span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Share Token:</span>{" "}
@@ -162,7 +175,13 @@ export default function DevDebugPanel({
                   </div>
                   <div>
                     <span className="text-muted-foreground">Is Creator:</span>{" "}
-                    <span className={projectInfo.creator_id === userEmail ? "text-green-600 font-medium" : "text-orange-600"}>
+                    <span
+                      className={
+                        projectInfo.creator_id === userEmail
+                          ? "text-green-600 font-medium"
+                          : "text-orange-600"
+                      }
+                    >
                       {projectInfo.creator_id === userEmail ? "Yes ✓" : "No"}
                     </span>
                   </div>
@@ -174,8 +193,18 @@ export default function DevDebugPanel({
             <div className="text-xs text-muted-foreground border-t pt-4 space-y-2">
               <p className="font-medium">Keyboard Shortcuts:</p>
               <ul className="space-y-1 ml-2">
-                <li><kbd className="px-1 py-0.5 bg-muted rounded font-mono">/</kbd> - Toggle this debug panel</li>
-                <li><kbd className="px-1 py-0.5 bg-muted rounded font-mono">ESC</kbd> - Close this panel</li>
+                <li>
+                  <kbd className="px-1 py-0.5 bg-muted rounded font-mono">
+                    /
+                  </kbd>{" "}
+                  - Toggle this debug panel
+                </li>
+                <li>
+                  <kbd className="px-1 py-0.5 bg-muted rounded font-mono">
+                    ESC
+                  </kbd>{" "}
+                  - Close this panel
+                </li>
               </ul>
             </div>
 
@@ -198,4 +227,3 @@ export default function DevDebugPanel({
     </>
   );
 }
-
