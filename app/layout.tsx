@@ -61,6 +61,9 @@ export default function RootLayout({
             <AdminPanelWrapper />
           </ThemeProvider>
         </AuthProvider>
+
+        {/* Database Schema Widget - Reports schema info to central dashboard */}
+        <script src="https://database.quick.shopify.io/widget.js" async />
       </body>
     </html>
   );
