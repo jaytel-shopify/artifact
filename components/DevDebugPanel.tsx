@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Bug, X } from "lucide-react";
+import { Bug, Database } from "lucide-react";
 
 interface DevDebugPanelProps {
   isReadOnly: boolean;
@@ -43,6 +44,7 @@ export default function DevDebugPanel({
   userEmail,
 }: DevDebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     function handleKeyPress(e: KeyboardEvent) {
@@ -106,6 +108,27 @@ export default function DevDebugPanel({
                 </div>
               )}
             </div>
+
+            {/* Database Visualizer - Only for jaytel */}
+            {userEmail === "jaytel.provence@shopify.com" && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold">Admin Tools</h3>
+                <Button
+                  onClick={() => {
+                    setIsOpen(false);
+                    router.push("/database");
+                  }}
+                  className="w-full flex items-center gap-2"
+                  variant="outline"
+                >
+                  <Database className="h-4 w-4" />
+                  Database Visualizer
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Explore all Quick.db collections and their relationships
+                </p>
+              </div>
+            )}
 
             {/* Current User Info */}
             <div className="space-y-3">
