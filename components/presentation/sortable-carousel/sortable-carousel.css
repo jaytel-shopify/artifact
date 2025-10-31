@@ -4,7 +4,7 @@
 
 .carousel {
   display: grid;
-  gap: 2rem;
+  gap: 1rem;
   padding: 0 1rem;
   margin: 0;
   list-style: none;
