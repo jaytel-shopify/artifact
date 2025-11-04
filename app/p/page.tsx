@@ -526,7 +526,7 @@ function PresentationPageInnerWithProvider() {
   return (
     <QuickFollowProvider
       room={room}
-      key={currentPageId || "no-page"}
+      key={project?.id || "no-project"}
       captureOptions={{
         captureScroll: false,
         captureClick: false,

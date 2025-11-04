@@ -27,13 +27,15 @@ export interface ArtifactEventPayload {
 
 export class ArtifactSyncManager {
   private room: any = null;
+  private projectId: string;
   private pageId: string;
   private isConnected = false;
   private eventHandlers = new Map<ArtifactSyncEvent, Set<Function>>();
   private userId: string = "";
   private socketId: string = "";
 
-  constructor(pageId: string) {
+  constructor(projectId: string, pageId: string) {
+    this.projectId = projectId;
     this.pageId = pageId;
   }
 
@@ -45,8 +47,8 @@ export class ArtifactSyncManager {
       const user = await quick.id.waitForUser();
       this.userId = user.email;
 
-      // Join room for this specific page
-      const roomName = `artifacts-${this.pageId}`;
+      // Join room for this specific project (not page, so viewers persist across pages)
+      const roomName = `artifacts-${this.projectId}`;
       this.room = quick.socket.room(roomName);
 
       // Set up event handlers

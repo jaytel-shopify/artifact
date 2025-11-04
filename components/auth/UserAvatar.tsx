@@ -1,11 +1,10 @@
 "use client";
 
+import { memo } from "react";
 import { useAuth } from "./AuthProvider";
 
-export default function UserAvatar() {
+function UserAvatar() {
   const { user, loading } = useAuth();
-
-  console.log("[UserAvatar] Render:", { user: !!user, loading });
 
   if (loading) {
     return (
@@ -16,7 +15,6 @@ export default function UserAvatar() {
   }
 
   if (!user) {
-    console.log("[UserAvatar] No user found");
     return (
       <div className="w-8 h-8 min-w-8 flex-shrink-0 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium">
         ?
@@ -52,3 +50,6 @@ export default function UserAvatar() {
     </div>
   );
 }
+
+// Memoize to prevent re-renders when parent re-renders due to unrelated prop changes
+export default memo(UserAvatar);

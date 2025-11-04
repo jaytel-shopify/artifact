@@ -27,9 +27,10 @@ async function fetcher(pageId: string): Promise<Artifact[]> {
 /**
  * Module-level singleton to prevent duplicate sync managers
  * This persists across React component mounts/unmounts (including Strict Mode)
+ * Key is projectId since rooms are per-project, not per-page
  */
 const syncManagers = new Map<string, ArtifactSyncManager>();
-const initializingPages = new Set<string>();
+const initializingProjects = new Set<string>();
 
 /**
  * Hook to manage artifacts with real-time synchronization
@@ -57,13 +58,27 @@ export function useSyncedArtifacts(
 
   const syncManagerRef = useRef<ArtifactSyncManager | null>(null);
   const [isSyncReady, setIsSyncReady] = useState(false);
+  // Store the initial pageId used to create the manager - don't change it when page changes
+  const initialPageIdRef = useRef<string | undefined>(undefined);
+  // Track the current projectId to detect when it actually changes
+  const currentProjectIdRef = useRef<string | undefined>(projectId);
+  const projectChanged = currentProjectIdRef.current !== projectId;
+  if (projectChanged) {
+    currentProjectIdRef.current = projectId;
+    initialPageIdRef.current = undefined; // Reset initial page on project change
+  }
 
-  // Initialize or reuse sync manager
+  // Initialize or reuse sync manager (keyed by projectId, not pageId)
   useEffect(() => {
-    if (!pageId) return;
+    if (!projectId || !pageId) return;
+    
+    // Set the initial pageId only once per project
+    if (!initialPageIdRef.current) {
+      initialPageIdRef.current = pageId;
+    }
 
     // Check module-level singleton first (prevents React Strict Mode duplication)
-    const existingManager = syncManagers.get(pageId);
+    const existingManager = syncManagers.get(projectId);
     if (existingManager) {
       syncManagerRef.current = existingManager;
 
@@ -82,23 +97,19 @@ export function useSyncedArtifacts(
 
         return () => {
           clearInterval(checkReady);
-          syncManagerRef.current = null;
-          setIsSyncReady(false);
+          // Don't clear state here - handled by main cleanup below
         };
       }
 
-      // Already ready, just set up cleanup
-      return () => {
-        syncManagerRef.current = null;
-        setIsSyncReady(false);
-      };
+      // Already ready, no cleanup needed (handled by main cleanup below)
+      return;
     }
 
     // If currently initializing, wait for it
-    if (initializingPages.has(pageId)) {
+    if (initializingProjects.has(projectId)) {
       // Poll for the manager to be available
       const checkInterval = setInterval(() => {
-        const mgr = syncManagers.get(pageId);
+        const mgr = syncManagers.get(projectId);
         if (mgr) {
           syncManagerRef.current = mgr;
           setIsSyncReady(mgr.isReady());
@@ -108,46 +119,46 @@ export function useSyncedArtifacts(
 
       return () => {
         clearInterval(checkInterval);
-        syncManagerRef.current = null;
-        setIsSyncReady(false);
+        // Don't clear state here - handled by main cleanup below
       };
     }
 
     // Mark as initializing in module-level tracker
-    initializingPages.add(pageId);
+    initializingProjects.add(projectId);
     let manager: ArtifactSyncManager | null = null;
 
     async function initSync() {
       // Guard against undefined (TypeScript doesn't narrow in async function)
-      if (!pageId) return;
+      if (!projectId || !initialPageIdRef.current) return;
 
-      manager = new ArtifactSyncManager(pageId);
+      manager = new ArtifactSyncManager(projectId, initialPageIdRef.current);
       syncManagerRef.current = manager;
-      // Store in module-level singleton
-      syncManagers.set(pageId, manager);
+      // Store in module-level singleton (keyed by projectId, not pageId)
+      syncManagers.set(projectId, manager);
 
       const success = await manager.init();
       setIsSyncReady(success);
 
       // Remove from initializing set now that init is complete
-      initializingPages.delete(pageId);
+      initializingProjects.delete(projectId);
     }
 
     initSync().catch((error) => {
       console.error("[useSyncedArtifacts] Failed to initialize sync:", error);
       // Remove from initializing set on error
-      initializingPages.delete(pageId);
+      initializingProjects.delete(projectId);
     });
 
     return () => {
-      // On component unmount, just clear the ref
-      // Don't destroy the manager - it persists at module level for reuse
-      syncManagerRef.current = null;
-      setIsSyncReady(false);
-      // Remove from initializing set (in case initialization was still in progress)
-      initializingPages.delete(pageId);
+      // Only clear state if project is actually changing (not just page changing)
+      // This prevents blinking when switching between pages in the same project
+      if (currentProjectIdRef.current !== projectId) {
+        syncManagerRef.current = null;
+        setIsSyncReady(false);
+        initializingProjects.delete(projectId);
+      }
     };
-  }, [pageId]); // Only reinitialize when pageId changes, not on every mutate
+  }, [projectId, pageId]); // Include pageId to trigger effect when it becomes available, but logic above prevents recreation
 
   // Set up event handlers for this component instance
   // This runs for EVERY component, whether it creates or reuses a manager
