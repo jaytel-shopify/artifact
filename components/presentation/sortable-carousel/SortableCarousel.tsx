@@ -50,6 +50,7 @@ interface Props {
   onFocusArtifact?: (artifactId: string) => void;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
+  pageId?: string; // Track page changes to prevent auto-scroll on page switch
 }
 
 const measuring: MeasuringConfiguration = {
@@ -87,6 +88,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(function Sor
   onFocusArtifact,
   focusedArtifactId,
   isReadOnly = false,
+  pageId,
 }, forwardedRef) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [isSettling, setIsSettling] = useState(false);
@@ -99,6 +101,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(function Sor
     undefined
   );
   const [items, setItems] = useState<Artifact[]>(artifacts);
+  const prevPageIdRef = useRef(pageId);
 
   // Sync artifacts with local state (respecting animation state)
   const prevArtifactsRef = useRef(artifacts);
@@ -117,14 +120,17 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(function Sor
 
     // Sync if items added/removed
     if (prevIds !== newIds) {
-      // Check if items were added (not removed)
+      // Check if items were added (not removed) AND page didn't change
       const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
+      const pageChanged = prevPageIdRef.current !== pageId;
 
       setItems(artifacts);
       prevArtifactsRef.current = artifacts;
+      prevPageIdRef.current = pageId;
 
-      // Scroll to end if items were added
-      if (itemsAdded && containerRef.current) {
+      // Scroll to end if items were added AND page didn't change
+      // (don't auto-scroll when switching pages)
+      if (itemsAdded && !pageChanged && containerRef.current) {
         setTimeout(() => {
           if (containerRef.current) {
             containerRef.current.scrollTo({

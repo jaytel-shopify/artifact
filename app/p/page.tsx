@@ -176,6 +176,22 @@ function PresentationPageInner() {
   );
   const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
+  // Disable browser scroll restoration to prevent carousel scroll memory
+  useEffect(() => {
+    if ("scrollRestoration" in history) {
+      history.scrollRestoration = "manual";
+    }
+  }, []);
+
+  // Reset carousel scroll position when page changes
+  useEffect(() => {
+    if (carouselRef.current && currentPageId) {
+      // Reset to beginning
+      carouselRef.current.scrollLeft = 0;
+      carouselRef.current.scrollTop = 0;
+    }
+  }, [currentPageId]);
+
   // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
   useFollowSync({
     followManager,
@@ -351,6 +367,7 @@ function PresentationPageInner() {
             columns={columns}
             fitMode={fitMode}
             artifacts={artifacts}
+            pageId={currentPageId || undefined}
             onReorder={async (reorderedArtifacts) => {
               try {
                 await reorderArtifacts(reorderedArtifacts);
