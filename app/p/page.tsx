@@ -1,13 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import {
-  Suspense,
-  useEffect,
-  useState,
-  useTransition,
-  useCallback,
-} from "react";
+import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
@@ -55,9 +49,8 @@ async function fetchProject(shareToken: string): Promise<Project | null> {
   return await getProjectByShareToken(shareToken);
 }
 
-function PresentationPageContent() {
-  console.log("[Follow] PresentationPageContent rendering");
-
+// Inner component that uses useFollow - must be wrapped by QuickFollowProvider
+function PresentationPageInner() {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
   const { user } = useAuth();
@@ -65,6 +58,16 @@ function PresentationPageContent() {
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+
+  // Ref to the carousel container for follow sync
+  const carouselRef = useRef<HTMLUListElement>(null);
+  const [carouselReady, setCarouselReady] = useState(false);
+
+  // Callback ref to track when carousel is mounted
+  const setCarouselRef = useCallback((node: HTMLUListElement | null) => {
+    carouselRef.current = node;
+    setCarouselReady(!!node);
+  }, []);
 
   // Follow functionality
   const {
@@ -76,22 +79,6 @@ function PresentationPageContent() {
     isInitialized: followInitialized,
   } = useFollow();
 
-  console.log("[Follow] useFollow returned:", {
-    followInitialized,
-    isFollowing,
-    followedUser: followedUser?.email,
-    hasManager: !!followManager,
-  });
-
-  // Debug: Log follow state changes
-  useEffect(() => {
-    console.log("[Follow] Follow state effect:", {
-      followInitialized,
-      isFollowing,
-      followedUser: followedUser?.email,
-      isLeading: followManager?.isLeading(),
-    });
-  }, [followInitialized, isFollowing, followedUser, followManager]);
   // Artifact focus mode
   const { focusedArtifactId, focusArtifact, unfocusArtifact } =
     useArtifactFocus(columns, setColumns, setFitMode);
@@ -143,6 +130,8 @@ function PresentationPageContent() {
     fitMode,
     setColumns,
     setFitMode,
+    carouselRef,
+    carouselReady,
   });
 
   // Handle follow user click
@@ -356,6 +345,7 @@ function PresentationPageContent() {
         {/* Canvas */}
         <div className="h-full pt-[var(--spacing-md)]">
           <Canvas
+            ref={setCarouselRef}
             columns={columns}
             fitMode={fitMode}
             artifacts={artifacts}
@@ -500,11 +490,17 @@ function PresentationPageContent() {
   );
 }
 
-function PresentationPageWithProvider() {
+// Simple wrapper - PresentationPageInner gets the room and wraps itself with provider
+function PresentationPageContent() {
+  return <PresentationPageInnerWithProvider />;
+}
+
+// Component that gets room and provides QuickFollowProvider
+function PresentationPageInnerWithProvider() {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
 
-  // Fetch project to get page info
+  // Fetch project
   const { data: project } = useSWR<Project | null>(
     shareToken ? `project-token-${shareToken}` : null,
     () => (shareToken ? fetchProject(shareToken) : null),
@@ -514,24 +510,36 @@ function PresentationPageWithProvider() {
   const { pages } = usePages(project?.id);
   const { currentPageId } = useCurrentPage(pages, project?.id);
 
-  // Use the same room name as artifact sync: "artifacts-{pageId}"
-  const roomName = currentPageId
-    ? `artifacts-${currentPageId}`
-    : "artifact-view-default";
+  // Get the room from artifact sync - this is the ONLY call to useSyncedArtifacts
+  const { getRoom, isSyncReady } = useSyncedArtifacts(
+    project?.id,
+    currentPageId || undefined
+  );
+
+  const room = getRoom();
+
+  // Wait for room to be ready before wrapping with provider
+  if (!room || !isSyncReady) {
+    return null; // Loading state
+  }
 
   return (
     <QuickFollowProvider
-      roomName={roomName}
-      key={roomName}
+      room={room}
+      key={currentPageId || "no-page"}
       captureOptions={{
-        captureScroll: false, // We handle scroll manually
+        captureScroll: false,
         captureClick: false,
         captureInput: false,
       }}
     >
-      <PresentationPageContent />
+      <PresentationPageInner />
     </QuickFollowProvider>
   );
+}
+
+function PresentationPageWithProvider() {
+  return <PresentationPageContent />;
 }
 
 export default function PresentationPage() {

@@ -218,6 +218,13 @@ export class ArtifactSyncManager {
   }
 
   /**
+   * Get the room instance (for sharing with other managers)
+   */
+  getRoom(): any {
+    return this.room;
+  }
+
+  /**
    * Get connected users count
    */
   getUsersCount(): number {
@@ -263,10 +270,6 @@ export class ArtifactSyncManager {
       console.log(
         `[ArtifactSync] 👥 ${currentCount} viewer${currentCount === 1 ? "" : "s"} connected`
       );
-      // Log first user's data structure to debug avatar issues
-      if (enrichedUsers.length > 0) {
-        console.log("[ArtifactSync] Sample user data:", enrichedUsers[0]);
-      }
       this.lastUserCount = currentCount;
     }
 

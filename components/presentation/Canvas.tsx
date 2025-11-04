@@ -1,5 +1,6 @@
 "use client";
 
+import { forwardRef } from "react";
 import { SortableCarousel } from "./sortable-carousel/SortableCarousel";
 import { Layout } from "./sortable-carousel/CarouselItem";
 import type { Artifact } from "@/types";
@@ -24,7 +25,7 @@ interface CanvasProps {
   fitMode?: boolean;
 }
 
-export default function Canvas({
+const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas({
   columns,
   artifacts,
   onReorder,
@@ -36,10 +37,11 @@ export default function Canvas({
   focusedArtifactId,
   isReadOnly = false,
   fitMode = false,
-}: CanvasProps) {
+}, ref) {
   return (
     <div className="w-full h-full">
       <SortableCarousel
+        ref={ref}
         layout={Layout.Horizontal}
         columns={columns}
         fitMode={fitMode}
@@ -55,4 +57,6 @@ export default function Canvas({
       />
     </div>
   );
-}
+});
+
+export default Canvas;

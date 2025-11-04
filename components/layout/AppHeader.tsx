@@ -23,7 +23,6 @@ import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import EditableTitle from "@/components/presentation/EditableTitle";
 import ShareDialog from "@/components/sharing/ShareDialog";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
-import CollaboratorBadge from "@/components/sharing/CollaboratorBadge";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/auth/UserAvatar";
@@ -358,11 +357,6 @@ export default function AppHeader({
             </div>
           ) : mode === "canvas" ? (
             <div className="flex items-center gap-3">
-              {/* Collaborator Badge (shown for invited editors) */}
-              {isCollaborator && creatorEmail && (
-                <CollaboratorBadge creatorEmail={creatorEmail} />
-              )}
-
               {/* Read-Only Badge (shown for viewers) */}
               {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
 

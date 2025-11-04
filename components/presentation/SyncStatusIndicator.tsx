@@ -34,23 +34,9 @@ export default function SyncStatusIndicator({
     }
 
     const usersList = getUsers();
-    console.log("[SyncStatusIndicator] Raw users data:", usersList);
 
-    // Deduplicate by email, preferring connections with more complete profile data
-    // Note: This allows you to see yourself from other browser windows (for testing)
-    const usersByEmail = new Map<string, any>();
-    usersList.forEach((user) => {
-      const existing = usersByEmail.get(user.email);
-      // Prefer user objects that have slackImageUrl (more complete profile)
-      if (!existing || (!existing.slackImageUrl && user.slackImageUrl)) {
-        usersByEmail.set(user.email, user);
-      }
-    });
-
-    const uniqueUsers = Array.from(usersByEmail.values());
-    console.log("[SyncStatusIndicator] Deduplicated users:", uniqueUsers);
-
-    setUsers(uniqueUsers);
+    // Count by socket ID (each connection counts as a separate viewer)
+    setUsers(usersList);
   }, [isSyncReady, getUsers, updateTrigger]);
 
   // Expose update function to parent via window event
@@ -68,8 +54,8 @@ export default function SyncStatusIndicator({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Viewer Avatars (only show when synced and there are viewers) */}
-      {isSyncReady && viewersCount > 0 && (
+      {/* Viewer Avatars (only show when synced and there are other viewers) */}
+      {isSyncReady && viewersCount >= 1 && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border bg-blue-500/10 border-blue-500/20 text-blue-600">
           <div className="flex items-center -space-x-2">
             {users.slice(0, 5).map((user, index) => {

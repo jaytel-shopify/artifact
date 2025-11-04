@@ -40,6 +40,7 @@ export function useFollow() {
 
 interface QuickFollowProviderProps {
   roomName?: string;
+  room?: any; // Existing socket room to reuse (optional)
   autoInit?: boolean;
   captureOptions?: {
     captureScroll?: boolean;
@@ -60,6 +61,7 @@ interface QuickFollowProviderProps {
 
 export default function QuickFollowProvider({
   roomName = "follow",
+  room = null,
   autoInit = true,
   captureOptions = {},
   executeOptions = {},
@@ -83,6 +85,7 @@ export default function QuickFollowProvider({
     async function initialize() {
       manager = new QuickFollowManager({
         roomName,
+        room, // Pass existing room if provided
         ...captureOptions,
         ...executeOptions,
       });
@@ -172,7 +175,7 @@ export default function QuickFollowProvider({
         manager.destroy();
       }
     };
-  }, [roomName, autoInit]);
+  }, [roomName, room, autoInit]);
 
   const contextValue: FollowContextType = {
     followManager,

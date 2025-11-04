@@ -351,5 +351,6 @@ export function useSyncedArtifacts(
     refetch: mutate,
     getUsersCount: () => syncManagerRef.current?.getUsersCount() || 0,
     getUsers: () => syncManagerRef.current?.getUsers() || [],
+    getRoom: () => syncManagerRef.current?.getRoom() || null,
   };
 }

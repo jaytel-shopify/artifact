@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
 import {
   closestCenter,
   DndContext,
@@ -74,7 +74,7 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-export function SortableCarousel({
+export const SortableCarousel = forwardRef<HTMLUListElement, Props>(function SortableCarousel({
   layout,
   columns = 3,
   fitMode = false,
@@ -87,11 +87,14 @@ export function SortableCarousel({
   onFocusArtifact,
   focusedArtifactId,
   isReadOnly = false,
-}: Props) {
+}, forwardedRef) {
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [isSettling, setIsSettling] = useState(false);
   const [settlingId, setSettlingId] = useState<UniqueIdentifier | null>(null);
   const containerRef = useRef<HTMLUListElement>(null);
+  
+  // Expose the containerRef to parent via forwardedRef
+  useImperativeHandle(forwardedRef, () => containerRef.current!);
   const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
     undefined
   );
@@ -326,7 +329,7 @@ export function SortableCarousel({
       </DragOverlay>
     </DndContext>
   );
-}
+});
 
 function CarouselItemOverlay({
   id,

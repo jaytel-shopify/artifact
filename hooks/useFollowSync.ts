@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, RefObject } from "react";
 import {
   getCurrentScrollIndex,
   scrollToIndex,
@@ -18,6 +18,8 @@ interface UseFollowSyncOptions {
   fitMode: boolean;
   setColumns: (columns: number) => void;
   setFitMode: (fitMode: boolean) => void;
+  carouselRef: RefObject<HTMLUListElement | null>;
+  carouselReady: boolean;
 }
 
 /**
@@ -32,6 +34,8 @@ export function useFollowSync({
   fitMode,
   setColumns,
   setFitMode,
+  carouselRef,
+  carouselReady,
 }: UseFollowSyncOptions) {
   const isFollowingRef = useRef(isFollowing);
   const lastScrollIndexRef = useRef<number>(-1);
@@ -56,14 +60,9 @@ export function useFollowSync({
 
   // Broadcast scroll index changes when leading
   useEffect(() => {
-    if (!followManager) return;
+    if (!followManager || !carouselReady || !carouselRef.current) return;
 
-    const carouselContainer = document.querySelector(
-      ".carousel-horizontal"
-    ) as HTMLElement;
-    if (!carouselContainer) {
-      return;
-    }
+    const carouselContainer = carouselRef.current;
 
     const handleScroll = () => {
       if (!followManager.isLeading()) {
@@ -89,9 +88,7 @@ export function useFollowSync({
       });
     };
 
-    carouselContainer.addEventListener("scroll", handleScroll, {
-      passive: true,
-    });
+    carouselContainer.addEventListener("scroll", handleScroll, { passive: true });
 
     return () => {
       carouselContainer.removeEventListener("scroll", handleScroll);
@@ -99,7 +96,7 @@ export function useFollowSync({
         cancelAnimationFrame(scrollFrameRef.current);
       }
     };
-  }, [followManager]);
+  }, [followManager, carouselReady, carouselRef]);
 
   // Listen to custom events when following
   useEffect(() => {
@@ -122,10 +119,11 @@ export function useFollowSync({
           setFitMode(dataRecord.fitMode as boolean);
         }
       } else if (eventName === "scrollIndex") {
-        const carouselContainer = document.querySelector(
-          ".carousel-horizontal"
-        ) as HTMLElement;
-        if (!carouselContainer) return;
+        if (!carouselRef.current) {
+          return;
+        }
+
+        const carouselContainer = carouselRef.current;
 
         // Store the latest index update
         pendingScrollIndexRef.current = dataRecord.index as number;
@@ -145,5 +143,5 @@ export function useFollowSync({
         });
       }
     });
-  }, [followManager, followInitialized, setColumns, setFitMode]);
+  }, [followManager, followInitialized, setColumns, setFitMode, carouselRef]);
 }
