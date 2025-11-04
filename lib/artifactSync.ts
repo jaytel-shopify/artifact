@@ -263,15 +263,12 @@ export class ArtifactSyncManager {
         title: user.state?.title || user.title,
       }));
 
-    // Log current count (always log if cache was reset)
+    // Track current count for change detection
     const currentCount = enrichedUsers.length;
     if (
       this.lastUserCount === undefined ||
       this.lastUserCount !== currentCount
     ) {
-      console.log(
-        `[ArtifactSync] 👥 ${currentCount} viewer${currentCount === 1 ? "" : "s"} connected`
-      );
       this.lastUserCount = currentCount;
     }
 
@@ -285,7 +282,34 @@ export class ArtifactSyncManager {
    * Check if connected
    */
   isReady(): boolean {
-    return this.isConnected;
+    return this.isConnected && this.room && this.room.user;
+  }
+
+  /**
+   * Ensure the room is connected, reconnecting if necessary
+   * Used when reusing an existing manager after navigation
+   */
+  async ensureConnected(): Promise<boolean> {
+    // If already connected and has user, we're good
+    if (this.isConnected && this.room?.user) {
+      return true;
+    }
+
+    // If room exists but disconnected, try to reconnect
+    if (this.room && !this.isConnected) {
+      try {
+        // Room might auto-reconnect, just wait for user to be available
+        await this.room.join();
+        this.isConnected = true;
+        this.socketId = this.room.user?.socketId || "";
+        return true;
+      } catch (error) {
+        console.error("[ArtifactSync] Failed to reconnect:", error);
+        return false;
+      }
+    }
+
+    return false;
   }
 
   /**

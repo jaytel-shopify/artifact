@@ -70,39 +70,33 @@ export function useSyncedArtifacts(
 
   // Initialize or reuse sync manager (keyed by projectId, not pageId)
   useEffect(() => {
-    if (!projectId || !pageId) return;
+    if (!projectId) return;
     
-    // Set the initial pageId only once per project
-    if (!initialPageIdRef.current) {
-      initialPageIdRef.current = pageId;
-    }
-
-    // Check module-level singleton first (prevents React Strict Mode duplication)
+    // Check module-level singleton first (even before pageId is available)
     const existingManager = syncManagers.get(projectId);
     if (existingManager) {
       syncManagerRef.current = existingManager;
 
-      // Set initial ready state
-      const initialReady = existingManager.isReady();
-      setIsSyncReady(initialReady);
+      // Ensure the manager is still connected (reconnect if needed after navigation)
+      existingManager.ensureConnected().then((connected) => {
+        setIsSyncReady(connected);
+      });
 
-      // If not ready yet, listen for connection
-      if (!initialReady) {
-        const checkReady = setInterval(() => {
-          if (existingManager.isReady()) {
-            setIsSyncReady(true);
-            clearInterval(checkReady);
-          }
-        }, 100);
-
-        return () => {
-          clearInterval(checkReady);
-          // Don't clear state here - handled by main cleanup below
-        };
+      // If pageId isn't available yet, return early and wait for it
+      if (!pageId) {
+        return;
       }
 
-      // Already ready, no cleanup needed (handled by main cleanup below)
+      // Already handled, return to prevent recreation
       return;
+    }
+    
+    // If no existing manager and no pageId yet, wait for pageId
+    if (!pageId) return;
+    
+    // Set the initial pageId only once per project (for creating new managers)
+    if (!initialPageIdRef.current) {
+      initialPageIdRef.current = pageId;
     }
 
     // If currently initializing, wait for it
@@ -150,10 +144,12 @@ export function useSyncedArtifacts(
     });
 
     return () => {
-      // Only clear state if project is actually changing (not just page changing)
-      // This prevents blinking when switching between pages in the same project
+      // Clear component-level refs but keep isSyncReady if just changing pages
+      // This prevents blinking when switching pages in the same project
+      syncManagerRef.current = null;
+      
+      // Only clear ready state and initialization tracking if project is actually changing
       if (currentProjectIdRef.current !== projectId) {
-        syncManagerRef.current = null;
         setIsSyncReady(false);
         initializingProjects.delete(projectId);
       }
