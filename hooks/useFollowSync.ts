@@ -20,11 +20,13 @@ interface UseFollowSyncOptions {
   setFitMode: (fitMode: boolean) => void;
   carouselRef: RefObject<HTMLUListElement | null>;
   carouselReady: boolean;
+  currentPageId: string | null;
+  selectPage: (pageId: string) => void;
 }
 
 /**
  * Custom hook to handle follow synchronization
- * Broadcasts and receives view state (columns, fit mode, scroll index)
+ * Broadcasts and receives view state (columns, fit mode, scroll index, page changes)
  */
 export function useFollowSync({
   followManager,
@@ -36,6 +38,8 @@ export function useFollowSync({
   setFitMode,
   carouselRef,
   carouselReady,
+  currentPageId,
+  selectPage,
 }: UseFollowSyncOptions) {
   const isFollowingRef = useRef(isFollowing);
   const lastScrollIndexRef = useRef<number>(-1);
@@ -57,6 +61,17 @@ export function useFollowSync({
       fitMode,
     });
   }, [columns, fitMode, followManager]);
+
+  // Broadcast page changes when leading
+  useEffect(() => {
+    if (!followManager?.isLeading() || !currentPageId) {
+      return;
+    }
+
+    followManager.broadcastCustomEvent("pageChange", {
+      pageId: currentPageId,
+    });
+  }, [currentPageId, followManager]);
 
   // Broadcast scroll index changes when leading
   useEffect(() => {
@@ -118,6 +133,10 @@ export function useFollowSync({
         if (dataRecord.fitMode !== undefined) {
           setFitMode(dataRecord.fitMode as boolean);
         }
+      } else if (eventName === "pageChange") {
+        if (dataRecord.pageId) {
+          selectPage(dataRecord.pageId as string);
+        }
       } else if (eventName === "scrollIndex") {
         if (!carouselRef.current) {
           return;
@@ -143,5 +162,5 @@ export function useFollowSync({
         });
       }
     });
-  }, [followManager, followInitialized, setColumns, setFitMode, carouselRef]);
+  }, [followManager, followInitialized, setColumns, setFitMode, selectPage, carouselRef]);
 }

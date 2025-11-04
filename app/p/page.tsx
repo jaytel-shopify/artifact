@@ -121,19 +121,6 @@ function PresentationPageInner() {
     window.localStorage.setItem("fit_mode", String(fitMode));
   }, [fitMode, hydrated]);
 
-  // Use follow sync hook to handle all follow broadcast/receive logic
-  useFollowSync({
-    followManager,
-    isFollowing,
-    followInitialized,
-    columns,
-    fitMode,
-    setColumns,
-    setFitMode,
-    carouselRef,
-    carouselReady,
-  });
-
   // Handle follow user click
   const handleFollowUser = useCallback(
     async (socketId: string) => {
@@ -188,6 +175,21 @@ function PresentationPageInner() {
     project?.id
   );
   const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
+
+  // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
+  useFollowSync({
+    followManager,
+    isFollowing,
+    followInitialized,
+    columns,
+    fitMode,
+    setColumns,
+    setFitMode,
+    carouselRef,
+    carouselReady,
+    currentPageId,
+    selectPage,
+  });
 
   // Fetch page-specific artifacts with real-time sync
   const {
