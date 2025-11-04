@@ -51,10 +51,26 @@ export function useFollowSync({
     scrollIndex?: number;
   } | null>(null);
   const isChangingPageRef = useRef(false);
+  
+  // Store setters and currentPageId in refs to avoid re-registering event listener
+  const setColumnsRef = useRef(setColumns);
+  const setFitModeRef = useRef(setFitMode);
+  const selectPageRef = useRef(selectPage);
+  const currentPageIdRef = useRef(currentPageId);
 
   useEffect(() => {
     isFollowingRef.current = isFollowing;
   }, [isFollowing]);
+  
+  useEffect(() => {
+    setColumnsRef.current = setColumns;
+    setFitModeRef.current = setFitMode;
+    selectPageRef.current = selectPage;
+  }, [setColumns, setFitMode, selectPage]);
+  
+  useEffect(() => {
+    currentPageIdRef.current = currentPageId;
+  }, [currentPageId]);
 
   // When page changes, apply any pending state after a delay
   useEffect(() => {
@@ -65,8 +81,8 @@ export function useFollowSync({
         // Apply any pending state after page change completes
         if (pendingStateRef.current) {
           const pending = pendingStateRef.current;
-          if (pending.columns !== undefined) setColumns(pending.columns);
-          if (pending.fitMode !== undefined) setFitMode(pending.fitMode);
+          if (pending.columns !== undefined) setColumnsRef.current(pending.columns);
+          if (pending.fitMode !== undefined) setFitModeRef.current(pending.fitMode);
           if (pending.scrollIndex !== undefined && carouselRef.current) {
             scrollToIndex(carouselRef.current, pending.scrollIndex);
           }
@@ -76,11 +92,11 @@ export function useFollowSync({
 
       return () => clearTimeout(timer);
     }
-  }, [currentPageId, setColumns, setFitMode, carouselRef]);
+  }, [currentPageId, carouselRef]);
 
   // Broadcast current state immediately when someone starts following
   const broadcastCurrentState = useCallback(() => {
-    if (!followManager || !carouselRef.current) {
+    if (!followManager) {
       return;
     }
 
@@ -96,10 +112,13 @@ export function useFollowSync({
       fitMode,
     });
 
-    const currentIndex = getCurrentScrollIndex(carouselRef.current);
-    followManager.broadcastCustomEvent("scrollIndex", {
-      index: currentIndex,
-    });
+    // Only broadcast scroll if carousel is ready
+    if (carouselRef.current) {
+      const currentIndex = getCurrentScrollIndex(carouselRef.current);
+      followManager.broadcastCustomEvent("scrollIndex", {
+        index: currentIndex,
+      });
+    }
   }, [followManager, currentPageId, columns, fitMode, carouselRef]);
 
   // Broadcast view state changes when leading
@@ -174,30 +193,29 @@ export function useFollowSync({
     }
 
     followManager.onCustomEvent((eventName: string, data: unknown) => {
-      console.log(
-        "[useFollowSync] Received event:",
-        eventName,
-        data,
-        "isFollowing:",
-        isFollowingRef.current
-      );
-
       if (!isFollowingRef.current) {
         return;
       }
 
       const dataRecord = data as Record<string, unknown>;
 
-      // Handle page changes with priority - they trigger page switching
+      // Handle page changes with priority - ALWAYS process these immediately
+      // even if another page change is in progress
       if (eventName === "pageChange") {
         if (dataRecord.pageId) {
-          isChangingPageRef.current = true;
-          pendingStateRef.current = {}; // Clear any pending state
-          selectPage(dataRecord.pageId as string);
+          const targetPageId = dataRecord.pageId as string;
+          // Only set changing flag if we're actually switching to a different page
+          if (targetPageId !== currentPageIdRef.current) {
+            isChangingPageRef.current = true;
+            pendingStateRef.current = {}; // Clear any pending state
+            selectPageRef.current(targetPageId);
+          }
         }
+        return; // Exit early - don't process other branches
       }
+      
       // Queue other state changes if we're changing pages
-      else if (isChangingPageRef.current) {
+      if (isChangingPageRef.current) {
         if (!pendingStateRef.current) {
           pendingStateRef.current = {};
         }
@@ -217,10 +235,10 @@ export function useFollowSync({
       else {
         if (eventName === "viewState") {
           if (dataRecord.columns !== undefined) {
-            setColumns(dataRecord.columns as number);
+            setColumnsRef.current(dataRecord.columns as number);
           }
           if (dataRecord.fitMode !== undefined) {
-            setFitMode(dataRecord.fitMode as boolean);
+            setFitModeRef.current(dataRecord.fitMode as boolean);
           }
         } else if (eventName === "scrollIndex") {
           if (!carouselRef.current) {
@@ -251,9 +269,6 @@ export function useFollowSync({
   }, [
     followManager,
     followInitialized,
-    setColumns,
-    setFitMode,
-    selectPage,
     carouselRef,
   ]);
 

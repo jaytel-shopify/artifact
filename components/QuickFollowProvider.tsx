@@ -91,32 +91,26 @@ export default function QuickFollowProvider({
       manager.onFollowStart = (user) => {
         setIsFollowing(true);
         setFollowedUser(user);
-        console.log("Started following:", user.name || user.email);
       };
 
       manager.onFollowStop = (user) => {
         setIsFollowing(false);
         setFollowedUser(null);
-        console.log("Stopped following:", user?.name || user?.email);
       };
 
       manager.onLeadStart = () => {
         setIsLeading(true);
-        console.log("Started leading");
       };
 
       manager.onLeadStop = () => {
         setIsLeading(false);
-        console.log("Stopped leading");
       };
 
       manager.onFollowerAdded = (user) => {
-        console.log("New follower:", user.name || user.email);
         updateFollowersList();
       };
 
       manager.onFollowerRemoved = (user) => {
-        console.log("Follower left:", user.name || user.email);
         updateFollowersList();
       };
 

@@ -1,4 +1,11 @@
-import React, { useState, useRef, useEffect, useCallback, forwardRef, useImperativeHandle } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import {
   closestCenter,
   DndContext,
@@ -75,267 +82,280 @@ const dropAnimation: DropAnimation = {
   }),
 };
 
-export const SortableCarousel = forwardRef<HTMLUListElement, Props>(function SortableCarousel({
-  layout,
-  columns = 3,
-  fitMode = false,
-  artifacts,
-  onReorder,
-  onUpdateArtifact,
-  onDeleteArtifact,
-  onReplaceMedia,
-  onEditTitleCard,
-  onFocusArtifact,
-  focusedArtifactId,
-  isReadOnly = false,
-  pageId,
-}, forwardedRef) {
-  const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [isSettling, setIsSettling] = useState(false);
-  const [settlingId, setSettlingId] = useState<UniqueIdentifier | null>(null);
-  const containerRef = useRef<HTMLUListElement>(null);
-  
-  // Expose the containerRef to parent via forwardedRef
-  useImperativeHandle(forwardedRef, () => containerRef.current!);
-  const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-    undefined
-  );
-  const [items, setItems] = useState<Artifact[]>(artifacts);
-  const prevPageIdRef = useRef(pageId);
+export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
+  function SortableCarousel(
+    {
+      layout,
+      columns = 3,
+      fitMode = false,
+      artifacts,
+      onReorder,
+      onUpdateArtifact,
+      onDeleteArtifact,
+      onReplaceMedia,
+      onEditTitleCard,
+      onFocusArtifact,
+      focusedArtifactId,
+      isReadOnly = false,
+      pageId,
+    },
+    forwardedRef
+  ) {
+    const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
+    const [isSettling, setIsSettling] = useState(false);
+    const [settlingId, setSettlingId] = useState<UniqueIdentifier | null>(null);
+    const containerRef = useRef<HTMLUListElement>(null);
 
-  // Sync artifacts with local state (respecting animation state)
-  const prevArtifactsRef = useRef(artifacts);
-  useEffect(() => {
-    // Block sync during animation - critical for smooth animation!
-    if (isSettling) return;
+    // Expose the containerRef to parent via forwardedRef
+    useImperativeHandle(forwardedRef, () => containerRef.current!);
+    const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+      undefined
+    );
+    const [items, setItems] = useState<Artifact[]>(artifacts);
+    const prevPageIdRef = useRef(pageId);
 
-    const prevIds = prevArtifactsRef.current
-      .map((a) => a.id)
-      .sort()
-      .join(",");
-    const newIds = artifacts
-      .map((a) => a.id)
-      .sort()
-      .join(",");
+    // Sync artifacts with local state (respecting animation state)
+    const prevArtifactsRef = useRef(artifacts);
+    useEffect(() => {
+      // Block sync during animation - critical for smooth animation!
+      if (isSettling) return;
 
-    // Sync if items added/removed
-    if (prevIds !== newIds) {
-      // Check if items were added (not removed) AND page didn't change
-      const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
-      const pageChanged = prevPageIdRef.current !== pageId;
+      const prevIds = prevArtifactsRef.current
+        .map((a) => a.id)
+        .sort()
+        .join(",");
+      const newIds = artifacts
+        .map((a) => a.id)
+        .sort()
+        .join(",");
 
-      setItems(artifacts);
-      prevArtifactsRef.current = artifacts;
-      prevPageIdRef.current = pageId;
+      // Sync if items added/removed
+      if (prevIds !== newIds) {
+        // Check if items were added (not removed) AND page didn't change
+        const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
+        const pageChanged = prevPageIdRef.current !== pageId;
 
-      // Scroll to end if items were added AND page didn't change
-      // (don't auto-scroll when switching pages)
-      if (itemsAdded && !pageChanged && containerRef.current) {
-        setTimeout(() => {
-          if (containerRef.current) {
-            containerRef.current.scrollTo({
-              left: containerRef.current.scrollWidth,
-              behavior: "smooth",
-            });
-          }
-        }, 100);
-      }
-      return;
-    }
-
-    // Check if order changed OR properties changed
-    const orderChanged = artifacts.some((artifact, idx) => {
-      const prevArtifact = prevArtifactsRef.current[idx];
-      return !prevArtifact || prevArtifact.id !== artifact.id;
-    });
-
-    const itemsChanged = artifacts.some((newArtifact) => {
-      const prevArtifact = prevArtifactsRef.current.find(
-        (a) => a.id === newArtifact.id
-      );
-      if (!prevArtifact) return true;
-
-      // Check if name or metadata changed
-      return (
-        newArtifact.name !== prevArtifact.name ||
-        JSON.stringify(newArtifact.metadata) !==
-          JSON.stringify(prevArtifact.metadata)
-      );
-    });
-
-    if (orderChanged || itemsChanged) {
-      // If order changed, use the new order from artifacts
-      // If only properties changed, preserve current order
-      if (orderChanged) {
         setItems(artifacts);
-      } else {
-        // Update items while preserving order
-        const orderMap = new Map(items.map((item, idx) => [item.id, idx]));
-        const updatedItems = artifacts.slice().sort((a, b) => {
-          const aIdx = orderMap.get(a.id) ?? 0;
-          const bIdx = orderMap.get(b.id) ?? 0;
-          return aIdx - bIdx;
-        });
-        setItems(updatedItems);
+        prevArtifactsRef.current = artifacts;
+        prevPageIdRef.current = pageId;
+
+        // Scroll to end if items were added AND page didn't change
+        // (don't auto-scroll when switching pages)
+        if (itemsAdded && !pageChanged && containerRef.current) {
+          setTimeout(() => {
+            if (containerRef.current) {
+              containerRef.current.scrollTo({
+                left: containerRef.current.scrollWidth,
+                behavior: "smooth",
+              });
+            }
+          }, 100);
+        }
+        return;
       }
-    }
 
-    prevArtifactsRef.current = artifacts;
-  }, [artifacts, isSettling, items]);
+      // Check if order changed OR properties changed
+      const orderChanged = artifacts.some((artifact, idx) => {
+        const prevArtifact = prevArtifactsRef.current[idx];
+        return !prevArtifact || prevArtifact.id !== artifact.id;
+      });
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-    container.scrollLeft = container.scrollLeft;
-  }, [columns]);
+      const itemsChanged = artifacts.some((newArtifact) => {
+        const prevArtifact = prevArtifactsRef.current.find(
+          (a) => a.id === newArtifact.id
+        );
+        if (!prevArtifact) return true;
 
-  const itemIds = items.map((artifact) => artifact.id);
-  const activeIndex =
-    activeId != null ? itemIds.indexOf(activeId.toString()) : -1;
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8, // Require 8px of movement before dragging starts
-      },
-      // Only activate on left mouse button (button 0), ignore right-click
-      button: 0,
-    }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+        // Check if name or metadata changed
+        return (
+          newArtifact.name !== prevArtifact.name ||
+          JSON.stringify(newArtifact.metadata) !==
+            JSON.stringify(prevArtifact.metadata)
+        );
+      });
 
-  const totalPaddingRem = 2;
-  const totalGapRem = 1 * (columns - 1); // 1rem gap from CSS
-  const totalSpacingRem = totalPaddingRem + totalGapRem;
-  const columnWidth = `calc((100vw - ${totalSpacingRem}rem) / ${columns})`;
-
-  // Fit mode is ONLY enabled when columns is 1
-  // Regardless of fitMode prop, it's disabled for multi-column layouts
-  const isFitMode = columns === 1 ? fitMode : false;
-
-  const handleDragStart = useCallback(({ active }: DragStartEvent) => {
-    setActiveId(active.id);
-  }, []);
-
-  const handleDragCancel = useCallback(() => {
-    setActiveId(null);
-  }, []);
-
-  const handleDragEnd = useCallback(
-    ({ over }: DragEndEvent) => {
-      if (over) {
-        const overIndex = itemIds.indexOf(over.id.toString());
-
-        if (activeIndex !== overIndex && activeIndex !== -1) {
-          // Set settling to block parent updates during animation
-          setIsSettling(true);
-          setSettlingId(activeId); // Track which item is settling
-
-          // Update local state immediately for smooth animation
-          const reorderedItems = arrayMove(items, activeIndex, overIndex);
-          setItems(reorderedItems);
-
-          // Delay notifying parent until AFTER animation completes
-          if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-          settleTimeoutRef.current = setTimeout(() => {
-            onReorder?.(reorderedItems);
-            setIsSettling(false);
-            setSettlingId(null);
-          }, 250); // Match dnd-kit's default animation duration
+      if (orderChanged || itemsChanged) {
+        // If order changed, use the new order from artifacts
+        // If only properties changed, preserve current order
+        if (orderChanged) {
+          setItems(artifacts);
+        } else {
+          // Update items while preserving order
+          const orderMap = new Map(items.map((item, idx) => [item.id, idx]));
+          const updatedItems = artifacts.slice().sort((a, b) => {
+            const aIdx = orderMap.get(a.id) ?? 0;
+            const bIdx = orderMap.get(b.id) ?? 0;
+            return aIdx - bIdx;
+          });
+          setItems(updatedItems);
         }
       }
 
-      setActiveId(null);
-    },
-    [itemIds, activeIndex, activeId, items, onReorder]
-  );
+      prevArtifactsRef.current = artifacts;
+    }, [artifacts, isSettling, items]);
 
-  if (items.length === 0) {
+    useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+      container.scrollLeft = container.scrollLeft;
+    }, [columns]);
+
+    const itemIds = items.map((artifact) => artifact.id);
+    const activeIndex =
+      activeId != null ? itemIds.indexOf(activeId.toString()) : -1;
+    const sensors = useSensors(
+      useSensor(PointerSensor, {
+        activationConstraint: {
+          distance: 8, // Require 8px of movement before dragging starts
+        },
+        // Only activate on left mouse button (button 0), ignore right-click
+        button: 0,
+      }),
+      useSensor(KeyboardSensor, {
+        coordinateGetter: sortableKeyboardCoordinates,
+      })
+    );
+
+    const totalPaddingRem = 2;
+    const totalGapRem = 1 * (columns - 1); // 1rem gap from CSS
+    const totalSpacingRem = totalPaddingRem + totalGapRem;
+    const columnWidth = `calc((100vw - ${totalSpacingRem}rem) / ${columns})`;
+
+    // Fit mode is ONLY enabled when columns is 1
+    // Regardless of fitMode prop, it's disabled for multi-column layouts
+    const isFitMode = columns === 1 ? fitMode : false;
+
+    const handleDragStart = useCallback(({ active }: DragStartEvent) => {
+      setActiveId(active.id);
+    }, []);
+
+    const handleDragCancel = useCallback(() => {
+      setActiveId(null);
+    }, []);
+
+    const handleDragEnd = useCallback(
+      ({ over }: DragEndEvent) => {
+        if (over) {
+          const overIndex = itemIds.indexOf(over.id.toString());
+
+          if (activeIndex !== overIndex && activeIndex !== -1) {
+            // Set settling to block parent updates during animation
+            setIsSettling(true);
+            setSettlingId(activeId); // Track which item is settling
+
+            // Update local state immediately for smooth animation
+            const reorderedItems = arrayMove(items, activeIndex, overIndex);
+            setItems(reorderedItems);
+
+            // Delay notifying parent until AFTER animation completes
+            if (settleTimeoutRef.current)
+              clearTimeout(settleTimeoutRef.current);
+            settleTimeoutRef.current = setTimeout(() => {
+              onReorder?.(reorderedItems);
+              setIsSettling(false);
+              setSettlingId(null);
+            }, 250); // Match dnd-kit's default animation duration
+          }
+        }
+
+        setActiveId(null);
+      },
+      [itemIds, activeIndex, activeId, items, onReorder]
+    );
+
+    if (items.length === 0) {
+      return (
+        <div className="h-full flex items-center justify-center text-white/60">
+          No artifacts yet. Add one to get started.
+        </div>
+      );
+    }
+
     return (
-      <div className="h-full flex items-center justify-center text-white/60">
-        No artifacts yet. Add one to get started.
-      </div>
+      <DndContext
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        measuring={measuring}
+      >
+        <SortableContext
+          items={itemIds}
+          strategy={horizontalListSortingStrategy}
+        >
+          <ul
+            ref={containerRef}
+            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""}`}
+          >
+            {items.map((artifact, index) => (
+              <SortableCarouselItem
+                id={artifact.id}
+                index={index + 1}
+                key={artifact.id}
+                layout={layout}
+                activeIndex={activeIndex}
+                contentUrl={artifact.source_url}
+                contentType={
+                  artifact.type as "image" | "video" | "url" | "titleCard"
+                }
+                width={artifact.metadata?.width as number}
+                height={artifact.metadata?.height as number}
+                name={artifact.name}
+                metadata={artifact.metadata as VideoMetadata}
+                columnWidth={columnWidth}
+                isAnyDragging={activeId !== null}
+                isSettling={settlingId === artifact.id}
+                isReadOnly={isReadOnly}
+                fitMode={isFitMode}
+                onDelete={
+                  onDeleteArtifact
+                    ? async () => await onDeleteArtifact(artifact.id)
+                    : undefined
+                }
+                onUpdateMetadata={
+                  onUpdateArtifact
+                    ? async (updates) =>
+                        await onUpdateArtifact(artifact.id, {
+                          metadata: { ...artifact.metadata, ...updates },
+                        })
+                    : undefined
+                }
+                onUpdateTitle={
+                  onUpdateArtifact
+                    ? async (newTitle) =>
+                        await onUpdateArtifact(artifact.id, { name: newTitle })
+                    : undefined
+                }
+                onReplaceMedia={
+                  onReplaceMedia
+                    ? async (file) => await onReplaceMedia(artifact.id, file)
+                    : undefined
+                }
+                onEdit={
+                  onEditTitleCard && artifact.type === "titleCard"
+                    ? () => onEditTitleCard(artifact.id)
+                    : undefined
+                }
+                onFocus={
+                  onFocusArtifact
+                    ? () => onFocusArtifact(artifact.id)
+                    : undefined
+                }
+                isFocused={focusedArtifactId === artifact.id}
+              />
+            ))}
+          </ul>
+        </SortableContext>
+        <DragOverlay dropAnimation={dropAnimation}>
+          {activeId != null ? (
+            <CarouselItemOverlay id={activeId} layout={layout} items={items} />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     );
   }
-
-  return (
-    <DndContext
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      measuring={measuring}
-    >
-      <SortableContext items={itemIds} strategy={horizontalListSortingStrategy}>
-        <ul
-          ref={containerRef}
-          className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""}`}
-        >
-          {items.map((artifact, index) => (
-            <SortableCarouselItem
-              id={artifact.id}
-              index={index + 1}
-              key={artifact.id}
-              layout={layout}
-              activeIndex={activeIndex}
-              contentUrl={artifact.source_url}
-              contentType={
-                artifact.type as "image" | "video" | "url" | "titleCard"
-              }
-              width={artifact.metadata?.width as number}
-              height={artifact.metadata?.height as number}
-              name={artifact.name}
-              metadata={artifact.metadata as VideoMetadata}
-              columnWidth={columnWidth}
-              isAnyDragging={activeId !== null}
-              isSettling={settlingId === artifact.id}
-              isReadOnly={isReadOnly}
-              fitMode={isFitMode}
-              onDelete={
-                onDeleteArtifact
-                  ? async () => await onDeleteArtifact(artifact.id)
-                  : undefined
-              }
-              onUpdateMetadata={
-                onUpdateArtifact
-                  ? async (updates) =>
-                      await onUpdateArtifact(artifact.id, {
-                        metadata: { ...artifact.metadata, ...updates },
-                      })
-                  : undefined
-              }
-              onUpdateTitle={
-                onUpdateArtifact
-                  ? async (newTitle) =>
-                      await onUpdateArtifact(artifact.id, { name: newTitle })
-                  : undefined
-              }
-              onReplaceMedia={
-                onReplaceMedia
-                  ? async (file) => await onReplaceMedia(artifact.id, file)
-                  : undefined
-              }
-              onEdit={
-                onEditTitleCard && artifact.type === "titleCard"
-                  ? () => onEditTitleCard(artifact.id)
-                  : undefined
-              }
-              onFocus={
-                onFocusArtifact ? () => onFocusArtifact(artifact.id) : undefined
-              }
-              isFocused={focusedArtifactId === artifact.id}
-            />
-          ))}
-        </ul>
-      </SortableContext>
-      <DragOverlay dropAnimation={dropAnimation}>
-        {activeId != null ? (
-          <CarouselItemOverlay id={activeId} layout={layout} items={items} />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
-  );
-});
+);
 
 function CarouselItemOverlay({
   id,
