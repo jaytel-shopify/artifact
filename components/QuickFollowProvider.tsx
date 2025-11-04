@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, createContext, useContext } from "react";
+import { useEffect, useState, createContext, useContext, useRef } from "react";
 import { QuickFollowManager } from "@/lib/followManager";
 
 interface User {
@@ -56,6 +56,7 @@ interface QuickFollowProviderProps {
     highlightClicks?: boolean;
     highlightDuration?: number;
   };
+  onBroadcastInitialState?: () => void; // Callback to broadcast current state when someone starts following
   children: React.ReactNode;
 }
 
@@ -65,6 +66,7 @@ export default function QuickFollowProvider({
   autoInit = true,
   captureOptions = {},
   executeOptions = {},
+  onBroadcastInitialState,
   children,
 }: QuickFollowProviderProps) {
   const [followManager, setFollowManager] = useState<QuickFollowManager | null>(
@@ -76,6 +78,19 @@ export default function QuickFollowProvider({
   const [followedUser, setFollowedUser] = useState<User | null>(null);
   const [followers, setFollowers] = useState<User[]>([]);
   const [availableUsers, setAvailableUsers] = useState<User[]>([]);
+
+  // Keep latest callback in a ref to avoid re-initializing manager when callback changes
+  const broadcastInitialStateRef = useRef(onBroadcastInitialState);
+  useEffect(() => {
+    broadcastInitialStateRef.current = onBroadcastInitialState;
+    
+    // Also update the manager's callback if it's already initialized
+    if (followManager) {
+      followManager.onBroadcastInitialState = () => {
+        broadcastInitialStateRef.current?.();
+      };
+    }
+  }, [onBroadcastInitialState, followManager]);
 
   useEffect(() => {
     let manager: QuickFollowManager | null = null;
@@ -121,6 +136,10 @@ export default function QuickFollowProvider({
       manager.onFollowerRemoved = (user) => {
         console.log("Follower left:", user.name || user.email);
         updateFollowersList();
+      };
+
+      manager.onBroadcastInitialState = () => {
+        broadcastInitialStateRef.current?.();
       };
 
       const success = await manager.init();

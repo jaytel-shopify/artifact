@@ -1,4 +1,4 @@
-import { useEffect, useRef, RefObject } from "react";
+import { useEffect, useRef, useCallback, RefObject } from "react";
 import {
   getCurrentScrollIndex,
   scrollToIndex,
@@ -45,10 +45,62 @@ export function useFollowSync({
   const lastScrollIndexRef = useRef<number>(-1);
   const scrollFrameRef = useRef<number | null>(null);
   const pendingScrollIndexRef = useRef<number | null>(null);
+  const pendingStateRef = useRef<{
+    columns?: number;
+    fitMode?: boolean;
+    scrollIndex?: number;
+  } | null>(null);
+  const isChangingPageRef = useRef(false);
 
   useEffect(() => {
     isFollowingRef.current = isFollowing;
   }, [isFollowing]);
+
+  // When page changes, apply any pending state after a delay
+  useEffect(() => {
+    if (isChangingPageRef.current && currentPageId) {
+      const timer = setTimeout(() => {
+        isChangingPageRef.current = false;
+
+        // Apply any pending state after page change completes
+        if (pendingStateRef.current) {
+          const pending = pendingStateRef.current;
+          if (pending.columns !== undefined) setColumns(pending.columns);
+          if (pending.fitMode !== undefined) setFitMode(pending.fitMode);
+          if (pending.scrollIndex !== undefined && carouselRef.current) {
+            scrollToIndex(carouselRef.current, pending.scrollIndex);
+          }
+          pendingStateRef.current = null;
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentPageId, setColumns, setFitMode, carouselRef]);
+
+  // Broadcast current state immediately when someone starts following
+  const broadcastCurrentState = useCallback(() => {
+    if (!followManager || !carouselRef.current) {
+      return;
+    }
+
+    // Broadcast all state immediately - receiver will handle ordering
+    if (currentPageId) {
+      followManager.broadcastCustomEvent("pageChange", {
+        pageId: currentPageId,
+      });
+    }
+
+    followManager.broadcastCustomEvent("viewState", {
+      columns,
+      fitMode,
+    });
+
+    const currentIndex = getCurrentScrollIndex(carouselRef.current);
+    followManager.broadcastCustomEvent("scrollIndex", {
+      index: currentIndex,
+    });
+  }, [followManager, currentPageId, columns, fitMode, carouselRef]);
 
   // Broadcast view state changes when leading
   useEffect(() => {
@@ -103,7 +155,9 @@ export function useFollowSync({
       });
     };
 
-    carouselContainer.addEventListener("scroll", handleScroll, { passive: true });
+    carouselContainer.addEventListener("scroll", handleScroll, {
+      passive: true,
+    });
 
     return () => {
       carouselContainer.removeEventListener("scroll", handleScroll);
@@ -120,47 +174,88 @@ export function useFollowSync({
     }
 
     followManager.onCustomEvent((eventName: string, data: unknown) => {
+      console.log(
+        "[useFollowSync] Received event:",
+        eventName,
+        data,
+        "isFollowing:",
+        isFollowingRef.current
+      );
+
       if (!isFollowingRef.current) {
         return;
       }
 
       const dataRecord = data as Record<string, unknown>;
 
-      if (eventName === "viewState") {
-        if (dataRecord.columns !== undefined) {
-          setColumns(dataRecord.columns as number);
-        }
-        if (dataRecord.fitMode !== undefined) {
-          setFitMode(dataRecord.fitMode as boolean);
-        }
-      } else if (eventName === "pageChange") {
+      // Handle page changes with priority - they trigger page switching
+      if (eventName === "pageChange") {
         if (dataRecord.pageId) {
+          isChangingPageRef.current = true;
+          pendingStateRef.current = {}; // Clear any pending state
           selectPage(dataRecord.pageId as string);
         }
-      } else if (eventName === "scrollIndex") {
-        if (!carouselRef.current) {
-          return;
+      }
+      // Queue other state changes if we're changing pages
+      else if (isChangingPageRef.current) {
+        if (!pendingStateRef.current) {
+          pendingStateRef.current = {};
         }
 
-        const carouselContainer = carouselRef.current;
-
-        // Store the latest index update
-        pendingScrollIndexRef.current = dataRecord.index as number;
-
-        // Cancel any pending scroll frame
-        if (scrollFrameRef.current !== null) {
-          cancelAnimationFrame(scrollFrameRef.current);
-        }
-
-        // Batch scroll updates to next frame
-        scrollFrameRef.current = requestAnimationFrame(() => {
-          const targetIndex = pendingScrollIndexRef.current;
-          if (targetIndex !== null) {
-            scrollToIndex(carouselContainer, targetIndex);
-            pendingScrollIndexRef.current = null;
+        if (eventName === "viewState") {
+          if (dataRecord.columns !== undefined) {
+            pendingStateRef.current.columns = dataRecord.columns as number;
           }
-        });
+          if (dataRecord.fitMode !== undefined) {
+            pendingStateRef.current.fitMode = dataRecord.fitMode as boolean;
+          }
+        } else if (eventName === "scrollIndex") {
+          pendingStateRef.current.scrollIndex = dataRecord.index as number;
+        }
+      }
+      // Apply state changes immediately if not changing pages
+      else {
+        if (eventName === "viewState") {
+          if (dataRecord.columns !== undefined) {
+            setColumns(dataRecord.columns as number);
+          }
+          if (dataRecord.fitMode !== undefined) {
+            setFitMode(dataRecord.fitMode as boolean);
+          }
+        } else if (eventName === "scrollIndex") {
+          if (!carouselRef.current) {
+            return;
+          }
+
+          const carouselContainer = carouselRef.current;
+
+          // Store the latest index update
+          pendingScrollIndexRef.current = dataRecord.index as number;
+
+          // Cancel any pending scroll frame
+          if (scrollFrameRef.current !== null) {
+            cancelAnimationFrame(scrollFrameRef.current);
+          }
+
+          // Batch scroll updates to next frame
+          scrollFrameRef.current = requestAnimationFrame(() => {
+            const targetIndex = pendingScrollIndexRef.current;
+            if (targetIndex !== null) {
+              scrollToIndex(carouselContainer, targetIndex);
+              pendingScrollIndexRef.current = null;
+            }
+          });
+        }
       }
     });
-  }, [followManager, followInitialized, setColumns, setFitMode, selectPage, carouselRef]);
+  }, [
+    followManager,
+    followInitialized,
+    setColumns,
+    setFitMode,
+    selectPage,
+    carouselRef,
+  ]);
+
+  return { broadcastCurrentState };
 }

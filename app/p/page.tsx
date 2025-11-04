@@ -50,7 +50,11 @@ async function fetchProject(shareToken: string): Promise<Project | null> {
 }
 
 // Inner component that uses useFollow - must be wrapped by QuickFollowProvider
-function PresentationPageInner() {
+function PresentationPageInner({
+  onBroadcastReady,
+}: {
+  onBroadcastReady?: (callback: () => void) => void;
+}) {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
   const { user } = useAuth();
@@ -193,7 +197,7 @@ function PresentationPageInner() {
   }, [currentPageId]);
 
   // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
-  useFollowSync({
+  const { broadcastCurrentState } = useFollowSync({
     followManager,
     isFollowing,
     followInitialized,
@@ -206,6 +210,13 @@ function PresentationPageInner() {
     currentPageId,
     selectPage,
   });
+
+  // Pass broadcast function to parent
+  useEffect(() => {
+    if (broadcastCurrentState && onBroadcastReady) {
+      onBroadcastReady(broadcastCurrentState);
+    }
+  }, [broadcastCurrentState, onBroadcastReady]);
 
   // Fetch page-specific artifacts with real-time sync
   const {
@@ -518,6 +529,17 @@ function PresentationPageContent() {
 function PresentationPageInnerWithProvider() {
   const searchParams = useSearchParams();
   const shareToken = searchParams.get("token") || "";
+  const [broadcastCallback, setBroadcastCallback] = useState<
+    (() => void) | null
+  >(null);
+
+  const wrappedSetBroadcastCallback = useCallback(
+    (callback: (() => void) | null) => {
+      // Wrap the callback to prevent React from treating it as a functional updater
+      setBroadcastCallback(() => callback);
+    },
+    []
+  );
 
   // Fetch project
   const { data: project } = useSWR<Project | null>(
@@ -551,8 +573,9 @@ function PresentationPageInnerWithProvider() {
         captureClick: false,
         captureInput: false,
       }}
+      onBroadcastInitialState={broadcastCallback || undefined}
     >
-      <PresentationPageInner />
+      <PresentationPageInner onBroadcastReady={wrappedSetBroadcastCallback} />
     </QuickFollowProvider>
   );
 }
