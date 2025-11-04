@@ -1,7 +1,17 @@
 import { useEffect, useRef } from "react";
+import {
+  getCurrentScrollIndex,
+  scrollToIndex,
+} from "@/components/presentation/sortable-carousel/carousel-utils";
+
+interface FollowManager {
+  isLeading(): boolean;
+  broadcastCustomEvent(eventName: string, data: unknown): void;
+  onCustomEvent(handler: (eventName: string, data: unknown) => void): void;
+}
 
 interface UseFollowSyncOptions {
-  followManager: any;
+  followManager: FollowManager | null;
   isFollowing: boolean;
   followInitialized: boolean;
   columns: number;
@@ -12,7 +22,7 @@ interface UseFollowSyncOptions {
 
 /**
  * Custom hook to handle follow synchronization
- * Broadcasts and receives view state (columns, fit mode, scroll position)
+ * Broadcasts and receives view state (columns, fit mode, scroll index)
  */
 export function useFollowSync({
   followManager,
@@ -24,6 +34,9 @@ export function useFollowSync({
   setFitMode,
 }: UseFollowSyncOptions) {
   const isFollowingRef = useRef(isFollowing);
+  const lastScrollIndexRef = useRef<number>(-1);
+  const scrollFrameRef = useRef<number | null>(null);
+  const pendingScrollIndexRef = useRef<number | null>(null);
 
   useEffect(() => {
     isFollowingRef.current = isFollowing;
@@ -35,75 +48,56 @@ export function useFollowSync({
       return;
     }
 
-    const carouselContainer = document.querySelector(
-      ".carousel-horizontal"
-    ) as HTMLElement;
     followManager.broadcastCustomEvent("viewState", {
       columns,
       fitMode,
-      scrollPosition: carouselContainer
-        ? {
-            x: carouselContainer.scrollLeft,
-            y: carouselContainer.scrollTop,
-          }
-        : { x: 0, y: 0 },
     });
   }, [columns, fitMode, followManager]);
 
-  // Broadcast scroll position when leading
+  // Broadcast scroll index changes when leading
   useEffect(() => {
-    console.log(
-      "[Follow] Setting up scroll broadcaster. Manager exists?",
-      !!followManager
-    );
     if (!followManager) return;
 
-    const carouselContainer = document.querySelector(".carousel-horizontal");
+    const carouselContainer = document.querySelector(
+      ".carousel-horizontal"
+    ) as HTMLElement;
     if (!carouselContainer) {
-      console.log(
-        "[Follow] Carousel container not found when setting up scroll broadcaster"
-      );
       return;
     }
-    console.log("[Follow] Found carousel container:", carouselContainer);
-
-    // Use proper throttle (not debounce) to broadcast while scrolling
-    let lastScrollTime = 0;
-    const throttleDelay = 16; // ~60fps
 
     const handleScroll = () => {
-      console.log(
-        "[Follow] Scroll event detected! isLeading?",
-        followManager.isLeading()
-      );
       if (!followManager.isLeading()) {
         return;
       }
 
-      const now = Date.now();
-      if (now - lastScrollTime < throttleDelay) {
-        return;
+      // Cancel any pending frame
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
       }
-      lastScrollTime = now;
 
-      const container = carouselContainer as HTMLElement;
-      console.log("[Follow] Broadcasting scroll:", {
-        x: container.scrollLeft,
-        y: container.scrollTop,
-      });
-      followManager.broadcastCustomEvent("scroll", {
-        x: container.scrollLeft,
-        y: container.scrollTop,
+      // Batch scroll events to next frame
+      scrollFrameRef.current = requestAnimationFrame(() => {
+        const currentIndex = getCurrentScrollIndex(carouselContainer);
+
+        // Only broadcast if index changed
+        if (currentIndex !== lastScrollIndexRef.current) {
+          lastScrollIndexRef.current = currentIndex;
+          followManager.broadcastCustomEvent("scrollIndex", {
+            index: currentIndex,
+          });
+        }
       });
     };
 
-    console.log("[Follow] Attaching scroll listener to carousel");
     carouselContainer.addEventListener("scroll", handleScroll, {
       passive: true,
     });
+
     return () => {
-      console.log("[Follow] Removing scroll listener from carousel");
       carouselContainer.removeEventListener("scroll", handleScroll);
+      if (scrollFrameRef.current !== null) {
+        cancelAnimationFrame(scrollFrameRef.current);
+      }
     };
   }, [followManager]);
 
@@ -113,49 +107,42 @@ export function useFollowSync({
       return;
     }
 
-    followManager.onCustomEvent((eventName: string, data: any) => {
-      console.log("[Follow] Received custom event:", eventName, data);
-      console.log("[Follow] Currently following?", isFollowingRef.current);
-
+    followManager.onCustomEvent((eventName: string, data: unknown) => {
       if (!isFollowingRef.current) {
-        console.log("[Follow] Not following anyone, ignoring event");
         return;
       }
 
+      const dataRecord = data as Record<string, unknown>;
+
       if (eventName === "viewState") {
-        console.log("[Follow] Processing viewState event");
-        if (data.columns !== undefined) {
-          setColumns(data.columns);
+        if (dataRecord.columns !== undefined) {
+          setColumns(dataRecord.columns as number);
         }
-        if (data.fitMode !== undefined) {
-          setFitMode(data.fitMode);
+        if (dataRecord.fitMode !== undefined) {
+          setFitMode(dataRecord.fitMode as boolean);
         }
-        if (data.scrollPosition) {
-          const carouselContainer = document.querySelector(
-            ".carousel-horizontal"
-          ) as HTMLElement;
-          if (carouselContainer) {
-            carouselContainer.scrollTo({
-              left: data.scrollPosition.x,
-              top: data.scrollPosition.y,
-              behavior: "smooth",
-            });
-          }
-        }
-      } else if (eventName === "scroll") {
-        console.log("[Follow] Processing scroll event:", data);
+      } else if (eventName === "scrollIndex") {
         const carouselContainer = document.querySelector(
           ".carousel-horizontal"
         ) as HTMLElement;
-        if (carouselContainer) {
-          console.log("[Follow] Applying scroll to carousel:", data.x, data.y);
-          // Disable scroll snapping while following for smooth movement
-          carouselContainer.style.scrollSnapType = "none";
-          carouselContainer.scrollLeft = data.x;
-          carouselContainer.scrollTop = data.y;
-        } else {
-          console.log("[Follow] Carousel container not found!");
+        if (!carouselContainer) return;
+
+        // Store the latest index update
+        pendingScrollIndexRef.current = dataRecord.index as number;
+
+        // Cancel any pending scroll frame
+        if (scrollFrameRef.current !== null) {
+          cancelAnimationFrame(scrollFrameRef.current);
         }
+
+        // Batch scroll updates to next frame
+        scrollFrameRef.current = requestAnimationFrame(() => {
+          const targetIndex = pendingScrollIndexRef.current;
+          if (targetIndex !== null) {
+            scrollToIndex(carouselContainer, targetIndex);
+            pendingScrollIndexRef.current = null;
+          }
+        });
       }
     });
   }, [followManager, followInitialized, setColumns, setFitMode]);

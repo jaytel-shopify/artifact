@@ -19,9 +19,13 @@
   /* Scroll snapping */
   scroll-snap-type: x mandatory;
   scroll-padding-left: 1rem;
-  scroll-behavior: smooth;
+  /* scroll-behavior: smooth; */
   /* Hide scrollbars */
   scrollbar-width: none;
+}
+
+.carousel-horizontal.disable-snap-scroll {
+  scroll-snap-type: none;
 }
 
 /* Only apply 100% height when columns is set to 1 */

@@ -195,7 +195,7 @@ export function SortableCarousel({
   );
 
   const totalPaddingRem = 2;
-  const totalGapRem = 2 * (columns - 1);
+  const totalGapRem = 1 * (columns - 1); // 1rem gap from CSS
   const totalSpacingRem = totalPaddingRem + totalGapRem;
   const columnWidth = `calc((100vw - ${totalSpacingRem}rem) / ${columns})`;
 

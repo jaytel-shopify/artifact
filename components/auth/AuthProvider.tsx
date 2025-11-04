@@ -51,10 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isLocalhost) {
       console.log('[AuthProvider] 🔓 Running on localhost - bypassing authentication');
       // Create a mock local dev user with admin privileges
+      // Use dev@shopify.com to match the mock data creator_id
       const localDevUser: QuickUser = {
-        email: 'local-dev@localhost',
+        email: 'dev@shopify.com',
         fullName: 'Local Developer',
         firstName: 'Local',
+        slackHandle: 'local-dev',
+        slackImageUrl: 'https://i.pravatar.cc/150?u=dev@shopify.com',
+        title: 'Developer',
       };
       
       setUser(localDevUser);

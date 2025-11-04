@@ -30,6 +30,7 @@
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.19",
+    "gsap": "^3.13.0",
     "lucide-react": "^0.544.0",
     "mediabunny": "^1.23.0",
     "nanoid": "^5.1.6",
