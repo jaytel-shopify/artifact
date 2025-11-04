@@ -22,6 +22,7 @@ interface UseFollowSyncOptions {
   carouselReady: boolean;
   currentPageId: string | null;
   selectPage: (pageId: string) => void;
+  stopFollowing: () => void;
 }
 
 /**
@@ -40,6 +41,7 @@ export function useFollowSync({
   carouselReady,
   currentPageId,
   selectPage,
+  stopFollowing,
 }: UseFollowSyncOptions) {
   const isFollowingRef = useRef(isFollowing);
   const lastScrollIndexRef = useRef<number>(-1);
@@ -272,5 +274,63 @@ export function useFollowSync({
     carouselRef,
   ]);
 
-  return { broadcastCurrentState };
+  // Wrapped handlers for UI controls - these auto-unfollow before making changes
+  const handleSetColumns = useCallback(
+    (newColumns: number) => {
+      if (isFollowingRef.current) {
+        stopFollowing();
+      }
+      setColumns(newColumns);
+    },
+    [setColumns, stopFollowing]
+  );
+
+  const handleSetFitMode = useCallback(
+    (newFitMode: boolean) => {
+      if (isFollowingRef.current) {
+        stopFollowing();
+      }
+      setFitMode(newFitMode);
+    },
+    [setFitMode, stopFollowing]
+  );
+
+  const handleSelectPage = useCallback(
+    (pageId: string) => {
+      if (isFollowingRef.current) {
+        stopFollowing();
+      }
+      selectPage(pageId);
+    },
+    [selectPage, stopFollowing]
+  );
+
+  // Detect user-initiated scroll gestures and auto-unfollow
+  useEffect(() => {
+    if (!carouselReady || !carouselRef.current) return;
+
+    const carouselContainer = carouselRef.current;
+
+    const handleUserScrollGesture = () => {
+      if (isFollowingRef.current) {
+        stopFollowing();
+      }
+    };
+
+    // Listen for user input events that indicate manual scrolling
+    carouselContainer.addEventListener("wheel", handleUserScrollGesture, { passive: true });
+    carouselContainer.addEventListener("touchstart", handleUserScrollGesture, { passive: true });
+
+    return () => {
+      carouselContainer.removeEventListener("wheel", handleUserScrollGesture);
+      carouselContainer.removeEventListener("touchstart", handleUserScrollGesture);
+    };
+  }, [carouselReady, carouselRef, stopFollowing]);
+
+  return {
+    broadcastCurrentState,
+    handleSetColumns,
+    handleSetFitMode,
+    handleSelectPage,
+  };
 }

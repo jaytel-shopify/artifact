@@ -197,7 +197,12 @@ function PresentationPageInner({
   }, [currentPageId]);
 
   // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
-  const { broadcastCurrentState } = useFollowSync({
+  const {
+    broadcastCurrentState,
+    handleSetColumns,
+    handleSetFitMode,
+    handleSelectPage,
+  } = useFollowSync({
     followManager,
     isFollowing,
     followInitialized,
@@ -209,6 +214,7 @@ function PresentationPageInner({
     carouselReady,
     currentPageId,
     selectPage,
+    stopFollowing,
   });
 
   // Pass broadcast function to parent
@@ -303,13 +309,13 @@ function PresentationPageInner({
       onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
       onArtifactAdded={canEdit ? refetchArtifacts : undefined}
       columns={columns}
-      onColumnsChange={setColumns}
+      onColumnsChange={handleSetColumns}
       showColumnControls={true}
       fitMode={fitMode}
-      onFitModeChange={setFitMode}
+      onFitModeChange={handleSetFitMode}
       pages={pages}
       currentPageId={currentPageId || undefined}
-      onPageSelect={selectPage}
+      onPageSelect={handleSelectPage}
       onPageRename={handlePageRename}
       onPageCreate={canEdit ? handlePageCreate : undefined}
       onPageDelete={canEdit ? handlePageDelete : undefined}
