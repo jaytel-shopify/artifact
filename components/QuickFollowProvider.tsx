@@ -42,20 +42,6 @@ interface QuickFollowProviderProps {
   roomName?: string;
   room?: any; // Existing socket room to reuse (optional)
   autoInit?: boolean;
-  captureOptions?: {
-    captureScroll?: boolean;
-    captureClick?: boolean;
-    captureInput?: boolean;
-    captureHover?: boolean;
-    captureFocus?: boolean;
-    captureResize?: boolean;
-    throttleDelay?: number;
-  };
-  executeOptions?: {
-    smoothScroll?: boolean;
-    highlightClicks?: boolean;
-    highlightDuration?: number;
-  };
   onBroadcastInitialState?: () => void; // Callback to broadcast current state when someone starts following
   children: React.ReactNode;
 }
@@ -64,8 +50,6 @@ export default function QuickFollowProvider({
   roomName = "follow",
   room = null,
   autoInit = true,
-  captureOptions = {},
-  executeOptions = {},
   onBroadcastInitialState,
   children,
 }: QuickFollowProviderProps) {
@@ -101,8 +85,6 @@ export default function QuickFollowProvider({
       manager = new QuickFollowManager({
         roomName,
         room, // Pass existing room if provided
-        ...captureOptions,
-        ...executeOptions,
       });
 
       // Setup callbacks

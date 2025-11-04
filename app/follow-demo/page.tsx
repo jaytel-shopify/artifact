@@ -212,21 +212,7 @@ function DemoContent() {
 
 export default function FollowDemoPage() {
   return (
-    <QuickFollowProvider
-      roomName="follow-demo"
-      captureOptions={{
-        captureScroll: true,
-        captureClick: true,
-        captureInput: true,
-        captureHover: false,
-        throttleDelay: 50,
-      }}
-      executeOptions={{
-        smoothScroll: true,
-        highlightClicks: true,
-        highlightDuration: 1000,
-      }}
-    >
+    <QuickFollowProvider roomName="follow-demo">
       <DemoContent />
       <FollowControlPanel />
     </QuickFollowProvider>

@@ -568,11 +568,6 @@ function PresentationPageInnerWithProvider() {
     <QuickFollowProvider
       room={room}
       key={project?.id || "no-project"}
-      captureOptions={{
-        captureScroll: false,
-        captureClick: false,
-        captureInput: false,
-      }}
       onBroadcastInitialState={broadcastCallback || undefined}
     >
       <PresentationPageInner onBroadcastReady={wrappedSetBroadcastCallback} />
