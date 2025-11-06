@@ -83,8 +83,14 @@ export function useCollectionMode({
         stillnessTimerRef.current = null;
       }
 
+      // Early return if not in collection mode - no async work needed
+      if (!isCollectionMode) {
+        resetCollectionState();
+        return false;
+      }
+
       // Collection mode - create a collection/stack
-      if (isCollectionMode && overId && overId !== activeId && onCreateCollection) {
+      if (overId && overId !== activeId && onCreateCollection) {
         await onCreateCollection(activeId!.toString(), overId.toString());
         resetCollectionState();
         return true; // Indicate collection was created

@@ -313,33 +313,42 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
     const handleDragEnd = useCallback(
       async ({ over }: DragEndEvent) => {
-        // Try to handle collection creation
-        const collectionCreated = await handleCollectionDragEnd(
-          over?.id ?? null
-        );
+        if (!over) {
+          setActiveId(null);
+          return;
+        }
 
-        if (over && !collectionCreated) {
-          const overIndex = itemIds.indexOf(over.id.toString());
+        const overIndex = itemIds.indexOf(over.id.toString());
 
-          // Reorder mode - normal reordering
-          if (activeIndex !== overIndex && activeIndex !== -1) {
-            // Set settling to block parent updates during animation
-            setIsSettling(true);
-            setSettlingId(activeId); // Track which item is settling
-
-            // Update local state immediately for smooth animation
-            const reorderedItems = arrayMove(items, activeIndex, overIndex);
-            setItems(reorderedItems);
-
-            // Delay notifying parent until AFTER animation completes
-            if (settleTimeoutRef.current)
-              clearTimeout(settleTimeoutRef.current);
-            settleTimeoutRef.current = setTimeout(() => {
-              onReorder?.(reorderedItems);
-              setIsSettling(false);
-              setSettlingId(null);
-            }, 250); // Match dnd-kit's default animation duration
+        // Check if we're in collection mode - if so, try to create collection
+        if (isCollectionMode && over.id !== activeId) {
+          const collectionCreated = await handleCollectionDragEnd(over.id);
+          if (collectionCreated) {
+            setActiveId(null);
+            return;
           }
+        } else {
+          // Not in collection mode - just reset state synchronously
+          handleCollectionDragEnd(over.id);
+        }
+
+        // Reorder mode - normal reordering
+        if (activeIndex !== overIndex && activeIndex !== -1) {
+          // Set settling to block parent updates during animation
+          setIsSettling(true);
+          setSettlingId(activeId); // Track which item is settling
+
+          // Update local state immediately for smooth animation
+          const reorderedItems = arrayMove(items, activeIndex, overIndex);
+          setItems(reorderedItems);
+
+          // Delay notifying parent until AFTER animation completes
+          if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
+          settleTimeoutRef.current = setTimeout(() => {
+            onReorder?.(reorderedItems);
+            setIsSettling(false);
+            setSettlingId(null);
+          }, 250); // Match dnd-kit's default animation duration
         }
 
         setActiveId(null);
@@ -350,6 +359,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         activeId,
         items,
         onReorder,
+        isCollectionMode,
         handleCollectionDragEnd,
       ]
     );
