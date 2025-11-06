@@ -5,6 +5,7 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useMemo,
 } from "react";
 import {
   closestCenter,
@@ -18,6 +19,7 @@ import {
   MeasuringStrategy,
   DropAnimation,
   defaultDropAnimationSideEffects,
+  DragMoveEvent,
 } from "@dnd-kit/core";
 import type {
   DragStartEvent,
@@ -37,6 +39,7 @@ import type { Artifact } from "@/types";
 
 import { CarouselItem, Layout, Position } from "./CarouselItem";
 import type { Props as CarouselItemProps } from "./CarouselItem";
+import { useCollectionMode } from "./useCollectionMode";
 import "./sortable-carousel.css";
 
 type VideoMetadata = { hideUI?: boolean; loop?: boolean; muted?: boolean };
@@ -47,6 +50,8 @@ interface Props {
   fitMode?: boolean;
   artifacts: Artifact[];
   onReorder?: (artifacts: Artifact[]) => void;
+  onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
+  onToggleCollection?: (collectionId: string) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
     updates: { name?: string; metadata?: Record<string, unknown> }
@@ -90,6 +95,8 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       fitMode = false,
       artifacts,
       onReorder,
+      onCreateCollection,
+      onToggleCollection,
       onUpdateArtifact,
       onDeleteArtifact,
       onReplaceMedia,
@@ -106,6 +113,18 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const [settlingId, setSettlingId] = useState<UniqueIdentifier | null>(null);
     const containerRef = useRef<HTMLUListElement>(null);
 
+    // Collection mode logic
+    const {
+      isCollectionMode,
+      hoveredItemId,
+      handleCollectionDragStart,
+      handleCollectionDragMove,
+      handleCollectionDragEnd,
+    } = useCollectionMode({
+      activeId,
+      onCreateCollection,
+    });
+
     // Expose the containerRef to parent via forwardedRef
     useImperativeHandle(forwardedRef, () => containerRef.current!);
     const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -113,6 +132,40 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     );
     const [items, setItems] = useState<Artifact[]>(artifacts);
     const prevPageIdRef = useRef(pageId);
+
+    // Filter and reorder artifacts for display in carousel
+    // When a collection is expanded, show its items right after the collection header
+    // Use useMemo to prevent infinite loops in useEffect
+    const visibleArtifacts = useMemo(() => {
+      const result: Artifact[] = [];
+
+      artifacts.forEach((artifact) => {
+        const metadata = artifact.metadata as {
+          parent_collection_id?: string;
+          collection_items?: string[];
+          is_expanded?: boolean;
+        };
+
+        // Skip items that belong to a collection (they'll be added by their parent collection)
+        if (metadata?.parent_collection_id) {
+          return; // Never add these directly
+        }
+
+        // Add the artifact to results (it's either a regular item or a collection header)
+        result.push(artifact);
+
+        // If this is an expanded collection, insert its items right after it
+        if (metadata?.collection_items && metadata?.is_expanded) {
+          const collectionItems = metadata.collection_items
+            .map((itemId) => artifacts.find((a) => a.id === itemId))
+            .filter((a): a is Artifact => a !== undefined);
+
+          result.push(...collectionItems);
+        }
+      });
+
+      return result;
+    }, [artifacts]);
 
     // Sync artifacts with local state (respecting animation state)
     const prevArtifactsRef = useRef(artifacts);
@@ -124,7 +177,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         .map((a) => a.id)
         .sort()
         .join(",");
-      const newIds = artifacts
+      const newIds = visibleArtifacts
         .map((a) => a.id)
         .sort()
         .join(",");
@@ -132,10 +185,15 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       // Sync if items added/removed
       if (prevIds !== newIds) {
         // Check if items were added (not removed) AND page didn't change
-        const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
+        const itemsAdded =
+          visibleArtifacts.length >
+          prevArtifactsRef.current.filter((a) => {
+            const metadata = a.metadata as { parent_collection_id?: string };
+            return !metadata?.parent_collection_id;
+          }).length;
         const pageChanged = prevPageIdRef.current !== pageId;
 
-        setItems(artifacts);
+        setItems(visibleArtifacts);
         prevArtifactsRef.current = artifacts;
         prevPageIdRef.current = pageId;
 
@@ -155,12 +213,16 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       }
 
       // Check if order changed OR properties changed
-      const orderChanged = artifacts.some((artifact, idx) => {
-        const prevArtifact = prevArtifactsRef.current[idx];
+      const orderChanged = visibleArtifacts.some((artifact, idx) => {
+        const prevVisible = prevArtifactsRef.current.filter((a) => {
+          const metadata = a.metadata as { parent_collection_id?: string };
+          return !metadata?.parent_collection_id;
+        });
+        const prevArtifact = prevVisible[idx];
         return !prevArtifact || prevArtifact.id !== artifact.id;
       });
 
-      const itemsChanged = artifacts.some((newArtifact) => {
+      const itemsChanged = visibleArtifacts.some((newArtifact) => {
         const prevArtifact = prevArtifactsRef.current.find(
           (a) => a.id === newArtifact.id
         );
@@ -175,30 +237,34 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       });
 
       if (orderChanged || itemsChanged) {
-        // If order changed, use the new order from artifacts
+        // If order changed, use the new order from visibleArtifacts
         // If only properties changed, preserve current order
         if (orderChanged) {
-          setItems(artifacts);
+          setItems(visibleArtifacts);
         } else {
           // Update items while preserving order
-          const orderMap = new Map(items.map((item, idx) => [item.id, idx]));
-          const updatedItems = artifacts.slice().sort((a, b) => {
-            const aIdx = orderMap.get(a.id) ?? 0;
-            const bIdx = orderMap.get(b.id) ?? 0;
-            return aIdx - bIdx;
+          // Use functional update to access current items without dependency
+          setItems((currentItems) => {
+            const orderMap = new Map(
+              currentItems.map((item, idx) => [item.id, idx])
+            );
+            return visibleArtifacts.slice().sort((a, b) => {
+              const aIdx = orderMap.get(a.id) ?? 0;
+              const bIdx = orderMap.get(b.id) ?? 0;
+              return aIdx - bIdx;
+            });
           });
-          setItems(updatedItems);
         }
       }
 
       prevArtifactsRef.current = artifacts;
-    }, [artifacts, isSettling, items]);
+    }, [artifacts, isSettling, pageId, visibleArtifacts]);
 
     useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
       container.scrollLeft = container.scrollLeft;
-    }, [columns]);
+    }, [columns, pageId]);
 
     const itemIds = items.map((artifact) => artifact.id);
     const activeIndex =
@@ -225,19 +291,37 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     // Regardless of fitMode prop, it's disabled for multi-column layouts
     const isFitMode = columns === 1 ? fitMode : false;
 
-    const handleDragStart = useCallback(({ active }: DragStartEvent) => {
-      setActiveId(active.id);
-    }, []);
+    const handleDragStart = useCallback(
+      ({ active }: DragStartEvent) => {
+        setActiveId(active.id);
+        handleCollectionDragStart();
+      },
+      [handleCollectionDragStart]
+    );
+
+    const handleDragMove = useCallback(
+      (event: DragMoveEvent) => {
+        handleCollectionDragMove(event);
+      },
+      [handleCollectionDragMove]
+    );
 
     const handleDragCancel = useCallback(() => {
       setActiveId(null);
-    }, []);
+      handleCollectionDragStart(); // Resets collection state
+    }, [handleCollectionDragStart]);
 
     const handleDragEnd = useCallback(
-      ({ over }: DragEndEvent) => {
-        if (over) {
+      async ({ over }: DragEndEvent) => {
+        // Try to handle collection creation
+        const collectionCreated = await handleCollectionDragEnd(
+          over?.id ?? null
+        );
+
+        if (over && !collectionCreated) {
           const overIndex = itemIds.indexOf(over.id.toString());
 
+          // Reorder mode - normal reordering
           if (activeIndex !== overIndex && activeIndex !== -1) {
             // Set settling to block parent updates during animation
             setIsSettling(true);
@@ -260,7 +344,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         setActiveId(null);
       },
-      [itemIds, activeIndex, activeId, items, onReorder]
+      [
+        itemIds,
+        activeIndex,
+        activeId,
+        items,
+        onReorder,
+        handleCollectionDragEnd,
+      ]
     );
 
     if (items.length === 0) {
@@ -274,6 +365,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     return (
       <DndContext
         onDragStart={handleDragStart}
+        onDragMove={handleDragMove}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
         sensors={sensors}
@@ -286,7 +378,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         >
           <ul
             ref={containerRef}
-            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""}`}
+            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
           >
             {items.map((artifact, index) => (
               <SortableCarouselItem
@@ -308,6 +400,10 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                 isSettling={settlingId === artifact.id}
                 isReadOnly={isReadOnly}
                 fitMode={isFitMode}
+                isCollectionMode={isCollectionMode}
+                isHoveredForCollection={hoveredItemId === artifact.id}
+                allArtifacts={artifacts}
+                onToggleCollection={onToggleCollection}
                 onDelete={
                   onDeleteArtifact
                     ? async () => await onDeleteArtifact(artifact.id)
@@ -349,7 +445,13 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         </SortableContext>
         <DragOverlay dropAnimation={dropAnimation}>
           {activeId != null ? (
-            <CarouselItemOverlay id={activeId} layout={layout} items={items} />
+            <CarouselItemOverlay
+              id={activeId}
+              layout={layout}
+              items={items}
+              allArtifacts={artifacts}
+              isCollectionMode={isCollectionMode}
+            />
           ) : null}
         </DragOverlay>
       </DndContext>
@@ -360,8 +462,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 function CarouselItemOverlay({
   id,
   items,
+  allArtifacts,
+  isCollectionMode = false,
   ...props
-}: Omit<CarouselItemProps, "index"> & { items: Artifact[] }) {
+}: Omit<CarouselItemProps, "index"> & {
+  items: Artifact[];
+  allArtifacts?: Artifact[];
+  isCollectionMode?: boolean;
+}) {
   const { activatorEvent, over } = useDndContext();
   const isKeyboardSorting = isKeyboardEvent(activatorEvent);
   const itemIds = items.map((a) => a.id);
@@ -380,10 +488,12 @@ function CarouselItemOverlay({
       height={artifact.metadata?.height as number}
       name={artifact.name}
       metadata={artifact.metadata as VideoMetadata}
+      allArtifacts={allArtifacts}
       {...props}
       clone
+      isCollectionMode={isCollectionMode}
       insertPosition={
-        isKeyboardSorting && overIndex !== activeIndex
+        isKeyboardSorting && overIndex !== activeIndex && !isCollectionMode
           ? overIndex > activeIndex
             ? Position.After
             : Position.Before
@@ -400,6 +510,10 @@ function SortableCarouselItem({
   isAnyDragging,
   isSettling,
   fitMode,
+  isCollectionMode,
+  isHoveredForCollection,
+  allArtifacts,
+  onToggleCollection,
   ...props
 }: CarouselItemProps & {
   activeIndex: number;
@@ -407,6 +521,10 @@ function SortableCarouselItem({
   isAnyDragging?: boolean;
   isSettling?: boolean;
   fitMode?: boolean;
+  isCollectionMode?: boolean;
+  isHoveredForCollection?: boolean;
+  allArtifacts?: Artifact[];
+  onToggleCollection?: (collectionId: string) => Promise<void>;
 }) {
   const {
     attributes,
@@ -432,6 +550,10 @@ function SortableCarouselItem({
       isAnyDragging={isAnyDragging}
       isSettling={isSettling}
       fitMode={fitMode}
+      isCollectionMode={isCollectionMode}
+      isHoveredForCollection={isHoveredForCollection}
+      allArtifacts={allArtifacts}
+      onToggleCollection={onToggleCollection}
       style={{
         transition,
         transform: isSorting ? undefined : CSS.Translate.toString(transform),
@@ -439,7 +561,7 @@ function SortableCarouselItem({
         "--column-width": columnWidth,
       }}
       insertPosition={
-        over?.id === id
+        over?.id === id && !isCollectionMode
           ? index > activeIndex
             ? Position.After
             : Position.Before

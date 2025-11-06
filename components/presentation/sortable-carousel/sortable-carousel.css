@@ -19,13 +19,14 @@
   /* Scroll snapping */
   scroll-snap-type: x mandatory;
   scroll-padding-left: 1rem;
-  /* scroll-behavior: smooth; */
+  scroll-behavior: smooth;
   /* Hide scrollbars */
   scrollbar-width: none;
 }
 
 .carousel-horizontal.disable-snap-scroll {
   scroll-snap-type: none;
+  scroll-behavior: auto;
 }
 
 /* Only apply 100% height when columns is set to 1 */
@@ -73,6 +74,13 @@
   opacity: 0;
 }
 
+/* Hide stack layers and badge when dragging */
+.carousel-item-wrapper.active .collection-stack-indicator,
+.carousel-item-wrapper.active .collection-badge {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .carousel-item-wrapper.settling .carousel-item {
   background-color: rgba(60, 60, 60, 0.2);
 }
@@ -82,6 +90,19 @@
     0 0 0 1px rgba(63, 63, 68, 0.05),
     0 1px 6px 0 rgba(34, 33, 81, 0.3);
   cursor: grabbing;
+}
+
+/* Ensure stack layers are visible when dragging a collection */
+.carousel-item-wrapper.clone.is-collection {
+  position: relative;
+  margin-right: 16px;
+  margin-bottom: 16px;
+}
+
+.carousel-item-wrapper.clone .collection-stack-indicator,
+.carousel-item-wrapper.clone .collection-badge {
+  opacity: 1;
+  display: block;
 }
 
 .carousel-item-wrapper:hover .carousel-item-remove {
@@ -98,6 +119,12 @@
   max-height: 500px;
 }
 
+/* Hide drop indicators in collection mode */
+.carousel.collection-mode .carousel-item-wrapper.insert-before::after,
+.carousel.collection-mode .carousel-item-wrapper.insert-after::after {
+  display: none;
+}
+
 .carousel-item-wrapper:not(.vertical).insert-before::after,
 .carousel-item-wrapper:not(.vertical).insert-after::after {
   top: 0;
@@ -110,7 +137,7 @@
 }
 
 .carousel-item-wrapper:not(.vertical).insert-before::after {
-  left: -1rem;
+  left: -0.5rem;
 }
 
 .carousel-item-wrapper:not(.vertical).insert-after.clone {
@@ -118,7 +145,7 @@
 }
 
 .carousel-item-wrapper:not(.vertical).insert-after::after {
-  right: -1rem;
+  right: -0.5rem;
 }
 
 .carousel-item-wrapper.vertical.insert-before::after,
@@ -153,7 +180,6 @@
   display: block;
   width: 100%;
   max-height: calc(100vh - 180px);
-  /* background-color: rgb(10, 10, 10); */
   border-radius: 3px;
   box-shadow:
     0 0 0 1px rgba(63, 63, 68, 0.05),
@@ -161,6 +187,7 @@
   outline: none;
   border: none;
   overflow: auto;
+  z-index: 1; /* Ensure item is above stack layers */
 }
 
 /* Only apply height: 100% to URL/website types */
@@ -244,7 +271,6 @@
    ========================================================================== */
 
 .carousel-horizontal.fit-mode .carousel-item-wrapper.fit-mode {
-  /* height: calc(100vh - 200px) !important; */
   aspect-ratio: auto !important;
 }
 
@@ -258,4 +284,263 @@
       width: auto;
     }
   }
+}
+
+/* ==========================================================================
+   Collection Mode Indicators
+   ========================================================================== */
+
+/* Collection indicator on hovered items */
+.collection-indicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  z-index: 20;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  animation: fadeInScale 0.2s ease;
+}
+
+.collection-indicator span {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* Collection mode badge on dragged item */
+.collection-mode-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: rgba(59, 130, 246, 0.95);
+  color: #fff;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 21;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.7);
+  }
+}
+
+/* Highlight effect for hovered items in collection mode */
+.carousel-item-wrapper.hovered-for-collection .carousel-item {
+  box-shadow:
+    0 0 0 3px rgba(59, 130, 246, 0.6),
+    0 8px 24px rgba(59, 130, 246, 0.3);
+  transform: scale(1.02);
+  transition: all 0.2s ease;
+}
+
+/* ==========================================================================
+   Collection Stack Indicators
+   ========================================================================== */
+
+/* Stack layers behind the main item */
+.collection-stack-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0; /* Behind carousel-item (z-index: 1) but visible */
+}
+
+.stack-layer {
+  position: absolute;
+  bottom: 0; /* Anchor to bottom so they peek out */
+  left: 0;
+  right: 0;
+  height: 100%; /* Full height */
+  border-radius: 3px;
+  box-shadow:
+    0 0 0 1px rgba(63, 63, 68, 0.05),
+    0 1px 3px 0 rgba(34, 33, 81, 0.15);
+  overflow: hidden;
+}
+
+/* Collection badge showing item count */
+.collection-badge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.95),
+    rgba(59, 130, 246, 0.95)
+  );
+  color: #fff;
+  padding: 0.75rem;
+  border-radius: 12px;
+  min-width: 60px;
+  z-index: 15;
+  pointer-events: none;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+  backdrop-filter: blur(4px);
+}
+
+.collection-badge-count {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.collection-badge-label {
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+  opacity: 0.9;
+}
+
+/* Adjust collection wrapper to accommodate stack layers */
+.carousel-item-wrapper.is-collection {
+  margin-right: 16px; /* Increased from 8px to accommodate larger offset */
+  margin-bottom: 16px; /* Increased from 8px to accommodate larger offset */
+}
+
+/* Make collections clickable (double-click to expand/collapse) */
+.carousel-item-wrapper.is-collection .carousel-item,
+.carousel-item-wrapper.is-collection-expanded .carousel-item {
+  cursor: pointer;
+}
+
+/* Remove extra margin when collection is expanded */
+.carousel-item-wrapper.is-collection-expanded {
+  margin-right: 0;
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   Collection Expand/Collapse Animations
+   ========================================================================== */
+
+/* Animate items entering when collection expands */
+@keyframes slideInFromStack {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Apply animation to collection items - use data attribute to track state */
+.carousel-item-wrapper[data-collection-child="true"] {
+  animation: slideInFromStack 0.3s ease-out;
+}
+
+/* Smooth transition for collection badge and stack layers */
+.collection-badge,
+.collection-stack-indicator {
+  transition:
+    opacity 0.25s ease,
+    transform 0.25s ease;
+}
+
+/* Smooth transition for collection wrapper margins */
+.carousel-item-wrapper.is-collection,
+.carousel-item-wrapper.is-collection-expanded {
+  transition: margin 0.3s ease;
+}
+
+/* When collection is being expanded, fade out stack elements */
+.carousel-item-wrapper.is-collection-expanded .collection-stack-indicator,
+.carousel-item-wrapper.is-collection-expanded .collection-badge {
+  opacity: 0;
+  transform: scale(0.95);
+  pointer-events: none;
+}
+
+/* Animate stack layers when appearing (collection collapses) */
+.carousel-item-wrapper.is-collection .collection-stack-indicator {
+  animation: fadeInStack 0.3s ease-out;
+}
+
+.carousel-item-wrapper.is-collection .collection-badge {
+  animation: fadeInBadge 0.3s ease-out 0.1s backwards;
+}
+
+@keyframes fadeInStack {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeInBadge {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Stagger animation for multiple items */
+.carousel-item-wrapper[data-collection-child="true"]:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.carousel-item-wrapper[data-collection-child="true"]:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.carousel-item-wrapper[data-collection-child="true"]:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.carousel-item-wrapper[data-collection-child="true"]:nth-child(5) {
+  animation-delay: 0.2s;
 }
