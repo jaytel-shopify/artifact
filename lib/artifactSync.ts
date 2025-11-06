@@ -61,7 +61,8 @@ export class ArtifactSyncManager {
       // Store our socket ID for filtering our own events
       this.socketId = this.room.user?.socketId || "";
 
-      // Update user state with full profile info (including slack avatar)
+      // Update user state immediately with full profile info (including slack avatar)
+      // This will trigger user:state events for other users, causing them to re-render
       this.room.updateUserState({
         slackImageUrl: user.slackImageUrl,
         slackHandle: user.slackHandle,
@@ -137,6 +138,14 @@ export class ArtifactSyncManager {
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
         }, 50);
+      }
+    });
+
+    // Listen for user state changes (e.g., when slackImageUrl is added)
+    this.room.on("user:state", () => {
+      // Trigger UI update when any user's state changes (including avatar data)
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("artifactSyncUserChange"));
       }
     });
   }
