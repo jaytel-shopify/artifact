@@ -133,6 +133,8 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const [isSettling, setIsSettling] = useState(false);
     const [settlingId, setSettlingId] = useState<UniqueIdentifier | null>(null);
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
+    const [itemBeingAddedToCollection, setItemBeingAddedToCollection] =
+      useState<UniqueIdentifier | null>(null);
     const containerRef = useRef<HTMLUListElement>(null);
 
     // Collection mode logic
@@ -183,6 +185,40 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             .filter((a): a is Artifact => a !== undefined);
 
           result.push(...collectionItems);
+        }
+      });
+
+      return result;
+    }, [artifacts]);
+
+    // Separate array for hidden collection items (rendered outside sortable context)
+    // These stay mounted to preserve video state but don't participate in DnD
+    const hiddenCollectionItems = useMemo(() => {
+      const result: Artifact[] = [];
+
+      artifacts.forEach((artifact) => {
+        const metadata = artifact.metadata as {
+          parent_collection_id?: string;
+          collection_items?: string[];
+          is_expanded?: boolean;
+        };
+
+        // Find collapsed collection items
+        if (metadata?.parent_collection_id) {
+          const parent = artifacts.find(
+            (a) => a.id === metadata.parent_collection_id
+          );
+          const parentMetadata = parent?.metadata as
+            | {
+                is_expanded?: boolean;
+              }
+            | undefined;
+          const isExpanded = parentMetadata?.is_expanded || false;
+
+          // Only include if parent is collapsed
+          if (!isExpanded) {
+            result.push(artifact);
+          }
         }
       });
 
@@ -330,6 +366,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
     const handleDragCancel = useCallback(() => {
       setActiveId(null);
+      setItemBeingAddedToCollection(null);
       handleCollectionDragStart(); // Resets collection state
     }, [handleCollectionDragStart]);
 
@@ -337,6 +374,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       async ({ over }: DragEndEvent) => {
         if (!over) {
           setActiveId(null);
+          setItemBeingAddedToCollection(null);
           return;
         }
 
@@ -346,13 +384,20 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         if (isCollectionMode && over.id !== activeId) {
           setIsCreatingCollection(true);
 
+          // Immediately hide the item being added to prevent it showing in original position
+          setItemBeingAddedToCollection(activeId);
+          setActiveId(null);
+
           // Wait for the drop animation to complete before updating data
           setTimeout(async () => {
             await handleCollectionDragEnd(over.id);
             setIsCreatingCollection(false);
+            // Clear after a brief delay to ensure DB update has propagated
+            setTimeout(() => {
+              setItemBeingAddedToCollection(null);
+            }, 100);
           }, 300); // Match collectionDropAnimation duration
 
-          setActiveId(null);
           return;
         } else {
           // Not in collection mode - just reset state synchronously
@@ -439,6 +484,9 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                 fitMode={isFitMode}
                 isCollectionMode={isCollectionMode}
                 isHoveredForCollection={hoveredItemId === artifact.id}
+                isBeingAddedToCollection={
+                  itemBeingAddedToCollection === artifact.id
+                }
                 allArtifacts={artifacts}
                 onToggleCollection={onToggleCollection}
                 onDelete={
@@ -476,6 +524,23 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                     : undefined
                 }
                 isFocused={focusedArtifactId === artifact.id}
+              />
+            ))}
+            {/* Render hidden collection items outside sortable context to preserve state */}
+            {hiddenCollectionItems.map((artifact) => (
+              <HiddenCarouselItem
+                id={artifact.id}
+                key={`hidden-${artifact.id}`}
+                layout={layout}
+                contentUrl={artifact.source_url}
+                contentType={
+                  artifact.type as "image" | "video" | "url" | "titleCard"
+                }
+                width={artifact.metadata?.width as number}
+                height={artifact.metadata?.height as number}
+                name={artifact.name}
+                metadata={artifact.metadata as VideoMetadata}
+                columnWidth={columnWidth}
               />
             ))}
           </ul>
@@ -555,6 +620,7 @@ function SortableCarouselItem({
   fitMode,
   isCollectionMode,
   isHoveredForCollection,
+  isBeingAddedToCollection,
   allArtifacts,
   onToggleCollection,
   ...props
@@ -566,6 +632,7 @@ function SortableCarouselItem({
   fitMode?: boolean;
   isCollectionMode?: boolean;
   isHoveredForCollection?: boolean;
+  isBeingAddedToCollection?: boolean;
   allArtifacts?: Artifact[];
   onToggleCollection?: (collectionId: string) => Promise<void>;
 }) {
@@ -595,6 +662,7 @@ function SortableCarouselItem({
       fitMode={fitMode}
       isCollectionMode={isCollectionMode}
       isHoveredForCollection={isHoveredForCollection}
+      isBeingAddedToCollection={isBeingAddedToCollection}
       allArtifacts={allArtifacts}
       onToggleCollection={onToggleCollection}
       style={{
@@ -615,6 +683,49 @@ function SortableCarouselItem({
       dragHandleProps={{
         ref: setActivatorNodeRef,
         ...listeners,
+      }}
+    />
+  );
+}
+
+// Hidden carousel item - renders outside sortable context to preserve state
+// Used for collapsed collection items so videos don't reload when expanded
+function HiddenCarouselItem({
+  id,
+  layout,
+  contentUrl,
+  contentType,
+  width,
+  height,
+  name,
+  metadata,
+  columnWidth,
+}: {
+  id: UniqueIdentifier;
+  layout: Layout;
+  contentUrl?: string;
+  contentType: "image" | "video" | "url" | "titleCard";
+  width?: number;
+  height?: number;
+  name?: string;
+  metadata?: VideoMetadata;
+  columnWidth?: string;
+}) {
+  return (
+    <CarouselItem
+      id={id}
+      layout={layout}
+      contentUrl={contentUrl}
+      contentType={contentType}
+      width={width}
+      height={height}
+      name={name}
+      metadata={metadata}
+      isReadOnly={true}
+      shouldHide={true}
+      style={{
+        // @ts-expect-error - CSS custom property
+        "--column-width": columnWidth,
       }}
     />
   );

@@ -64,6 +64,8 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   fitMode?: boolean;
   isCollectionMode?: boolean;
   isHoveredForCollection?: boolean;
+  isBeingAddedToCollection?: boolean;
+  shouldHide?: boolean;
 }
 
 export const CarouselItem = forwardRef<HTMLLIElement, Props>(
@@ -98,6 +100,8 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       fitMode = false,
       isCollectionMode = false,
       isHoveredForCollection = false,
+      isBeingAddedToCollection = false,
+      shouldHide = false,
       ...props
     },
     ref
@@ -151,6 +155,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         ${isHoveredForCollection ? "hovered-for-collection" : ""}
         ${isCollection && !isExpanded ? "is-collection" : ""}
         ${isCollection && isExpanded ? "is-collection-expanded" : ""}
+        ${shouldHide ? "collection-child-hidden" : ""}
       `}
         data-collection-child={
           (metadata as any)?.parent_collection_id ? "true" : undefined
@@ -205,16 +210,18 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
           onDoubleClick={handleDoubleClick}
           {...props}
         >
-          <CarouselItemContent
-            type={type}
-            url={url}
-            alt={`Item ${index}`}
-            width={contentWidth}
-            height={contentHeight}
-            isDragging={isAnyDragging}
-            metadata={metadata}
-            fitMode={fitMode}
-          />
+          {!isBeingAddedToCollection && (
+            <CarouselItemContent
+              type={type}
+              url={url}
+              alt={`Item ${index}`}
+              width={contentWidth}
+              height={contentHeight}
+              isDragging={isAnyDragging}
+              metadata={metadata}
+              fitMode={fitMode}
+            />
+          )}
           {isHoveredForCollection && (
             <div className="collection-indicator">
               <FolderPlus size={32} />
@@ -234,20 +241,6 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             </div>
           )} */}
         </div>
-        {isCollection && !isExpanded && (
-          <div className="collection-stack-indicator">
-            <div
-              className="stack-layer"
-              style={{
-                bottom: "-10px",
-                height: "50px",
-                transform: "scale(0.97 )",
-                transformOrigin: "bottom center",
-                backgroundColor: "rgba(60, 60, 60, 1)",
-              }}
-            />
-          </div>
-        )}
       </li>
     );
 
