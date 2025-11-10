@@ -54,6 +54,11 @@ export function useCollectionMode({
     const draggedMetadata = draggedArtifact.metadata as any;
     const targetMetadata = targetArtifact.metadata as any;
     
+    // If dragged item is itself a collection, don't allow adding to other collections
+    if (draggedMetadata?.collection_items) {
+      return false;
+    }
+    
     // If dragged item is in a collection, check if trying to add to the same collection
     const draggedParentId = draggedMetadata?.parent_collection_id;
     if (draggedParentId) {

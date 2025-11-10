@@ -243,13 +243,18 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
       // Sync if items added/removed
       if (prevIds !== newIds) {
+        // Compare top-level artifacts only (not collection children)
+        const prevTopLevel = prevArtifactsRef.current.filter((a) => {
+          const metadata = a.metadata as { parent_collection_id?: string };
+          return !metadata?.parent_collection_id;
+        });
+        const currentTopLevel = artifacts.filter((a) => {
+          const metadata = a.metadata as { parent_collection_id?: string };
+          return !metadata?.parent_collection_id;
+        });
+
         // Check if items were added (not removed) AND page didn't change
-        const itemsAdded =
-          visibleArtifacts.length >
-          prevArtifactsRef.current.filter((a) => {
-            const metadata = a.metadata as { parent_collection_id?: string };
-            return !metadata?.parent_collection_id;
-          }).length;
+        const itemsAdded = currentTopLevel.length > prevTopLevel.length;
         const pageChanged = prevPageIdRef.current !== pageId;
 
         setItems(visibleArtifacts);

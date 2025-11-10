@@ -387,7 +387,35 @@ function PresentationPageInner({
             pageId={currentPageId || undefined}
             onReorder={async (reorderedArtifacts) => {
               try {
-                await reorderArtifacts(reorderedArtifacts);
+                // Separate top-level artifacts from collection items
+                const { topLevel, collectionItems } = reorderedArtifacts.reduce(
+                  (acc, artifact) => {
+                    const parentId = (artifact.metadata as any)?.parent_collection_id;
+                    if (parentId) {
+                      if (!acc.collectionItems.has(parentId)) {
+                        acc.collectionItems.set(parentId, []);
+                      }
+                      acc.collectionItems.get(parentId)!.push(artifact.id);
+                    } else {
+                      acc.topLevel.push(artifact);
+                    }
+                    return acc;
+                  },
+                  { topLevel: [] as Artifact[], collectionItems: new Map<string, string[]>() }
+                );
+                
+                // Update all collections in parallel
+                await Promise.all(
+                  Array.from(collectionItems.entries()).map(([collectionId, itemIds]) => {
+                    const collection = artifacts.find(a => a.id === collectionId);
+                    return collection ? updateArtifact(collectionId, {
+                      metadata: { ...collection.metadata, collection_items: itemIds }
+                    }) : Promise.resolve();
+                  })
+                );
+                
+                // Update top-level artifacts order
+                await reorderArtifacts(topLevel);
               } catch (error) {
                 toast.error("Failed to reorder artifacts. Please try again.");
                 console.error("Failed to reorder artifacts:", error);
@@ -468,8 +496,6 @@ function PresentationPageInner({
                     is_expanded: !isExpanded,
                   }
                 });
-                
-                toast.success(isExpanded ? "Collection collapsed" : "Collection expanded");
               } catch (error) {
                 toast.error("Failed to toggle collection");
                 console.error("Failed to toggle collection:", error);
