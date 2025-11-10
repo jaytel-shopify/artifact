@@ -305,46 +305,6 @@
    Collection Mode Indicators
    ========================================================================== */
 
-/* Collection indicator on hovered items */
-.collection-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  background-color: rgba(0, 0, 0, 0.8);
-  color: #fff;
-  padding: 1.5rem 2rem;
-  border-radius: 12px;
-  z-index: 20;
-  pointer-events: none;
-  backdrop-filter: blur(4px);
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  animation: fadeInScale 0.2s ease;
-}
-
-.collection-indicator span {
-  font-size: 0.875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
-}
-
 /* Collection mode badge on dragged item */
 .collection-mode-badge {
   position: absolute;
@@ -353,7 +313,7 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background-color: rgba(59, 130, 246, 0.95);
+  background-color: rgba(55, 65, 81, 0.95);
   color: #fff;
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
@@ -361,17 +321,17 @@
   font-weight: 600;
   z-index: 21;
   pointer-events: none;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
 @keyframes pulseGlow {
   0%,
   100% {
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   }
   50% {
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.7);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
   }
 }
 

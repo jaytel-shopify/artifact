@@ -40,6 +40,11 @@ import type { Artifact } from "@/types";
 import { CarouselItem, Layout, Position } from "./CarouselItem";
 import type { Props as CarouselItemProps } from "./CarouselItem";
 import { useCollectionMode } from "./useCollectionMode";
+import {
+  getCollectionMetadata,
+  isCollectionChild,
+  type CollectionMetadata,
+} from "@/lib/collection-utils";
 import "./sortable-carousel.css";
 
 type VideoMetadata = { hideUI?: boolean; loop?: boolean; muted?: boolean };
@@ -167,27 +172,19 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
     // Filter and reorder artifacts for display in carousel
     // When a collection is expanded, show its items right after the collection header
-    // Use useMemo to prevent infinite loops in useEffect
     const visibleArtifacts = useMemo(() => {
       const result: Artifact[] = [];
 
       artifacts.forEach((artifact) => {
-        const metadata = artifact.metadata as {
-          parent_collection_id?: string;
-          collection_items?: string[];
-          is_expanded?: boolean;
-        };
-
         // Skip items that belong to a collection (they'll be added by their parent collection)
-        if (metadata?.parent_collection_id) {
-          return; // Never add these directly
-        }
+        if (isCollectionChild(artifact)) return;
 
         // Add the artifact to results (it's either a regular item or a collection header)
         result.push(artifact);
 
         // If this is an expanded collection, insert its items right after it
-        if (metadata?.collection_items && metadata?.is_expanded) {
+        const metadata = getCollectionMetadata(artifact);
+        if (metadata.collection_items && metadata.is_expanded) {
           const collectionItems = metadata.collection_items
             .map((itemId) => artifacts.find((a) => a.id === itemId))
             .filter((a): a is Artifact => a !== undefined);
@@ -202,35 +199,22 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     // Separate array for hidden collection items (rendered outside sortable context)
     // These stay mounted to preserve video state but don't participate in DnD
     const hiddenCollectionItems = useMemo(() => {
-      const result: Artifact[] = [];
+      return artifacts.filter((artifact) => {
+        if (!isCollectionChild(artifact)) return false;
 
-      artifacts.forEach((artifact) => {
-        const metadata = artifact.metadata as {
-          parent_collection_id?: string;
-          collection_items?: string[];
-          is_expanded?: boolean;
-        };
+        const metadata = getCollectionMetadata(artifact);
+        const parent = artifacts.find(
+          (a) => a.id === metadata.parent_collection_id
+        );
 
-        // Find collapsed collection items
-        if (metadata?.parent_collection_id) {
-          const parent = artifacts.find(
-            (a) => a.id === metadata.parent_collection_id
-          );
-          const parentMetadata = parent?.metadata as
-            | {
-                is_expanded?: boolean;
-              }
-            | undefined;
-          const isExpanded = parentMetadata?.is_expanded || false;
+        if (!parent) return false;
 
-          // Only include if parent is collapsed
-          if (!isExpanded) {
-            result.push(artifact);
-          }
-        }
+        const parentMetadata = getCollectionMetadata(parent);
+        const isExpanded = parentMetadata.is_expanded || false;
+
+        // Only include if parent is collapsed
+        return !isExpanded;
       });
-
-      return result;
     }, [artifacts]);
 
     // Sync artifacts with local state (respecting animation state)
@@ -408,12 +392,9 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       (reorderedItems: Artifact[], targetIndex: number) => {
         let topLevelIndex = 0;
         for (let i = 0; i < Math.min(targetIndex, reorderedItems.length); i++) {
-          const itemMetadata = reorderedItems[i].metadata as {
-            parent_collection_id?: string;
-          };
           // Only count top-level items (not collection children)
           if (
-            !itemMetadata?.parent_collection_id ||
+            !isCollectionChild(reorderedItems[i]) ||
             reorderedItems[i].id === activeId?.toString()
           ) {
             topLevelIndex++;
@@ -439,13 +420,10 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         if (collectionHeaderIndex === -1) return false;
 
         const collectionHeader = items[collectionHeaderIndex];
-        const collectionMetadata = collectionHeader.metadata as {
-          collection_items?: string[];
-          is_expanded?: boolean;
-        };
+        const collectionMetadata = getCollectionMetadata(collectionHeader);
 
         // Only check bounds if collection is expanded
-        if (!collectionMetadata?.is_expanded) return false;
+        if (!collectionMetadata.is_expanded) return false;
 
         const collectionItems = collectionMetadata.collection_items || [];
         // Collection bounds in the visible array
@@ -547,10 +525,8 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         // 2. Handle removing from collection (dragging outside bounds)
         if (activeId && activeIndex !== -1 && overIndex !== -1) {
           const activeArtifact = items[activeIndex];
-          const activeMetadata = activeArtifact?.metadata as {
-            parent_collection_id?: string;
-          };
-          const parentCollectionId = activeMetadata?.parent_collection_id;
+          const activeMetadata = getCollectionMetadata(activeArtifact);
+          const parentCollectionId = activeMetadata.parent_collection_id;
 
           if (parentCollectionId && onRemoveFromCollection) {
             const handled = handleRemoveFromCollectionDrag(

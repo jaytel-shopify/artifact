@@ -222,16 +222,10 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               fitMode={fitMode}
             />
           )}
-          {isHoveredForCollection && (
-            <div className="collection-indicator">
-              <FolderPlus size={32} />
-              <span>Add to Collection</span>
-            </div>
-          )}
           {clone && isCollectionMode && (
             <div className="collection-mode-badge">
               <FolderPlus size={20} />
-              <span>Collection Mode</span>
+              <span>Add to Collection</span>
             </div>
           )}
           {/* {isCollection && !isExpanded && (
