@@ -390,7 +390,8 @@ function PresentationPageInner({
                 // Separate top-level artifacts from collection items
                 const { topLevel, collectionItems } = reorderedArtifacts.reduce(
                   (acc, artifact) => {
-                    const parentId = (artifact.metadata as any)?.parent_collection_id;
+                    const parentId = (artifact.metadata as any)
+                      ?.parent_collection_id;
                     if (parentId) {
                       if (!acc.collectionItems.has(parentId)) {
                         acc.collectionItems.set(parentId, []);
@@ -401,19 +402,31 @@ function PresentationPageInner({
                     }
                     return acc;
                   },
-                  { topLevel: [] as Artifact[], collectionItems: new Map<string, string[]>() }
+                  {
+                    topLevel: [] as Artifact[],
+                    collectionItems: new Map<string, string[]>(),
+                  }
                 );
-                
+
                 // Update all collections in parallel
                 await Promise.all(
-                  Array.from(collectionItems.entries()).map(([collectionId, itemIds]) => {
-                    const collection = artifacts.find(a => a.id === collectionId);
-                    return collection ? updateArtifact(collectionId, {
-                      metadata: { ...collection.metadata, collection_items: itemIds }
-                    }) : Promise.resolve();
-                  })
+                  Array.from(collectionItems.entries()).map(
+                    ([collectionId, itemIds]) => {
+                      const collection = artifacts.find(
+                        (a) => a.id === collectionId
+                      );
+                      return collection
+                        ? updateArtifact(collectionId, {
+                            metadata: {
+                              ...collection.metadata,
+                              collection_items: itemIds,
+                            },
+                          })
+                        : Promise.resolve();
+                    }
+                  )
                 );
-                
+
                 // Update top-level artifacts order
                 await reorderArtifacts(topLevel);
               } catch (error) {
@@ -424,9 +437,11 @@ function PresentationPageInner({
             onCreateCollection={async (draggedId, targetId) => {
               try {
                 // Find both artifacts
-                const draggedArtifact = artifacts.find(a => a.id === draggedId);
-                let targetArtifact = artifacts.find(a => a.id === targetId);
-                
+                const draggedArtifact = artifacts.find(
+                  (a) => a.id === draggedId
+                );
+                let targetArtifact = artifacts.find((a) => a.id === targetId);
+
                 if (!draggedArtifact || !targetArtifact) {
                   toast.error("Could not find artifacts for collection");
                   return;
@@ -435,7 +450,9 @@ function PresentationPageInner({
                 // If the target is part of a collection, redirect to the parent collection
                 const targetMetadata = targetArtifact.metadata as any;
                 if (targetMetadata?.parent_collection_id) {
-                  const parentCollection = artifacts.find(a => a.id === targetMetadata.parent_collection_id);
+                  const parentCollection = artifacts.find(
+                    (a) => a.id === targetMetadata.parent_collection_id
+                  );
                   if (parentCollection) {
                     targetArtifact = parentCollection;
                     targetId = parentCollection.id;
@@ -451,30 +468,31 @@ function PresentationPageInner({
 
                 // Get existing collection items
                 const updatedTargetMetadata = targetArtifact.metadata as any;
-                const existingItems = updatedTargetMetadata?.collection_items || [];
-                
+                const existingItems =
+                  updatedTargetMetadata?.collection_items || [];
+
                 // Add dragged item to collection
                 // NOTE: Don't add targetId itself - the collection header represents the target item
                 const updatedItems = [...existingItems, draggedId];
-                
+
                 // Update target artifact to be a collection
                 await updateArtifact(targetId, {
                   metadata: {
                     ...targetArtifact.metadata,
                     collection_items: updatedItems,
                     is_expanded: false,
-                  }
+                  },
                 });
-                
+
                 // Mark the dragged artifact as part of this collection (instead of deleting it)
                 // This keeps the artifact data available but hides it from the main carousel
                 await updateArtifact(draggedId, {
                   metadata: {
                     ...draggedArtifact.metadata,
                     parent_collection_id: targetId,
-                  }
+                  },
                 });
-                
+
                 toast.success("Items added to collection");
               } catch (error) {
                 toast.error("Failed to create collection. Please try again.");
@@ -483,18 +501,18 @@ function PresentationPageInner({
             }}
             onToggleCollection={async (collectionId) => {
               try {
-                const collection = artifacts.find(a => a.id === collectionId);
+                const collection = artifacts.find((a) => a.id === collectionId);
                 if (!collection) return;
-                
+
                 const collectionMetadata = collection.metadata as any;
                 const isExpanded = collectionMetadata?.is_expanded || false;
-                
+
                 // Toggle the expanded state
                 await updateArtifact(collectionId, {
                   metadata: {
                     ...collection.metadata,
                     is_expanded: !isExpanded,
-                  }
+                  },
                 });
               } catch (error) {
                 toast.error("Failed to toggle collection");
