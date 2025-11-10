@@ -437,7 +437,23 @@
   max-height: calc(100vh - 180px);
 }
 
-/* Animation removed - items now appear instantly when collection expands */
+/* Animate collection items only when they first expand */
+.carousel-item-wrapper.just-expanded[data-collection-child="true"]:not(
+    .collection-child-hidden
+  ) {
+  animation: slideInFromLeft 0.3s ease-out backwards;
+}
+
+@keyframes slideInFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 
 /* Smooth transition for collection badge */
 .collection-badge {

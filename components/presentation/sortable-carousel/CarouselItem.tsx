@@ -65,6 +65,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   isCollectionMode?: boolean;
   isHoveredForCollection?: boolean;
   isBeingAddedToCollection?: boolean;
+  isJustExpanded?: boolean;
   shouldHide?: boolean;
 }
 
@@ -101,6 +102,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       isCollectionMode = false,
       isHoveredForCollection = false,
       isBeingAddedToCollection = false,
+      isJustExpanded = false,
       shouldHide = false,
       ...props
     },
@@ -156,6 +158,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         ${isCollection && !isExpanded ? "is-collection" : ""}
         ${isCollection && isExpanded ? "is-collection-expanded" : ""}
         ${shouldHide ? "collection-child-hidden" : ""}
+        ${isJustExpanded ? "just-expanded" : ""}
       `}
         data-collection-child={
           (metadata as any)?.parent_collection_id ? "true" : undefined

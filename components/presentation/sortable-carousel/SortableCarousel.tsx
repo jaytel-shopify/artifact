@@ -43,7 +43,6 @@ import { useCollectionMode } from "./useCollectionMode";
 import {
   getCollectionMetadata,
   isCollectionChild,
-  type CollectionMetadata,
 } from "@/lib/collection-utils";
 import "./sortable-carousel.css";
 
@@ -169,6 +168,10 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     );
     const [items, setItems] = useState<Artifact[]>(artifacts);
     const prevPageIdRef = useRef(pageId);
+    const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
+      new Set()
+    );
+    const prevExpandedRef = useRef<Set<string>>(new Set());
 
     // Filter and reorder artifacts for display in carousel
     // When a collection is expanded, show its items right after the collection header
@@ -215,6 +218,32 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         // Only include if parent is collapsed
         return !isExpanded;
       });
+    }, [artifacts]);
+
+    // Track newly expanded collections for animation
+    useEffect(() => {
+      const currentExpanded = new Set(
+        artifacts
+          .filter((a) => {
+            const metadata = getCollectionMetadata(a);
+            return metadata.collection_items && metadata.is_expanded;
+          })
+          .map((a) => a.id)
+      );
+
+      // Find newly expanded collections
+      const newlyExpanded = Array.from(currentExpanded).filter(
+        (id) => !prevExpandedRef.current.has(id)
+      );
+
+      if (newlyExpanded.length > 0) {
+        setExpandedCollections(new Set(newlyExpanded));
+        const timer = setTimeout(() => setExpandedCollections(new Set()), 400);
+        prevExpandedRef.current = currentExpanded;
+        return () => clearTimeout(timer);
+      }
+
+      prevExpandedRef.current = currentExpanded;
     }, [artifacts]);
 
     // Sync artifacts with local state (respecting animation state)
@@ -582,70 +611,81 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             ref={containerRef}
             className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
           >
-            {items.map((artifact, index) => (
-              <SortableCarouselItem
-                id={artifact.id}
-                index={index + 1}
-                key={artifact.id}
-                layout={layout}
-                activeIndex={activeIndex}
-                contentUrl={artifact.source_url}
-                contentType={
-                  artifact.type as "image" | "video" | "url" | "titleCard"
-                }
-                width={artifact.metadata?.width as number}
-                height={artifact.metadata?.height as number}
-                name={artifact.name}
-                metadata={artifact.metadata as VideoMetadata}
-                columnWidth={columnWidth}
-                isAnyDragging={activeId !== null}
-                isSettling={settlingId === artifact.id}
-                isReadOnly={isReadOnly}
-                fitMode={isFitMode}
-                isCollectionMode={isCollectionMode}
-                isHoveredForCollection={hoveredItemId === artifact.id}
-                isBeingAddedToCollection={
-                  itemBeingAddedToCollection === artifact.id
-                }
-                allArtifacts={artifacts}
-                onToggleCollection={onToggleCollection}
-                onDelete={
-                  onDeleteArtifact
-                    ? async () => await onDeleteArtifact(artifact.id)
-                    : undefined
-                }
-                onUpdateMetadata={
-                  onUpdateArtifact
-                    ? async (updates) =>
-                        await onUpdateArtifact(artifact.id, {
-                          metadata: { ...artifact.metadata, ...updates },
-                        })
-                    : undefined
-                }
-                onUpdateTitle={
-                  onUpdateArtifact
-                    ? async (newTitle) =>
-                        await onUpdateArtifact(artifact.id, { name: newTitle })
-                    : undefined
-                }
-                onReplaceMedia={
-                  onReplaceMedia
-                    ? async (file) => await onReplaceMedia(artifact.id, file)
-                    : undefined
-                }
-                onEdit={
-                  onEditTitleCard && artifact.type === "titleCard"
-                    ? () => onEditTitleCard(artifact.id)
-                    : undefined
-                }
-                onFocus={
-                  onFocusArtifact
-                    ? () => onFocusArtifact(artifact.id)
-                    : undefined
-                }
-                isFocused={focusedArtifactId === artifact.id}
-              />
-            ))}
+            {items.map((artifact, index) => {
+              // Check if this item belongs to a newly expanded collection
+              const artifactMetadata = getCollectionMetadata(artifact);
+              const isJustExpanded = artifactMetadata.parent_collection_id
+                ? expandedCollections.has(artifactMetadata.parent_collection_id)
+                : false;
+
+              return (
+                <SortableCarouselItem
+                  id={artifact.id}
+                  index={index + 1}
+                  key={artifact.id}
+                  layout={layout}
+                  activeIndex={activeIndex}
+                  contentUrl={artifact.source_url}
+                  contentType={
+                    artifact.type as "image" | "video" | "url" | "titleCard"
+                  }
+                  width={artifact.metadata?.width as number}
+                  height={artifact.metadata?.height as number}
+                  name={artifact.name}
+                  metadata={artifact.metadata as VideoMetadata}
+                  columnWidth={columnWidth}
+                  isAnyDragging={activeId !== null}
+                  isSettling={settlingId === artifact.id}
+                  isReadOnly={isReadOnly}
+                  fitMode={isFitMode}
+                  isCollectionMode={isCollectionMode}
+                  isHoveredForCollection={hoveredItemId === artifact.id}
+                  isBeingAddedToCollection={
+                    itemBeingAddedToCollection === artifact.id
+                  }
+                  isJustExpanded={isJustExpanded}
+                  allArtifacts={artifacts}
+                  onToggleCollection={onToggleCollection}
+                  onDelete={
+                    onDeleteArtifact
+                      ? async () => await onDeleteArtifact(artifact.id)
+                      : undefined
+                  }
+                  onUpdateMetadata={
+                    onUpdateArtifact
+                      ? async (updates) =>
+                          await onUpdateArtifact(artifact.id, {
+                            metadata: { ...artifact.metadata, ...updates },
+                          })
+                      : undefined
+                  }
+                  onUpdateTitle={
+                    onUpdateArtifact
+                      ? async (newTitle) =>
+                          await onUpdateArtifact(artifact.id, {
+                            name: newTitle,
+                          })
+                      : undefined
+                  }
+                  onReplaceMedia={
+                    onReplaceMedia
+                      ? async (file) => await onReplaceMedia(artifact.id, file)
+                      : undefined
+                  }
+                  onEdit={
+                    onEditTitleCard && artifact.type === "titleCard"
+                      ? () => onEditTitleCard(artifact.id)
+                      : undefined
+                  }
+                  onFocus={
+                    onFocusArtifact
+                      ? () => onFocusArtifact(artifact.id)
+                      : undefined
+                  }
+                  isFocused={focusedArtifactId === artifact.id}
+                />
+              );
+            })}
             {/* Render hidden collection items outside sortable context to preserve state */}
             {hiddenCollectionItems.map((artifact) => (
               <HiddenCarouselItem
@@ -741,6 +781,7 @@ function SortableCarouselItem({
   isCollectionMode,
   isHoveredForCollection,
   isBeingAddedToCollection,
+  isJustExpanded,
   allArtifacts,
   onToggleCollection,
   ...props
@@ -753,6 +794,7 @@ function SortableCarouselItem({
   isCollectionMode?: boolean;
   isHoveredForCollection?: boolean;
   isBeingAddedToCollection?: boolean;
+  isJustExpanded?: boolean;
   allArtifacts?: Artifact[];
   onToggleCollection?: (collectionId: string) => Promise<void>;
 }) {
@@ -783,6 +825,7 @@ function SortableCarouselItem({
       isCollectionMode={isCollectionMode}
       isHoveredForCollection={isHoveredForCollection}
       isBeingAddedToCollection={isBeingAddedToCollection}
+      isJustExpanded={isJustExpanded}
       allArtifacts={allArtifacts}
       onToggleCollection={onToggleCollection}
       style={{
