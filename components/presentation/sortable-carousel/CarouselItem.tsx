@@ -206,37 +206,37 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
             </div>
           </div>
         )}
-        <div
-          className="carousel-item"
-          data-id={id.toString()}
-          data-content-type={type}
-          onDoubleClick={handleDoubleClick}
-          {...props}
-        >
-          {!isBeingAddedToCollection && (
-            <CarouselItemContent
-              type={type}
-              url={url}
-              alt={`Item ${index}`}
-              width={contentWidth}
-              height={contentHeight}
-              isDragging={isAnyDragging}
-              metadata={metadata}
-              fitMode={fitMode}
-            />
+        <div className="carousel-item-content-wrapper">
+          {/* Stack card div - only rendered for collections */}
+          {isCollection && !isExpanded && !active && !isSettling && (
+            <div className="collection-stack-card" />
           )}
-          {clone && isCollectionMode && (
-            <div className="collection-mode-badge">
-              <FolderPlus size={20} />
-              <span>Add to Collection</span>
-            </div>
-          )}
-          {/* {isCollection && !isExpanded && (
-            <div className="collection-badge">
-              <div className="collection-badge-count">{collectionCount}</div>
-              <div className="collection-badge-label">items</div>
-            </div>
-          )} */}
+          <div
+            className="carousel-item"
+            data-id={id.toString()}
+            data-content-type={type}
+            onDoubleClick={handleDoubleClick}
+            {...props}
+          >
+            {!isBeingAddedToCollection && (
+              <CarouselItemContent
+                type={type}
+                url={url}
+                alt={`Item ${index}`}
+                width={contentWidth}
+                height={contentHeight}
+                isDragging={isAnyDragging}
+                metadata={metadata}
+                fitMode={fitMode}
+              />
+            )}
+            {clone && isCollectionMode && (
+              <div className="collection-mode-badge">
+                <FolderPlus size={20} />
+                <span>Add to Collection</span>
+              </div>
+            )}
+          </div>
         </div>
       </li>
     );

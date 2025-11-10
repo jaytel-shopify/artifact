@@ -74,8 +74,9 @@
   transition: none !important;
 }
 
-/* Hide badge when dragging */
-.carousel-item-wrapper.active .collection-badge {
+/* Hide badge when dragging or settling */
+.carousel-item-wrapper.active .collection-badge,
+.carousel-item-wrapper.settling .collection-badge {
   opacity: 0 !important;
   pointer-events: none;
   transition: none !important;
@@ -87,7 +88,14 @@
   box-shadow: none !important;
 }
 
-.carousel-item-wrapper.settling .carousel-item {
+/* Hide grey box and shadow during settling for collections */
+.carousel-item-wrapper.settling.is-collection .carousel-item {
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Only show grey box during settling for non-collection items */
+.carousel-item-wrapper.settling:not(.is-collection) .carousel-item {
   background-color: rgba(60, 60, 60, 0.2);
 }
 
@@ -110,14 +118,6 @@
   display: block;
   transition: none !important;
   animation: none !important;
-}
-
-/* Show stack shadow when dragging a collection */
-.carousel-item-wrapper.clone.is-collection .carousel-item {
-  box-shadow:
-    0 0 0 1px rgba(63, 63, 68, 0.05),
-    0 1px 6px 0 rgba(34, 33, 81, 0.3),
-    0 16px 0px -7px #272727 !important;
 }
 
 .carousel-item-wrapper:hover .carousel-item-remove {
@@ -357,12 +357,38 @@
    Collection Stack Indicators
    ========================================================================== */
 
-/* Box shadow to indicate stacked collection */
+/* Content wrapper - transparent by default (acts as if it doesn't exist) */
+.carousel-item-content-wrapper {
+  display: contents; /* Makes wrapper transparent to layout */
+}
+
+/* For collections, wrapper becomes a real container with padding for stack card */
+.carousel-item-wrapper.is-collection .carousel-item-content-wrapper {
+  display: block;
+  position: relative;
+  padding-bottom: 8px; /* Creates space for stack card to peek out */
+}
+
+/* Stack card - positioned to peek behind carousel-item, inset for depth */
+.collection-stack-card {
+  position: absolute;
+  top: 8px; /* Offset down to create depth effect */
+  left: 3%; /* Inset from left to appear "back in space" */
+  right: 3%; /* Inset from right to appear "back in space" */
+  bottom: 0;
+  background-color: #333;
+  border-radius: 3px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Carousel item in collections */
 .carousel-item-wrapper.is-collection .carousel-item {
   box-shadow:
     0 0 0 1px rgba(63, 63, 68, 0.05),
-    0 1px 3px 0 rgba(34, 33, 81, 0.15),
-    0 16px 0px -7px #272727 !important;
+    0 1px 3px 0 rgba(34, 33, 81, 0.15);
+  position: relative;
+  z-index: 1;
 }
 
 /* Collection badge showing item count */
