@@ -297,14 +297,22 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       }
 
       // Check if order changed OR properties changed
-      const orderChanged = visibleArtifacts.some((artifact, idx) => {
-        const prevVisible = prevArtifactsRef.current.filter((a) => {
+      // Only check top-level order changes (not collection children reordering)
+      const prevTopLevelOrder = prevArtifactsRef.current
+        .filter((a) => {
           const metadata = a.metadata as { parent_collection_id?: string };
           return !metadata?.parent_collection_id;
-        });
-        const prevArtifact = prevVisible[idx];
-        return !prevArtifact || prevArtifact.id !== artifact.id;
-      });
+        })
+        .map((a) => a.id)
+        .join(",");
+      const currentTopLevelOrder = artifacts
+        .filter((a) => {
+          const metadata = a.metadata as { parent_collection_id?: string };
+          return !metadata?.parent_collection_id;
+        })
+        .map((a) => a.id)
+        .join(",");
+      const orderChanged = prevTopLevelOrder !== currentTopLevelOrder;
 
       const itemsChanged = visibleArtifacts.some((newArtifact) => {
         const prevArtifact = prevArtifactsRef.current.find(
@@ -321,24 +329,8 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       });
 
       if (orderChanged || itemsChanged) {
-        // If order changed, use the new order from visibleArtifacts
-        // If only properties changed, preserve current order
-        if (orderChanged) {
-          setItems(visibleArtifacts);
-        } else {
-          // Update items while preserving order
-          // Use functional update to access current items without dependency
-          setItems((currentItems) => {
-            const orderMap = new Map(
-              currentItems.map((item, idx) => [item.id, idx])
-            );
-            return visibleArtifacts.slice().sort((a, b) => {
-              const aIdx = orderMap.get(a.id) ?? 0;
-              const bIdx = orderMap.get(b.id) ?? 0;
-              return aIdx - bIdx;
-            });
-          });
-        }
+        // Top-level order changed or properties changed - update items
+        setItems(visibleArtifacts);
       }
 
       prevArtifactsRef.current = artifacts;
