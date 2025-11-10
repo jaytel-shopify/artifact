@@ -383,6 +383,148 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       handleCollectionDragStart(); // Resets collection state
     }, [handleCollectionDragStart]);
 
+    // Helper: Handle adding item to collection (collection mode)
+    const handleAddToCollection = useCallback(
+      async (overId: UniqueIdentifier) => {
+        setIsCreatingCollection(true);
+        setItemBeingAddedToCollection(activeId);
+        setActiveId(null);
+
+        // Wait for the drop animation to complete before updating data
+        setTimeout(async () => {
+          await handleCollectionDragEnd(overId);
+          setIsCreatingCollection(false);
+          // Clear after a brief delay to ensure DB update has propagated
+          setTimeout(() => {
+            setItemBeingAddedToCollection(null);
+          }, 100);
+        }, 300); // Match collectionDropAnimation duration
+      },
+      [activeId, handleCollectionDragEnd]
+    );
+
+    // Helper: Calculate top-level index after removing from collection
+    const calculateTopLevelIndex = useCallback(
+      (reorderedItems: Artifact[], targetIndex: number) => {
+        let topLevelIndex = 0;
+        for (let i = 0; i < Math.min(targetIndex, reorderedItems.length); i++) {
+          const itemMetadata = reorderedItems[i].metadata as {
+            parent_collection_id?: string;
+          };
+          // Only count top-level items (not collection children)
+          if (
+            !itemMetadata?.parent_collection_id ||
+            reorderedItems[i].id === activeId?.toString()
+          ) {
+            topLevelIndex++;
+          }
+        }
+        return topLevelIndex;
+      },
+      [activeId]
+    );
+
+    // Helper: Handle removing item from collection and placing it elsewhere
+    const handleRemoveFromCollectionDrag = useCallback(
+      (
+        parentCollectionId: string,
+        overIndex: number,
+        activeIndex: number
+      ): boolean => {
+        // Find the collection header in the visible items
+        const collectionHeaderIndex = items.findIndex(
+          (item) => item.id === parentCollectionId
+        );
+
+        if (collectionHeaderIndex === -1) return false;
+
+        const collectionHeader = items[collectionHeaderIndex];
+        const collectionMetadata = collectionHeader.metadata as {
+          collection_items?: string[];
+          is_expanded?: boolean;
+        };
+
+        // Only check bounds if collection is expanded
+        if (!collectionMetadata?.is_expanded) return false;
+
+        const collectionItems = collectionMetadata.collection_items || [];
+        // Collection bounds in the visible array
+        const collectionStartIndex = collectionHeaderIndex + 1;
+        const collectionEndIndex =
+          collectionHeaderIndex + collectionItems.length;
+
+        // Check if drop position is outside collection bounds
+        const isOutsideBounds =
+          overIndex < collectionStartIndex || overIndex > collectionEndIndex;
+
+        if (isOutsideBounds) {
+          // Reset collection mode state to clear any hover indicators
+          resetCollectionState();
+
+          setIsSettling(true);
+          setSettlingId(activeId);
+
+          // Update local state immediately for smooth animation
+          const reorderedItems = arrayMove(items, activeIndex, overIndex);
+          setItems(reorderedItems);
+
+          // Calculate the target top-level index
+          const topLevelIndex = calculateTopLevelIndex(
+            reorderedItems,
+            overIndex
+          );
+
+          // Delay updating backend until after animation
+          if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
+          settleTimeoutRef.current = setTimeout(async () => {
+            await onRemoveFromCollection?.(
+              activeId!.toString(),
+              parentCollectionId,
+              topLevelIndex
+            );
+            setIsSettling(false);
+            setSettlingId(null);
+          }, 250);
+
+          setActiveId(null);
+          return true; // Handled
+        }
+
+        return false; // Not handled
+      },
+      [
+        items,
+        activeId,
+        resetCollectionState,
+        calculateTopLevelIndex,
+        onRemoveFromCollection,
+      ]
+    );
+
+    // Helper: Handle normal reordering (not collection-related)
+    const handleNormalReorder = useCallback(
+      (overIndex: number, activeIndex: number) => {
+        if (activeIndex === overIndex || activeIndex === -1) return;
+
+        // Set settling to block parent updates during animation
+        setIsSettling(true);
+        setSettlingId(activeId);
+
+        // Update local state immediately for smooth animation
+        const reorderedItems = arrayMove(items, activeIndex, overIndex);
+        setItems(reorderedItems);
+
+        // Delay notifying parent until AFTER animation completes
+        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
+        settleTimeoutRef.current = setTimeout(() => {
+          onReorder?.(reorderedItems);
+          setIsSettling(false);
+          setSettlingId(null);
+        }, 250); // Match dnd-kit's default animation duration
+      },
+      [activeId, items, onReorder]
+    );
+
     const handleDragEnd = useCallback(
       async ({ over }: DragEndEvent) => {
         if (!over) {
@@ -393,31 +535,16 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         const overIndex = itemIds.indexOf(over.id.toString());
 
-        // Check if we're in collection mode - if so, try to create collection
+        // 1. Handle collection mode (adding to collection)
         if (isCollectionMode && over.id !== activeId) {
-          setIsCreatingCollection(true);
-
-          // Immediately hide the item being added to prevent it showing in original position
-          setItemBeingAddedToCollection(activeId);
-          setActiveId(null);
-
-          // Wait for the drop animation to complete before updating data
-          setTimeout(async () => {
-            await handleCollectionDragEnd(over.id);
-            setIsCreatingCollection(false);
-            // Clear after a brief delay to ensure DB update has propagated
-            setTimeout(() => {
-              setItemBeingAddedToCollection(null);
-            }, 100);
-          }, 300); // Match collectionDropAnimation duration
-
+          await handleAddToCollection(over.id);
           return;
         } else {
-          // Not in collection mode - just reset state synchronously
+          // Not in collection mode - reset state
           handleCollectionDragEnd(over.id);
         }
 
-        // Check if the active item is from a collection and being moved outside bounds
+        // 2. Handle removing from collection (dragging outside bounds)
         if (activeId && activeIndex !== -1 && overIndex !== -1) {
           const activeArtifact = items[activeIndex];
           const activeMetadata = activeArtifact?.metadata as {
@@ -426,110 +553,17 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           const parentCollectionId = activeMetadata?.parent_collection_id;
 
           if (parentCollectionId && onRemoveFromCollection) {
-            // Find the collection header in the visible items
-            const collectionHeaderIndex = items.findIndex(
-              (item) => item.id === parentCollectionId
+            const handled = handleRemoveFromCollectionDrag(
+              parentCollectionId,
+              overIndex,
+              activeIndex
             );
-
-            if (collectionHeaderIndex !== -1) {
-              const collectionHeader = items[collectionHeaderIndex];
-              const collectionMetadata = collectionHeader.metadata as {
-                collection_items?: string[];
-                is_expanded?: boolean;
-              };
-
-              // Only check bounds if collection is expanded
-              if (collectionMetadata?.is_expanded) {
-                const collectionItems =
-                  collectionMetadata.collection_items || [];
-                // Collection bounds in the visible array:
-                // Start: collection header index + 1
-                // End: collection header index + collection items length
-                const collectionStartIndex = collectionHeaderIndex + 1;
-                const collectionEndIndex =
-                  collectionHeaderIndex + collectionItems.length;
-
-                // Check if drop position is outside collection bounds
-                const isOutsideBounds =
-                  overIndex < collectionStartIndex ||
-                  overIndex > collectionEndIndex;
-
-                if (isOutsideBounds) {
-                  // Item is being moved outside the collection
-                  // Reset collection mode state immediately to clear any hover indicators
-                  resetCollectionState();
-
-                  setIsSettling(true);
-                  setSettlingId(activeId);
-
-                  // Update local state immediately for smooth animation
-                  const reorderedItems = arrayMove(
-                    items,
-                    activeIndex,
-                    overIndex
-                  );
-                  setItems(reorderedItems);
-
-                  // Calculate the target top-level index
-                  // Count how many top-level items (non-collection children) are before overIndex
-                  let topLevelIndex = 0;
-                  for (
-                    let i = 0;
-                    i < Math.min(overIndex, reorderedItems.length);
-                    i++
-                  ) {
-                    const itemMetadata = reorderedItems[i].metadata as {
-                      parent_collection_id?: string;
-                    };
-                    // Only count top-level items (not collection children)
-                    if (
-                      !itemMetadata?.parent_collection_id ||
-                      reorderedItems[i].id === activeId.toString()
-                    ) {
-                      topLevelIndex++;
-                    }
-                  }
-
-                  // Delay updating backend until after animation
-                  if (settleTimeoutRef.current)
-                    clearTimeout(settleTimeoutRef.current);
-                  settleTimeoutRef.current = setTimeout(async () => {
-                    await onRemoveFromCollection(
-                      activeId.toString(),
-                      parentCollectionId,
-                      topLevelIndex
-                    );
-                    setIsSettling(false);
-                    setSettlingId(null);
-                  }, 250);
-
-                  setActiveId(null);
-                  return;
-                }
-              }
-            }
+            if (handled) return;
           }
         }
 
-        // Reorder mode - normal reordering (within collection or at top level)
-        if (activeIndex !== overIndex && activeIndex !== -1) {
-          // Set settling to block parent updates during animation
-          setIsSettling(true);
-          setSettlingId(activeId); // Track which item is settling
-
-          // Update local state immediately for smooth animation
-          const reorderedItems = arrayMove(items, activeIndex, overIndex);
-          setItems(reorderedItems);
-
-          // Delay notifying parent until AFTER animation completes
-          if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-          settleTimeoutRef.current = setTimeout(() => {
-            onReorder?.(reorderedItems);
-            setIsSettling(false);
-            setSettlingId(null);
-          }, 250); // Match dnd-kit's default animation duration
-        }
-
+        // 3. Handle normal reordering
+        handleNormalReorder(overIndex, activeIndex);
         setActiveId(null);
       },
       [
@@ -537,11 +571,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         activeIndex,
         activeId,
         items,
-        onReorder,
         isCollectionMode,
         handleCollectionDragEnd,
         onRemoveFromCollection,
-        resetCollectionState,
+        handleAddToCollection,
+        handleRemoveFromCollectionDrag,
+        handleNormalReorder,
       ]
     );
 

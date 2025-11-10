@@ -446,8 +446,7 @@
 
 /* Adjust collection wrapper to accommodate stack layers */
 .carousel-item-wrapper.is-collection {
-  margin-right: 16px; /* Increased from 8px to accommodate larger offset */
-  margin-bottom: 16px; /* Increased from 8px to accommodate larger offset */
+  margin-bottom: 16px;
 }
 
 /* Make collections clickable (double-click to expand/collapse) */
