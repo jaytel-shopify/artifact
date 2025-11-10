@@ -71,12 +71,33 @@ const measuring: MeasuringConfiguration = {
   },
 };
 
-const dropAnimation: DropAnimation = {
+const defaultDropAnimation: DropAnimation = {
   keyframes({ transform }) {
     return [
       { transform: CSS.Transform.toString(transform.initial) },
       {
         transform: CSS.Transform.toString(transform.final),
+      },
+    ];
+  },
+  sideEffects: defaultDropAnimationSideEffects({
+    className: {
+      active: "carousel-item-active",
+    },
+  }),
+};
+
+const collectionDropAnimation: DropAnimation = {
+  duration: 300,
+  keyframes({ transform }) {
+    return [
+      {
+        transform: CSS.Transform.toString(transform.initial),
+        opacity: "1",
+      },
+      {
+        transform: `${CSS.Transform.toString(transform.initial)} scale(0.8)`,
+        opacity: "0",
       },
     ];
   },
@@ -111,6 +132,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
     const [isSettling, setIsSettling] = useState(false);
     const [settlingId, setSettlingId] = useState<UniqueIdentifier | null>(null);
+    const [isCreatingCollection, setIsCreatingCollection] = useState(false);
     const containerRef = useRef<HTMLUListElement>(null);
 
     // Collection mode logic
@@ -322,11 +344,16 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         // Check if we're in collection mode - if so, try to create collection
         if (isCollectionMode && over.id !== activeId) {
-          const collectionCreated = await handleCollectionDragEnd(over.id);
-          if (collectionCreated) {
-            setActiveId(null);
-            return;
-          }
+          setIsCreatingCollection(true);
+
+          // Wait for the drop animation to complete before updating data
+          setTimeout(async () => {
+            await handleCollectionDragEnd(over.id);
+            setIsCreatingCollection(false);
+          }, 300); // Match collectionDropAnimation duration
+
+          setActiveId(null);
+          return;
         } else {
           // Not in collection mode - just reset state synchronously
           handleCollectionDragEnd(over.id);
@@ -453,7 +480,13 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             ))}
           </ul>
         </SortableContext>
-        <DragOverlay dropAnimation={dropAnimation}>
+        <DragOverlay
+          dropAnimation={
+            isCreatingCollection
+              ? collectionDropAnimation
+              : defaultDropAnimation
+          }
+        >
           {activeId != null ? (
             <CarouselItemOverlay
               id={activeId}

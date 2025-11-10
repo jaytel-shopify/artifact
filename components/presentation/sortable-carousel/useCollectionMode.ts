@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import type { DragMoveEvent } from "@dnd-kit/core";
 
@@ -12,7 +12,7 @@ interface UseCollectionModeOptions {
 export function useCollectionMode({
   activeId,
   onCreateCollection,
-  stillnessDelayMs = 1500,
+  stillnessDelayMs = 800,
   movementThresholdPx = 5,
 }: UseCollectionModeOptions) {
   const [isCollectionMode, setIsCollectionMode] = useState(false);
@@ -21,16 +21,25 @@ export function useCollectionMode({
   );
   const lastMousePosRef = useRef<{ x: number; y: number } | null>(null);
   const stillnessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentOverIdRef = useRef<UniqueIdentifier | null>(null);
 
   const resetCollectionState = useCallback(() => {
     setIsCollectionMode(false);
     setHoveredItemId(null);
     lastMousePosRef.current = null;
+    currentOverIdRef.current = null;
     if (stillnessTimerRef.current) {
       clearTimeout(stillnessTimerRef.current);
       stillnessTimerRef.current = null;
     }
   }, []);
+
+  // When collection mode activates, immediately show hover indicator for current item
+  useEffect(() => {
+    if (isCollectionMode && currentOverIdRef.current && currentOverIdRef.current !== activeId) {
+      setHoveredItemId(currentOverIdRef.current);
+    }
+  }, [isCollectionMode, activeId]);
 
   const handleCollectionDragStart = useCallback(() => {
     resetCollectionState();
@@ -64,6 +73,9 @@ export function useCollectionMode({
       }
 
       lastMousePosRef.current = currentPos;
+
+      // Track current over item
+      currentOverIdRef.current = event.over?.id || null;
 
       // Update hovered item for collection mode
       if (isCollectionMode && event.over && event.over.id !== activeId) {

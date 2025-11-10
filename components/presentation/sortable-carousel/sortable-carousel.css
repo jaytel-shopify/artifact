@@ -72,13 +72,16 @@
 .carousel-item-wrapper.settling .carousel-item .carousel-item-content,
 .carousel-item-wrapper.settling .carousel-item-header {
   opacity: 0;
+  transition: none !important;
 }
 
 /* Hide stack layers and badge when dragging */
 .carousel-item-wrapper.active .collection-stack-indicator,
 .carousel-item-wrapper.active .collection-badge {
-  opacity: 0;
+  opacity: 0 !important;
   pointer-events: none;
+  transition: none !important;
+  animation: none !important;
 }
 
 .carousel-item-wrapper.settling .carousel-item {
@@ -95,14 +98,16 @@
 /* Ensure stack layers are visible when dragging a collection */
 .carousel-item-wrapper.clone.is-collection {
   position: relative;
-  margin-right: 16px;
-  margin-bottom: 16px;
+  margin-right: 0;
+  margin-bottom: 15px;
 }
 
 .carousel-item-wrapper.clone .collection-stack-indicator,
 .carousel-item-wrapper.clone .collection-badge {
-  opacity: 1;
+  opacity: 1 !important;
   display: block;
+  transition: none !important;
+  animation: none !important;
 }
 
 .carousel-item-wrapper:hover .carousel-item-remove {
@@ -362,11 +367,20 @@
 
 /* Highlight effect for hovered items in collection mode */
 .carousel-item-wrapper.hovered-for-collection .carousel-item {
-  box-shadow:
-    0 0 0 3px rgba(59, 130, 246, 0.6),
-    0 8px 24px rgba(59, 130, 246, 0.3);
-  transform: scale(1.02);
-  transition: all 0.2s ease;
+  position: relative;
+}
+
+.carousel-item-wrapper.hovered-for-collection .carousel-item::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 3px solid rgba(255, 255, 255, 1);
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 999;
 }
 
 /* ==========================================================================
@@ -544,3 +558,4 @@
 .carousel-item-wrapper[data-collection-child="true"]:nth-child(5) {
   animation-delay: 0.2s;
 }
+

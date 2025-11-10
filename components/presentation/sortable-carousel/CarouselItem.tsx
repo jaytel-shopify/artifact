@@ -114,25 +114,15 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isUrl = type === "url";
 
     // Check if this is a collection
-    const collectionItems = (metadata as any)?.collection_items as string[] | undefined;
+    const collectionItems = (metadata as any)?.collection_items as
+      | string[]
+      | undefined;
     const isCollection = collectionItems && collectionItems.length > 0;
     const isExpanded = (metadata as any)?.is_expanded || false;
     // Collection count includes the header itself + items in collection_items
-    const collectionCount = isCollection ? (collectionItems?.length || 0) + 1 : 0;
-
-    // Get the actual artifacts in the collection for rendering
-    // Include the current artifact (header) at the beginning for proper stacking
-    const collectionArtifacts = isCollection && collectionItems
-      ? [
-          // Find the current artifact to add as the first item
-          allArtifacts.find((a) => a.id === id.toString()),
-          // Then add the collection items
-          ...collectionItems
-            .map(itemId => allArtifacts.find((a) => a.id === itemId))
-            .filter((a): a is Artifact => a !== undefined)
-        ].filter((a): a is Artifact => a !== undefined)
-        .slice(0, 3) // Show max 3 items in stack preview
-      : [];
+    const collectionCount = isCollection
+      ? (collectionItems?.length || 0) + 1
+      : 0;
 
     // Handle double-click to expand/collapse collection
     const handleDoubleClick = (e: React.MouseEvent) => {
@@ -162,7 +152,9 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         ${isCollection && !isExpanded ? "is-collection" : ""}
         ${isCollection && isExpanded ? "is-collection-expanded" : ""}
       `}
-        data-collection-child={(metadata as any)?.parent_collection_id ? "true" : undefined}
+        data-collection-child={
+          (metadata as any)?.parent_collection_id ? "true" : undefined
+        }
         style={{
           ...style,
           aspectRatio:
@@ -235,43 +227,25 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
               <span>Collection Mode</span>
             </div>
           )}
-          {isCollection && !isExpanded && (
+          {/* {isCollection && !isExpanded && (
             <div className="collection-badge">
               <div className="collection-badge-count">{collectionCount}</div>
               <div className="collection-badge-label">items</div>
             </div>
-          )}
+          )} */}
         </div>
-        {isCollection && !isExpanded && collectionArtifacts.length > 0 && (
+        {isCollection && !isExpanded && (
           <div className="collection-stack-indicator">
-            {collectionArtifacts.slice(1).reverse().map((artifact, idx: number) => {
-              const stackIndex = collectionArtifacts.length - idx - 1;
-              const offset = stackIndex * 8; // Increased from 4 to 8px for better visibility
-              const scale = 1 - (stackIndex * 0.02);
-              
-              // Use thumbnail for videos, source_url for images
-              const videoMetadata = artifact.metadata as { thumbnail_url?: string } | undefined;
-              const imageUrl = artifact.type === 'video' 
-                ? (videoMetadata?.thumbnail_url || artifact.source_url)
-                : artifact.source_url;
-              
-              const hasImage = artifact.type === 'image' || artifact.type === 'video';
-              
-              return (
-                <div
-                  key={artifact.id}
-                  className={`stack-layer stack-layer-${stackIndex}`}
-                  style={{
-                    transform: `translate(${offset}px, ${offset}px) scale(${scale})`,
-                    backgroundImage: hasImage ? `url(${imageUrl})` : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundColor: hasImage ? 'transparent' : 'rgba(60, 60, 60, 0.5)',
-                    opacity: 1 - (stackIndex * 0.15),
-                  }}
-                />
-              );
-            })}
+            <div
+              className="stack-layer"
+              style={{
+                bottom: "-10px",
+                height: "50px",
+                transform: "scale(0.97 )",
+                transformOrigin: "bottom center",
+                backgroundColor: "rgba(60, 60, 60, 1)",
+              }}
+            />
           </div>
         )}
       </li>
