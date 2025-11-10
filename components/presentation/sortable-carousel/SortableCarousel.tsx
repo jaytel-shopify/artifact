@@ -147,6 +147,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     } = useCollectionMode({
       activeId,
       onCreateCollection,
+      artifacts,
     });
 
     // Expose the containerRef to parent via forwardedRef

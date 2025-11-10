@@ -397,16 +397,33 @@ function PresentationPageInner({
               try {
                 // Find both artifacts
                 const draggedArtifact = artifacts.find(a => a.id === draggedId);
-                const targetArtifact = artifacts.find(a => a.id === targetId);
+                let targetArtifact = artifacts.find(a => a.id === targetId);
                 
                 if (!draggedArtifact || !targetArtifact) {
                   toast.error("Could not find artifacts for collection");
                   return;
                 }
 
-                // Check if target is already a collection
+                // If the target is part of a collection, redirect to the parent collection
                 const targetMetadata = targetArtifact.metadata as any;
-                const existingItems = targetMetadata?.collection_items || [];
+                if (targetMetadata?.parent_collection_id) {
+                  const parentCollection = artifacts.find(a => a.id === targetMetadata.parent_collection_id);
+                  if (parentCollection) {
+                    targetArtifact = parentCollection;
+                    targetId = parentCollection.id;
+                  }
+                }
+
+                // Check if dragged item is already in this collection
+                const draggedMetadata = draggedArtifact.metadata as any;
+                if (draggedMetadata?.parent_collection_id === targetId) {
+                  toast.error("Item is already in this collection");
+                  return;
+                }
+
+                // Get existing collection items
+                const updatedTargetMetadata = targetArtifact.metadata as any;
+                const existingItems = updatedTargetMetadata?.collection_items || [];
                 
                 // Add dragged item to collection
                 // NOTE: Don't add targetId itself - the collection header represents the target item
