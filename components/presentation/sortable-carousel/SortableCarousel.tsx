@@ -52,6 +52,11 @@ interface Props {
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
+  onRemoveFromCollection?: (
+    itemId: string,
+    collectionId: string,
+    newTopLevelIndex: number
+  ) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
     updates: { name?: string; metadata?: Record<string, unknown> }
@@ -118,6 +123,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       onReorder,
       onCreateCollection,
       onToggleCollection,
+      onRemoveFromCollection,
       onUpdateArtifact,
       onDeleteArtifact,
       onReplaceMedia,
@@ -144,6 +150,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       handleCollectionDragStart,
       handleCollectionDragMove,
       handleCollectionDragEnd,
+      resetCollectionState,
     } = useCollectionMode({
       activeId,
       onCreateCollection,
@@ -410,7 +417,101 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           handleCollectionDragEnd(over.id);
         }
 
-        // Reorder mode - normal reordering
+        // Check if the active item is from a collection and being moved outside bounds
+        if (activeId && activeIndex !== -1 && overIndex !== -1) {
+          const activeArtifact = items[activeIndex];
+          const activeMetadata = activeArtifact?.metadata as {
+            parent_collection_id?: string;
+          };
+          const parentCollectionId = activeMetadata?.parent_collection_id;
+
+          if (parentCollectionId && onRemoveFromCollection) {
+            // Find the collection header in the visible items
+            const collectionHeaderIndex = items.findIndex(
+              (item) => item.id === parentCollectionId
+            );
+
+            if (collectionHeaderIndex !== -1) {
+              const collectionHeader = items[collectionHeaderIndex];
+              const collectionMetadata = collectionHeader.metadata as {
+                collection_items?: string[];
+                is_expanded?: boolean;
+              };
+
+              // Only check bounds if collection is expanded
+              if (collectionMetadata?.is_expanded) {
+                const collectionItems =
+                  collectionMetadata.collection_items || [];
+                // Collection bounds in the visible array:
+                // Start: collection header index + 1
+                // End: collection header index + collection items length
+                const collectionStartIndex = collectionHeaderIndex + 1;
+                const collectionEndIndex =
+                  collectionHeaderIndex + collectionItems.length;
+
+                // Check if drop position is outside collection bounds
+                const isOutsideBounds =
+                  overIndex < collectionStartIndex ||
+                  overIndex > collectionEndIndex;
+
+                if (isOutsideBounds) {
+                  // Item is being moved outside the collection
+                  // Reset collection mode state immediately to clear any hover indicators
+                  resetCollectionState();
+
+                  setIsSettling(true);
+                  setSettlingId(activeId);
+
+                  // Update local state immediately for smooth animation
+                  const reorderedItems = arrayMove(
+                    items,
+                    activeIndex,
+                    overIndex
+                  );
+                  setItems(reorderedItems);
+
+                  // Calculate the target top-level index
+                  // Count how many top-level items (non-collection children) are before overIndex
+                  let topLevelIndex = 0;
+                  for (
+                    let i = 0;
+                    i < Math.min(overIndex, reorderedItems.length);
+                    i++
+                  ) {
+                    const itemMetadata = reorderedItems[i].metadata as {
+                      parent_collection_id?: string;
+                    };
+                    // Only count top-level items (not collection children)
+                    if (
+                      !itemMetadata?.parent_collection_id ||
+                      reorderedItems[i].id === activeId.toString()
+                    ) {
+                      topLevelIndex++;
+                    }
+                  }
+
+                  // Delay updating backend until after animation
+                  if (settleTimeoutRef.current)
+                    clearTimeout(settleTimeoutRef.current);
+                  settleTimeoutRef.current = setTimeout(async () => {
+                    await onRemoveFromCollection(
+                      activeId.toString(),
+                      parentCollectionId,
+                      topLevelIndex
+                    );
+                    setIsSettling(false);
+                    setSettlingId(null);
+                  }, 250);
+
+                  setActiveId(null);
+                  return;
+                }
+              }
+            }
+          }
+        }
+
+        // Reorder mode - normal reordering (within collection or at top level)
         if (activeIndex !== overIndex && activeIndex !== -1) {
           // Set settling to block parent updates during animation
           setIsSettling(true);
@@ -439,6 +540,8 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         onReorder,
         isCollectionMode,
         handleCollectionDragEnd,
+        onRemoveFromCollection,
+        resetCollectionState,
       ]
     );
 

@@ -10,7 +10,7 @@ import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
-import type { Project } from "@/types";
+import type { Project, Artifact } from "@/types";
 import { getProjectByShareToken } from "@/lib/quick-db";
 import { useProjectPermissions } from "@/hooks/useProjectPermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -517,6 +517,71 @@ function PresentationPageInner({
               } catch (error) {
                 toast.error("Failed to toggle collection");
                 console.error("Failed to toggle collection:", error);
+              }
+            }}
+            onRemoveFromCollection={async (
+              itemId,
+              collectionId,
+              newTopLevelIndex
+            ) => {
+              try {
+                // Find the collection and item
+                const collection = artifacts.find((a) => a.id === collectionId);
+                const item = artifacts.find((a) => a.id === itemId);
+
+                if (!collection || !item) {
+                  toast.error("Could not find collection or item");
+                  return;
+                }
+
+                // Remove item from collection's collection_items array
+                const collectionMetadata = collection.metadata as any;
+                const collectionItems =
+                  collectionMetadata?.collection_items || [];
+                const updatedItems = collectionItems.filter(
+                  (id: string) => id !== itemId
+                );
+
+                // Update collection
+                await updateArtifact(collectionId, {
+                  metadata: {
+                    ...collection.metadata,
+                    collection_items: updatedItems,
+                  },
+                });
+
+                // Remove parent_collection_id from item
+                await updateArtifact(itemId, {
+                  metadata: {
+                    ...item.metadata,
+                    parent_collection_id: undefined,
+                  },
+                });
+
+                // Reorder top-level artifacts to place the item at the correct position
+                const topLevelArtifacts = artifacts.filter(
+                  (a) => !(a.metadata as any)?.parent_collection_id
+                );
+
+                // Remove the item if it's already in the list (it shouldn't be since it was in a collection)
+                const withoutItem = topLevelArtifacts.filter(
+                  (a) => a.id !== itemId
+                );
+
+                // Insert the item at the new index
+                const reorderedTopLevel = [
+                  ...withoutItem.slice(0, newTopLevelIndex),
+                  item,
+                  ...withoutItem.slice(newTopLevelIndex),
+                ];
+
+                // Update the order
+                await reorderArtifacts(reorderedTopLevel);
+
+                toast.success("Item removed from collection");
+              } catch (error) {
+                toast.error("Failed to remove item from collection");
+                console.error("Failed to remove item from collection:", error);
               }
             }}
             onUpdateArtifact={async (artifactId, updates) => {
