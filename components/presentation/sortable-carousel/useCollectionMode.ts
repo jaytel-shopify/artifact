@@ -1,11 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import type { DragMoveEvent } from "@dnd-kit/core";
-
-interface Artifact {
-  id: string;
-  metadata?: Record<string, unknown>;
-}
+import type { Artifact } from "@/types";
+import {
+  getCollectionMetadata,
+  getCollectionArtifacts,
+} from "@/lib/collection-utils";
 
 interface UseCollectionModeOptions {
   activeId: UniqueIdentifier | null;
@@ -59,10 +59,20 @@ export function useCollectionMode({
 
       if (!draggedArtifact || !targetArtifact) return true; // Allow if not found (fallback)
 
-      const draggedMetadata = draggedArtifact.metadata as Record<
-        string,
-        unknown
-      >;
+      // Check if the dragged item is part of a collection with multiple items
+      // If so, we're dragging a whole collection and shouldn't enter collection mode
+      const draggedMetadata = getCollectionMetadata(draggedArtifact);
+      if (draggedMetadata.collection_id) {
+        const collectionItems = getCollectionArtifacts(
+          draggedMetadata.collection_id,
+          artifacts
+        );
+        // If there are multiple items with this collection_id, we're dragging a collection
+        if (collectionItems.length > 1) {
+          return false; // Don't enter collection mode when dragging a collection
+        }
+      }
+
       const targetMetadata = targetArtifact.metadata as Record<string, unknown>;
 
       // If both items are in the same collection, don't enter collection mode
