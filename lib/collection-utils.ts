@@ -69,6 +69,50 @@ export function getAllCollectionIds(artifacts: Artifact[]): string[] {
 }
 
 /**
+ * Check if removing an artifact from a collection would leave only one item,
+ * and if so, return the cleanup metadata for that remaining item
+ *
+ * @param artifactToRemove - The artifact being removed
+ * @param allArtifacts - All artifacts in the page
+ * @returns Null if no cleanup needed, or { artifactId, metadata } for the remaining item
+ */
+export function getCollectionCleanupIfNeeded(
+  artifactToRemove: Artifact,
+  allArtifacts: Artifact[]
+): { artifactId: string; metadata: Record<string, unknown> } | null {
+  const metadata = getCollectionMetadata(artifactToRemove);
+
+  // Only cleanup if the item being removed is in a collection
+  if (!metadata.collection_id) return null;
+
+  const collectionArtifacts = getCollectionArtifacts(
+    metadata.collection_id,
+    allArtifacts
+  );
+
+  // If collection has exactly 2 items, the remaining one needs cleanup
+  if (collectionArtifacts.length === 2) {
+    const remainingArtifact = collectionArtifacts.find(
+      (a) => a.id !== artifactToRemove.id
+    );
+
+    if (remainingArtifact) {
+      // Remove collection metadata from the remaining item
+      const cleanedMetadata = { ...remainingArtifact.metadata };
+      delete cleanedMetadata.collection_id;
+      delete cleanedMetadata.is_expanded;
+
+      return {
+        artifactId: remainingArtifact.id,
+        metadata: cleanedMetadata,
+      };
+    }
+  }
+
+  return null;
+}
+
+/**
  * Reconstruct full artifacts array from visible items, inserting hidden collection items
  *
  * @param visibleItems - The reordered visible items (collapsed collections only show first item)

@@ -45,6 +45,7 @@ import {
   getCollectionArtifacts,
   getAllCollectionIds,
   reconstructFullArtifactsArray,
+  getCollectionCleanupIfNeeded,
 } from "@/lib/collection-utils";
 import "./sortable-carousel.css";
 
@@ -458,6 +459,17 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           // Delay updating backend until after animation
           if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
           settleTimeoutRef.current = setTimeout(async () => {
+            // Check if we need to cleanup a single remaining item in the collection
+            const cleanup = getCollectionCleanupIfNeeded(
+              activeArtifact,
+              artifacts
+            );
+            if (cleanup && onUpdateArtifact) {
+              await onUpdateArtifact(cleanup.artifactId, {
+                metadata: cleanup.metadata,
+              });
+            }
+
             // Remove item from collection by removing collection_id
             const updatedMetadata = {
               ...activeMetadata,

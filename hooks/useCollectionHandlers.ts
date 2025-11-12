@@ -4,6 +4,7 @@ import type { Artifact } from "@/types";
 import {
   getCollectionMetadata,
   getCollectionArtifacts,
+  getCollectionCleanupIfNeeded,
 } from "@/lib/collection-utils";
 
 interface UseCollectionHandlersProps {
@@ -146,7 +147,15 @@ export function useCollectionHandlers({
           return;
         }
 
-        // Simply remove collection_id from the item
+        // Check if we need to cleanup a single remaining item in the collection
+        const cleanup = getCollectionCleanupIfNeeded(item, artifacts);
+        if (cleanup) {
+          await updateArtifact(cleanup.artifactId, {
+            metadata: cleanup.metadata,
+          });
+        }
+
+        // Remove collection_id from the item being removed
         const newMetadata = { ...item.metadata };
         delete newMetadata.collection_id;
         delete newMetadata.is_expanded;

@@ -16,6 +16,7 @@ import {
   ArtifactEventPayload,
 } from "@/lib/artifactSync";
 import type { Artifact, ArtifactType } from "@/types";
+import { getCollectionCleanupIfNeeded } from "@/lib/collection-utils";
 
 /**
  * Fetcher function for SWR
@@ -266,6 +267,28 @@ export function useSyncedArtifacts(
       if (!projectId) return;
 
       try {
+        // Check if we need to cleanup a single remaining item in the collection
+        const artifactToDelete = artifacts.find((a) => a.id === artifactId);
+        if (artifactToDelete) {
+          const cleanup = getCollectionCleanupIfNeeded(
+            artifactToDelete,
+            artifacts
+          );
+
+          if (cleanup) {
+            await updateArtifactDB(cleanup.artifactId, {
+              metadata: cleanup.metadata,
+            });
+
+            // Broadcast the update to other users
+            if (syncManagerRef.current?.isReady()) {
+              syncManagerRef.current.broadcastUpdate(cleanup.artifactId, {
+                metadata: cleanup.metadata,
+              });
+            }
+          }
+        }
+
         await deleteArtifactDB(artifactId);
 
         // Broadcast to other users
@@ -280,7 +303,7 @@ export function useSyncedArtifacts(
         throw error;
       }
     },
-    [projectId, mutate]
+    [projectId, mutate, artifacts]
   );
 
   /**
