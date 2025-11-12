@@ -66,7 +66,7 @@ export type Artifact = {
   file_path: string | null;
   name: string;
   position: number;
-  metadata: Record<string, unknown> | UrlViewportMetadata;
+  metadata: Record<string, unknown> & Partial<UrlViewportMetadata & VideoMetadata & TitleCardMetadata & CollectionMetadata>;
   created_at: string;
   updated_at: string;
 };
