@@ -43,9 +43,9 @@ export type TitleCardMetadata = {
 };
 
 export type CollectionMetadata = {
-  collection_items?: string[]; // Array of artifact IDs that are part of this collection
+  collection_id?: string; // ID shared by all artifacts in this collection
   is_expanded?: boolean; // Whether the collection is currently expanded in the carousel
-  parent_collection_id?: string | null; // ID of collection this artifact belongs to (if any)
+  [key: string]: unknown; // Allow for future extensibility
 };
 
 export type Page = {
