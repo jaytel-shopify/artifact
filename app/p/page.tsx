@@ -445,6 +445,30 @@ function PresentationPageInner({
                   },
                 });
 
+                // Ensure target comes BEFORE dragged in the artifacts array
+                // Target should be index 0 (the "cover" of the collection)
+                const draggedIndex = artifacts.findIndex(
+                  (a) => a.id === draggedId
+                );
+                const targetIndex = artifacts.findIndex((a) => a.id === targetId);
+
+                if (
+                  draggedIndex !== -1 &&
+                  targetIndex !== -1 &&
+                  draggedIndex < targetIndex
+                ) {
+                  // Dragged is currently before target, need to reorder
+                  // Remove dragged from its position and insert it after target
+                  const reordered = [...artifacts];
+                  const [removed] = reordered.splice(draggedIndex, 1);
+                  const newTargetIndex = reordered.findIndex(
+                    (a) => a.id === targetId
+                  );
+                  reordered.splice(newTargetIndex + 1, 0, removed);
+
+                  await reorderArtifacts(reordered);
+                }
+
                 toast.success("Items added to collection");
               } catch (error) {
                 toast.error("Failed to create collection. Please try again.");

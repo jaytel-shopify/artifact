@@ -495,13 +495,52 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         // Delay notifying parent until AFTER animation completes
         if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
         settleTimeoutRef.current = setTimeout(() => {
-          // Just reorder - the visual order IS the data order
-          onReorder?.(reorderedItems);
+          // Reconstruct full artifacts array from reordered visible items
+          // For collapsed collections, we need to insert hidden items after their first item
+          const fullReordered: Artifact[] = [];
+          const seen = new Set<string>();
+
+          reorderedItems.forEach((visibleItem) => {
+            // Skip if we've already added this item (shouldn't happen, but safeguard)
+            if (seen.has(visibleItem.id)) return;
+
+            const metadata = getCollectionMetadata(visibleItem);
+
+            // Add the visible item
+            fullReordered.push(visibleItem);
+            seen.add(visibleItem.id);
+
+            // If this is part of a collection, add all other collection items after it
+            if (metadata.collection_id) {
+              const collectionArtifacts = getCollectionArtifacts(
+                metadata.collection_id,
+                artifacts
+              );
+
+              // Check if this is the first item in the collection
+              const isFirstInCollection =
+                collectionArtifacts[0]?.id === visibleItem.id;
+
+              if (isFirstInCollection) {
+                // Add all other items in the collection (except the first which we just added)
+                // Maintain their relative order from the original artifacts array
+                const otherItems = collectionArtifacts.slice(1);
+                otherItems.forEach((item) => {
+                  if (!seen.has(item.id)) {
+                    fullReordered.push(item);
+                    seen.add(item.id);
+                  }
+                });
+              }
+            }
+          });
+
+          onReorder?.(fullReordered);
           setIsSettling(false);
           setSettlingId(null);
         }, 250); // Match dnd-kit's default animation duration
       },
-      [activeId, items, onReorder]
+      [activeId, items, onReorder, artifacts]
     );
 
     const handleDragEnd = useCallback(
@@ -541,6 +580,9 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         // 3. Handle normal reordering
         handleNormalReorder(overIndex, activeIndex);
+
+        // Always reset collection state to clear any lingering hover indicators
+        resetCollectionState();
         setActiveId(null);
       },
       [
@@ -554,6 +596,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         handleAddToCollection,
         handleRemoveFromCollectionDrag,
         handleNormalReorder,
+        resetCollectionState,
       ]
     );
 
