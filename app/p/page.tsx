@@ -412,7 +412,8 @@ function PresentationPageInner({
                 // Check if items are already in the same collection
                 if (
                   draggedMetadata?.collection_id &&
-                  draggedMetadata.collection_id === targetMetadata?.collection_id
+                  draggedMetadata.collection_id ===
+                    targetMetadata?.collection_id
                 ) {
                   toast.error("Item is already in this collection");
                   return;
@@ -450,7 +451,9 @@ function PresentationPageInner({
                 const draggedIndex = artifacts.findIndex(
                   (a) => a.id === draggedId
                 );
-                const targetIndex = artifacts.findIndex((a) => a.id === targetId);
+                const targetIndex = artifacts.findIndex(
+                  (a) => a.id === targetId
+                );
 
                 if (
                   draggedIndex !== -1 &&
@@ -510,30 +513,6 @@ function PresentationPageInner({
               } catch (error) {
                 toast.error("Failed to toggle collection");
                 console.error("Failed to toggle collection:", error);
-              }
-            }}
-            onRemoveFromCollection={async (itemId, _collectionId, _newIndex) => {
-              try {
-                const item = artifacts.find((a) => a.id === itemId);
-
-                if (!item) {
-                  toast.error("Could not find item");
-                  return;
-                }
-
-                // Simply remove collection_id from the item
-                const newMetadata = { ...item.metadata };
-                delete newMetadata.collection_id;
-                delete newMetadata.is_expanded;
-
-                await updateArtifact(itemId, {
-                  metadata: newMetadata,
-                });
-
-                toast.success("Item removed from collection");
-              } catch (error) {
-                toast.error("Failed to remove item from collection");
-                console.error("Failed to remove item from collection:", error);
               }
             }}
             onUpdateArtifact={async (artifactId, updates) => {

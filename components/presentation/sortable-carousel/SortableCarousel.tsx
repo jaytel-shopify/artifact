@@ -58,11 +58,6 @@ interface Props {
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
-  onRemoveFromCollection?: (
-    itemId: string,
-    collectionId: string,
-    newTopLevelIndex: number
-  ) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
     updates: { name?: string; metadata?: Record<string, unknown> }
@@ -129,7 +124,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       onReorder,
       onCreateCollection,
       onToggleCollection,
-      onRemoveFromCollection,
       onUpdateArtifact,
       onDeleteArtifact,
       onReplaceMedia,
@@ -445,10 +439,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         // Check if drop position is outside collection bounds
         const isOutsideBounds =
-          overIndex < firstCollectionIndex ||
-          overIndex > lastCollectionIndex + 1;
+          overIndex < firstCollectionIndex || overIndex > lastCollectionIndex;
 
         if (isOutsideBounds) {
+          const activeArtifact = items[activeIndex];
+          const activeMetadata = getCollectionMetadata(activeArtifact);
+
           // Reset collection mode state to clear any hover indicators
           resetCollectionState();
 
@@ -462,11 +458,47 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           // Delay updating backend until after animation
           if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
           settleTimeoutRef.current = setTimeout(async () => {
-            await onRemoveFromCollection?.(
-              activeId!.toString(),
-              collectionId,
-              overIndex
+            // Remove item from collection by removing collection_id
+            const updatedMetadata = {
+              ...activeMetadata,
+            };
+            delete updatedMetadata.collection_id;
+            delete updatedMetadata.is_expanded;
+
+            await onUpdateArtifact?.(activeArtifact.id, {
+              metadata: updatedMetadata,
+            });
+
+            // Build reordered array by treating the item as no longer in a collection
+            // Update the metadata in reorderedItems for reconstruction
+            const reorderedWithUpdatedMetadata = reorderedItems.map((item) => {
+              if (item.id === activeArtifact.id) {
+                return {
+                  ...item,
+                  metadata: updatedMetadata,
+                };
+              }
+              return item;
+            });
+
+            // Create modified artifacts where the active item has no collection_id
+            const modifiedArtifacts = artifacts.map((artifact) => {
+              if (artifact.id === activeArtifact.id) {
+                return {
+                  ...artifact,
+                  metadata: updatedMetadata,
+                };
+              }
+              return artifact;
+            });
+
+            // Reconstruct using the utility with updated metadata
+            const fullReordered = reconstructFullArtifactsArray(
+              reorderedWithUpdatedMetadata,
+              modifiedArtifacts
             );
+
+            onReorder?.(fullReordered);
             setIsSettling(false);
             setSettlingId(null);
           }, 250);
@@ -477,7 +509,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         return false; // Not handled
       },
-      [items, activeId, resetCollectionState, onRemoveFromCollection]
+      [
+        items,
+        activeId,
+        artifacts,
+        resetCollectionState,
+        onUpdateArtifact,
+        onReorder,
+      ]
     );
 
     // Helper: Handle adding item to expanded collection
@@ -634,7 +673,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           const activeMetadata = getCollectionMetadata(activeArtifact);
           const collectionId = activeMetadata.collection_id;
 
-          if (collectionId && onRemoveFromCollection) {
+          if (collectionId) {
             const handled = handleRemoveFromCollectionDrag(
               collectionId,
               overIndex,
@@ -663,7 +702,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         items,
         isCollectionMode,
         handleCollectionDragEnd,
-        onRemoveFromCollection,
         handleAddToCollection,
         handleRemoveFromCollectionDrag,
         handleAddToExpandedCollection,

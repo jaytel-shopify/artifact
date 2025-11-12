@@ -14,7 +14,6 @@ interface CanvasProps {
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
-  onRemoveFromCollection?: (itemId: string, collectionId: string, newTopLevelIndex: number) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
     updates: { name?: string; metadata?: Record<string, unknown> }
@@ -36,7 +35,6 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     onReorder,
     onCreateCollection,
     onToggleCollection,
-    onRemoveFromCollection,
     onUpdateArtifact,
     onDeleteArtifact,
     onReplaceMedia,
@@ -60,7 +58,6 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         onReorder={onReorder}
         onCreateCollection={onCreateCollection}
         onToggleCollection={onToggleCollection}
-        onRemoveFromCollection={onRemoveFromCollection}
         onUpdateArtifact={onUpdateArtifact}
         onDeleteArtifact={onDeleteArtifact}
         onReplaceMedia={onReplaceMedia}
