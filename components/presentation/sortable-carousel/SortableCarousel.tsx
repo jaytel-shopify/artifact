@@ -483,13 +483,17 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     // Helper: Handle adding item to expanded collection
     const handleAddToExpandedCollection = useCallback(
       (overIndex: number, activeIndex: number): boolean => {
-        if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
+        if (
+          activeIndex === -1 ||
+          overIndex === -1 ||
+          activeIndex === overIndex
+        ) {
           return false;
         }
 
         const activeArtifact = items[activeIndex];
         const overArtifact = items[overIndex];
-        
+
         const activeMetadata = getCollectionMetadata(activeArtifact);
         const overMetadata = getCollectionMetadata(overArtifact);
 
@@ -544,9 +548,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           // Reconstruct full artifacts array with override for target collection
           const collectionOverrides = new Map<string, Artifact[]>();
           if (targetCollectionId) {
-            collectionOverrides.set(targetCollectionId, collectionArtifactsInOrder);
+            collectionOverrides.set(
+              targetCollectionId,
+              collectionArtifactsInOrder
+            );
           }
-          
+
           const fullReordered = reconstructFullArtifactsArray(
             reorderedItems,
             artifacts,
