@@ -219,7 +219,7 @@
 }
 
 .carousel-item:focus-visible:not(.carousel-item-wrapper.active .carousel-item) {
-  box-shadow: 0 0 0 2px #4c9ffe;
+  outline: none;
 }
 
 /* ==========================================================================

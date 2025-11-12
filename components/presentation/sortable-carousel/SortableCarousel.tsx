@@ -584,18 +584,51 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             metadata: updatedMetadata,
           });
 
-          // Reconstruct full artifacts array with override for target collection
+          // Update metadata in reorderedItems for reconstruction
+          const reorderedWithUpdatedMetadata = reorderedItems.map((item) => {
+            if (item.id === activeArtifact.id) {
+              return {
+                ...item,
+                metadata: updatedMetadata,
+              };
+            }
+            return item;
+          });
+
+          // Create modified artifacts where the active item has the new collection_id
+          const modifiedArtifacts = artifacts.map((artifact) => {
+            if (artifact.id === activeArtifact.id) {
+              return {
+                ...artifact,
+                metadata: updatedMetadata,
+              };
+            }
+            return artifact;
+          });
+
+          // Build collection override with items in the new order
+          const collectionArtifactsWithUpdatedItem =
+            collectionArtifactsInOrder.map((item) => {
+              if (item.id === activeArtifact.id) {
+                return {
+                  ...item,
+                  metadata: updatedMetadata,
+                };
+              }
+              return item;
+            });
+
           const collectionOverrides = new Map<string, Artifact[]>();
           if (targetCollectionId) {
             collectionOverrides.set(
               targetCollectionId,
-              collectionArtifactsInOrder
+              collectionArtifactsWithUpdatedItem
             );
           }
 
           const fullReordered = reconstructFullArtifactsArray(
-            reorderedItems,
-            artifacts,
+            reorderedWithUpdatedMetadata,
+            modifiedArtifacts,
             collectionOverrides
           );
 

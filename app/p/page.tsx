@@ -471,8 +471,6 @@ function PresentationPageInner({
 
                   await reorderArtifacts(reordered);
                 }
-
-                toast.success("Items added to collection");
               } catch (error) {
                 toast.error("Failed to create collection. Please try again.");
                 console.error("Failed to create collection:", error);
