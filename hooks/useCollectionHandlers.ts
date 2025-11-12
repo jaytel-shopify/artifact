@@ -3,8 +3,7 @@ import { toast } from "sonner";
 import type { Artifact } from "@/types";
 import {
   getCollectionMetadata,
-  getTopLevelArtifacts,
-  findParentCollection,
+  getCollectionArtifacts,
 } from "@/lib/collection-utils";
 
 interface UseCollectionHandlersProps {
@@ -25,48 +24,47 @@ export function useCollectionHandlers({
     async (draggedId: string, targetId: string) => {
       try {
         const draggedArtifact = artifacts.find((a) => a.id === draggedId);
-        let targetArtifact = artifacts.find((a) => a.id === targetId);
+        const targetArtifact = artifacts.find((a) => a.id === targetId);
 
         if (!draggedArtifact || !targetArtifact) {
           toast.error("Could not find artifacts for collection");
           return;
         }
 
-        // If the target is part of a collection, redirect to the parent collection
-        const parentCollection = findParentCollection(targetArtifact, artifacts);
-        if (parentCollection) {
-          targetArtifact = parentCollection;
-          targetId = parentCollection.id;
-        }
+        const draggedMetadata = getCollectionMetadata(draggedArtifact);
+        const targetMetadata = getCollectionMetadata(targetArtifact);
 
         // Check if dragged item is already in this collection
-        const draggedMetadata = getCollectionMetadata(draggedArtifact);
-        if (draggedMetadata.parent_collection_id === targetId) {
+        if (draggedMetadata.collection_id && 
+            draggedMetadata.collection_id === targetMetadata.collection_id) {
           toast.error("Item is already in this collection");
           return;
         }
 
-        // Get existing collection items
-        const targetMetadata = getCollectionMetadata(targetArtifact);
-        const existingItems = targetMetadata.collection_items || [];
+        // Determine the collection ID to use
+        let collectionId: string;
+        if (targetMetadata.collection_id) {
+          // Target is already in a collection - add to that collection
+          collectionId = targetMetadata.collection_id;
+        } else {
+          // Create new collection - use a simple timestamp-based ID
+          collectionId = `collection-${Date.now()}`;
+          
+          // Add target to the collection
+          await updateArtifact(targetId, {
+            metadata: {
+              ...targetArtifact.metadata,
+              collection_id: collectionId,
+              is_expanded: false,
+            },
+          });
+        }
 
-        // Add dragged item to collection
-        const updatedItems = [...existingItems, draggedId];
-
-        // Update target artifact to be a collection
-        await updateArtifact(targetId, {
-          metadata: {
-            ...targetArtifact.metadata,
-            collection_items: updatedItems,
-            is_expanded: false,
-          },
-        });
-
-        // Mark the dragged artifact as part of this collection
+        // Add dragged item to the collection
         await updateArtifact(draggedId, {
           metadata: {
             ...draggedArtifact.metadata,
-            parent_collection_id: targetId,
+            collection_id: collectionId,
           },
         });
 
@@ -80,21 +78,36 @@ export function useCollectionHandlers({
   );
 
   const handleToggleCollection = useCallback(
-    async (collectionId: string) => {
+    async (artifactId: string) => {
       try {
-        const collection = artifacts.find((a) => a.id === collectionId);
-        if (!collection) return;
+        const artifact = artifacts.find((a) => a.id === artifactId);
+        if (!artifact) return;
 
-        const metadata = getCollectionMetadata(collection);
-        const isExpanded = metadata.is_expanded || false;
+        const metadata = getCollectionMetadata(artifact);
+        const collectionId = metadata.collection_id;
+        
+        if (!collectionId) return;
 
-        // Toggle the expanded state
-        await updateArtifact(collectionId, {
-          metadata: {
-            ...collection.metadata,
-            is_expanded: !isExpanded,
-          },
-        });
+        // Get all items in this collection
+        const collectionArtifacts = getCollectionArtifacts(collectionId, artifacts);
+        if (collectionArtifacts.length === 0) return;
+
+        // Get current expanded state from first item
+        const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
+        const isExpanded = firstMeta.is_expanded || false;
+
+        // Toggle expanded state on ALL items in the collection
+        // (though only the first item's state matters for display)
+        await Promise.all(
+          collectionArtifacts.map((item) =>
+            updateArtifact(item.id, {
+              metadata: {
+                ...item.metadata,
+                is_expanded: !isExpanded,
+              },
+            })
+          )
+        );
       } catch (error) {
         toast.error("Failed to toggle collection");
         console.error("Failed to toggle collection:", error);
@@ -107,51 +120,24 @@ export function useCollectionHandlers({
     async (
       itemId: string,
       collectionId: string,
-      newTopLevelIndex: number
+      _newIndex: number // Not used - order is determined by artifacts array position
     ) => {
       try {
-        const collection = artifacts.find((a) => a.id === collectionId);
         const item = artifacts.find((a) => a.id === itemId);
 
-        if (!collection || !item) {
-          toast.error("Could not find collection or item");
+        if (!item) {
+          toast.error("Could not find item");
           return;
         }
 
-        // Remove item from collection's collection_items array
-        const collectionMetadata = getCollectionMetadata(collection);
-        const collectionItems = collectionMetadata.collection_items || [];
-        const updatedItems = collectionItems.filter((id) => id !== itemId);
+        // Simply remove collection_id from the item
+        const newMetadata = { ...item.metadata };
+        delete newMetadata.collection_id;
+        delete newMetadata.is_expanded;
 
-        // Update collection
-        await updateArtifact(collectionId, {
-          metadata: {
-            ...collection.metadata,
-            collection_items: updatedItems,
-          },
-        });
-
-        // Remove parent_collection_id from item
         await updateArtifact(itemId, {
-          metadata: {
-            ...item.metadata,
-            parent_collection_id: undefined,
-          },
+          metadata: newMetadata,
         });
-
-        // Reorder top-level artifacts to place the item at the correct position
-        const topLevelArtifacts = getTopLevelArtifacts(artifacts);
-        const withoutItem = topLevelArtifacts.filter((a) => a.id !== itemId);
-
-        // Insert the item at the new index
-        const reorderedTopLevel = [
-          ...withoutItem.slice(0, newTopLevelIndex),
-          item,
-          ...withoutItem.slice(newTopLevelIndex),
-        ];
-
-        // Update the order
-        await reorderArtifacts(reorderedTopLevel);
 
         toast.success("Item removed from collection");
       } catch (error) {
@@ -159,55 +145,21 @@ export function useCollectionHandlers({
         console.error("Failed to remove item from collection:", error);
       }
     },
-    [artifacts, updateArtifact, reorderArtifacts]
+    [artifacts, updateArtifact]
   );
 
   const handleReorder = useCallback(
     async (reorderedArtifacts: Artifact[]) => {
       try {
-        // Separate top-level artifacts from collection items
-        const topLevel: Artifact[] = [];
-        const collectionItems = new Map<string, string[]>();
-
-        reorderedArtifacts.forEach((artifact) => {
-          const metadata = getCollectionMetadata(artifact);
-          const parentId = metadata.parent_collection_id;
-
-          if (parentId) {
-            if (!collectionItems.has(parentId)) {
-              collectionItems.set(parentId, []);
-            }
-            collectionItems.get(parentId)!.push(artifact.id);
-          } else {
-            topLevel.push(artifact);
-          }
-        });
-
-        // Update all collections in parallel
-        await Promise.all(
-          Array.from(collectionItems.entries()).map(
-            ([collectionId, itemIds]) => {
-              const collection = artifacts.find((a) => a.id === collectionId);
-              return collection
-                ? updateArtifact(collectionId, {
-                    metadata: {
-                      ...collection.metadata,
-                      collection_items: itemIds,
-                    },
-                  })
-                : Promise.resolve();
-            }
-          )
-        );
-
-        // Update top-level artifacts order
-        await reorderArtifacts(topLevel);
+        // With the new structure, the visual order IS the data order!
+        // Just reorder the artifacts array
+        await reorderArtifacts(reorderedArtifacts);
       } catch (error) {
         toast.error("Failed to reorder artifacts. Please try again.");
         console.error("Failed to reorder artifacts:", error);
       }
     },
-    [artifacts, updateArtifact, reorderArtifacts]
+    [reorderArtifacts]
   );
 
   return {

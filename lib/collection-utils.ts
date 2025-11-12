@@ -4,9 +4,8 @@ import type { Artifact } from "@/types";
  * Type definitions for collection metadata
  */
 export interface CollectionMetadata {
-  collection_items?: string[];
+  collection_id?: string;
   is_expanded?: boolean;
-  parent_collection_id?: string;
   [key: string]: unknown;
 }
 
@@ -22,35 +21,49 @@ export function getCollectionMetadata(
 /**
  * Check if an artifact is part of a collection
  */
-export function isCollectionChild(artifact: Artifact): boolean {
+export function isInCollection(artifact: Artifact): boolean {
   const metadata = getCollectionMetadata(artifact);
-  return !!metadata.parent_collection_id;
+  return !!metadata.collection_id;
 }
 
 /**
- * Check if an artifact is a collection header
+ * Get all artifacts in a collection, in order
  */
-export function isCollection(artifact: Artifact): boolean {
-  const metadata = getCollectionMetadata(artifact);
-  return !!metadata.collection_items && metadata.collection_items.length > 0;
-}
-
-/**
- * Get only top-level artifacts (not collection children)
- */
-export function getTopLevelArtifacts(artifacts: Artifact[]): Artifact[] {
-  return artifacts.filter((a) => !isCollectionChild(a));
-}
-
-/**
- * Find the parent collection of an artifact
- */
-export function findParentCollection(
-  artifact: Artifact,
+export function getCollectionArtifacts(
+  collectionId: string,
   allArtifacts: Artifact[]
-): Artifact | undefined {
-  const metadata = getCollectionMetadata(artifact);
-  if (!metadata.parent_collection_id) return undefined;
-  return allArtifacts.find((a) => a.id === metadata.parent_collection_id);
+): Artifact[] {
+  return allArtifacts.filter((a) => {
+    const metadata = getCollectionMetadata(a);
+    return metadata.collection_id === collectionId;
+  });
 }
 
+/**
+ * Check if a collection is expanded
+ */
+export function isCollectionExpanded(
+  collectionId: string,
+  allArtifacts: Artifact[]
+): boolean {
+  const firstItem = allArtifacts.find((a) => {
+    const metadata = getCollectionMetadata(a);
+    return metadata.collection_id === collectionId;
+  });
+  const metadata = getCollectionMetadata(firstItem);
+  return !!metadata.is_expanded;
+}
+
+/**
+ * Get all unique collection IDs from artifacts
+ */
+export function getAllCollectionIds(artifacts: Artifact[]): string[] {
+  const ids = new Set<string>();
+  artifacts.forEach((a) => {
+    const metadata = getCollectionMetadata(a);
+    if (metadata.collection_id) {
+      ids.add(metadata.collection_id);
+    }
+  });
+  return Array.from(ids);
+}

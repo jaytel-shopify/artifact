@@ -129,7 +129,7 @@
 .carousel-item-wrapper:not(.active):not(.clone).insert-after::after {
   content: "";
   position: absolute;
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 1);
   z-index: 10;
   max-height: 500px;
 }
@@ -142,9 +142,9 @@
 
 .carousel-item-wrapper:not(.vertical).insert-before::after,
 .carousel-item-wrapper:not(.vertical).insert-after::after {
-  top: 0;
-  bottom: 0;
-  width: 2px;
+  top: 9px;
+  bottom: 3px;
+  width: 1px;
 }
 
 .carousel-item-wrapper:not(.vertical).insert-before.clone {
@@ -231,6 +231,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
+  padding-top: 10px;
   margin-bottom: 20px;
 }
 
@@ -468,6 +469,33 @@
     .collection-child-hidden
   ) {
   animation: slideInFromLeft 0.3s ease-out backwards;
+}
+
+/* Visual indicator line above collection items - extends into gap for continuity */
+.carousel-item-wrapper[data-collection-child="true"]:not(
+    .collection-child-hidden
+  ):not(.clone)::before,
+.carousel-item-wrapper.is-collection-expanded:not(.clone)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -0.5rem; /* Extend left into the gap */
+  right: -0.5rem; /* Extend right into the gap */
+  height: 1px;
+  background-color: rgba(100, 100, 100, 1);
+  z-index: 10;
+}
+
+/* First item in collection - don't extend line to the left */
+.carousel-item-wrapper.is-collection-expanded:not(.clone)::before {
+  left: 0;
+}
+
+/* Last child in collection - don't extend line to the right */
+.carousel-item-wrapper[data-collection-child="true"]:not(
+    .collection-child-hidden
+  ):not(.clone):last-of-type::before {
+  right: 0;
 }
 
 @keyframes slideInFromLeft {

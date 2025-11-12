@@ -18,7 +18,7 @@ interface UseCollectionModeOptions {
 export function useCollectionMode({
   activeId,
   onCreateCollection,
-  stillnessDelayMs = 800,
+  stillnessDelayMs = 400,
   movementThresholdPx = 5,
   artifacts = [],
 }: UseCollectionModeOptions) {
@@ -42,38 +42,49 @@ export function useCollectionMode({
   }, []);
 
   // Check if dragged item can be added to target collection
-  const canAddToCollection = useCallback((draggedId: UniqueIdentifier | null, targetId: UniqueIdentifier | null): boolean => {
-    if (!draggedId || !targetId || draggedId === targetId) return false;
-    if (!artifacts || artifacts.length === 0) return true; // Allow if no artifacts data
-    
-    const draggedArtifact = artifacts.find(a => a.id === draggedId.toString());
-    const targetArtifact = artifacts.find(a => a.id === targetId.toString());
-    
-    if (!draggedArtifact || !targetArtifact) return true; // Allow if not found (fallback)
-    
-    const draggedMetadata = draggedArtifact.metadata as any;
-    const targetMetadata = targetArtifact.metadata as any;
-    
-    // If dragged item is itself a collection, don't allow adding to other collections
-    if (draggedMetadata?.collection_items) {
-      return false;
-    }
-    
-    // If dragged item is in a collection, check if trying to add to the same collection
-    const draggedParentId = draggedMetadata?.parent_collection_id;
-    if (draggedParentId) {
-      // Prevent if target is the collection header OR a sibling in the same collection
-      if (draggedParentId === targetId.toString() || draggedParentId === targetMetadata?.parent_collection_id) {
+  const canAddToCollection = useCallback(
+    (
+      draggedId: UniqueIdentifier | null,
+      targetId: UniqueIdentifier | null
+    ): boolean => {
+      if (!draggedId || !targetId || draggedId === targetId) return false;
+      if (!artifacts || artifacts.length === 0) return true; // Allow if no artifacts data
+
+      const draggedArtifact = artifacts.find(
+        (a) => a.id === draggedId.toString()
+      );
+      const targetArtifact = artifacts.find(
+        (a) => a.id === targetId.toString()
+      );
+
+      if (!draggedArtifact || !targetArtifact) return true; // Allow if not found (fallback)
+
+      const draggedMetadata = draggedArtifact.metadata as Record<
+        string,
+        unknown
+      >;
+      const targetMetadata = targetArtifact.metadata as Record<string, unknown>;
+
+      // If both items are in the same collection, don't enter collection mode
+      const draggedCollectionId = draggedMetadata?.collection_id;
+      const targetCollectionId = targetMetadata?.collection_id;
+
+      if (draggedCollectionId && draggedCollectionId === targetCollectionId) {
         return false;
       }
-    }
-    
-    return true;
-  }, [artifacts]);
+
+      return true;
+    },
+    [artifacts]
+  );
 
   // When collection mode activates, immediately show hover indicator for current item
   useEffect(() => {
-    if (isCollectionMode && currentOverIdRef.current && currentOverIdRef.current !== activeId) {
+    if (
+      isCollectionMode &&
+      currentOverIdRef.current &&
+      currentOverIdRef.current !== activeId
+    ) {
       setHoveredItemId(currentOverIdRef.current);
     }
   }, [isCollectionMode, activeId]);
@@ -91,7 +102,10 @@ export function useCollectionMode({
       currentOverIdRef.current = event.over?.id || null;
 
       // Check if the current target is valid for collection creation
-      const isValidTarget = canAddToCollection(activeId, currentOverIdRef.current);
+      const isValidTarget = canAddToCollection(
+        activeId,
+        currentOverIdRef.current
+      );
 
       // Check if mouse has moved beyond threshold
       if (lastMousePosRef.current) {
@@ -129,7 +143,13 @@ export function useCollectionMode({
         setHoveredItemId(null);
       }
     },
-    [isCollectionMode, activeId, stillnessDelayMs, movementThresholdPx, canAddToCollection]
+    [
+      isCollectionMode,
+      activeId,
+      stillnessDelayMs,
+      movementThresholdPx,
+      canAddToCollection,
+    ]
   );
 
   const handleCollectionDragEnd = useCallback(
@@ -168,4 +188,3 @@ export function useCollectionMode({
     resetCollectionState,
   };
 }
-
