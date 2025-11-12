@@ -44,6 +44,7 @@ import {
   getCollectionMetadata,
   getCollectionArtifacts,
   getAllCollectionIds,
+  reconstructFullArtifactsArray,
 } from "@/lib/collection-utils";
 import "./sortable-carousel.css";
 
@@ -479,6 +480,98 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       [items, activeId, resetCollectionState, onRemoveFromCollection]
     );
 
+    // Helper: Handle adding item to expanded collection
+    const handleAddToExpandedCollection = useCallback(
+      (overIndex: number, activeIndex: number): boolean => {
+        if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
+          return false;
+        }
+
+        const activeArtifact = items[activeIndex];
+        const overArtifact = items[overIndex];
+        
+        const activeMetadata = getCollectionMetadata(activeArtifact);
+        const overMetadata = getCollectionMetadata(overArtifact);
+
+        // Check if dropping onto an item that's in an expanded collection
+        // and the active item is NOT already in that collection
+        if (
+          !overMetadata.collection_id ||
+          !overMetadata.is_expanded ||
+          activeMetadata.collection_id === overMetadata.collection_id ||
+          !onUpdateArtifact
+        ) {
+          return false; // Not handled
+        }
+
+        // Add item to the collection
+        setIsSettling(true);
+        setSettlingId(activeId);
+
+        // Update local state immediately for smooth animation
+        const reorderedItems = arrayMove(items, activeIndex, overIndex);
+        setItems(reorderedItems);
+
+        // Delay updating backend until after animation
+        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
+        settleTimeoutRef.current = setTimeout(async () => {
+          const targetCollectionId = overMetadata.collection_id;
+
+          // Build the new collection order from the visual order
+          const collectionArtifactsInOrder: Artifact[] = [];
+          reorderedItems.forEach((item) => {
+            const itemMetadata = getCollectionMetadata(item);
+            const isInTargetCollection =
+              itemMetadata.collection_id === targetCollectionId;
+            const isBeingAdded = item.id === activeArtifact.id;
+
+            if (isInTargetCollection || isBeingAdded) {
+              collectionArtifactsInOrder.push(item);
+            }
+          });
+
+          // Update metadata to add item to collection
+          const updatedMetadata = {
+            ...activeMetadata,
+            collection_id: targetCollectionId,
+            is_expanded: true,
+          };
+
+          await onUpdateArtifact(activeArtifact.id, {
+            metadata: updatedMetadata,
+          });
+
+          // Reconstruct full artifacts array with override for target collection
+          const collectionOverrides = new Map<string, Artifact[]>();
+          if (targetCollectionId) {
+            collectionOverrides.set(targetCollectionId, collectionArtifactsInOrder);
+          }
+          
+          const fullReordered = reconstructFullArtifactsArray(
+            reorderedItems,
+            artifacts,
+            collectionOverrides
+          );
+
+          onReorder?.(fullReordered);
+          setIsSettling(false);
+          setSettlingId(null);
+        }, 250);
+
+        resetCollectionState();
+        setActiveId(null);
+        return true; // Handled
+      },
+      [
+        items,
+        activeId,
+        artifacts,
+        onUpdateArtifact,
+        onReorder,
+        resetCollectionState,
+      ]
+    );
+
     // Helper: Handle normal reordering
     const handleNormalReorder = useCallback(
       (overIndex: number, activeIndex: number) => {
@@ -496,44 +589,10 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
         settleTimeoutRef.current = setTimeout(() => {
           // Reconstruct full artifacts array from reordered visible items
-          // For collapsed collections, we need to insert hidden items after their first item
-          const fullReordered: Artifact[] = [];
-          const seen = new Set<string>();
-
-          reorderedItems.forEach((visibleItem) => {
-            // Skip if we've already added this item (shouldn't happen, but safeguard)
-            if (seen.has(visibleItem.id)) return;
-
-            const metadata = getCollectionMetadata(visibleItem);
-
-            // Add the visible item
-            fullReordered.push(visibleItem);
-            seen.add(visibleItem.id);
-
-            // If this is part of a collection, add all other collection items after it
-            if (metadata.collection_id) {
-              const collectionArtifacts = getCollectionArtifacts(
-                metadata.collection_id,
-                artifacts
-              );
-
-              // Check if this is the first item in the collection
-              const isFirstInCollection =
-                collectionArtifacts[0]?.id === visibleItem.id;
-
-              if (isFirstInCollection) {
-                // Add all other items in the collection (except the first which we just added)
-                // Maintain their relative order from the original artifacts array
-                const otherItems = collectionArtifacts.slice(1);
-                otherItems.forEach((item) => {
-                  if (!seen.has(item.id)) {
-                    fullReordered.push(item);
-                    seen.add(item.id);
-                  }
-                });
-              }
-            }
-          });
+          const fullReordered = reconstructFullArtifactsArray(
+            reorderedItems,
+            artifacts
+          );
 
           onReorder?.(fullReordered);
           setIsSettling(false);
@@ -578,7 +637,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           }
         }
 
-        // 3. Handle normal reordering
+        // 3. Handle adding to expanded collection
+        if (handleAddToExpandedCollection(overIndex, activeIndex)) {
+          return; // Handled
+        }
+
+        // 4. Handle normal reordering
         handleNormalReorder(overIndex, activeIndex);
 
         // Always reset collection state to clear any lingering hover indicators
@@ -595,6 +659,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         onRemoveFromCollection,
         handleAddToCollection,
         handleRemoveFromCollectionDrag,
+        handleAddToExpandedCollection,
         handleNormalReorder,
         resetCollectionState,
       ]
