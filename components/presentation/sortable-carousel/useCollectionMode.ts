@@ -18,7 +18,7 @@ interface UseCollectionModeOptions {
 export function useCollectionMode({
   activeId,
   onCreateCollection,
-  stillnessDelayMs = 400,
+  stillnessDelayMs = 600,
   movementThresholdPx = 5,
   artifacts = [],
 }: UseCollectionModeOptions) {
