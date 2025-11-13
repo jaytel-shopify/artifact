@@ -494,20 +494,18 @@ function PresentationPageInner({
                 if (collectionArtifacts.length === 0) return;
 
                 // Get current expanded state from first item
-                const firstMeta = collectionArtifacts[0].metadata as any;
+                const firstArtifact = collectionArtifacts[0];
+                const firstMeta = firstArtifact.metadata as any;
                 const isExpanded = firstMeta?.is_expanded || false;
 
-                // Toggle expanded state on all items in the collection
-                await Promise.all(
-                  collectionArtifacts.map((item) =>
-                    updateArtifact(item.id, {
-                      metadata: {
-                        ...item.metadata,
-                        is_expanded: !isExpanded,
-                      },
-                    })
-                  )
-                );
+                // Only update the first item - this is sufficient since
+                // isCollectionExpanded() only checks the first item
+                await updateArtifact(firstArtifact.id, {
+                  metadata: {
+                    ...firstArtifact.metadata,
+                    is_expanded: !isExpanded,
+                  },
+                });
               } catch (error) {
                 toast.error("Failed to toggle collection");
                 console.error("Failed to toggle collection:", error);

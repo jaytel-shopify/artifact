@@ -46,6 +46,7 @@ import {
   getAllCollectionIds,
   reconstructFullArtifactsArray,
   getCollectionCleanupIfNeeded,
+  isCollectionExpanded,
 } from "@/lib/collection-utils";
 import "./sortable-carousel.css";
 
@@ -546,7 +547,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         // and the active item is NOT already in that collection
         if (
           !overMetadata.collection_id ||
-          !overMetadata.is_expanded ||
+          !isCollectionExpanded(overMetadata.collection_id, artifacts) ||
           activeMetadata.collection_id === overMetadata.collection_id ||
           !onUpdateArtifact
         ) {
@@ -565,13 +566,17 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           is_expanded: true,
         };
 
-        // CRITICAL: Only update position in local state, NOT metadata
-        // This prevents unmount/remount (the cause of blinking)
-        // Metadata flows back through props after backend update
-        const reorderedItems = arrayMove(items, activeIndex, overIndex);
+        // Update local state with both position AND metadata immediately
+        // This shows visual feedback (hairline border) right away
+        const reorderedItems = arrayMove(items, activeIndex, overIndex).map(
+          (item) =>
+            item.id === activeArtifact.id
+              ? { ...item, metadata: updatedMetadata }
+              : item
+        );
         setItems(reorderedItems);
 
-        // Fire backend update immediately (metadata will flow back as props)
+        // Fire backend update immediately (optimistic update handles the rest)
         onUpdateArtifact?.(activeArtifact.id, {
           metadata: updatedMetadata,
         });

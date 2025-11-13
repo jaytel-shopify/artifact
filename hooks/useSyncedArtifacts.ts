@@ -72,7 +72,7 @@ export function useSyncedArtifacts(
   // Initialize or reuse sync manager (keyed by projectId, not pageId)
   useEffect(() => {
     if (!projectId) return;
-    
+
     // Check module-level singleton first (even before pageId is available)
     const existingManager = syncManagers.get(projectId);
     if (existingManager) {
@@ -91,10 +91,10 @@ export function useSyncedArtifacts(
       // Already handled, return to prevent recreation
       return;
     }
-    
+
     // If no existing manager and no pageId yet, wait for pageId
     if (!pageId) return;
-    
+
     // Set the initial pageId only once per project (for creating new managers)
     if (!initialPageIdRef.current) {
       initialPageIdRef.current = pageId;
@@ -148,7 +148,7 @@ export function useSyncedArtifacts(
       // Clear component-level refs but keep isSyncReady if just changing pages
       // This prevents blinking when switching pages in the same project
       syncManagerRef.current = null;
-      
+
       // Only clear ready state and initialization tracking if project is actually changing
       if (currentProjectIdRef.current !== projectId) {
         setIsSyncReady(false);
@@ -241,6 +241,21 @@ export function useSyncedArtifacts(
       if (!projectId) return null;
 
       try {
+        // Optimistic update - update UI immediately
+        const optimisticArtifacts = artifacts.map((a) =>
+          a.id === artifactId
+            ? {
+                ...a,
+                ...(updates.name && { name: updates.name }),
+                ...(updates.metadata && {
+                  metadata: { ...a.metadata, ...updates.metadata },
+                }),
+              }
+            : a
+        );
+        mutate(optimisticArtifacts, false);
+
+        // Persist to database in background
         const artifact = await updateArtifactDB(artifactId, updates);
 
         // Broadcast to other users
@@ -248,15 +263,17 @@ export function useSyncedArtifacts(
           syncManagerRef.current.broadcastUpdate(artifactId, updates);
         }
 
-        // Update local state
+        // Revalidate from server to ensure consistency
         await mutate();
         return artifact;
       } catch (error) {
         console.error("Failed to update artifact:", error);
+        // Rollback optimistic update on error
+        await mutate();
         throw error;
       }
     },
-    [projectId, mutate]
+    [projectId, artifacts, mutate]
   );
 
   /**
@@ -269,6 +286,9 @@ export function useSyncedArtifacts(
       try {
         // Check if we need to cleanup a single remaining item in the collection
         const artifactToDelete = artifacts.find((a) => a.id === artifactId);
+        let cleanupArtifactId: string | undefined;
+        let cleanupMetadata: Record<string, unknown> | undefined;
+
         if (artifactToDelete) {
           const cleanup = getCollectionCleanupIfNeeded(
             artifactToDelete,
@@ -276,19 +296,36 @@ export function useSyncedArtifacts(
           );
 
           if (cleanup) {
-            await updateArtifactDB(cleanup.artifactId, {
-              metadata: cleanup.metadata,
-            });
-
-            // Broadcast the update to other users
-            if (syncManagerRef.current?.isReady()) {
-              syncManagerRef.current.broadcastUpdate(cleanup.artifactId, {
-                metadata: cleanup.metadata,
-              });
-            }
+            cleanupArtifactId = cleanup.artifactId;
+            cleanupMetadata = cleanup.metadata;
           }
         }
 
+        // Optimistic update - remove from UI immediately
+        const optimisticArtifacts = artifacts
+          .filter((a) => a.id !== artifactId)
+          .map((a) =>
+            a.id === cleanupArtifactId && cleanupMetadata
+              ? { ...a, metadata: cleanupMetadata }
+              : a
+          );
+        mutate(optimisticArtifacts, false);
+
+        // Persist cleanup if needed
+        if (cleanupArtifactId && cleanupMetadata) {
+          await updateArtifactDB(cleanupArtifactId, {
+            metadata: cleanupMetadata,
+          });
+
+          // Broadcast the update to other users
+          if (syncManagerRef.current?.isReady()) {
+            syncManagerRef.current.broadcastUpdate(cleanupArtifactId, {
+              metadata: cleanupMetadata,
+            });
+          }
+        }
+
+        // Persist deletion to database in background
         await deleteArtifactDB(artifactId);
 
         // Broadcast to other users
@@ -296,10 +333,12 @@ export function useSyncedArtifacts(
           syncManagerRef.current.broadcastDelete(artifactId);
         }
 
-        // Update local state
+        // Revalidate from server to ensure consistency
         await mutate();
       } catch (error) {
         console.error("Failed to delete artifact:", error);
+        // Rollback optimistic update on error
+        await mutate();
         throw error;
       }
     },
