@@ -452,11 +452,24 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           setIsSettling(true);
           setSettlingId(activeId);
 
-          // Update local state immediately for smooth animation
+          const updatedMetadata = {
+            ...activeMetadata,
+          };
+          delete updatedMetadata.collection_id;
+          delete updatedMetadata.is_expanded;
+
+          // CRITICAL: Only update position in local state, NOT metadata
+          // This prevents unmount/remount (the cause of blinking)
+          // Metadata flows back through props after backend update
           const reorderedItems = arrayMove(items, activeIndex, overIndex);
           setItems(reorderedItems);
 
-          // Delay updating backend until after animation
+          // Fire backend update immediately (metadata will flow back as props)
+          onUpdateArtifact?.(activeArtifact.id, {
+            metadata: updatedMetadata,
+          });
+
+          // Delay parent notification until AFTER animation
           if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
           settleTimeoutRef.current = setTimeout(async () => {
             // Check if we need to cleanup a single remaining item in the collection
@@ -470,30 +483,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
               });
             }
 
-            // Remove item from collection by removing collection_id
-            const updatedMetadata = {
-              ...activeMetadata,
-            };
-            delete updatedMetadata.collection_id;
-            delete updatedMetadata.is_expanded;
-
-            await onUpdateArtifact?.(activeArtifact.id, {
-              metadata: updatedMetadata,
-            });
-
-            // Build reordered array by treating the item as no longer in a collection
-            // Update the metadata in reorderedItems for reconstruction
-            const reorderedWithUpdatedMetadata = reorderedItems.map((item) => {
-              if (item.id === activeArtifact.id) {
-                return {
-                  ...item,
-                  metadata: updatedMetadata,
-                };
-              }
-              return item;
-            });
-
-            // Create modified artifacts where the active item has no collection_id
+            // Create modified artifacts where the active item has no collection_id (already updated above)
             const modifiedArtifacts = artifacts.map((artifact) => {
               if (artifact.id === activeArtifact.id) {
                 return {
@@ -506,9 +496,13 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
             // Reconstruct using the utility with updated metadata
             const fullReordered = reconstructFullArtifactsArray(
-              reorderedWithUpdatedMetadata,
+              reorderedItems,
               modifiedArtifacts
             );
+
+            // CRITICAL: Update prevArtifactsRef BEFORE ending settling
+            // This prevents sync effect from detecting metadata change as "new"
+            prevArtifactsRef.current = fullReordered;
 
             onReorder?.(fullReordered);
             setIsSettling(false);
@@ -563,48 +557,50 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         setIsSettling(true);
         setSettlingId(activeId);
 
-        // Update local state immediately for smooth animation
+        const targetCollectionId = overMetadata.collection_id;
+
+        const updatedMetadata = {
+          ...activeMetadata,
+          collection_id: targetCollectionId,
+          is_expanded: true,
+        };
+
+        // CRITICAL: Only update position in local state, NOT metadata
+        // This prevents unmount/remount (the cause of blinking)
+        // Metadata flows back through props after backend update
         const reorderedItems = arrayMove(items, activeIndex, overIndex);
         setItems(reorderedItems);
 
-        // Delay updating backend until after animation
+        // Fire backend update immediately (metadata will flow back as props)
+        onUpdateArtifact?.(activeArtifact.id, {
+          metadata: updatedMetadata,
+        });
+
+        // Delay parent notification until AFTER animation
         if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
         settleTimeoutRef.current = setTimeout(async () => {
-          const targetCollectionId = overMetadata.collection_id;
-
-          // Build the new collection order from the visual order
+          // Build collection order from VISUAL order (preserves drop position)
           const collectionArtifactsInOrder: Artifact[] = [];
-          reorderedItems.forEach((item) => {
-            const itemMetadata = getCollectionMetadata(item);
+          reorderedItems.forEach((visualItem) => {
+            const artifact = artifacts.find((a) => a.id === visualItem.id);
+            if (!artifact) return;
+
+            // Use updated metadata for item being added, existing for others
+            const itemMetadata =
+              visualItem.id === activeArtifact.id
+                ? updatedMetadata
+                : getCollectionMetadata(artifact);
+
             const isInTargetCollection =
               itemMetadata.collection_id === targetCollectionId;
-            const isBeingAdded = item.id === activeArtifact.id;
 
-            if (isInTargetCollection || isBeingAdded) {
-              collectionArtifactsInOrder.push(item);
+            if (isInTargetCollection) {
+              const artifactWithMetadata =
+                visualItem.id === activeArtifact.id
+                  ? { ...artifact, metadata: updatedMetadata }
+                  : artifact;
+              collectionArtifactsInOrder.push(artifactWithMetadata);
             }
-          });
-
-          // Update metadata to add item to collection
-          const updatedMetadata = {
-            ...activeMetadata,
-            collection_id: targetCollectionId,
-            is_expanded: true,
-          };
-
-          await onUpdateArtifact(activeArtifact.id, {
-            metadata: updatedMetadata,
-          });
-
-          // Update metadata in reorderedItems for reconstruction
-          const reorderedWithUpdatedMetadata = reorderedItems.map((item) => {
-            if (item.id === activeArtifact.id) {
-              return {
-                ...item,
-                metadata: updatedMetadata,
-              };
-            }
-            return item;
           });
 
           // Create modified artifacts where the active item has the new collection_id
@@ -618,31 +614,23 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             return artifact;
           });
 
-          // Build collection override with items in the new order
-          const collectionArtifactsWithUpdatedItem =
-            collectionArtifactsInOrder.map((item) => {
-              if (item.id === activeArtifact.id) {
-                return {
-                  ...item,
-                  metadata: updatedMetadata,
-                };
-              }
-              return item;
-            });
-
           const collectionOverrides = new Map<string, Artifact[]>();
           if (targetCollectionId) {
             collectionOverrides.set(
               targetCollectionId,
-              collectionArtifactsWithUpdatedItem
+              collectionArtifactsInOrder
             );
           }
 
           const fullReordered = reconstructFullArtifactsArray(
-            reorderedWithUpdatedMetadata,
+            reorderedItems,
             modifiedArtifacts,
             collectionOverrides
           );
+
+          // CRITICAL: Update prevArtifactsRef BEFORE ending settling
+          // This prevents sync effect from detecting metadata change as "new"
+          prevArtifactsRef.current = fullReordered;
 
           onReorder?.(fullReordered);
           setIsSettling(false);

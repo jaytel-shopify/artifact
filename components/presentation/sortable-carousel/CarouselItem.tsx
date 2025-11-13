@@ -109,6 +109,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     },
     ref
   ) {
+
     // Use provided data (required now, no mock fallback)
     const url = contentUrl || "";
     const type = contentType;
