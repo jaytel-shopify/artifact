@@ -5,7 +5,6 @@ import React, {
   useCallback,
   forwardRef,
   useImperativeHandle,
-  useMemo,
 } from "react";
 import {
   closestCenter,
@@ -28,7 +27,6 @@ import type {
   UniqueIdentifier,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   useSortable,
   SortableContext,
   sortableKeyboardCoordinates,
@@ -40,14 +38,9 @@ import type { Artifact } from "@/types";
 import { CarouselItem, Layout, Position } from "./CarouselItem";
 import type { Props as CarouselItemProps } from "./CarouselItem";
 import { useCollectionMode } from "./useCollectionMode";
-import {
-  getCollectionMetadata,
-  getCollectionArtifacts,
-  getAllCollectionIds,
-  reconstructFullArtifactsArray,
-  getCollectionCleanupIfNeeded,
-  isCollectionExpanded,
-} from "@/lib/collection-utils";
+import { useCarouselItems } from "./useCarouselItems";
+import { useDragHandlers } from "./useDragHandlers";
+import { getCollectionMetadata } from "@/lib/collection-utils";
 import "./sortable-carousel.css";
 
 type VideoMetadata = { hideUI?: boolean; loop?: boolean; muted?: boolean };
@@ -70,7 +63,7 @@ interface Props {
   onFocusArtifact?: (artifactId: string) => void;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
-  pageId?: string; // Track page changes to prevent auto-scroll on page switch
+  pageId?: string;
 }
 
 const measuring: MeasuringConfiguration = {
@@ -143,9 +136,25 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const [isCreatingCollection, setIsCreatingCollection] = useState(false);
     const [itemBeingAddedToCollection, setItemBeingAddedToCollection] =
       useState<UniqueIdentifier | null>(null);
-    const containerRef = useRef<HTMLUListElement>(null);
+    const containerRef = useRef<HTMLUListElement | null>(null);
 
-    // Collection mode logic
+    // Expose the containerRef to parent via forwardedRef
+    useImperativeHandle(forwardedRef, () => containerRef.current!);
+
+    // Custom hooks for organized logic
+    const {
+      items,
+      setItems,
+      hiddenCollectionItems,
+      expandedCollections,
+      prevArtifactsRef,
+    } = useCarouselItems({
+      artifacts,
+      isSettling,
+      pageId,
+      containerRef,
+    });
+
     const {
       isCollectionMode,
       hoveredItemId,
@@ -159,186 +168,25 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       artifacts,
     });
 
-    // Expose the containerRef to parent via forwardedRef
-    useImperativeHandle(forwardedRef, () => containerRef.current!);
-    const settleTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
-      undefined
-    );
-    const [items, setItems] = useState<Artifact[]>(artifacts);
-    const prevPageIdRef = useRef(pageId);
-    const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
-      new Set()
-    );
-    const prevExpandedRef = useRef<Set<string>>(new Set());
+    const {
+      handleRemoveFromCollectionDrag,
+      handleAddToExpandedCollection,
+      handleNormalReorder,
+    } = useDragHandlers({
+      items,
+      artifacts,
+      activeId,
+      onUpdateArtifact,
+      onReorder,
+      resetCollectionState,
+      setItems,
+      setIsSettling,
+      setSettlingId,
+      setActiveId,
+      prevArtifactsRef,
+    });
 
-    // Get visible artifacts based on collection expand/collapse state
-    const visibleArtifacts = useMemo(() => {
-      const seen = new Set<string>();
-      const result: Artifact[] = [];
-
-      artifacts.forEach((artifact) => {
-        if (seen.has(artifact.id)) return;
-
-        const metadata = getCollectionMetadata(artifact);
-
-        if (metadata.collection_id) {
-          // This is part of a collection
-          const collectionArtifacts = getCollectionArtifacts(
-            metadata.collection_id,
-            artifacts
-          );
-
-          // Check if expanded (use first item's state)
-          const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-
-          if (firstMeta.is_expanded) {
-            // Show all items in order
-            collectionArtifacts.forEach((item) => {
-              if (!seen.has(item.id)) {
-                result.push(item);
-                seen.add(item.id);
-              }
-            });
-          } else {
-            // Show only first item (collapsed)
-            if (!seen.has(collectionArtifacts[0].id)) {
-              result.push(collectionArtifacts[0]);
-              seen.add(collectionArtifacts[0].id);
-            }
-            // Mark others as seen so we skip them
-            collectionArtifacts.forEach((item) => seen.add(item.id));
-          }
-        } else {
-          // Regular item, not in a collection
-          result.push(artifact);
-          seen.add(artifact.id);
-        }
-      });
-
-      return result;
-    }, [artifacts]);
-
-    // Hidden collection items (collapsed, but stay mounted to preserve video state)
-    const hiddenCollectionItems = useMemo(() => {
-      const result: Artifact[] = [];
-      const collectionIds = getAllCollectionIds(artifacts);
-
-      collectionIds.forEach((collectionId) => {
-        const collectionArtifacts = getCollectionArtifacts(
-          collectionId,
-          artifacts
-        );
-        const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-
-        // If collapsed, hide all items except the first
-        if (!firstMeta.is_expanded && collectionArtifacts.length > 1) {
-          result.push(...collectionArtifacts.slice(1));
-        }
-      });
-
-      return result;
-    }, [artifacts]);
-
-    // Track newly expanded collections for animation
-    useEffect(() => {
-      const collectionIds = getAllCollectionIds(artifacts);
-      const currentExpanded = new Set<string>();
-
-      collectionIds.forEach((collectionId) => {
-        const collectionArtifacts = getCollectionArtifacts(
-          collectionId,
-          artifacts
-        );
-        if (collectionArtifacts.length > 0) {
-          const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-          if (firstMeta.is_expanded) {
-            currentExpanded.add(collectionId);
-          }
-        }
-      });
-
-      // Find newly expanded collections
-      const newlyExpanded = Array.from(currentExpanded).filter(
-        (id) => !prevExpandedRef.current.has(id)
-      );
-
-      if (newlyExpanded.length > 0) {
-        setExpandedCollections(new Set(newlyExpanded));
-        const timer = setTimeout(() => setExpandedCollections(new Set()), 400);
-        prevExpandedRef.current = currentExpanded;
-        return () => clearTimeout(timer);
-      }
-
-      prevExpandedRef.current = currentExpanded;
-    }, [artifacts]);
-
-    // Sync artifacts with local state (respecting animation state)
-    const prevArtifactsRef = useRef(artifacts);
-    useEffect(() => {
-      // Block sync during animation - critical for smooth animation!
-      if (isSettling) return;
-
-      const prevIds = prevArtifactsRef.current
-        .map((a) => a.id)
-        .sort()
-        .join(",");
-      const newIds = visibleArtifacts
-        .map((a) => a.id)
-        .sort()
-        .join(",");
-
-      // Sync if items added/removed
-      if (prevIds !== newIds) {
-        // Check if items were added (not removed) AND page didn't change
-        const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
-        const pageChanged = prevPageIdRef.current !== pageId;
-
-        setItems(visibleArtifacts);
-        prevArtifactsRef.current = artifacts;
-        prevPageIdRef.current = pageId;
-
-        // Scroll to end if items were added AND page didn't change
-        // (don't auto-scroll when switching pages)
-        if (itemsAdded && !pageChanged && containerRef.current) {
-          setTimeout(() => {
-            if (containerRef.current) {
-              containerRef.current.scrollTo({
-                left: containerRef.current.scrollWidth,
-                behavior: "smooth",
-              });
-            }
-          }, 100);
-        }
-        return;
-      }
-
-      // Check if order changed OR properties changed
-      const prevOrder = prevArtifactsRef.current.map((a) => a.id).join(",");
-      const currentOrder = artifacts.map((a) => a.id).join(",");
-      const orderChanged = prevOrder !== currentOrder;
-
-      const itemsChanged = visibleArtifacts.some((newArtifact) => {
-        const prevArtifact = prevArtifactsRef.current.find(
-          (a) => a.id === newArtifact.id
-        );
-        if (!prevArtifact) return true;
-
-        // Check if name or metadata changed
-        return (
-          newArtifact.name !== prevArtifact.name ||
-          JSON.stringify(newArtifact.metadata) !==
-            JSON.stringify(prevArtifact.metadata)
-        );
-      });
-
-      if (orderChanged || itemsChanged) {
-        // Top-level order changed or properties changed - update items
-        setItems(visibleArtifacts);
-      }
-
-      prevArtifactsRef.current = artifacts;
-    }, [artifacts, isSettling, pageId, visibleArtifacts]);
-
+    // Maintain scroll position on column change
     useEffect(() => {
       const container = containerRef.current;
       if (!container) return;
@@ -348,12 +196,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const itemIds = items.map((artifact) => artifact.id);
     const activeIndex =
       activeId != null ? itemIds.indexOf(activeId.toString()) : -1;
+
     const sensors = useSensors(
       useSensor(PointerSensor, {
         activationConstraint: {
-          distance: 8, // Require 8px of movement before dragging starts
+          distance: 8,
         },
-        // Only activate on left mouse button (button 0), ignore right-click
         button: 0,
       }),
       useSensor(KeyboardSensor, {
@@ -362,14 +210,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     );
 
     const totalPaddingRem = 2;
-    const totalGapRem = 1 * (columns - 1); // 1rem gap from CSS
+    const totalGapRem = 1 * (columns - 1);
     const totalSpacingRem = totalPaddingRem + totalGapRem;
     const columnWidth = `calc((100vw - ${totalSpacingRem}rem) / ${columns})`;
 
     // Fit mode is ONLY enabled when columns is 1
-    // Regardless of fitMode prop, it's disabled for multi-column layouts
     const isFitMode = columns === 1 ? fitMode : false;
 
+    // Drag event handlers
     const handleDragStart = useCallback(
       ({ active }: DragStartEvent) => {
         setActiveId(active.id);
@@ -388,302 +236,24 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const handleDragCancel = useCallback(() => {
       setActiveId(null);
       setItemBeingAddedToCollection(null);
-      handleCollectionDragStart(); // Resets collection state
+      handleCollectionDragStart();
     }, [handleCollectionDragStart]);
 
-    // Helper: Handle adding item to collection (collection mode)
     const handleAddToCollection = useCallback(
       async (overId: UniqueIdentifier) => {
         setIsCreatingCollection(true);
         setItemBeingAddedToCollection(activeId);
         setActiveId(null);
 
-        // Wait for the drop animation to complete before updating data
         setTimeout(async () => {
           await handleCollectionDragEnd(overId);
           setIsCreatingCollection(false);
-          // Clear after a brief delay to ensure DB update has propagated
           setTimeout(() => {
             setItemBeingAddedToCollection(null);
           }, 100);
-        }, 300); // Match collectionDropAnimation duration
+        }, 300);
       },
       [activeId, handleCollectionDragEnd]
-    );
-
-    // Helper: Handle removing item from collection and placing it elsewhere
-    const handleRemoveFromCollectionDrag = useCallback(
-      (
-        collectionId: string,
-        overIndex: number,
-        activeIndex: number
-      ): boolean => {
-        // Get all items in this collection
-        const collectionArtifacts = getCollectionArtifacts(collectionId, items);
-
-        if (collectionArtifacts.length === 0) return false;
-
-        // Only check bounds if collection is expanded
-        const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-        if (!firstMeta.is_expanded) return false;
-
-        // Find collection bounds in visible items
-        const firstCollectionIndex = items.findIndex(
-          (item) => item.id === collectionArtifacts[0].id
-        );
-        const lastCollectionIndex = items.findIndex(
-          (item) =>
-            item.id === collectionArtifacts[collectionArtifacts.length - 1].id
-        );
-
-        if (firstCollectionIndex === -1 || lastCollectionIndex === -1)
-          return false;
-
-        // Check if drop position is outside collection bounds
-        const isOutsideBounds =
-          overIndex < firstCollectionIndex || overIndex > lastCollectionIndex;
-
-        if (isOutsideBounds) {
-          const activeArtifact = items[activeIndex];
-          const activeMetadata = getCollectionMetadata(activeArtifact);
-
-          // Reset collection mode state to clear any hover indicators
-          resetCollectionState();
-
-          setIsSettling(true);
-          setSettlingId(activeId);
-
-          const updatedMetadata = {
-            ...activeMetadata,
-          };
-          delete updatedMetadata.collection_id;
-          delete updatedMetadata.is_expanded;
-
-          // CRITICAL: Only update position in local state, NOT metadata
-          // This prevents unmount/remount (the cause of blinking)
-          // Metadata flows back through props after backend update
-          const reorderedItems = arrayMove(items, activeIndex, overIndex);
-          setItems(reorderedItems);
-
-          // Fire backend update immediately (metadata will flow back as props)
-          onUpdateArtifact?.(activeArtifact.id, {
-            metadata: updatedMetadata,
-          });
-
-          // Delay parent notification until AFTER animation
-          if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-          settleTimeoutRef.current = setTimeout(async () => {
-            // Check if we need to cleanup a single remaining item in the collection
-            const cleanup = getCollectionCleanupIfNeeded(
-              activeArtifact,
-              artifacts
-            );
-            if (cleanup && onUpdateArtifact) {
-              await onUpdateArtifact(cleanup.artifactId, {
-                metadata: cleanup.metadata,
-              });
-            }
-
-            // Create modified artifacts where the active item has no collection_id (already updated above)
-            const modifiedArtifacts = artifacts.map((artifact) => {
-              if (artifact.id === activeArtifact.id) {
-                return {
-                  ...artifact,
-                  metadata: updatedMetadata,
-                };
-              }
-              return artifact;
-            });
-
-            // Reconstruct using the utility with updated metadata
-            const fullReordered = reconstructFullArtifactsArray(
-              reorderedItems,
-              modifiedArtifacts
-            );
-
-            // CRITICAL: Update prevArtifactsRef BEFORE ending settling
-            // This prevents sync effect from detecting metadata change as "new"
-            prevArtifactsRef.current = fullReordered;
-
-            onReorder?.(fullReordered);
-            setIsSettling(false);
-            setSettlingId(null);
-          }, 250);
-
-          setActiveId(null);
-          return true; // Handled
-        }
-
-        return false; // Not handled
-      },
-      [
-        items,
-        activeId,
-        artifacts,
-        resetCollectionState,
-        onUpdateArtifact,
-        onReorder,
-      ]
-    );
-
-    // Helper: Handle adding item to expanded collection
-    const handleAddToExpandedCollection = useCallback(
-      (overIndex: number, activeIndex: number): boolean => {
-        if (
-          activeIndex === -1 ||
-          overIndex === -1 ||
-          activeIndex === overIndex
-        ) {
-          return false;
-        }
-
-        const activeArtifact = items[activeIndex];
-        const overArtifact = items[overIndex];
-
-        const activeMetadata = getCollectionMetadata(activeArtifact);
-        const overMetadata = getCollectionMetadata(overArtifact);
-
-        // Check if dropping onto an item that's in an expanded collection
-        // and the active item is NOT already in that collection
-        if (
-          !overMetadata.collection_id ||
-          !isCollectionExpanded(overMetadata.collection_id, artifacts) ||
-          activeMetadata.collection_id === overMetadata.collection_id ||
-          !onUpdateArtifact
-        ) {
-          return false; // Not handled
-        }
-
-        // Add item to the collection
-        setIsSettling(true);
-        setSettlingId(activeId);
-
-        const targetCollectionId = overMetadata.collection_id;
-
-        const updatedMetadata = {
-          ...activeMetadata,
-          collection_id: targetCollectionId,
-          is_expanded: true,
-        };
-
-        // Update local state with both position AND metadata immediately
-        // This shows visual feedback (hairline border) right away
-        const reorderedItems = arrayMove(items, activeIndex, overIndex).map(
-          (item) =>
-            item.id === activeArtifact.id
-              ? { ...item, metadata: updatedMetadata }
-              : item
-        );
-        setItems(reorderedItems);
-
-        // Fire backend update immediately (optimistic update handles the rest)
-        onUpdateArtifact?.(activeArtifact.id, {
-          metadata: updatedMetadata,
-        });
-
-        // Delay parent notification until AFTER animation
-        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-        settleTimeoutRef.current = setTimeout(async () => {
-          // Build collection order from VISUAL order (preserves drop position)
-          const collectionArtifactsInOrder: Artifact[] = [];
-          reorderedItems.forEach((visualItem) => {
-            const artifact = artifacts.find((a) => a.id === visualItem.id);
-            if (!artifact) return;
-
-            // Use updated metadata for item being added, existing for others
-            const itemMetadata =
-              visualItem.id === activeArtifact.id
-                ? updatedMetadata
-                : getCollectionMetadata(artifact);
-
-            const isInTargetCollection =
-              itemMetadata.collection_id === targetCollectionId;
-
-            if (isInTargetCollection) {
-              const artifactWithMetadata =
-                visualItem.id === activeArtifact.id
-                  ? { ...artifact, metadata: updatedMetadata }
-                  : artifact;
-              collectionArtifactsInOrder.push(artifactWithMetadata);
-            }
-          });
-
-          // Create modified artifacts where the active item has the new collection_id
-          const modifiedArtifacts = artifacts.map((artifact) => {
-            if (artifact.id === activeArtifact.id) {
-              return {
-                ...artifact,
-                metadata: updatedMetadata,
-              };
-            }
-            return artifact;
-          });
-
-          const collectionOverrides = new Map<string, Artifact[]>();
-          if (targetCollectionId) {
-            collectionOverrides.set(
-              targetCollectionId,
-              collectionArtifactsInOrder
-            );
-          }
-
-          const fullReordered = reconstructFullArtifactsArray(
-            reorderedItems,
-            modifiedArtifacts,
-            collectionOverrides
-          );
-
-          // CRITICAL: Update prevArtifactsRef BEFORE ending settling
-          // This prevents sync effect from detecting metadata change as "new"
-          prevArtifactsRef.current = fullReordered;
-
-          onReorder?.(fullReordered);
-          setIsSettling(false);
-          setSettlingId(null);
-        }, 250);
-
-        resetCollectionState();
-        setActiveId(null);
-        return true; // Handled
-      },
-      [
-        items,
-        activeId,
-        artifacts,
-        onUpdateArtifact,
-        onReorder,
-        resetCollectionState,
-      ]
-    );
-
-    // Helper: Handle normal reordering
-    const handleNormalReorder = useCallback(
-      (overIndex: number, activeIndex: number) => {
-        if (activeIndex === overIndex || activeIndex === -1) return;
-
-        // Set settling to block parent updates during animation
-        setIsSettling(true);
-        setSettlingId(activeId);
-
-        // Update local state immediately for smooth animation
-        const reorderedItems = arrayMove(items, activeIndex, overIndex);
-        setItems(reorderedItems);
-
-        // Delay notifying parent until AFTER animation completes
-        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-        settleTimeoutRef.current = setTimeout(() => {
-          // Reconstruct full artifacts array from reordered visible items
-          const fullReordered = reconstructFullArtifactsArray(
-            reorderedItems,
-            artifacts
-          );
-
-          onReorder?.(fullReordered);
-          setIsSettling(false);
-          setSettlingId(null);
-        }, 250); // Match dnd-kit's default animation duration
-      },
-      [activeId, items, onReorder, artifacts]
     );
 
     const handleDragEnd = useCallback(
@@ -701,7 +271,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           await handleAddToCollection(over.id);
           return;
         } else {
-          // Not in collection mode - reset state
           handleCollectionDragEnd(over.id);
         }
 
@@ -723,13 +292,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
         // 3. Handle adding to expanded collection
         if (handleAddToExpandedCollection(overIndex, activeIndex)) {
-          return; // Handled
+          return;
         }
 
         // 4. Handle normal reordering
         handleNormalReorder(overIndex, activeIndex);
 
-        // Always reset collection state to clear any lingering hover indicators
         resetCollectionState();
         setActiveId(null);
       },
@@ -775,7 +343,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
           >
             {items.map((artifact, index) => {
-              // Check if this item belongs to a newly expanded collection
               const artifactMetadata = getCollectionMetadata(artifact);
               const isJustExpanded = artifactMetadata.collection_id
                 ? expandedCollections.has(artifactMetadata.collection_id)
@@ -849,7 +416,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                 />
               );
             })}
-            {/* Render hidden collection items outside sortable context to preserve state */}
+            {/* Hidden collection items preserve state when collapsed */}
             {hiddenCollectionItems.map((artifact) => (
               <HiddenCarouselItem
                 id={artifact.id}
@@ -890,6 +457,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
   }
 );
 
+// Overlay component for drag preview
 function CarouselItemOverlay({
   id,
   items,
@@ -934,6 +502,7 @@ function CarouselItemOverlay({
   );
 }
 
+// Sortable wrapper component
 function SortableCarouselItem({
   id,
   activeIndex,
@@ -1014,8 +583,7 @@ function SortableCarouselItem({
   );
 }
 
-// Hidden carousel item - renders outside sortable context to preserve state
-// Used for collapsed collection items so videos don't reload when expanded
+// Hidden item component - preserves video state when collection is collapsed
 function HiddenCarouselItem({
   id,
   layout,
@@ -1056,6 +624,7 @@ function HiddenCarouselItem({
     />
   );
 }
+
 function always() {
   return true;
 }
