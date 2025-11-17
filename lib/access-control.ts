@@ -140,7 +140,7 @@ async function sendInviteNotification(
             type: "section",
             text: {
               type: "mrkdwn",
-              text: `*You've been invited to a ${resourceType}* on Artifact 🎉`,
+              text: `*You've been invited to a ${resourceType} on Artifact* 🎉`,
             },
           },
           {
