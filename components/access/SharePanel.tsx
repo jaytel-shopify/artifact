@@ -1,8 +1,14 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { X, Link as LinkIcon, Check } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Link as LinkIcon, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -35,7 +41,7 @@ interface SharePanelProps {
 
 /**
  * SharePanel
- * 
+ *
  * Unified share panel for both projects and folders.
  * Allows owner to manage access with owner/editor/viewer roles.
  */
@@ -50,24 +56,20 @@ export function SharePanel({
   const [accessList, setAccessList] = useState<AccessEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [linkCopied, setLinkCopied] = useState(false);
-  const [currentUserAccess, setCurrentUserAccess] = useState<AccessLevel | null>(null);
-  const [selectedAccessLevel, setSelectedAccessLevel] = useState<AccessLevel>("editor");
+  const [currentUserAccess, setCurrentUserAccess] =
+    useState<AccessLevel | null>(null);
+  const [selectedAccessLevel, setSelectedAccessLevel] =
+    useState<AccessLevel>("editor");
   const [selectedUser, setSelectedUser] = useState<ShopifyUser | null>(null);
 
   // Generate the shareable link
-  const shareUrl = 
+  const shareUrl =
     resourceType === "project"
       ? `https://artifact.quick.shopify.io/p?id=${resourceId}`
       : `https://artifact.quick.shopify.io/folder?id=${resourceId}`;
 
   // Load access list
-  useEffect(() => {
-    if (!isOpen) return;
-
-    loadAccessList();
-  }, [isOpen, resourceId, resourceType]);
-
-  async function loadAccessList() {
+  const loadAccessList = useCallback(async () => {
     setLoading(true);
     try {
       const access = await getAccessList(resourceId, resourceType);
@@ -84,7 +86,12 @@ export function SharePanel({
     } finally {
       setLoading(false);
     }
-  }
+  }, [resourceId, resourceType, currentUserEmail]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    loadAccessList();
+  }, [isOpen, loadAccessList]);
 
   // Check if current user is owner
   const isOwner = currentUserAccess === "owner";
@@ -114,7 +121,9 @@ export function SharePanel({
         selectedUser.slackImageUrl
       );
 
-      toast.success(`Invited ${selectedUser.fullName} as ${selectedAccessLevel}`);
+      toast.success(
+        `Invited ${selectedUser.fullName} as ${selectedAccessLevel}`
+      );
       setSelectedUser(null); // Clear selection after invite
       await loadAccessList();
       setSelectedAccessLevel("editor"); // Reset to default
@@ -162,7 +171,7 @@ export function SharePanel({
       setLinkCopied(true);
       toast.success("Link copied!");
       setTimeout(() => setLinkCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error("Failed to copy link");
     }
   }
@@ -174,24 +183,16 @@ export function SharePanel({
   const owner = accessList.find((a) => a.access_level === "owner");
   const otherUsers = accessList.filter((a) => a.access_level !== "owner");
 
-  if (!isOpen) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-background border border-border rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-          <h2 className="text-xl font-semibold">
-            Share {resourceName}
-          </h2>
-          
-          <div className="flex items-center gap-2">
+        <DialogHeader className="px-6 py-5 border-b border-border">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-xl font-semibold">
+              Share {resourceName}
+            </DialogTitle>
+
             {/* Copy Link Button */}
             <Button
               variant="ghost"
@@ -209,18 +210,8 @@ export function SharePanel({
                 "Copy link"
               )}
             </Button>
-
-            {/* Close Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
           </div>
-        </div>
+        </DialogHeader>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
@@ -235,10 +226,12 @@ export function SharePanel({
                     placeholder="Search name"
                   />
                 </div>
-                
-                <Select 
+
+                <Select
                   value={selectedAccessLevel}
-                  onValueChange={(value) => setSelectedAccessLevel(value as AccessLevel)}
+                  onValueChange={(value) =>
+                    setSelectedAccessLevel(value as AccessLevel)
+                  }
                 >
                   <SelectTrigger className="w-[120px]">
                     <SelectValue />
@@ -257,9 +250,10 @@ export function SharePanel({
                   Invite
                 </Button>
               </div>
-              
+
               <p className="text-xs text-muted-foreground">
-                Search and select a person, then click invite to grant them access
+                Search and select a person, then click invite to grant them
+                access
               </p>
             </div>
           )}
@@ -300,9 +294,7 @@ export function SharePanel({
                       </div>
                     </div>
 
-                    <div className="text-sm text-muted-foreground">
-                      owner
-                    </div>
+                    <div className="text-sm text-muted-foreground">owner</div>
                   </div>
                 )}
 
@@ -353,7 +345,10 @@ export function SharePanel({
                         <SelectContent>
                           <SelectItem value="editor">editor</SelectItem>
                           <SelectItem value="viewer">viewer</SelectItem>
-                          <SelectItem value="remove" className="text-destructive">
+                          <SelectItem
+                            value="remove"
+                            className="text-destructive"
+                          >
                             Remove access
                           </SelectItem>
                         </SelectContent>
@@ -369,7 +364,7 @@ export function SharePanel({
             )}
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
