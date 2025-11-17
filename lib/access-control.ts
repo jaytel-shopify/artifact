@@ -125,68 +125,57 @@ async function sendInviteNotification(
   try {
     // Only send if user has Slack ID
     if (!invitedUser.slackId) {
-      console.log(
-        "[AccessControl] Skipping Slack notification - no Slack ID for:",
-        invitedUser.email
-      );
       return;
     }
 
     const quick = await waitForQuick();
-
-    // Generate resource URL
     const resourceUrl = getResourceUrl(resourceType, resourceId);
 
-    // Create message
-    const message = `You've been invited to a ${resourceType}!`;
-
-    // Send Slack message with blocks for better formatting
-    await quick.slack.sendMessage(invitedUser.slackId, message, {
-      blocks: [
-        {
-          type: "section",
-          text: {
-            type: "mrkdwn",
-            text: `*You've been invited to a ${resourceType}* 🎉`,
+    await quick.slack.sendMessage(
+      invitedUser.slackId,
+      `You've been invited to a ${resourceType}!`,
+      {
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*You've been invited to a ${resourceType}* on Artifact 🎉`,
+            },
           },
-        },
-        {
-          type: "section",
-          fields: [
-            {
-              type: "mrkdwn",
-              text: `*${resourceType === "project" ? "Project" : "Folder"}:*\n${resourceName}`,
-            },
-            {
-              type: "mrkdwn",
-              text: `*Access Level:*\n${accessLevel}`,
-            },
-            {
-              type: "mrkdwn",
-              text: `*Invited by:*\n${invitedBy}`,
-            },
-          ],
-        },
-        {
-          type: "actions",
-          elements: [
-            {
-              type: "button",
-              text: {
-                type: "plain_text",
-                text: `Open ${resourceType === "project" ? "Project" : "Folder"}`,
+          {
+            type: "section",
+            fields: [
+              {
+                type: "mrkdwn",
+                text: `*${resourceType === "project" ? "Project" : "Folder"}:*\n${resourceName}`,
               },
-              url: resourceUrl,
-              style: "primary",
-            },
-          ],
-        },
-      ],
-    });
-
-    console.log(
-      "[AccessControl] Sent Slack notification to:",
-      invitedUser.email
+              {
+                type: "mrkdwn",
+                text: `*Access Level:*\n${accessLevel}`,
+              },
+              {
+                type: "mrkdwn",
+                text: `*Invited by:*\n${invitedBy}`,
+              },
+            ],
+          },
+          {
+            type: "actions",
+            elements: [
+              {
+                type: "button",
+                text: {
+                  type: "plain_text",
+                  text: `Open ${resourceType === "project" ? "Project" : "Folder"}`,
+                },
+                url: resourceUrl,
+                style: "primary",
+              },
+            ],
+          },
+        ],
+      }
     );
   } catch (error) {
     // Don't fail the invitation if Slack notification fails

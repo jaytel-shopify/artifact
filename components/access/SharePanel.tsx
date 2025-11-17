@@ -19,6 +19,7 @@ import {
 import { toast } from "sonner";
 import { UserSearchAutocomplete } from "./UserSearchAutocomplete";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import { UserChip } from "@/components/ui/user-chip";
 import {
   getAccessList,
   grantAccess,
@@ -61,7 +62,7 @@ export function SharePanel({
     useState<AccessLevel | null>(null);
   const [selectedAccessLevel, setSelectedAccessLevel] =
     useState<AccessLevel>("editor");
-  const [selectedUser, setSelectedUser] = useState<ShopifyUser | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<ShopifyUser[]>([]);
 
   // Generate the shareable link
   const shareUrl = getResourceUrl(resourceType, resourceId);
@@ -94,19 +95,36 @@ export function SharePanel({
   // Check if current user is owner
   const isOwner = currentUserAccess === "owner";
 
-  // Handle inviting a new user
-  async function handleInviteUser() {
-    if (!selectedUser) return;
+  // Handle adding a user to the invite list
+  const handleAddUser = (user: ShopifyUser | null) => {
+    if (!user) return;
+
+    // Check if already in selected list
+    if (selectedUsers.find((u) => u.email === user.email)) {
+      return;
+    }
 
     // Check if user already has access
     const existing = accessList.find(
-      (a) => a.user_email.toLowerCase() === selectedUser.email.toLowerCase()
+      (a) => a.user_email.toLowerCase() === user.email.toLowerCase()
     );
 
     if (existing) {
-      toast.error(`${selectedUser.fullName} already has access`);
+      toast.error(`${user.fullName} already has access`);
       return;
     }
+
+    setSelectedUsers((prev) => [...prev, user]);
+  };
+
+  // Handle removing a user from the invite list
+  const handleRemoveUser = (email: string) => {
+    setSelectedUsers((prev) => prev.filter((u) => u.email !== email));
+  };
+
+  // Handle inviting all selected users
+  async function handleInviteUsers() {
+    if (selectedUsers.length === 0) return;
 
     try {
       // Get current user's name from access list
@@ -115,28 +133,33 @@ export function SharePanel({
       );
       const currentUserName = currentUser?.user_name || currentUserEmail;
 
-      await grantAccess(
-        resourceId,
-        resourceType,
-        selectedUser.email,
-        selectedAccessLevel,
-        currentUserEmail,
-        selectedUser.fullName,
-        selectedUser.slackImageUrl,
-        resourceName,
-        selectedUser.slackId,
-        currentUserName
+      // Invite all selected users
+      const promises = selectedUsers.map((user) =>
+        grantAccess(
+          resourceId,
+          resourceType,
+          user.email,
+          selectedAccessLevel,
+          currentUserEmail,
+          user.fullName,
+          user.slackImageUrl,
+          resourceName,
+          user.slackId,
+          currentUserName
+        )
       );
 
+      await Promise.all(promises);
+
       toast.success(
-        `Invited ${selectedUser.fullName} as ${selectedAccessLevel}`
+        `Invited ${selectedUsers.length} ${selectedUsers.length === 1 ? "person" : "people"} as ${selectedAccessLevel}`
       );
-      setSelectedUser(null); // Clear selection after invite
+      setSelectedUsers([]); // Clear selections after invite
       await loadAccessList();
       setSelectedAccessLevel("editor"); // Reset to default
     } catch (error) {
-      console.error("Failed to invite user:", error);
-      toast.error("Failed to invite user");
+      console.error("Failed to invite users:", error);
+      toast.error("Failed to invite users");
     }
   }
 
@@ -225,12 +248,17 @@ export function SharePanel({
           {/* Invite Section - Only show if user is owner */}
           {isOwner && (
             <div className="space-y-3">
+              {/* Search and Access Level */}
               <div className="flex gap-2">
                 <div className="flex-1">
                   <UserSearchAutocomplete
-                    onSelect={setSelectedUser}
-                    excludeEmails={excludeEmails}
-                    placeholder="Search name"
+                    onSelect={handleAddUser}
+                    selectedUser={null}
+                    excludeEmails={[
+                      ...excludeEmails,
+                      ...selectedUsers.map((u) => u.email),
+                    ]}
+                    placeholder="Search and add people..."
                   />
                 </div>
 
@@ -248,19 +276,35 @@ export function SharePanel({
                     <SelectItem value="viewer">viewer</SelectItem>
                   </SelectContent>
                 </Select>
-
-                <Button
-                  onClick={handleInviteUser}
-                  disabled={!selectedUser}
-                  className="whitespace-nowrap"
-                >
-                  Invite
-                </Button>
               </div>
 
+              {/* Selected Users Chips */}
+              {selectedUsers.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {selectedUsers.map((user) => (
+                    <UserChip
+                      key={user.email}
+                      email={user.email}
+                      name={user.fullName}
+                      imageUrl={user.slackImageUrl}
+                      onRemove={() => handleRemoveUser(user.email)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Invite Button */}
+              {selectedUsers.length > 0 && (
+                <Button onClick={handleInviteUsers} className="w-full">
+                  Invite {selectedUsers.length}{" "}
+                  {selectedUsers.length === 1 ? "person" : "people"} as{" "}
+                  {selectedAccessLevel}
+                </Button>
+              )}
+
               <p className="text-xs text-muted-foreground">
-                Search and select a person, then click invite to grant them
-                access
+                Search and select people to invite. They&apos;ll receive a Slack
+                notification.
               </p>
             </div>
           )}

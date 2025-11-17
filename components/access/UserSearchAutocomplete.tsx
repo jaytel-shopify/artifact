@@ -7,6 +7,7 @@ import { UserAvatar } from "@/components/auth/UserAvatar";
 
 interface UserSearchAutocompleteProps {
   onSelect: (user: ShopifyUser | null) => void;
+  selectedUser: ShopifyUser | null; // Track if a user is already selected
   placeholder?: string;
   excludeEmails?: string[];
 }
@@ -19,6 +20,7 @@ interface UserSearchAutocompleteProps {
  */
 export function UserSearchAutocomplete({
   onSelect,
+  selectedUser,
   placeholder = "Search name",
   excludeEmails = [],
 }: UserSearchAutocompleteProps) {
@@ -34,6 +36,13 @@ export function UserSearchAutocomplete({
   // Search users as query changes
   useEffect(() => {
     const search = async () => {
+      // Don't search if a user is already selected
+      if (selectedUser) {
+        setResults([]);
+        setIsOpen(false);
+        return;
+      }
+
       if (query.trim().length < 2) {
         setResults([]);
         setIsOpen(false);
@@ -61,7 +70,7 @@ export function UserSearchAutocomplete({
 
     const debounce = setTimeout(search, 300);
     return () => clearTimeout(debounce);
-  }, [query, excludeEmails]);
+  }, [query, excludeEmails, selectedUser]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -108,10 +117,10 @@ export function UserSearchAutocomplete({
   };
 
   const handleSelect = (user: ShopifyUser) => {
-    onSelect(user);
-    setQuery(user.fullName);
+    setQuery(""); // Clear input for next search
     setResults([]);
     setIsOpen(false);
+    onSelect(user); // This will add the user to the list in parent
   };
 
   return (
@@ -121,7 +130,13 @@ export function UserSearchAutocomplete({
         type="text"
         placeholder={placeholder}
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          // Clear selection when user starts typing again
+          if (e.target.value !== query) {
+            onSelect(null);
+          }
+        }}
         onKeyDown={handleKeyDown}
         onFocus={() => {
           if (results.length > 0) {
