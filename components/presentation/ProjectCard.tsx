@@ -19,7 +19,6 @@ interface ProjectCoverData {
   name: string;
   created_at: string;
   updated_at: string;
-  settings: any;
   coverArtifacts: Artifact[];
 }
 

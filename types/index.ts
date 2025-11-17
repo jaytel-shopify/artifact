@@ -1,9 +1,3 @@
-export type ProjectSettings = {
-  default_columns: number;
-  allow_viewer_control: boolean;
-  background_color: string;
-};
-
 export type Project = {
   id: string;
   name: string;
@@ -12,7 +6,6 @@ export type Project = {
   created_at: string;
   updated_at: string;
   last_accessed_at?: string; // For "last opened" sorting (optional for backward compat)
-  settings: ProjectSettings;
 };
 
 export type ArtifactType =

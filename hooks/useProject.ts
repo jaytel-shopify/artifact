@@ -44,24 +44,6 @@ export function useProject(projectId: string | undefined) {
   );
 
   /**
-   * Update project settings
-   */
-  const updateProjectSettings = useCallback(
-    async (settings: Project["settings"]) => {
-      if (!projectId) return;
-      
-      try {
-        await updateProject(projectId, { settings });
-        await mutate(); // Revalidate
-      } catch (error) {
-        console.error("Failed to update project settings:", error);
-        throw error;
-      }
-    },
-    [projectId, mutate]
-  );
-
-  /**
    * Delete the project
    */
   const deleteProjectById = useCallback(async () => {
@@ -80,7 +62,6 @@ export function useProject(projectId: string | undefined) {
     isLoading,
     error,
     updateProjectName,
-    updateProjectSettings,
     deleteProject: deleteProjectById,
     refetch: mutate,
   };

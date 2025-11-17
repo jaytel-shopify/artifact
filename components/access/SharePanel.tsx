@@ -29,6 +29,7 @@ import {
   type ResourceType,
   type ShopifyUser,
 } from "@/lib/access-control";
+import { getResourceUrl } from "@/lib/urls";
 
 interface SharePanelProps {
   isOpen: boolean;
@@ -63,10 +64,7 @@ export function SharePanel({
   const [selectedUser, setSelectedUser] = useState<ShopifyUser | null>(null);
 
   // Generate the shareable link
-  const shareUrl =
-    resourceType === "project"
-      ? `https://artifact.quick.shopify.io/p?id=${resourceId}`
-      : `https://artifact.quick.shopify.io/folder?id=${resourceId}`;
+  const shareUrl = getResourceUrl(resourceType, resourceId);
 
   // Load access list
   const loadAccessList = useCallback(async () => {
@@ -111,6 +109,12 @@ export function SharePanel({
     }
 
     try {
+      // Get current user's name from access list
+      const currentUser = accessList.find(
+        (a) => a.user_email.toLowerCase() === currentUserEmail.toLowerCase()
+      );
+      const currentUserName = currentUser?.user_name || currentUserEmail;
+
       await grantAccess(
         resourceId,
         resourceType,
@@ -118,7 +122,10 @@ export function SharePanel({
         selectedAccessLevel,
         currentUserEmail,
         selectedUser.fullName,
-        selectedUser.slackImageUrl
+        selectedUser.slackImageUrl,
+        resourceName,
+        selectedUser.slackId,
+        currentUserName
       );
 
       toast.success(

@@ -8,7 +8,7 @@ import { grantAccess } from "./access-control";
  * Quick.db Service Layer
  *
  * This module provides a clean interface to interact with Quick's JSON database.
- * Collections: projects, pages, artifacts, project_access
+ * Collections: projects, pages, artifacts
  *
  * Note: Quick.db automatically adds these fields to all documents:
  * - id (string): Unique identifier
@@ -64,11 +64,6 @@ export async function createProject(data: {
   name: string;
   creator_id: string; // user.email
   folder_id?: string | null; // Optional folder assignment
-  settings?: {
-    default_columns?: number;
-    allow_viewer_control?: boolean;
-    background_color?: string;
-  };
 }): Promise<Project> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
@@ -77,11 +72,6 @@ export async function createProject(data: {
     name: data.name,
     creator_id: data.creator_id,
     folder_id: data.folder_id || null,
-    settings: data.settings || {
-      default_columns: 3,
-      allow_viewer_control: true,
-      background_color: "#ffffff",
-    },
   };
 
   const project = await collection.create(projectData);
@@ -111,7 +101,7 @@ export async function createProject(data: {
 export async function updateProject(
   id: string,
   updates: Partial<
-    Pick<Project, "name" | "settings" | "last_accessed_at" | "folder_id">
+    Pick<Project, "name" | "last_accessed_at" | "folder_id">
   >
 ): Promise<Project> {
   const quick = await waitForQuick();

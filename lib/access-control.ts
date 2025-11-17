@@ -6,6 +6,7 @@
  */
 
 import { waitForQuick } from "./quick";
+import { getResourceUrl } from "./urls";
 
 export type AccessLevel = "owner" | "editor" | "viewer";
 export type ResourceType = "project" | "folder";
@@ -29,6 +30,7 @@ export interface ShopifyUser {
   firstName: string;
   slackImageUrl?: string;
   slackHandle?: string;
+  slackId?: string;
   title?: string;
 }
 
@@ -70,6 +72,7 @@ export async function searchShopifyUsers(
             firstName: fullName.split(" ")[0] || fullName,
             slackHandle: data.slack_handle,
             slackImageUrl: data.slack_image_url,
+            slackId: data.slack_id,
             title: data.title,
           });
         }
@@ -103,6 +106,93 @@ export async function searchShopifyUsers(
 }
 
 // ==================== ACCESS MANAGEMENT ====================
+
+/**
+ * Send Slack notification to invited user
+ */
+async function sendInviteNotification(
+  invitedUser: {
+    email: string;
+    name: string;
+    slackId?: string;
+  },
+  resourceType: ResourceType,
+  resourceName: string,
+  resourceId: string,
+  accessLevel: AccessLevel,
+  invitedBy: string
+): Promise<void> {
+  try {
+    // Only send if user has Slack ID
+    if (!invitedUser.slackId) {
+      console.log(
+        "[AccessControl] Skipping Slack notification - no Slack ID for:",
+        invitedUser.email
+      );
+      return;
+    }
+
+    const quick = await waitForQuick();
+
+    // Generate resource URL
+    const resourceUrl = getResourceUrl(resourceType, resourceId);
+
+    // Create message
+    const message = `You've been invited to a ${resourceType}!`;
+
+    // Send Slack message with blocks for better formatting
+    await quick.slack.sendMessage(invitedUser.slackId, message, {
+      blocks: [
+        {
+          type: "section",
+          text: {
+            type: "mrkdwn",
+            text: `*You've been invited to a ${resourceType}* 🎉`,
+          },
+        },
+        {
+          type: "section",
+          fields: [
+            {
+              type: "mrkdwn",
+              text: `*${resourceType === "project" ? "Project" : "Folder"}:*\n${resourceName}`,
+            },
+            {
+              type: "mrkdwn",
+              text: `*Access Level:*\n${accessLevel}`,
+            },
+            {
+              type: "mrkdwn",
+              text: `*Invited by:*\n${invitedBy}`,
+            },
+          ],
+        },
+        {
+          type: "actions",
+          elements: [
+            {
+              type: "button",
+              text: {
+                type: "plain_text",
+                text: `Open ${resourceType === "project" ? "Project" : "Folder"}`,
+              },
+              url: resourceUrl,
+              style: "primary",
+            },
+          ],
+        },
+      ],
+    });
+
+    console.log(
+      "[AccessControl] Sent Slack notification to:",
+      invitedUser.email
+    );
+  } catch (error) {
+    // Don't fail the invitation if Slack notification fails
+    console.error("[AccessControl] Failed to send Slack notification:", error);
+  }
+}
 
 /**
  * Get all access entries for a resource (project or folder)
@@ -149,7 +239,10 @@ export async function grantAccess(
   accessLevel: AccessLevel,
   grantedBy: string,
   userName?: string,
-  userAvatar?: string
+  userAvatar?: string,
+  resourceName?: string,
+  userSlackId?: string,
+  grantedByName?: string
 ): Promise<AccessEntry | null> {
   try {
     const quick = await waitForQuick();
@@ -186,6 +279,22 @@ export async function grantAccess(
       userEmail,
       accessLevel,
     });
+
+    // Send Slack notification to the invited user
+    if (resourceName && userSlackId) {
+      await sendInviteNotification(
+        {
+          email: userEmail,
+          name: userName || userEmail,
+          slackId: userSlackId,
+        },
+        resourceType,
+        resourceName,
+        resourceId,
+        accessLevel,
+        grantedByName || grantedBy
+      );
+    }
 
     return newAccess as AccessEntry;
   } catch (error) {

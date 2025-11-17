@@ -27,11 +27,6 @@ function init() {
       creator_id: "dev@shopify.com",
       // share_token removed - using direct ID access now
       folder_id: null,
-      settings: {
-        default_columns: 3,
-        allow_viewer_control: true,
-        background_color: "#ffffff",
-      },
       created_at: now,
       updated_at: now,
     },
@@ -192,8 +187,7 @@ function init() {
   ];
 
   db.folders = [];
-  db.folder_access = [];
-  db.project_access = [];
+  db.access_control = [];
 }
 
 // Mock collection

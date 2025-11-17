@@ -230,7 +230,7 @@ All data is stored in Quick's JSON database:
 - `projects` - User projects
 - `pages` - Pages within projects
 - `artifacts` - Images, videos, PDFs, URLs on pages
-- `project_access` - Collaborative edit permissions
+- `access_control` - Unified access control for projects and folders
 
 **Example**:
 
