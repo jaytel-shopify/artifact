@@ -7,7 +7,6 @@ import {
   PanelLeft,
   PanelLeftClose,
   Share,
-  LogOut,
   Plus,
   MoreVertical,
 } from "lucide-react";
@@ -21,12 +20,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import EditableTitle from "@/components/presentation/EditableTitle";
-import ShareDialog from "@/components/sharing/ShareDialog";
+import { SharePanel } from "@/components/access/SharePanel";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/auth/AuthProvider";
 import UserAvatar from "@/components/auth/UserAvatar";
-import { useRouter } from "next/navigation";
 import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
 
 interface AppHeaderProps {
@@ -39,7 +37,6 @@ interface AppHeaderProps {
   // Project-specific props (for canvas view)
   projectId?: string;
   projectName?: string;
-  shareToken?: string;
   creatorEmail?: string;
   isCreator?: boolean;
   isCollaborator?: boolean;
@@ -90,7 +87,6 @@ export default function AppHeader({
   sidebarOpen,
   projectId,
   projectName,
-  shareToken,
   creatorEmail,
   isCreator = false,
   isCollaborator = false,
@@ -122,17 +118,7 @@ export default function AppHeader({
   followingUserId,
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  const { user, signIn, signOut, loading } = useAuth();
-  const router = useRouter();
-
-  const handleSignIn = async () => {
-    await signIn();
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-    router.push("/auth/login");
-  };
+  const { user, loading } = useAuth();
 
   return (
     <header
@@ -336,24 +322,9 @@ export default function AppHeader({
                         {user.email}
                       </span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleSignOut}
-                      className="text-red-600"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button
-                  onClick={handleSignIn}
-                  disabled={loading}
-                  className="gap-2"
-                >
-                  Sign in
-                </Button>
-              )}
+              ) : null}
             </div>
           ) : mode === "canvas" ? (
             <div className="flex items-center gap-3">
@@ -371,7 +342,7 @@ export default function AppHeader({
               )}
 
               {/* Share Button */}
-              {shareToken && projectId && (
+              {projectId && user && (
                 <>
                   <Button
                     variant="outline"
@@ -382,15 +353,14 @@ export default function AppHeader({
                     Share
                   </Button>
 
-                  {/* Share Dialog */}
-                  <ShareDialog
-                    projectId={projectId}
-                    projectName={projectName || "Untitled Project"}
-                    shareToken={shareToken}
-                    creatorEmail={creatorEmail || ""}
-                    isCreator={isCreator}
+                  {/* Share Panel */}
+                  <SharePanel
                     isOpen={shareDialogOpen}
                     onClose={() => setShareDialogOpen(false)}
+                    resourceId={projectId}
+                    resourceType="project"
+                    resourceName={projectName || "Untitled Project"}
+                    currentUserEmail={user.email}
                   />
                 </>
               )}
@@ -416,24 +386,9 @@ export default function AppHeader({
                         {user.email}
                       </span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleSignOut}
-                      className="text-red-600"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button
-                  onClick={handleSignIn}
-                  disabled={loading}
-                  className="gap-2"
-                >
-                  Sign in
-                </Button>
-              )}
+              ) : null}
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -464,24 +419,9 @@ export default function AppHeader({
                         {user.email}
                       </span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={handleSignOut}
-                      className="text-red-600"
-                    >
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              ) : (
-                <Button
-                  onClick={handleSignIn}
-                  disabled={loading}
-                  className="gap-2"
-                >
-                  Sign in
-                </Button>
-              )}
+              ) : null}
             </div>
           )}
         </div>

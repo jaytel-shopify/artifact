@@ -11,8 +11,8 @@ import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
 import type { Project, Artifact } from "@/types";
-import { getProjectByShareToken } from "@/lib/quick-db";
-import { useProjectPermissions } from "@/hooks/useProjectPermissions";
+import { getProjectById } from "@/lib/quick-db";
+import { useResourcePermissions } from "@/hooks/useResourcePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
 import QuickFollowProvider, {
@@ -43,10 +43,10 @@ const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
 });
 
 /**
- * Fetcher function for SWR - gets project by share token
+ * Fetcher function for SWR - gets project by ID
  */
-async function fetchProject(shareToken: string): Promise<Project | null> {
-  return await getProjectByShareToken(shareToken);
+async function fetchProject(projectId: string): Promise<Project | null> {
+  return await getProjectById(projectId);
 }
 
 // Inner component that uses useFollow - must be wrapped by QuickFollowProvider
@@ -56,7 +56,7 @@ function PresentationPageInner({
   onBroadcastReady?: (callback: () => void) => void;
 }) {
   const searchParams = useSearchParams();
-  const shareToken = searchParams.get("token") || "";
+  const projectId = searchParams.get("id") || "";
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
@@ -160,19 +160,19 @@ function PresentationPageInner({
 
   // Fetch project data
   const { data: project } = useSWR<Project | null>(
-    shareToken ? `project-token-${shareToken}` : null,
-    () => (shareToken ? fetchProject(shareToken) : null),
+    projectId ? `project-${projectId}` : null,
+    () => (projectId ? fetchProject(projectId) : null),
     { revalidateOnFocus: false }
   );
 
   // Check permissions
-  const permissions = useProjectPermissions(project || null);
+  const permissions = useResourcePermissions(project?.id || null, "project");
 
   // Allow debug override of read-only mode
   const isReadOnly = debugReadOnly || permissions.isReadOnly;
   const canEdit = !debugReadOnly && permissions.canEdit;
-  const isCreator = permissions.isCreator;
-  const isCollaborator = permissions.isCollaborator;
+  const isOwner = permissions.isOwner;
+  const accessLevel = permissions.accessLevel;
 
   // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
@@ -293,14 +293,13 @@ function PresentationPageInner({
   }
 
   return (
-    <AppLayout
-      mode="canvas"
-      projectId={project.id}
-      projectName={project.name}
-      shareToken={project.share_token}
-      creatorEmail={project.creator_id}
-      isCreator={isCreator}
-      isCollaborator={isCollaborator}
+      <AppLayout
+        mode="canvas"
+        projectId={project.id}
+        projectName={project.name}
+        creatorEmail={project.creator_id}
+      isCreator={isOwner}
+      isCollaborator={accessLevel === "editor" || accessLevel === "viewer"}
       isReadOnly={isReadOnly}
       currentFolderId={project.folder_id}
       folders={userFolders}
@@ -634,7 +633,6 @@ function PresentationPageInner({
                 id: project.id,
                 name: project.name,
                 creator_id: project.creator_id,
-                share_token: project.share_token,
               }
             : undefined
         }
@@ -652,7 +650,7 @@ function PresentationPageContent() {
 // Component that gets room and provides QuickFollowProvider
 function PresentationPageInnerWithProvider() {
   const searchParams = useSearchParams();
-  const shareToken = searchParams.get("token") || "";
+  const projectId = searchParams.get("id") || "";
   const [broadcastCallback, setBroadcastCallback] = useState<
     (() => void) | null
   >(null);
@@ -667,8 +665,8 @@ function PresentationPageInnerWithProvider() {
 
   // Fetch project
   const { data: project } = useSWR<Project | null>(
-    shareToken ? `project-token-${shareToken}` : null,
-    () => (shareToken ? fetchProject(shareToken) : null),
+    projectId ? `project-${projectId}` : null,
+    () => (projectId ? fetchProject(projectId) : null),
     { revalidateOnFocus: false }
   );
 

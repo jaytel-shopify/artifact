@@ -33,7 +33,7 @@ import { Input } from "@/components/ui/input";
 import ProjectCard from "@/components/presentation/ProjectCard";
 import AppLayout from "@/components/layout/AppLayout";
 import FolderDialog from "@/components/folders/FolderDialog";
-import FolderAccessDialog from "@/components/folders/FolderAccessDialog";
+import { SharePanel } from "@/components/access/SharePanel";
 import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
 import { toast } from "sonner";
 import type { Project, Artifact, Folder } from "@/types";
@@ -42,8 +42,8 @@ import {
   getProjectsInFolder,
   updateFolder,
   deleteFolder,
-  canEditFolder,
 } from "@/lib/quick-folders";
+import { canUserEdit } from "@/lib/access-control";
 import {
   updateProject,
   deleteProject as deleteProjectDB,
@@ -88,7 +88,7 @@ function FolderPageContent() {
         // Parallel loading - fetch folder, permissions, and projects simultaneously
         const [folderData, hasEditAccess, folderProjects] = await Promise.all([
           getFolderById(folderId),
-          canEditFolder(folderId, user.email),
+          canUserEdit(folderId, "folder", user.email),
           getProjectsInFolder(folderId),
         ]);
 
@@ -344,13 +344,17 @@ function FolderPageContent() {
         initialName={folder.name}
       />
 
-      <FolderAccessDialog
-        isOpen={accessDialogOpen}
-        onClose={() => setAccessDialogOpen(false)}
-        folderId={folder.id}
-        folderName={folder.name}
-        creatorEmail={folder.creator_id}
-      />
+      {/* Folder Access Dialog */}
+      {user && (
+        <SharePanel
+          isOpen={accessDialogOpen}
+          onClose={() => setAccessDialogOpen(false)}
+          resourceId={folder.id}
+          resourceType="folder"
+          resourceName={folder.name}
+          currentUserEmail={user.email}
+        />
+      )}
 
       <DeleteFolderDialog
         isOpen={deleteDialogOpen}

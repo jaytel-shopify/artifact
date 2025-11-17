@@ -25,7 +25,7 @@ function init() {
       id: projectId,
       name: "Sample Project",
       creator_id: "dev@shopify.com",
-      share_token: "sample",
+      // share_token removed - using direct ID access now
       folder_id: null,
       settings: {
         default_columns: 3,

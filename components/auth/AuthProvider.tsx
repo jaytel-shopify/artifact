@@ -2,9 +2,6 @@
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { waitForQuick, type QuickIdentity } from "@/lib/quick";
-import { UnauthorizedAccess } from "./UnauthorizedAccess";
-import { isAdmin } from "@/lib/admin-config";
-import { isUserAllowed } from "@/lib/allowed-users-db";
 
 /**
  * Quick User type - extends QuickIdentity with our app-specific fields
@@ -24,24 +21,24 @@ interface AuthContextValue {
   user: QuickUser | null;
   loading: boolean;
   isAuthenticated: boolean;
-  isAuthorized: boolean | null;
-  isAdmin: boolean;
-  signIn: () => Promise<void>;
-  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
+/**
+ * AuthProvider
+ * 
+ * Simplified authentication - all Shopify employees can access the app.
+ * Access control is handled at the resource level (projects/folders).
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<QuickUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-  const [userIsAdmin, setUserIsAdmin] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
 
-    // Check if we're on localhost - bypass all auth if true
+    // Check if we're on localhost - bypass auth and create mock user
     const isLocalhost = typeof window !== 'undefined' && 
       (window.location.hostname === 'localhost' || 
        window.location.hostname === '127.0.0.1' ||
@@ -49,9 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
        window.location.hostname.endsWith('.local'));
 
     if (isLocalhost) {
-      console.log('[AuthProvider] 🔓 Running on localhost - bypassing authentication');
-      // Create a mock local dev user with admin privileges
-      // Use dev@shopify.com to match the mock data creator_id
+      console.log('[AuthProvider] 🔓 Running on localhost - using mock user');
+      
       const localDevUser: QuickUser = {
         email: 'dev@shopify.com',
         fullName: 'Local Developer',
@@ -62,58 +58,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       };
       
       setUser(localDevUser);
-      setUserIsAdmin(true); // Grant admin access for local dev
-      setIsAuthorized(true);
       setLoading(false);
-      return; // Skip all auth logic
-    }
-
-    async function checkAuthorization(email: string): Promise<boolean> {
-      try {
-        console.log('[AuthProvider] Checking authorization for:', email);
-        
-        // FIRST: Check if user is admin (hardcoded)
-        if (isAdmin(email)) {
-          console.log('[AuthProvider] ✅ User is ADMIN:', email);
-          return true;
-        }
-        
-        // SECOND: Check database for allowed users
-        const allowed = await isUserAllowed(email);
-        
-        console.log('[AuthProvider] Authorization check result:', {
-          email,
-          isAdmin: false,
-          isAllowed: allowed,
-        });
-        
-        return allowed;
-      } catch (err) {
-        console.error('[AuthProvider] Error checking authorization:', err);
-        return false;
-      }
+      return; // Skip Quick SDK loading
     }
 
     async function initUser() {
       try {
-        console.log('[AuthProvider] Waiting for Quick SDK...');
-        // Wait for Quick SDK to load
+        console.log('[AuthProvider] Loading Quick SDK...');
         const quick = await waitForQuick();
         console.log('[AuthProvider] Quick SDK loaded');
         
         // Get user identity from Quick
-        console.log('[AuthProvider] Waiting for user identity...');
+        console.log('[AuthProvider] Fetching user identity...');
         const userData = await quick.id.waitForUser();
         
         console.log('[AuthProvider] User loaded:', {
           email: userData.email,
           fullName: userData.fullName,
-          hasSlackImage: !!userData.slackImageUrl,
         });
         
         if (!isMounted) return;
         
-        const user = {
+        const user: QuickUser = {
           email: userData.email,
           fullName: userData.fullName,
           firstName: userData.firstName,
@@ -124,27 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           github: userData.github,
         };
         
-        // Check if user is admin
-        const adminStatus = isAdmin(user.email);
-        
-        // STRICT: Check authorization BEFORE setting user or showing any content
-        const authorized = await checkAuthorization(user.email);
-        
-        if (isMounted) {
-          setUser(user);
-          setUserIsAdmin(adminStatus);
-          setIsAuthorized(authorized);
-          setLoading(false);
-          console.log('[AuthProvider] Authorization complete:', {
-            email: user.email,
-            isAdmin: adminStatus,
-            authorized,
-          });
-        }
+        setUser(user);
+        setLoading(false);
       } catch (err) {
-        console.error('[AuthProvider] Failed to load Quick user:', err);
+        console.error('[AuthProvider] Failed to load user:', err);
         if (isMounted) {
-          setIsAuthorized(false);
           setLoading(false);
         }
       }
@@ -161,26 +111,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     loading,
     isAuthenticated: !!user,
-    isAuthorized,
-    isAdmin: userIsAdmin,
-    signIn: async () => {
-      // Quick handles authentication automatically via Google OAuth
-      // If the user isn't authenticated, they'll be redirected to sign in
-      // For now, we just reload the page to trigger Quick's auth flow
-      window.location.reload();
-    },
-    signOut: async () => {
-      // Quick doesn't have a built-in signOut method exposed in the docs
-      // The user can sign out by clearing cookies or navigating to a logout URL
-      // For Shopify internal tools, users are typically always authenticated
-      console.warn('Sign out is handled by Quick platform - redirect to logout if needed');
-      // You may need to redirect to a specific logout URL provided by Quick
-      // window.location.href = '/logout';
-    },
   };
 
-  // Show loading state while checking authorization
-  if (loading || isAuthorized === null) {
+  // Show loading state
+  if (loading) {
     return (
       <AuthContext.Provider value={value}>
         <div className="min-h-screen flex items-center justify-center bg-background">
@@ -193,16 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
   }
 
-  // Show unauthorized page if user is not on allowlist
-  if (isAuthorized === false) {
-    return (
-      <AuthContext.Provider value={value}>
-        <UnauthorizedAccess userEmail={user?.email} />
-      </AuthContext.Provider>
-    );
-  }
-
-  // Only render app content if user is authorized
+  // All authenticated Shopify users can access the app
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

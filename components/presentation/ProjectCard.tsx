@@ -17,7 +17,6 @@ import { SPRING_TRANSITIONS } from "@/lib/easings";
 interface ProjectCoverData {
   id: string;
   name: string;
-  share_token: string;
   created_at: string;
   updated_at: string;
   settings: any;
@@ -197,7 +196,7 @@ export default function ProjectCard({
   );
 
   return (
-    <Link href={`/p/?token=${project.share_token}`} prefetch={false}>
+    <Link href={`/p/?id=${project.id}`} prefetch={false}>
       {cardContent}
     </Link>
   );

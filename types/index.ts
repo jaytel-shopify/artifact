@@ -8,7 +8,6 @@ export type Project = {
   id: string;
   name: string;
   creator_id: string;
-  share_token: string;
   folder_id: string | null; // Reference to parent folder (null if uncategorized)
   created_at: string;
   updated_at: string;
@@ -89,11 +88,5 @@ export type Folder = {
   last_accessed_at?: string; // For "last opened" sorting
 };
 
-export type FolderAccess = {
-  id: string;
-  folder_id: string; // Reference to folder
-  user_email: string; // Collaborator's email
-  role: "editor" | "viewer"; // Permission level
-  created_at: string;
-  updated_at: string;
-};
+// Access control types moved to lib/access-control.ts
+// FolderAccess is now part of the unified AccessEntry type

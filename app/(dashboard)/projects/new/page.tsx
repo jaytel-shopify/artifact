@@ -5,9 +5,6 @@ import { useEffect, useRef, Suspense } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createProject as createProjectDB, getProjects } from "@/lib/quick-db";
-import { customAlphabet } from "nanoid";
-
-const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 12);
 
 function NewProjectContent() {
   const router = useRouter();
@@ -41,21 +38,17 @@ function NewProjectContent() {
           }
         }
         
-        // Generate unique share token
-        const shareToken = nanoid();
-        
         // Create the project (with optional folder assignment)
         const project = await createProjectDB({
           name: projectName,
           creator_id: user.email,
-          share_token: shareToken,
           folder_id: folderId || null,
         });
         
         toast.success(`Created "${project.name}"`);
         
-        // Navigate to new route format
-        router.push(`/p?token=${project.share_token}`);
+        // Navigate to new ID-based route
+        router.push(`/p?id=${project.id}`);
       } catch (err) {
         toast.error("Failed to create project. Please try again.");
         console.error("Failed to create project:", err);

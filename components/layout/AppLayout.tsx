@@ -14,7 +14,6 @@ interface AppLayoutProps {
   // Project-specific props (for canvas mode)
   projectId?: string;
   projectName?: string;
-  shareToken?: string;
   creatorEmail?: string;
   isCreator?: boolean;
   isCollaborator?: boolean;
@@ -73,7 +72,6 @@ export default function AppLayout({
   mode,
   projectId,
   projectName,
-  shareToken,
   creatorEmail,
   isCreator = false,
   isCollaborator = false,
@@ -146,7 +144,6 @@ export default function AppLayout({
           mode={mode}
           projectId={projectId}
           projectName={projectName}
-          shareToken={shareToken}
           creatorEmail={creatorEmail}
           isCreator={isCreator}
           isCollaborator={isCollaborator}

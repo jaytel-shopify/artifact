@@ -20,7 +20,6 @@ interface DevDebugPanelProps {
     id: string;
     name: string;
     creator_id: string;
-    share_token: string;
   };
   userEmail?: string;
 }
@@ -168,10 +167,6 @@ export default function DevDebugPanel({
                     <span className="font-medium">
                       {projectInfo.creator_id}
                     </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Share Token:</span>{" "}
-                    <span className="font-mono">{projectInfo.share_token}</span>
                   </div>
                   <div>
                     <span className="text-muted-foreground">Is Creator:</span>{" "}

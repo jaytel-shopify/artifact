@@ -37,7 +37,7 @@ import ProjectCard from "@/components/presentation/ProjectCard";
 import FolderCard from "@/components/folders/FolderCard";
 import FolderDialog from "@/components/folders/FolderDialog";
 import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
-import FolderAccessDialog from "@/components/folders/FolderAccessDialog";
+import { SharePanel } from "@/components/access/SharePanel";
 import MoveToFolderMenu from "@/components/folders/MoveToFolderMenu";
 import type { Project, Artifact, Folder } from "@/types";
 import { toast } from "sonner";
@@ -48,12 +48,13 @@ import {
   getArtifactsByProject,
 } from "@/lib/quick-db";
 import {
-  getUserFolders,
+  getFolders,
   createFolder,
   updateFolder as updateFolderDB,
   deleteFolder,
   getProjectCountInFolder,
 } from "@/lib/quick-folders";
+import { getUserAccessibleResources } from "@/lib/access-control";
 import {
   moveProjectToFolder,
   removeProjectFromFolder,
@@ -67,10 +68,17 @@ async function fetcher(userEmail?: string): Promise<{
   folders: Array<Folder & { projectCount: number }>;
 }> {
   // Parallel loading - fetch projects and folders simultaneously
-  const [projects, userFolders] = await Promise.all([
+  const [projects, userFoldersAccess] = await Promise.all([
     getProjects(userEmail),
-    getUserFolders(userEmail || ""),
+    getUserAccessibleResources(userEmail || "", "folder"),
   ]);
+
+  // Get full folder details from access entries
+  const { getFolderById } = await import("@/lib/quick-folders");
+  const userFolders = await Promise.all(
+    userFoldersAccess.map((access) => getFolderById(access.resource_id))
+  );
+  const validFolders = userFolders.filter((f): f is Folder => f !== null);
 
   // Get cover artifacts for projects (in parallel)
   const projectsWithCovers = await Promise.all(
@@ -85,7 +93,7 @@ async function fetcher(userEmail?: string): Promise<{
 
   // Get project counts for folders (in parallel)
   const foldersWithCounts = await Promise.all(
-    userFolders.map(async (folder) => {
+    validFolders.map(async (folder) => {
       const count = await getProjectCountInFolder(folder.id);
       return { ...folder, projectCount: count };
     })
@@ -553,13 +561,16 @@ export default function ProjectsPage() {
             initialName={folderToRename?.name || ""}
           />
 
-          <FolderAccessDialog
-            isOpen={!!folderToManage}
-            onClose={() => setFolderToManage(null)}
-            folderId={folderToManage?.id || ""}
-            folderName={folderToManage?.name || ""}
-            creatorEmail={folderToManage?.creator_id || ""}
-          />
+          {folderToManage && user && (
+            <SharePanel
+              isOpen={!!folderToManage}
+              onClose={() => setFolderToManage(null)}
+              resourceId={folderToManage.id}
+              resourceType="folder"
+              resourceName={folderToManage.name}
+              currentUserEmail={user.email}
+            />
+          )}
 
           <DeleteFolderDialog
             isOpen={!!folderToDelete}

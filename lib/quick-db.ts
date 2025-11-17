@@ -2,6 +2,7 @@
 
 import { waitForQuick } from "./quick";
 import type { Project, Page, Artifact, ArtifactType } from "@/types";
+import { grantAccess } from "./access-control";
 
 /**
  * Quick.db Service Layer
@@ -54,20 +55,7 @@ export async function getProjectById(id: string): Promise<Project | null> {
   }
 }
 
-/**
- * Get a project by its share token
- */
-export async function getProjectByShareToken(
-  token: string
-): Promise<Project | null> {
-  const quick = await waitForQuick();
-  const collection = quick.db.collection("projects");
-
-  const projects = await collection.find();
-  const project = projects.find((p: Project) => p.share_token === token);
-
-  return project || null;
-}
+// getProjectByShareToken removed - projects now use direct ID-based access
 
 /**
  * Create a new project
@@ -75,7 +63,6 @@ export async function getProjectByShareToken(
 export async function createProject(data: {
   name: string;
   creator_id: string; // user.email
-  share_token: string;
   folder_id?: string | null; // Optional folder assignment
   settings?: {
     default_columns?: number;
@@ -89,7 +76,6 @@ export async function createProject(data: {
   const projectData = {
     name: data.name,
     creator_id: data.creator_id,
-    share_token: data.share_token,
     folder_id: data.folder_id || null,
     settings: data.settings || {
       default_columns: 3,
@@ -99,6 +85,15 @@ export async function createProject(data: {
   };
 
   const project = await collection.create(projectData);
+
+  // Grant owner access to creator
+  await grantAccess(
+    project.id,
+    "project",
+    data.creator_id,
+    "owner",
+    data.creator_id
+  );
 
   // Create default page for the project
   await createPage({
@@ -145,22 +140,7 @@ export async function deleteProject(id: string): Promise<void> {
   await projectCollection.delete(id);
 }
 
-/**
- * Check if a user can edit a project
- * Future: Will check project_access table
- * Current: Only creator can edit
- */
-export async function canEditProject(
-  projectId: string,
-  userEmail: string
-): Promise<boolean> {
-  const project = await getProjectById(projectId);
-  if (!project) return false;
-
-  // For now, only creator can edit
-  // Future: Check project_access table for additional editors
-  return project.creator_id === userEmail;
-}
+// canEditProject removed - use checkUserAccess from lib/access-control.ts instead
 
 // ==================== PAGES ====================
 
@@ -373,76 +353,9 @@ export async function reorderArtifacts(
   );
 }
 
-// ==================== PROJECT ACCESS (Future) ====================
-
-/**
- * Grant edit access to a user for a project
- * Note: Not implemented yet, placeholder for future functionality
- */
-export async function grantProjectAccess(
-  projectId: string,
-  userEmail: string,
-  role: "editor" | "viewer" = "editor"
-): Promise<void> {
-  const quick = await waitForQuick();
-  const collection = quick.db.collection("project_access");
-
-  // Check if access already exists
-  const allAccess = await collection.find();
-  const existing = allAccess.find(
-    (a: any) => a.project_id === projectId && a.user_email === userEmail
-  );
-
-  if (existing) {
-    // Update existing access
-    await collection.update(existing.id, { role });
-  } else {
-    // Create new access
-    await collection.create({
-      project_id: projectId,
-      user_email: userEmail,
-      role,
-    });
-  }
-}
-
-/**
- * Revoke access to a project
- * Note: Not implemented yet, placeholder for future functionality
- */
-export async function revokeProjectAccess(
-  projectId: string,
-  userEmail: string
-): Promise<void> {
-  const quick = await waitForQuick();
-  const collection = quick.db.collection("project_access");
-
-  const allAccess = await collection.find();
-  const existing = allAccess.find(
-    (a: any) => a.project_id === projectId && a.user_email === userEmail
-  );
-
-  if (existing) {
-    await collection.delete(existing.id);
-  }
-}
-
-/**
- * Get all users with access to a project
- * Note: Not implemented yet, placeholder for future functionality
- */
-export async function getProjectAccessList(projectId: string): Promise<
-  Array<{
-    user_email: string;
-    role: string;
-  }>
-> {
-  const quick = await waitForQuick();
-  const collection = quick.db.collection("project_access");
-
-  const allAccess = await collection.find();
-  return allAccess.filter((a: any) => a.project_id === projectId);
-}
+// ==================== ACCESS CONTROL ====================
+// Access control functions moved to lib/access-control.ts
+// All project and folder access is now managed through the unified access_control collection
 
 // ==================== UTILITY FUNCTIONS ====================
 
