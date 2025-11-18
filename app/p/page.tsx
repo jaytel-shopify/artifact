@@ -322,7 +322,7 @@ function PresentationPageInner({
         projectName={project.name}
         creatorEmail={project.creator_id}
       isCreator={isOwner}
-      isCollaborator={accessLevel === "editor" || accessLevel === "viewer"}
+      isCollaborator={accessLevel === "editor"}
       isReadOnly={isReadOnly}
       currentFolderId={project.folder_id}
       folders={userFolders}

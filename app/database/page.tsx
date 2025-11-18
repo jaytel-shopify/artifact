@@ -345,6 +345,73 @@ export default function DatabaseViewerPage() {
     }
   }
 
+  async function updateAccessLevel(
+    entryId: string,
+    newAccessLevel: "owner" | "editor" | "viewer",
+    userEmail: string,
+    resourceName: string
+  ) {
+    setFixing(true);
+    const results: string[] = [];
+
+    try {
+      // @ts-ignore
+      const quick = window.quick;
+      const accessCollection = quick.db.collection("access_control");
+
+      await accessCollection.update(entryId, {
+        access_level: newAccessLevel,
+      });
+
+      results.push(`✅ Updated ${userEmail} to ${newAccessLevel} on ${resourceName}`);
+      setFixResults(results);
+
+      // Reload data
+      setTimeout(() => {
+        loadData();
+      }, 500);
+    } catch (err: any) {
+      results.push(`❌ Failed to update access: ${err.message}`);
+      setFixResults(results);
+    } finally {
+      setFixing(false);
+    }
+  }
+
+  async function removeUserAccess(
+    entryId: string,
+    userEmail: string,
+    resourceName: string
+  ) {
+    if (!confirm(`Remove ${userEmail} from ${resourceName}?`)) {
+      return;
+    }
+
+    setFixing(true);
+    const results: string[] = [];
+
+    try {
+      // @ts-ignore
+      const quick = window.quick;
+      const accessCollection = quick.db.collection("access_control");
+
+      await accessCollection.delete(entryId);
+
+      results.push(`✅ Removed ${userEmail} from ${resourceName}`);
+      setFixResults(results);
+
+      // Reload data
+      setTimeout(() => {
+        loadData();
+      }, 500);
+    } catch (err: any) {
+      results.push(`❌ Failed to remove access: ${err.message}`);
+      setFixResults(results);
+    } finally {
+      setFixing(false);
+    }
+  }
+
   async function deleteOrphanedAccess() {
     if (!confirm("This will DELETE all orphaned access control entries. This cannot be undone. Continue?")) {
       return;
@@ -692,25 +759,47 @@ export default function DatabaseViewerPage() {
                           {resource.accessEntries.map((entry) => (
                             <div
                               key={entry.id}
-                              className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 flex justify-between items-center"
+                              className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 flex justify-between items-center gap-4"
                             >
-                              <div>
-                                <div className="font-medium text-white">{entry.user_email}</div>
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium text-white truncate">{entry.user_email}</div>
                                 <div className="text-sm text-neutral-400 mt-1">
                                   Granted by: {entry.granted_by} • {new Date(entry.created_at).toLocaleDateString()}
                                 </div>
                               </div>
-                              <span
-                                className={`px-3 py-1 text-sm font-medium rounded ${
-                                  entry.access_level === "owner"
-                                    ? "bg-green-900 text-green-200"
-                                    : entry.access_level === "editor"
-                                    ? "bg-blue-900 text-blue-200"
-                                    : "bg-neutral-700 text-neutral-200"
-                                }`}
-                              >
-                                {entry.access_level}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={entry.access_level}
+                                  onChange={(e) => {
+                                    updateAccessLevel(
+                                      entry.id,
+                                      e.target.value as "owner" | "editor" | "viewer",
+                                      entry.user_email,
+                                      resource.resource.name
+                                    );
+                                  }}
+                                  disabled={fixing}
+                                  className={`px-3 py-1 text-sm font-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                    entry.access_level === "owner"
+                                      ? "bg-green-900 text-green-200 border-green-700"
+                                      : entry.access_level === "editor"
+                                      ? "bg-blue-900 text-blue-200 border-blue-700"
+                                      : "bg-neutral-700 text-neutral-200 border-neutral-600"
+                                  }`}
+                                >
+                                  <option value="viewer">viewer</option>
+                                  <option value="editor">editor</option>
+                                  <option value="owner">owner</option>
+                                </select>
+                                <button
+                                  onClick={() => removeUserAccess(entry.id, entry.user_email, resource.resource.name)}
+                                  disabled={fixing}
+                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                                  title="Remove user"
+                                >
+                                  🗑️
+                                </button>
+                              </div>
                             </div>
                           ))}
                         </div>

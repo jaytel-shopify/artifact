@@ -89,7 +89,7 @@ function FolderPageContent() {
         const [folderData, hasEditAccess, folderProjects] = await Promise.all([
           getFolderById(folderId),
           canUserEdit(folderId, "folder", user.email),
-          getProjectsInFolder(folderId),
+          getProjectsInFolder(folderId, user.email),
         ]);
 
         if (!folderData) {

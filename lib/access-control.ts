@@ -219,6 +219,44 @@ export async function getAccessList(
 }
 
 /**
+ * Cascade folder access to all projects in the folder
+ */
+async function cascadeAccessToFolderProjects(
+  folderId: string,
+  userEmail: string,
+  accessLevel: AccessLevel,
+  grantedBy: string,
+  userName?: string,
+  userAvatar?: string
+): Promise<void> {
+  try {
+    // Import dynamically to avoid circular dependency
+    const { getProjectsInFolder } = await import("./quick-folders");
+    const projects = await getProjectsInFolder(folderId);
+
+    console.log("[AccessControl] Cascading access to", projects.length, "projects in folder");
+
+    // Grant access to each project (in parallel for speed)
+    await Promise.all(
+      projects.map((project) =>
+        grantAccess(
+          project.id,
+          "project",
+          userEmail,
+          accessLevel,
+          grantedBy,
+          userName,
+          userAvatar
+          // Don't send Slack notifications for cascaded access (too spammy)
+        )
+      )
+    );
+  } catch (error) {
+    console.error("[AccessControl] Failed to cascade folder access:", error);
+  }
+}
+
+/**
  * Grant access to a user
  */
 export async function grantAccess(
@@ -248,6 +286,18 @@ export async function grantAccess(
         user_avatar: userAvatar,
       });
 
+      // If updating folder access, cascade to projects
+      if (resourceType === "folder") {
+        await cascadeAccessToFolderProjects(
+          resourceId,
+          userEmail,
+          accessLevel,
+          grantedBy,
+          userName,
+          userAvatar
+        );
+      }
+
       return await collection.findById(existing.id);
     }
 
@@ -268,6 +318,18 @@ export async function grantAccess(
       userEmail,
       accessLevel,
     });
+
+    // If granting folder access, cascade to all projects in folder
+    if (resourceType === "folder") {
+      await cascadeAccessToFolderProjects(
+        resourceId,
+        userEmail,
+        accessLevel,
+        grantedBy,
+        userName,
+        userAvatar
+      );
+    }
 
     // Send Slack notification to the invited user
     if (resourceName && userSlackId) {
@@ -458,6 +520,7 @@ export async function getUserAccessibleResources(
     const allAccess = await collection.find();
     return allAccess.filter(
       (entry: AccessEntry) =>
+        entry.user_email && // Check that user_email exists
         entry.user_email.toLowerCase() === userEmail.toLowerCase().trim() &&
         entry.resource_type === resourceType
     );
