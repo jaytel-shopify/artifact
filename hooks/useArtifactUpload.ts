@@ -1,6 +1,6 @@
 import { useState, useCallback, useTransition } from "react";
 import { toast } from "sonner";
-import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
+import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick/fs";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 
@@ -41,7 +41,7 @@ export function useArtifactUpload({
       if (files.length === 0) return;
 
       // Validate all files first (50MB limit)
-      const { validateFile } = await import("@/lib/quick-storage");
+      const { validateFile } = await import("@/lib/quick/fs");
       for (const file of files) {
         const validation = validateFile(file, { maxSizeMB: 50 });
         if (!validation.valid) {
@@ -184,4 +184,3 @@ export function useArtifactUpload({
     isPending,
   };
 }
-

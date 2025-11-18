@@ -53,7 +53,7 @@ export function useFollowSync({
     scrollIndex?: number;
   } | null>(null);
   const isChangingPageRef = useRef(false);
-  
+
   // Store setters and currentPageId in refs to avoid re-registering event listener
   const setColumnsRef = useRef(setColumns);
   const setFitModeRef = useRef(setFitMode);
@@ -63,13 +63,13 @@ export function useFollowSync({
   useEffect(() => {
     isFollowingRef.current = isFollowing;
   }, [isFollowing]);
-  
+
   useEffect(() => {
     setColumnsRef.current = setColumns;
     setFitModeRef.current = setFitMode;
     selectPageRef.current = selectPage;
   }, [setColumns, setFitMode, selectPage]);
-  
+
   useEffect(() => {
     currentPageIdRef.current = currentPageId;
   }, [currentPageId]);
@@ -83,8 +83,10 @@ export function useFollowSync({
         // Apply any pending state after page change completes
         if (pendingStateRef.current) {
           const pending = pendingStateRef.current;
-          if (pending.columns !== undefined) setColumnsRef.current(pending.columns);
-          if (pending.fitMode !== undefined) setFitModeRef.current(pending.fitMode);
+          if (pending.columns !== undefined)
+            setColumnsRef.current(pending.columns);
+          if (pending.fitMode !== undefined)
+            setFitModeRef.current(pending.fitMode);
           if (pending.scrollIndex !== undefined && carouselRef.current) {
             scrollToIndex(carouselRef.current, pending.scrollIndex);
           }
@@ -151,6 +153,7 @@ export function useFollowSync({
     if (!followManager || !carouselReady || !carouselRef.current) return;
 
     const carouselContainer = carouselRef.current;
+    if (!carouselContainer) return;
 
     const handleScroll = () => {
       if (!followManager.isLeading()) {
@@ -215,7 +218,7 @@ export function useFollowSync({
         }
         return; // Exit early - don't process other branches
       }
-      
+
       // Queue other state changes if we're changing pages
       if (isChangingPageRef.current) {
         if (!pendingStateRef.current) {
@@ -268,11 +271,7 @@ export function useFollowSync({
         }
       }
     });
-  }, [
-    followManager,
-    followInitialized,
-    carouselRef,
-  ]);
+  }, [followManager, followInitialized, carouselRef]);
 
   // Wrapped handlers for UI controls - these auto-unfollow before making changes
   const handleSetColumns = useCallback(
@@ -310,6 +309,7 @@ export function useFollowSync({
     if (!carouselReady || !carouselRef.current) return;
 
     const carouselContainer = carouselRef.current;
+    if (!carouselContainer) return;
 
     const handleUserScrollGesture = () => {
       if (isFollowingRef.current) {
@@ -318,12 +318,19 @@ export function useFollowSync({
     };
 
     // Listen for user input events that indicate manual scrolling
-    carouselContainer.addEventListener("wheel", handleUserScrollGesture, { passive: true });
-    carouselContainer.addEventListener("touchstart", handleUserScrollGesture, { passive: true });
+    carouselContainer.addEventListener("wheel", handleUserScrollGesture, {
+      passive: true,
+    });
+    carouselContainer.addEventListener("touchstart", handleUserScrollGesture, {
+      passive: true,
+    });
 
     return () => {
       carouselContainer.removeEventListener("wheel", handleUserScrollGesture);
-      carouselContainer.removeEventListener("touchstart", handleUserScrollGesture);
+      carouselContainer.removeEventListener(
+        "touchstart",
+        handleUserScrollGesture
+      );
     };
   }, [carouselReady, carouselRef, stopFollowing]);
 

@@ -29,7 +29,7 @@ import {
   uploadFile,
   getArtifactTypeFromMimeType,
   validateFile,
-} from "@/lib/quick-storage";
+} from "@/lib/quick/fs";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import { toast } from "sonner";
 

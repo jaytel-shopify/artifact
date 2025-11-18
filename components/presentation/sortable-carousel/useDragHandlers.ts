@@ -58,11 +58,7 @@ export function useDragHandlers({
 
   // Helper: Handle removing item from collection and placing it elsewhere
   const handleRemoveFromCollectionDrag = useCallback(
-    (
-      collectionId: string,
-      overIndex: number,
-      activeIndex: number
-    ): boolean => {
+    (collectionId: string, overIndex: number, activeIndex: number): boolean => {
       // Get all items in this collection
       const collectionArtifacts = getCollectionArtifacts(collectionId, items);
 
@@ -176,11 +172,7 @@ export function useDragHandlers({
   // Helper: Handle adding item to expanded collection
   const handleAddToExpandedCollection = useCallback(
     (overIndex: number, activeIndex: number): boolean => {
-      if (
-        activeIndex === -1 ||
-        overIndex === -1 ||
-        activeIndex === overIndex
-      ) {
+      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
         return false;
       }
 
@@ -352,4 +344,3 @@ export function useDragHandlers({
     handleNormalReorder,
   };
 }
-

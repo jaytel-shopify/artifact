@@ -4,7 +4,6 @@ import React, {
   useEffect,
   useCallback,
   forwardRef,
-  useImperativeHandle,
 } from "react";
 import {
   closestCenter,
@@ -41,7 +40,6 @@ import { useCollectionMode } from "./useCollectionMode";
 import { useCarouselItems } from "./useCarouselItems";
 import { useDragHandlers } from "./useDragHandlers";
 import { getCollectionMetadata } from "@/lib/collection-utils";
-import "./sortable-carousel.css";
 
 type VideoMetadata = { hideUI?: boolean; loop?: boolean; muted?: boolean };
 
@@ -138,8 +136,18 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       useState<UniqueIdentifier | null>(null);
     const containerRef = useRef<HTMLUListElement | null>(null);
 
-    // Expose the containerRef to parent via forwardedRef
-    useImperativeHandle(forwardedRef, () => containerRef.current!);
+    // Callback ref to assign to both local ref and forwarded ref
+    const setContainerRef = useCallback(
+      (node: HTMLUListElement | null) => {
+        containerRef.current = node;
+        if (typeof forwardedRef === "function") {
+          forwardedRef(node);
+        } else if (forwardedRef) {
+          forwardedRef.current = node;
+        }
+      },
+      [forwardedRef]
+    );
 
     // Custom hooks for organized logic
     const {
@@ -339,7 +347,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           strategy={horizontalListSortingStrategy}
         >
           <ul
-            ref={containerRef}
+            ref={setContainerRef}
             className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
           >
             {items.map((artifact, index) => {
@@ -355,14 +363,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                   key={artifact.id}
                   layout={layout}
                   activeIndex={activeIndex}
-                  contentUrl={artifact.source_url}
+                  contentUrl={artifact.content.url}
                   contentType={
                     artifact.type as "image" | "video" | "url" | "titleCard"
                   }
-                  width={artifact.metadata?.width as number}
-                  height={artifact.metadata?.height as number}
-                  name={artifact.name}
-                  metadata={artifact.metadata as VideoMetadata}
+                  width={artifact.content?.width as number}
+                  height={artifact.content?.height as number}
+                  name={artifact.title}
+                  metadata={artifact.content as VideoMetadata}
                   columnWidth={columnWidth}
                   isAnyDragging={activeId !== null}
                   isSettling={settlingId === artifact.id}
@@ -385,7 +393,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                     onUpdateArtifact
                       ? async (updates) =>
                           await onUpdateArtifact(artifact.id, {
-                            metadata: { ...artifact.metadata, ...updates },
+                            metadata: { ...artifact.content, ...updates },
                           })
                       : undefined
                   }
@@ -422,14 +430,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                 id={artifact.id}
                 key={`hidden-${artifact.id}`}
                 layout={layout}
-                contentUrl={artifact.source_url}
+                contentUrl={artifact.content.url}
                 contentType={
                   artifact.type as "image" | "video" | "url" | "titleCard"
                 }
-                width={artifact.metadata?.width as number}
-                height={artifact.metadata?.height as number}
-                name={artifact.name}
-                metadata={artifact.metadata as VideoMetadata}
+                width={artifact.content?.width as number}
+                height={artifact.content?.height as number}
+                name={artifact.title}
+                metadata={artifact.content as VideoMetadata}
                 columnWidth={columnWidth}
               />
             ))}
@@ -481,12 +489,12 @@ function CarouselItemOverlay({
   return (
     <CarouselItem
       id={id}
-      contentUrl={artifact.source_url}
+      contentUrl={artifact.content.url}
       contentType={artifact.type as "image" | "video" | "url" | "titleCard"}
-      width={artifact.metadata?.width as number}
-      height={artifact.metadata?.height as number}
-      name={artifact.name}
-      metadata={artifact.metadata as VideoMetadata}
+      width={artifact.content?.width as number}
+      height={artifact.content?.height as number}
+      name={artifact.title}
+      metadata={artifact.content as VideoMetadata}
       allArtifacts={allArtifacts}
       {...props}
       clone

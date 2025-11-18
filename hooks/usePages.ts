@@ -3,41 +3,51 @@
 import useSWR from "swr";
 import { useCallback } from "react";
 import {
-  getPages,
   createPage as createPageDB,
   updatePage as updatePageDB,
   deletePage as deletePageDB,
   reorderPages as reorderPagesDB,
   getNextPosition,
-} from "@/lib/quick-db";
-import { Page } from "@/types";
+  getPages as getPagesDB,
+} from "@/lib/quick/db";
+import { getChildren } from "@/lib/quick/db-new";
+import { Folder } from "@/types";
 
 /**
  * Fetcher function for SWR
  */
-async function fetcher(projectId: string): Promise<Page[]> {
-  return await getPages(projectId);
+async function fetcher(projectId: string): Promise<Folder[]> {
+  return (await getChildren(projectId)) as Folder[];
 }
 
 export function usePages(projectId: string | undefined) {
-  const { data: pages = [], error, isLoading, mutate } = useSWR<Page[]>(
+  const {
+    data: pages = [],
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<Folder[]>(
     projectId ? `pages-${projectId}` : null,
     () => (projectId ? fetcher(projectId) : []),
     { revalidateOnFocus: false }
   );
 
   const createPage = useCallback(
-    async (name: string) => {
+    async (title: string) => {
       if (!projectId) return null;
 
       try {
         // Get next available position
-        const nextPosition = await getNextPosition("pages", projectId, "project_id");
+        const nextPosition = await getNextPosition(
+          "pages",
+          projectId,
+          "project_id"
+        );
 
         // Create the page
         const page = await createPageDB({
           project_id: projectId,
-          name,
+          title,
           position: nextPosition,
         });
 
@@ -53,7 +63,10 @@ export function usePages(projectId: string | undefined) {
   );
 
   const updatePage = useCallback(
-    async (pageId: string, updates: Partial<Pick<Page, "name" | "position">>) => {
+    async (
+      pageId: string,
+      updates: Partial<Pick<Folder, "title" | "position">>
+    ) => {
       if (!projectId) return null;
 
       try {
@@ -84,7 +97,7 @@ export function usePages(projectId: string | undefined) {
   );
 
   const reorderPages = useCallback(
-    async (reorderedPages: Page[]) => {
+    async (reorderedPages: Folder[]) => {
       if (!projectId) return;
 
       // Optimistic update
@@ -96,7 +109,7 @@ export function usePages(projectId: string | undefined) {
           id: page.id,
           position: index,
         }));
-        
+
         await reorderPagesDB(updates);
         await mutate();
       } catch (error) {

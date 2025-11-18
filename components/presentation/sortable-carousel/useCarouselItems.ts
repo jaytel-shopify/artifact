@@ -142,7 +142,10 @@ export function useCarouselItems({
       .map((a) => a.id)
       .sort()
       .join(",");
-    const newIds = visibleArtifacts.map((a) => a.id).sort().join(",");
+    const newIds = visibleArtifacts
+      .map((a) => a.id)
+      .sort()
+      .join(",");
 
     // Sync if items added/removed
     if (prevIds !== newIds) {
@@ -182,9 +185,9 @@ export function useCarouselItems({
 
       // Check if name or metadata changed
       return (
-        newArtifact.name !== prevArtifact.name ||
-        JSON.stringify(newArtifact.metadata) !==
-          JSON.stringify(prevArtifact.metadata)
+        newArtifact.title !== prevArtifact.title ||
+        JSON.stringify(newArtifact.content) !==
+          JSON.stringify(prevArtifact.content)
       );
     });
 
@@ -205,4 +208,3 @@ export function useCarouselItems({
     prevArtifactsRef,
   };
 }
-

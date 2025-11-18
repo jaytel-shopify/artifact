@@ -3,15 +3,15 @@
 import useSWR from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/router";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
-import type { Project, Artifact } from "@/types";
-import { getProjectById } from "@/lib/quick-db";
+import type { Folder, Artifact } from "@/types";
+import { getFolderById } from "@/lib/quick/db-new";
 import { useResourcePermissions } from "@/hooks/useResourcePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
@@ -45,8 +45,8 @@ const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
 /**
  * Fetcher function for SWR - gets project by ID
  */
-async function fetchProject(projectId: string): Promise<Project | null> {
-  return await getProjectById(projectId);
+async function fetchProject(projectId: string): Promise<Folder | null> {
+  return await getFolderById(projectId);
 }
 
 // Inner component that uses useFollow - must be wrapped by QuickFollowProvider
@@ -55,8 +55,8 @@ function PresentationPageInner({
 }: {
   onBroadcastReady?: (callback: () => void) => void;
 }) {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("id") || "";
+  const router = useRouter();
+  const projectId = router.query.id;
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
@@ -67,10 +67,21 @@ function PresentationPageInner({
   const carouselRef = useRef<HTMLUListElement>(null);
   const [carouselReady, setCarouselReady] = useState(false);
 
-  // Callback ref to track when carousel is mounted
-  const setCarouselRef = useCallback((node: HTMLUListElement | null) => {
-    carouselRef.current = node;
-    setCarouselReady(!!node);
+  // Track when carousel is mounted (check periodically until ref is set)
+  useEffect(() => {
+    if (carouselRef.current) {
+      setCarouselReady(true);
+      return;
+    }
+
+    const checkInterval = setInterval(() => {
+      if (carouselRef.current) {
+        setCarouselReady(true);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    return () => clearInterval(checkInterval);
   }, []);
 
   // Follow functionality
@@ -158,11 +169,10 @@ function PresentationPageInner({
     onTogglePresentationMode: () => setPresentationMode((prev) => !prev),
   });
 
-  // Fetch project data
-  const { data: project } = useSWR<Project | null>(
+  // Fetch project data using SWR
+  const { data: project } = useSWR(
     projectId ? `project-${projectId}` : null,
-    () => (projectId ? fetchProject(projectId) : null),
-    { revalidateOnFocus: false }
+    () => fetchProject(projectId as string)
   );
 
   // Check permissions
@@ -196,33 +206,33 @@ function PresentationPageInner({
     }
   }, [currentPageId]);
 
-  // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
-  const {
-    broadcastCurrentState,
-    handleSetColumns,
-    handleSetFitMode,
-    handleSelectPage,
-  } = useFollowSync({
-    followManager,
-    isFollowing,
-    followInitialized,
-    columns,
-    fitMode,
-    setColumns,
-    setFitMode,
-    carouselRef,
-    carouselReady,
-    currentPageId,
-    selectPage,
-    stopFollowing,
-  });
+  // // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
+  // const {
+  //   broadcastCurrentState,
+  //   handleSetColumns,
+  //   handleSetFitMode,
+  //   handleSelectPage,
+  // } = useFollowSync({
+  //   followManager,
+  //   isFollowing,
+  //   followInitialized,
+  //   columns,
+  //   fitMode,
+  //   setColumns,
+  //   setFitMode,
+  //   carouselRef,
+  //   carouselReady,
+  //   currentPageId,
+  //   selectPage,
+  //   stopFollowing,
+  // });
 
-  // Pass broadcast function to parent
-  useEffect(() => {
-    if (broadcastCurrentState && onBroadcastReady) {
-      onBroadcastReady(broadcastCurrentState);
-    }
-  }, [broadcastCurrentState, onBroadcastReady]);
+  // // Pass broadcast function to parent
+  // useEffect(() => {
+  //   if (broadcastCurrentState && onBroadcastReady) {
+  //     onBroadcastReady(broadcastCurrentState);
+  //   }
+  // }, [broadcastCurrentState, onBroadcastReady]);
 
   // Fetch page-specific artifacts with real-time sync
   const {
@@ -280,9 +290,7 @@ function PresentationPageInner({
   );
 
   // Smart back URL: Go to folder if project is in a folder, otherwise /projects
-  const backUrl = project?.folder_id
-    ? `/folder/?id=${project.folder_id}`
-    : "/projects/";
+  const backUrl = project?.parent_id ? `/folder/${project.parent_id}` : "/";
 
   const isUploading = uploadState.uploading || isPending;
   const isPageLoading = !project || pages.length === 0;
@@ -293,28 +301,28 @@ function PresentationPageInner({
   }
 
   return (
-      <AppLayout
-        mode="canvas"
-        projectId={project.id}
-        projectName={project.name}
-        creatorEmail={project.creator_id}
+    <AppLayout
+      mode="canvas"
+      projectId={project.id}
+      projectName={project.title}
+      creatorEmail={project.owner_id}
       isCreator={isOwner}
       isCollaborator={accessLevel === "editor" || accessLevel === "viewer"}
       isReadOnly={isReadOnly}
-      currentFolderId={project.folder_id}
+      currentFolderId={project?.parent_id}
       folders={userFolders}
       onProjectNameUpdate={canEdit ? handleProjectNameUpdate : undefined}
       onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
       onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
       onArtifactAdded={canEdit ? refetchArtifacts : undefined}
       columns={columns}
-      onColumnsChange={handleSetColumns}
+      // onColumnsChange={handleSetColumns}
       showColumnControls={true}
       fitMode={fitMode}
-      onFitModeChange={handleSetFitMode}
+      // onFitModeChange={handleSetFitMode}
       pages={pages}
       currentPageId={currentPageId || undefined}
-      onPageSelect={handleSelectPage}
+      // onPageSelect={handleSelectPage}
       onPageRename={handlePageRename}
       onPageCreate={canEdit ? handlePageCreate : undefined}
       onPageDelete={canEdit ? handlePageDelete : undefined}
@@ -379,7 +387,7 @@ function PresentationPageInner({
         {/* Canvas */}
         <div className="h-full pt-[var(--spacing-md)]">
           <Canvas
-            ref={setCarouselRef}
+            ref={carouselRef}
             columns={columns}
             fitMode={fitMode}
             artifacts={artifacts}
@@ -624,20 +632,20 @@ function PresentationPageInner({
       </Dialog>
 
       {/* Dev Debug Panel - Press '/' to toggle */}
-      <DevDebugPanel
+      {/* <DevDebugPanel
         isReadOnly={debugReadOnly}
         onToggleReadOnly={setDebugReadOnly}
         projectInfo={
           project
             ? {
                 id: project.id,
-                name: project.name,
-                creator_id: project.creator_id,
+                name: project.title,
+                creator_id: project.owner_id,
               }
             : undefined
         }
         userEmail={user?.email}
-      />
+      /> */}
     </AppLayout>
   );
 }
@@ -649,8 +657,8 @@ function PresentationPageContent() {
 
 // Component that gets room and provides QuickFollowProvider
 function PresentationPageInnerWithProvider() {
-  const searchParams = useSearchParams();
-  const projectId = searchParams.get("id") || "";
+  const router = useRouter();
+  const projectId = router.query.id;
   const [broadcastCallback, setBroadcastCallback] = useState<
     (() => void) | null
   >(null);
@@ -663,11 +671,10 @@ function PresentationPageInnerWithProvider() {
     []
   );
 
-  // Fetch project
-  const { data: project } = useSWR<Project | null>(
+  // Fetch project using SWR
+  const { data: project } = useSWR(
     projectId ? `project-${projectId}` : null,
-    () => (projectId ? fetchProject(projectId) : null),
-    { revalidateOnFocus: false }
+    () => fetchProject(projectId as string)
   );
 
   const { pages } = usePages(project?.id);

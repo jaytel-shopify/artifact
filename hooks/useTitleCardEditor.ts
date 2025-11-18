@@ -24,7 +24,7 @@ export function useTitleCardEditor(
       const artifact = artifacts.find((a) => a.id === artifactId);
       if (!artifact) return;
 
-      const metadata = artifact.metadata as
+      const metadata = artifact.content as
         | { headline?: string; subheadline?: string }
         | undefined;
 

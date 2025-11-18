@@ -3,7 +3,7 @@
 import { useState, useEffect, ReactNode } from "react";
 import AppHeader from "./AppHeader";
 import PageNavigationSidebar from "./PageNavigationSidebar";
-import { Page } from "@/types";
+import { Folder } from "@/types";
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -42,13 +42,13 @@ interface AppLayoutProps {
   onFitModeChange?: (fit: boolean) => void;
 
   // Page management (canvas mode)
-  pages?: Page[];
+  pages?: Folder[];
   currentPageId?: string;
   onPageSelect?: (pageId: string) => void;
   onPageRename?: (pageId: string, newName: string) => Promise<void>;
   onPageCreate?: () => void;
   onPageDelete?: (pageId: string) => void;
-  onPageReorder?: (reorderedPages: Page[]) => void;
+  onPageReorder?: (reorderedPages: Folder[]) => void;
 
   // Presentation mode
   presentationMode?: boolean;

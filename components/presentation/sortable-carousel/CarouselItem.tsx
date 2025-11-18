@@ -9,7 +9,10 @@ import { CarouselItemContextMenu } from "./CarouselItemContextMenu";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
 import { Button } from "@/components/ui/button";
 import type { Artifact } from "@/types";
-import { getCollectionMetadata, getCollectionArtifacts } from "@/lib/collection-utils";
+import {
+  getCollectionMetadata,
+  getCollectionArtifacts,
+} from "@/lib/collection-utils";
 
 export enum Position {
   Before = -1,
@@ -109,7 +112,6 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     },
     ref
   ) {
-
     // Use provided data (required now, no mock fallback)
     const url = contentUrl || "";
     const type = contentType;
@@ -122,19 +124,25 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isUrl = type === "url";
 
     // Check if this is part of a collection
-    const itemMetadata = getCollectionMetadata({ id: id.toString(), metadata } as Artifact);
+    const itemMetadata = getCollectionMetadata({
+      id: id.toString(),
+      metadata: metadata,
+    } as Artifact);
     const collectionId = itemMetadata.collection_id;
     const isInCollection = !!collectionId;
-    
+
     // Find all items in this collection
-    const collectionArtifacts = isInCollection && allArtifacts
-      ? getCollectionArtifacts(collectionId!, allArtifacts)
-      : [];
-    
+    const collectionArtifacts =
+      isInCollection && allArtifacts
+        ? getCollectionArtifacts(collectionId!, allArtifacts)
+        : [];
+
     // This item is the "first" in collection if it's in a collection and is index 0
-    const isCollectionFirst = isInCollection && collectionArtifacts.length > 0 && 
+    const isCollectionFirst =
+      isInCollection &&
+      collectionArtifacts.length > 0 &&
       collectionArtifacts[0].id === id.toString();
-    
+
     const isExpanded = itemMetadata.is_expanded || false;
     const collectionCount = collectionArtifacts.length;
 

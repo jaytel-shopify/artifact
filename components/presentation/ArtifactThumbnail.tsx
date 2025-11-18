@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe, Play, FileText, Type } from "lucide-react";
+import { Globe, Play, Type } from "lucide-react";
 import type { Artifact } from "@/types";
 
 interface ArtifactThumbnailProps {
@@ -19,13 +19,15 @@ export default function ArtifactThumbnail({
     ${className}
   `;
 
+  const artifactUrl = artifact.content.url;
+
   switch (artifact.type) {
     case "image":
       return (
         <div className={baseClasses}>
           <img
-            src={artifact.source_url}
-            alt={artifact.name}
+            src={artifactUrl}
+            alt={artifact.title}
             className="w-full h-full object-cover"
             loading="lazy"
           />
@@ -43,13 +45,13 @@ export default function ArtifactThumbnail({
 
     case "video":
       // Check if thumbnail is available in metadata
-      const thumbnailUrl = (artifact.metadata as any)?.thumbnail_url;
+      const thumbnailUrl = artifact.content.thumbnail_url as string | undefined;
       if (thumbnailUrl) {
         return (
           <div className={baseClasses}>
             <img
               src={thumbnailUrl}
-              alt={artifact.name}
+              alt={artifact.title}
               className="w-full h-full object-cover"
               loading="lazy"
             />

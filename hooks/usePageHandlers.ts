@@ -1,17 +1,13 @@
+import { Folder } from "@/types";
 import { useCallback } from "react";
 import { toast } from "sonner";
-
-interface Page {
-  id: string;
-  name: string;
-}
 
 /**
  * Hook to handle page CRUD operations
  */
 export function usePageHandlers(
-  pages: Page[],
-  createPage: (name: string) => Promise<Page | null>,
+  pages: Folder[],
+  createPage: (title: string) => Promise<Folder | null>,
   updatePage: (id: string, updates: any) => Promise<any>,
   deletePage: (id: string) => Promise<void>,
   selectPage: (id: string) => void

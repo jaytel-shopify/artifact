@@ -1,8 +1,8 @@
 "use client";
 
-import { waitForQuick } from "./quick";
-import type { Project, Page, Artifact, ArtifactType } from "@/types";
-import { grantAccess } from "./access-control";
+import { waitForQuick } from "./index";
+import type { Project, Page, Artifact, ArtifactType, Folder } from "@/types";
+import { grantAccess } from "../access-control";
 
 /**
  * Quick.db Service Layer
@@ -98,7 +98,7 @@ export async function createProject(data: {
   // Create default page for the project
   await createPage({
     project_id: project.id,
-    name: "Page 01",
+    title: "Page 01",
     position: 0,
   });
 
@@ -178,9 +178,9 @@ export async function getPageById(id: string): Promise<Page | null> {
  */
 export async function createPage(data: {
   project_id: string;
-  name: string;
+  title: string;
   position: number;
-}): Promise<Page> {
+}): Promise<Folder> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
 

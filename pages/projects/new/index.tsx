@@ -1,54 +1,52 @@
-"use client";
-
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, Suspense } from "react";
+import { useRouter } from "next/router";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { createProject as createProjectDB, getProjects } from "@/lib/quick-db";
+import { createProject as createProjectDB, getProjects } from "@/lib/quick/db";
 
-function NewProjectContent() {
+export default function NewProjectPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { user } = useAuth();
   const hasCreatedRef = useRef(false);
-  
-  const folderId = searchParams.get("folder");
+
+  const folderId = router.query.folder as string | undefined;
 
   useEffect(() => {
     async function createNewProject() {
       // Prevent double execution in React Strict Mode
       if (hasCreatedRef.current) return;
       if (!user?.email) return; // Wait for user to be loaded
-      
+      if (!router.isReady) return; // Wait for router to be ready
+
       hasCreatedRef.current = true;
 
       try {
         // Generate unique project name
         let projectName = "Untitled Project";
         const existingProjects = await getProjects(user.email);
-        
+
         if (existingProjects.length > 0) {
           // Find highest number
-          const untitledProjects = existingProjects.filter(p => 
+          const untitledProjects = existingProjects.filter((p) =>
             p.name.startsWith("Untitled Project")
           );
-          
+
           if (untitledProjects.length > 0) {
             projectName = `Untitled Project ${untitledProjects.length + 1}`;
           }
         }
-        
+
         // Create the project (with optional folder assignment)
         const project = await createProjectDB({
           name: projectName,
           creator_id: user.email,
           folder_id: folderId || null,
         });
-        
+
         toast.success(`Created "${project.name}"`);
-        
+
         // Navigate to new ID-based route
-        router.push(`/p?id=${project.id}`);
+        router.push(`/p/${project.id}`);
       } catch (err) {
         toast.error("Failed to create project. Please try again.");
         console.error("Failed to create project:", err);
@@ -58,7 +56,7 @@ function NewProjectContent() {
     }
 
     createNewProject();
-  }, [router, user, folderId]);
+  }, [router, user, folderId, router.isReady]);
 
   return (
     <main className="h-screen flex items-center justify-center bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
@@ -69,13 +67,4 @@ function NewProjectContent() {
     </main>
   );
 }
-
-export default function NewProjectPage() {
-  return (
-    <Suspense fallback={null}>
-      <NewProjectContent />
-    </Suspense>
-  );
-}
-
 

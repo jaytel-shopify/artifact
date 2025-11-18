@@ -2,7 +2,7 @@
 
 import useSWR from "swr";
 import { useCallback } from "react";
-import { getProjectById, updateProject, deleteProject } from "@/lib/quick-db";
+import { getProjectById, updateProject, deleteProject } from "@/lib/quick/db";
 import type { Project } from "@/types";
 
 /**
@@ -16,7 +16,12 @@ async function fetcher(id: string): Promise<Project | null> {
  * Hook to manage a single project
  */
 export function useProject(projectId: string | undefined) {
-  const { data: project, error, isLoading, mutate } = useSWR<Project | null>(
+  const {
+    data: project,
+    error,
+    isLoading,
+    mutate,
+  } = useSWR<Project | null>(
     projectId ? `project-${projectId}` : null,
     () => (projectId ? fetcher(projectId) : null),
     {
@@ -31,7 +36,7 @@ export function useProject(projectId: string | undefined) {
   const updateProjectName = useCallback(
     async (name: string) => {
       if (!projectId) return;
-      
+
       try {
         await updateProject(projectId, { name });
         await mutate(); // Revalidate
@@ -49,7 +54,7 @@ export function useProject(projectId: string | undefined) {
   const updateProjectSettings = useCallback(
     async (settings: Project["settings"]) => {
       if (!projectId) return;
-      
+
       try {
         await updateProject(projectId, { settings });
         await mutate(); // Revalidate
@@ -66,7 +71,7 @@ export function useProject(projectId: string | undefined) {
    */
   const deleteProjectById = useCallback(async () => {
     if (!projectId) return;
-    
+
     try {
       await deleteProject(projectId);
     } catch (error) {
@@ -85,5 +90,3 @@ export function useProject(projectId: string | undefined) {
     refetch: mutate,
   };
 }
-
-

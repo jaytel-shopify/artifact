@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
-import { uploadFile } from "@/lib/quick-storage";
+import { uploadFile } from "@/lib/quick/fs";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import type { Artifact } from "@/types";
 
@@ -27,7 +27,7 @@ export function useMediaReplacement(
 
         // Validate file
         const { validateFile, getArtifactTypeFromMimeType } = await import(
-          "@/lib/quick-storage"
+          "@/lib/quick/fs"
         );
         const validation = validateFile(file, { maxSizeMB: 50 });
         if (!validation.valid) {

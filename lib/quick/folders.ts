@@ -1,9 +1,9 @@
 "use client";
 
-import { waitForQuick } from "./quick";
+import { waitForQuick } from "./index";
 import type { Folder, Project } from "@/types";
-import { deleteProject } from "./quick-db";
-import { deleteAllAccessForResource, grantAccess } from "./access-control";
+import { deleteProject } from "./db";
+import { deleteAllAccessForResource, grantAccess } from "../access-control";
 
 /**
  * Quick.db Folders Service Layer

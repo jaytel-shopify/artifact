@@ -209,8 +209,8 @@ artifact/
 │
 ├── lib/
 │   ├── quick.ts                  # Quick SDK TypeScript types
-│   ├── quick-db.ts               # Database service layer
-│   ├── quick-storage.ts          # File storage helpers
+│   ├── quick/db.ts               # Database service layer
+│   ├── quick/fs.ts          # File storage helpers
 │   ├── artifactNames.ts          # Auto-generate artifact names
 │   └── viewports.ts              # Viewport presets for URLs
 │

@@ -73,7 +73,7 @@ export function useCollectionMode({
         }
       }
 
-      const targetMetadata = targetArtifact.metadata as Record<string, unknown>;
+      const targetMetadata = targetArtifact.content as Record<string, unknown>;
 
       // If both items are in the same collection, don't enter collection mode
       const draggedCollectionId = draggedMetadata?.collection_id;

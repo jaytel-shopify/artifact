@@ -9,7 +9,7 @@ import {
   deleteArtifact as deleteArtifactDB,
   reorderArtifacts as reorderArtifactsDB,
   getNextPosition,
-} from "@/lib/quick-db";
+} from "@/lib/quick/db";
 import {
   ArtifactSyncManager,
   ArtifactSyncEvent,
@@ -17,12 +17,13 @@ import {
 } from "@/lib/artifactSync";
 import type { Artifact, ArtifactType } from "@/types";
 import { getCollectionCleanupIfNeeded } from "@/lib/collection-utils";
+import { getArtifactsByFolderId } from "@/lib/quick/db-new";
 
 /**
  * Fetcher function for SWR
  */
 async function fetcher(pageId: string): Promise<Artifact[]> {
-  return await getArtifactsByPage(pageId);
+  return await getArtifactsByFolderId(pageId);
 }
 
 /**
@@ -248,7 +249,7 @@ export function useSyncedArtifacts(
                 ...a,
                 ...(updates.name && { name: updates.name }),
                 ...(updates.metadata && {
-                  metadata: { ...a.metadata, ...updates.metadata },
+                  metadata: { ...a.content, ...updates.metadata },
                 }),
               }
             : a

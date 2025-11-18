@@ -15,7 +15,7 @@ export interface CollectionMetadata {
 export function getCollectionMetadata(
   artifact: Artifact | undefined
 ): CollectionMetadata {
-  return (artifact?.metadata || {}) as CollectionMetadata;
+  return (artifact?.content || {}) as CollectionMetadata;
 }
 
 /**
@@ -98,9 +98,9 @@ export function getCollectionCleanupIfNeeded(
 
     if (remainingArtifact) {
       // Remove collection metadata from the remaining item
-      const cleanedMetadata = { ...remainingArtifact.metadata };
-      delete cleanedMetadata.collection_id;
-      delete cleanedMetadata.is_expanded;
+      const cleanedMetadata = { ...remainingArtifact.content };
+      // delete cleanedMetadata.collection_id;
+      // delete cleanedMetadata.is_expanded;
 
       return {
         artifactId: remainingArtifact.id,

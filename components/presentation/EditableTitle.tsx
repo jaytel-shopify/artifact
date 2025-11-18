@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Check, ChevronDown, Folder as FolderIcon, X } from "lucide-react";
-import { updateProject } from "@/lib/quick-db";
+import { updateProject } from "@/lib/quick/db";
 import { toast } from "sonner";
 import type { Folder } from "@/types";
 
@@ -52,7 +52,7 @@ export default function EditableTitle({
     try {
       if (isFolder) {
         // Update folder name
-        const { updateFolder } = await import("@/lib/quick-folders");
+        const { updateFolder } = await import("@/lib/quick/folders");
         await updateFolder(projectId, { name: next.trim() });
         onUpdated?.(next.trim());
         toast.success("Folder renamed");

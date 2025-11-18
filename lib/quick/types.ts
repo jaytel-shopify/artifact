@@ -13,7 +13,7 @@ declare global {
     quick: {
       db: QuickDB;
       fs: QuickFS;
-      id: QuickIdentity;
+      id: QuickIdentity & { waitForUser(): Promise<QuickIdentity> };
       ai: QuickAI;
       socket: QuickSocket;
       site: QuickSite;
@@ -97,6 +97,7 @@ interface QuickFS {
 
 // ==================== IDENTITY ====================
 interface QuickIdentity {
+  id: string;
   email: string;
   fullName: string;
   firstName: string;
@@ -106,7 +107,6 @@ interface QuickIdentity {
   title?: string;
   github?: string;
   timestamp?: string;
-  waitForUser(): Promise<QuickIdentity>;
 }
 
 // ==================== AI ====================
@@ -212,89 +212,6 @@ interface QuickSlack {
 // ==================== AUTH ====================
 interface QuickAuth {
   requestScopes(scopes: string[]): Promise<{ hasRequiredScopes: boolean }>;
-}
-
-// ==================== HELPER FUNCTIONS ====================
-
-/**
- * Get the Quick API object (only works in browser)
- */
-export function useQuick() {
-  if (typeof window === "undefined") return null;
-  return window.quick;
-}
-
-/**
- * Wait for Quick SDK to be loaded and ready
- * Useful for ensuring Quick is available before making API calls
- *
- * In local development, this returns a mock implementation with placeholder data
- */
-export async function waitForQuick(): Promise<typeof window.quick> {
-  if (typeof window === "undefined") {
-    throw new Error("Quick is only available in the browser");
-  }
-
-  // Check if running in local development
-  const hostname = window.location.hostname;
-  const isLocal =
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname.startsWith("192.168.");
-
-  if (isLocal) {
-    // Use mock implementation for local development
-    const { createMockQuick } = await import("./quick-mock");
-    const mockQuick = createMockQuick();
-
-    // Store it on window for consistency
-    if (!window.quick) {
-      (window as any).quick = mockQuick;
-    }
-
-    console.log("[Quick] Using mock implementation for local development");
-    return mockQuick as unknown as typeof window.quick;
-  }
-
-  // Production: wait for real Quick SDK
-  if (window.quick) {
-    return window.quick;
-  }
-
-  return new Promise((resolve) => {
-    const checkQuick = () => {
-      if (window.quick) {
-        resolve(window.quick);
-      } else {
-        setTimeout(checkQuick, 100);
-      }
-    };
-    checkQuick();
-  });
-}
-
-/**
- * Check if Quick SDK is loaded
- */
-export function isQuickLoaded(): boolean {
-  return typeof window !== "undefined" && !!window.quick;
-}
-
-/**
- * Get current user from Quick identity
- * Returns null if not loaded yet
- */
-export function getCurrentUser(): QuickIdentity | null {
-  if (typeof window === "undefined" || !window.quick) {
-    return null;
-  }
-
-  // Quick.id properties are directly accessible
-  if (window.quick.id.email) {
-    return window.quick.id;
-  }
-
-  return null;
 }
 
 export type {

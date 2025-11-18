@@ -1,15 +1,15 @@
 import { useEffect } from "react";
-import type { Project } from "@/types";
+import type { Folder } from "@/types";
 
 /**
  * Hook to track project access and set document title
  */
-export function useProjectTracking(project: Project | null | undefined) {
+export function useProjectTracking(project: Folder | null | undefined) {
   // Set document title
   useEffect(() => {
-    if (!project?.name) return;
-    document.title = `${project.name} | Artifact`;
-  }, [project?.name]);
+    if (!project?.title) return;
+    document.title = `${project.title} | Artifact`;
+  }, [project?.title]);
 
   // Track when project is accessed (for "last opened" sorting)
   useEffect(() => {
@@ -19,7 +19,7 @@ export function useProjectTracking(project: Project | null | undefined) {
       if (!project) return;
 
       try {
-        const { updateProject } = await import("@/lib/quick-db");
+        const { updateProject } = await import("@/lib/quick/db");
         await updateProject(project.id, {
           last_accessed_at: new Date().toISOString(),
         });

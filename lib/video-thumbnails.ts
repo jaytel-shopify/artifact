@@ -1,8 +1,8 @@
 "use client";
 
 import { Input, ALL_FORMATS, BlobSource, CanvasSink } from "mediabunny";
-import { uploadFile } from "./quick-storage";
-import { updateArtifact } from "./quick-db";
+import { uploadFile } from "./quick/fs";
+import { updateArtifact } from "./quick/db";
 
 /**
  * Generate a thumbnail image from the first frame of a video file
@@ -131,7 +131,7 @@ export async function generateAndUploadThumbnail(
     );
 
     // Get the current artifact to preserve existing metadata
-    const { getArtifactById } = await import("./quick-db");
+    const { getArtifactById } = await import("./quick/db");
     const artifact = await getArtifactById(artifactId);
 
     if (!artifact) {
