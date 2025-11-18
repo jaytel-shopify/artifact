@@ -78,6 +78,9 @@ interface AppHeaderProps {
   // Follow functionality
   onFollowUser?: (socketId: string) => void;
   followingUserId?: string | null;
+
+  // Artifact creation
+  createArtifact?: any;
 }
 
 export default function AppHeader({
@@ -116,6 +119,7 @@ export default function AppHeader({
   getUsers,
   onFollowUser,
   followingUserId,
+  createArtifact,
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { user, loading } = useAuth();
@@ -178,11 +182,12 @@ export default function AppHeader({
               )}
 
               {/* Add Artifact Button (hidden in read-only mode) */}
-              {projectId && currentPageId && onArtifactAdded && (
+              {projectId && currentPageId && onArtifactAdded && createArtifact && (
                 <ArtifactAdder
                   projectId={projectId}
                   pageId={currentPageId}
                   onAdded={onArtifactAdded}
+                  createArtifact={createArtifact}
                 />
               )}
 

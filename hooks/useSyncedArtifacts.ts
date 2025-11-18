@@ -1,12 +1,13 @@
 "use client";
 
 import useSWR from "swr";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { getArtifactsByPage } from "@/lib/quick-db";
 import { PresenceManager } from "@/lib/presence-manager";
 import type { Artifact } from "@/types";
 import { waitForQuick } from "@/lib/quick";
 import { useArtifactMutations } from "./useArtifactMutations";
+import { debounce } from "@/lib/utils";
 
 async function fetcher(pageId: string): Promise<Artifact[]> {
   return await getArtifactsByPage(pageId);
@@ -112,6 +113,11 @@ export function useSyncedArtifacts(
   }, [projectId, pageId]);
 
   // Subscribe to quick.db for CRUD sync
+  const debouncedMutate = useMemo(
+    () => debounce(() => mutate(), 100),
+    [mutate]
+  );
+
   useEffect(() => {
     if (!pageId) return;
 
@@ -122,12 +128,12 @@ export function useSyncedArtifacts(
 
         const unsubscribe = artifactsCollection.subscribe({
           onCreate: (doc) => {
-            if (doc.page_id === pageId) mutate();
+            if (doc.page_id === pageId) debouncedMutate();
           },
           onUpdate: (doc) => {
-            if (doc.page_id === pageId) mutate();
+            if (doc.page_id === pageId) debouncedMutate();
           },
-          onDelete: () => mutate(),
+          onDelete: () => debouncedMutate(),
         });
 
         return unsubscribe;
@@ -147,7 +153,7 @@ export function useSyncedArtifacts(
     return () => {
       if (unsubscribeFn) unsubscribeFn();
     };
-  }, [pageId, mutate]);
+  }, [pageId, debouncedMutate]);
 
   const mutations = useArtifactMutations({
     artifacts,

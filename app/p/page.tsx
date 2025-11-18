@@ -65,8 +65,10 @@ async function fetchProject(projectId: string): Promise<Project | null> {
 // Inner component that uses useFollow - must be wrapped by QuickFollowProvider
 function PresentationPageInner({
   onBroadcastReady,
+  syncedArtifacts,
 }: {
   onBroadcastReady?: (callback: () => void) => void;
+  syncedArtifacts: ReturnType<typeof useSyncedArtifacts>;
 }) {
   const searchParams = useSearchParams();
   const projectId = searchParams.get("id") || "";
@@ -237,7 +239,7 @@ function PresentationPageInner({
     }
   }, [broadcastCurrentState, onBroadcastReady]);
 
-  // Fetch page-specific artifacts with real-time sync
+  // Use artifacts from prop (already fetched in parent)
   const {
     artifacts,
     createArtifact,
@@ -249,7 +251,7 @@ function PresentationPageInner({
     isPresenceReady,
     getUsersCount,
     getUsers,
-  } = useSyncedArtifacts(project?.id, currentPageId || undefined);
+  } = syncedArtifacts;
 
   // Command executor for artifact operations (handles optimistic updates + DB writes)
   const { executeCommand } = useArtifactCommands({
@@ -349,6 +351,7 @@ function PresentationPageInner({
       getUsers={getUsers}
       onFollowUser={handleFollowUser}
       followingUserId={followedUser?.socketId || null}
+      createArtifact={createArtifact}
     >
       <div className="h-full relative">
         {/* Dropzone for file uploads (only for creators/editors) */}
@@ -588,16 +591,16 @@ function PresentationPageInnerWithProvider() {
   const { pages } = usePages(project?.id);
   const { currentPageId } = useCurrentPage(pages, project?.id);
 
-  // Get the room from artifact sync - this is the ONLY call to useSyncedArtifacts
-  const { getRoom, isPresenceReady } = useSyncedArtifacts(
+  // Single call to useSyncedArtifacts - get everything needed
+  const syncedArtifacts = useSyncedArtifacts(
     project?.id,
     currentPageId || undefined
   );
 
-  const room = getRoom();
+  const room = syncedArtifacts.getRoom();
 
   // Wait for room to be ready before wrapping with provider
-  if (!room || !isPresenceReady) {
+  if (!room || !syncedArtifacts.isPresenceReady) {
     return null; // Loading state
   }
 
@@ -607,7 +610,10 @@ function PresentationPageInnerWithProvider() {
       key={project?.id || "no-project"}
       onBroadcastInitialState={broadcastCallback || undefined}
     >
-      <PresentationPageInner onBroadcastReady={wrappedSetBroadcastCallback} />
+      <PresentationPageInner 
+        onBroadcastReady={wrappedSetBroadcastCallback}
+        syncedArtifacts={syncedArtifacts}
+      />
     </QuickFollowProvider>
   );
 }

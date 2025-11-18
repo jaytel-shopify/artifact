@@ -65,6 +65,9 @@ interface AppLayoutProps {
   // Follow functionality
   onFollowUser?: (socketId: string) => void;
   followingUserId?: string | null;
+
+  // Artifact creation
+  createArtifact?: any;
 }
 
 export default function AppLayout({
@@ -109,6 +112,7 @@ export default function AppLayout({
   getUsers,
   onFollowUser,
   followingUserId,
+  createArtifact,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -176,6 +180,7 @@ export default function AppLayout({
           getUsers={getUsers}
           onFollowUser={onFollowUser}
           followingUserId={followingUserId}
+          createArtifact={createArtifact}
         />
       )}
 
