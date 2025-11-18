@@ -228,7 +228,7 @@ export function SharePanel({
               variant="ghost"
               size="sm"
               onClick={copyLink}
-              className="gap-2"
+              className="gap-2 mr-3"
             >
               <LinkIcon className="h-4 w-4" />
               {linkCopied ? (
