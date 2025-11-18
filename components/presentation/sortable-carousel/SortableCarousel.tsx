@@ -551,6 +551,7 @@ function SortableCarouselItem({
   } = useSortable({
     id,
     animateLayoutChanges: always,
+    disabled: props.isReadOnly,
   });
 
   return (
@@ -582,10 +583,14 @@ function SortableCarouselItem({
       }
       {...props}
       {...attributes}
-      dragHandleProps={{
-        ref: setActivatorNodeRef,
-        ...listeners,
-      }}
+      dragHandleProps={
+        props.isReadOnly
+          ? undefined
+          : {
+              ref: setActivatorNodeRef,
+              ...listeners,
+            }
+      }
     />
   );
 }

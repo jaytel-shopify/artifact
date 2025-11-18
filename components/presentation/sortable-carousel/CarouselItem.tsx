@@ -208,9 +208,11 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                   {fitMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </Button>
               )}
-              <div className="carousel-item-drag-handle" ref={dragHandleRef}>
-                <GripVertical size={16} />
-              </div>
+              {!isReadOnly && (
+                <div className="carousel-item-drag-handle" ref={dragHandleRef}>
+                  <GripVertical size={16} />
+                </div>
+              )}
             </div>
           </div>
         )}
