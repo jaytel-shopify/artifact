@@ -249,6 +249,13 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       </li>
     );
 
+    // Don't show context menu for collapsed collections (they represent multiple items)
+    const isCollapsedCollection = isCollectionFirst && !isExpanded;
+    
+    if (isCollapsedCollection) {
+      return contentElement;
+    }
+
     return (
       <CarouselItemContextMenu
         contentType={type}

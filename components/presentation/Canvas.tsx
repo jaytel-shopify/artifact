@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef } from "react";
+import { forwardRef, type MutableRefObject } from "react";
 import { SortableCarousel } from "./sortable-carousel/SortableCarousel";
 import { Layout } from "./sortable-carousel/CarouselItem";
 import type { Artifact } from "@/types";
@@ -13,6 +13,7 @@ interface CanvasProps {
   artifacts: Artifact[];
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
+  onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
@@ -34,6 +35,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     artifacts,
     onReorder,
     onCreateCollection,
+    onRemoveFromCollection,
     onToggleCollection,
     onUpdateArtifact,
     onDeleteArtifact,
@@ -57,6 +59,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         artifacts={artifacts}
         onReorder={onReorder}
         onCreateCollection={onCreateCollection}
+        onRemoveFromCollection={onRemoveFromCollection}
         onToggleCollection={onToggleCollection}
         onUpdateArtifact={onUpdateArtifact}
         onDeleteArtifact={onDeleteArtifact}

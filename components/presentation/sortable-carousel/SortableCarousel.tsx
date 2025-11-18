@@ -52,6 +52,7 @@ interface Props {
   artifacts: Artifact[];
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
+  onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
@@ -118,6 +119,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       artifacts,
       onReorder,
       onCreateCollection,
+      onRemoveFromCollection,
       onToggleCollection,
       onUpdateArtifact,
       onDeleteArtifact,
@@ -178,6 +180,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       activeId,
       onUpdateArtifact,
       onReorder,
+      onRemoveFromCollection,
       resetCollectionState,
       setItems,
       setIsSettling,
@@ -243,11 +246,15 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       async (overId: UniqueIdentifier) => {
         setIsCreatingCollection(true);
         setItemBeingAddedToCollection(activeId);
+        setIsSettling(true); // Block prop updates during animation
+        setSettlingId(activeId);
         setActiveId(null);
 
         setTimeout(async () => {
           await handleCollectionDragEnd(overId);
           setIsCreatingCollection(false);
+          setIsSettling(false); // Re-enable prop updates after animation
+          setSettlingId(null);
           setTimeout(() => {
             setItemBeingAddedToCollection(null);
           }, 100);

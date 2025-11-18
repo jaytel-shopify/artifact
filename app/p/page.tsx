@@ -11,7 +11,20 @@ import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
 import type { Project, Artifact } from "@/types";
-import { getProjectById } from "@/lib/quick-db";
+import {
+  getProjectById,
+  updateArtifact as updateArtifactDB,
+  reorderArtifacts as reorderArtifactsDB,
+} from "@/lib/quick-db";
+import { useArtifactCommands } from "@/hooks/useArtifactCommands";
+import {
+  ReorderArtifactsCommand,
+  AddToCollectionCommand,
+  RemoveFromCollectionCommand,
+  ToggleCollectionCommand,
+  UpdateArtifactCommand,
+  DeleteArtifactCommand,
+} from "@/lib/artifact-commands";
 import { useResourcePermissions } from "@/hooks/useResourcePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
@@ -238,6 +251,16 @@ function PresentationPageInner({
     getUsers,
   } = useSyncedArtifacts(project?.id, currentPageId || undefined);
 
+  // Command executor for artifact operations (handles optimistic updates + DB writes)
+  const { executeCommand } = useArtifactCommands({
+    artifacts,
+    mutate: refetchArtifacts,
+    onError: (error, commandName) => {
+      console.error(`[${commandName}] Failed:`, error);
+      toast.error(`Failed to ${commandName.replace("Command", "").toLowerCase()}. Please try again.`);
+    },
+  });
+
   // Track project access and set document title
   useProjectTracking(project);
 
@@ -385,136 +408,28 @@ function PresentationPageInner({
             artifacts={artifacts}
             pageId={currentPageId || undefined}
             onReorder={async (reorderedArtifacts) => {
-              try {
-                // With the new structure, the visual order IS the data order!
-                await reorderArtifacts(reorderedArtifacts);
-              } catch (error) {
-                toast.error("Failed to reorder artifacts. Please try again.");
-                console.error("Failed to reorder artifacts:", error);
-              }
+              const command = new ReorderArtifactsCommand(reorderedArtifacts, artifacts);
+              await executeCommand(command, "ReorderCommand");
             }}
             onCreateCollection={async (draggedId, targetId) => {
-              try {
-                const draggedArtifact = artifacts.find(
-                  (a) => a.id === draggedId
-                );
-                const targetArtifact = artifacts.find((a) => a.id === targetId);
-
-                if (!draggedArtifact || !targetArtifact) {
-                  toast.error("Could not find artifacts for collection");
-                  return;
-                }
-
-                const draggedMetadata = draggedArtifact.metadata as any;
-                const targetMetadata = targetArtifact.metadata as any;
-
-                // Check if items are already in the same collection
-                if (
-                  draggedMetadata?.collection_id &&
-                  draggedMetadata.collection_id ===
-                    targetMetadata?.collection_id
-                ) {
-                  toast.error("Item is already in this collection");
-                  return;
-                }
-
-                // Determine collection ID to use
-                let collectionId: string;
-                if (targetMetadata?.collection_id) {
-                  // Target is already in a collection
-                  collectionId = targetMetadata.collection_id;
-                } else {
-                  // Create new collection
-                  collectionId = `collection-${Date.now()}`;
-
-                  // Add target to the collection
-                  await updateArtifact(targetId, {
-                    metadata: {
-                      ...targetArtifact.metadata,
-                      collection_id: collectionId,
-                      is_expanded: false,
-                    },
-                  });
-                }
-
-                // Add dragged item to the collection
-                await updateArtifact(draggedId, {
-                  metadata: {
-                    ...draggedArtifact.metadata,
-                    collection_id: collectionId,
-                  },
-                });
-
-                // Ensure target comes BEFORE dragged in the artifacts array
-                // Target should be index 0 (the "cover" of the collection)
-                const draggedIndex = artifacts.findIndex(
-                  (a) => a.id === draggedId
-                );
-                const targetIndex = artifacts.findIndex(
-                  (a) => a.id === targetId
-                );
-
-                if (
-                  draggedIndex !== -1 &&
-                  targetIndex !== -1 &&
-                  draggedIndex < targetIndex
-                ) {
-                  // Dragged is currently before target, need to reorder
-                  // Remove dragged from its position and insert it after target
-                  const reordered = [...artifacts];
-                  const [removed] = reordered.splice(draggedIndex, 1);
-                  const newTargetIndex = reordered.findIndex(
-                    (a) => a.id === targetId
-                  );
-                  reordered.splice(newTargetIndex + 1, 0, removed);
-
-                  await reorderArtifacts(reordered);
-                }
-              } catch (error) {
-                toast.error("Failed to create collection. Please try again.");
-                console.error("Failed to create collection:", error);
-              }
+              const command = new AddToCollectionCommand(draggedId, targetId, artifacts);
+              await executeCommand(command, "AddToCollectionCommand");
+            }}
+            onRemoveFromCollection={async (artifactId, newPosition) => {
+              const command = new RemoveFromCollectionCommand(artifactId, newPosition, artifacts);
+              await executeCommand(command, "RemoveFromCollectionCommand");
             }}
             onToggleCollection={async (artifactId) => {
-              try {
-                const artifact = artifacts.find((a) => a.id === artifactId);
-                if (!artifact) return;
-
-                const metadata = artifact.metadata as any;
-                const collectionId = metadata?.collection_id;
-
-                if (!collectionId) return;
-
-                // Find all items in the collection
-                const collectionArtifacts = artifacts.filter(
-                  (a) => (a.metadata as any)?.collection_id === collectionId
-                );
-
-                if (collectionArtifacts.length === 0) return;
-
-                // Get current expanded state from first item
-                const firstArtifact = collectionArtifacts[0];
-                const firstMeta = firstArtifact.metadata as any;
-                const isExpanded = firstMeta?.is_expanded || false;
-
-                // Only update the first item - this is sufficient since
-                // isCollectionExpanded() only checks the first item
-                await updateArtifact(firstArtifact.id, {
-                  metadata: {
-                    ...firstArtifact.metadata,
-                    is_expanded: !isExpanded,
-                  },
-                });
-              } catch (error) {
-                toast.error("Failed to toggle collection");
-                console.error("Failed to toggle collection:", error);
-              }
+              const command = new ToggleCollectionCommand(artifactId, artifacts);
+              await executeCommand(command, "ToggleCollectionCommand");
             }}
             onUpdateArtifact={async (artifactId, updates) => {
-              await updateArtifact(artifactId, updates);
+              const command = new UpdateArtifactCommand(artifactId, updates, artifacts);
+              await executeCommand(command, "UpdateArtifactCommand");
             }}
             onDeleteArtifact={async (artifactId) => {
-              await deleteArtifact(artifactId);
+              const command = new DeleteArtifactCommand(artifactId, artifacts);
+              await executeCommand(command, "DeleteArtifactCommand");
             }}
             onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
             onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
