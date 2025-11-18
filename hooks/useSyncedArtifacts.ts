@@ -1,13 +1,12 @@
 "use client";
 
 import useSWR from "swr";
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getArtifactsByPage } from "@/lib/quick-db";
 import { PresenceManager } from "@/lib/presence-manager";
 import type { Artifact } from "@/types";
 import { waitForQuick } from "@/lib/quick";
 import { useArtifactMutations } from "./useArtifactMutations";
-import { debounce } from "@/lib/utils";
 
 async function fetcher(pageId: string): Promise<Artifact[]> {
   return await getArtifactsByPage(pageId);
@@ -41,6 +40,7 @@ export function useSyncedArtifacts(
   const [isPresenceReady, setIsPresenceReady] = useState(false);
   const initialPageIdRef = useRef<string | undefined>(undefined);
   const currentProjectIdRef = useRef<string | undefined>(projectId);
+  const isExecutingCommandRef = useRef(false);
   const projectChanged = currentProjectIdRef.current !== projectId;
   if (projectChanged) {
     currentProjectIdRef.current = projectId;
@@ -113,11 +113,6 @@ export function useSyncedArtifacts(
   }, [projectId, pageId]);
 
   // Subscribe to quick.db for CRUD sync
-  const debouncedMutate = useMemo(
-    () => debounce(() => mutate(), 100),
-    [mutate]
-  );
-
   useEffect(() => {
     if (!pageId) return;
 
@@ -128,12 +123,20 @@ export function useSyncedArtifacts(
 
         const unsubscribe = artifactsCollection.subscribe({
           onCreate: (doc) => {
-            if (doc.page_id === pageId) debouncedMutate();
+            if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+              mutate();
+            }
           },
           onUpdate: (doc) => {
-            if (doc.page_id === pageId) debouncedMutate();
+            if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+              mutate();
+            }
           },
-          onDelete: () => debouncedMutate(),
+          onDelete: () => {
+            if (!isExecutingCommandRef.current) {
+              mutate();
+            }
+          },
         });
 
         return unsubscribe;
@@ -153,7 +156,7 @@ export function useSyncedArtifacts(
     return () => {
       if (unsubscribeFn) unsubscribeFn();
     };
-  }, [pageId, debouncedMutate]);
+  }, [pageId, mutate]);
 
   const mutations = useArtifactMutations({
     artifacts,
@@ -172,5 +175,13 @@ export function useSyncedArtifacts(
     getUsersCount: () => presenceManagerRef.current?.getUsersCount() || 0,
     getUsers: () => presenceManagerRef.current?.getUsers() || [],
     getRoom: () => presenceManagerRef.current?.getRoom() || null,
+    onCommandExecutionStart: () => {
+      isExecutingCommandRef.current = true;
+    },
+    onCommandExecutionEnd: () => {
+      isExecutingCommandRef.current = false;
+      // Refetch once after command completes to sync with DB
+      mutate();
+    },
   };
 }

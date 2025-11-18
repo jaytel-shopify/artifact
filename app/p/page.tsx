@@ -251,6 +251,8 @@ function PresentationPageInner({
     isPresenceReady,
     getUsersCount,
     getUsers,
+    onCommandExecutionStart,
+    onCommandExecutionEnd,
   } = syncedArtifacts;
 
   // Command executor for artifact operations (handles optimistic updates + DB writes)
@@ -261,6 +263,8 @@ function PresentationPageInner({
       console.error(`[${commandName}] Failed:`, error);
       toast.error(`Failed to ${commandName.replace("Command", "").toLowerCase()}. Please try again.`);
     },
+    onExecutionStart: onCommandExecutionStart,
+    onExecutionEnd: onCommandExecutionEnd,
   });
 
   // Track project access and set document title

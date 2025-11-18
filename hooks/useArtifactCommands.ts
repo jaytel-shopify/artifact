@@ -8,16 +8,21 @@ interface UseArtifactCommandsProps {
   artifacts: Artifact[];
   mutate: (data: Artifact[] | undefined, opts?: { revalidate?: boolean }) => Promise<any>;
   onError?: (error: Error, commandName: string) => void;
+  onExecutionStart?: () => void;
+  onExecutionEnd?: () => void;
 }
 
 export function useArtifactCommands({
   artifacts,
   mutate,
   onError,
+  onExecutionStart,
+  onExecutionEnd,
 }: UseArtifactCommandsProps) {
   const executeCommand = useCallback(
     async (command: ArtifactCommand, commandName: string = "Command") => {
       try {
+        onExecutionStart?.();
         const optimisticState = command.getOptimisticState();
         mutate(optimisticState, { revalidate: false });
         await command.execute();
@@ -32,9 +37,11 @@ export function useArtifactCommands({
         }
 
         throw error;
+      } finally {
+        onExecutionEnd?.();
       }
     },
-    [mutate, onError]
+    [mutate, onError, onExecutionStart, onExecutionEnd]
   );
 
   return {
