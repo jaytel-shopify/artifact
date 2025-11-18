@@ -246,7 +246,7 @@ function PresentationPageInner({
     deleteArtifact,
     replaceMedia: replaceMediaSync,
     refetch: refetchArtifacts,
-    isSyncReady,
+    isPresenceReady,
     getUsersCount,
     getUsers,
   } = useSyncedArtifacts(project?.id, currentPageId || undefined);
@@ -344,7 +344,7 @@ function PresentationPageInner({
       onPageReorder={canEdit ? reorderPages : undefined}
       presentationMode={presentationMode}
       backUrl={backUrl}
-      isSyncReady={isSyncReady}
+      isPresenceReady={isPresenceReady}
       getUsersCount={getUsersCount}
       getUsers={getUsers}
       onFollowUser={handleFollowUser}
@@ -589,7 +589,7 @@ function PresentationPageInnerWithProvider() {
   const { currentPageId } = useCurrentPage(pages, project?.id);
 
   // Get the room from artifact sync - this is the ONLY call to useSyncedArtifacts
-  const { getRoom, isSyncReady } = useSyncedArtifacts(
+  const { getRoom, isPresenceReady } = useSyncedArtifacts(
     project?.id,
     currentPageId || undefined
   );
@@ -597,7 +597,7 @@ function PresentationPageInnerWithProvider() {
   const room = getRoom();
 
   // Wait for room to be ready before wrapping with provider
-  if (!room || !isSyncReady) {
+  if (!room || !isPresenceReady) {
     return null; // Loading state
   }
 

@@ -71,7 +71,7 @@ interface AppHeaderProps {
   mode: "homepage" | "canvas" | "folder";
 
   // Sync status (for canvas mode)
-  isSyncReady?: boolean;
+  isPresenceReady?: boolean;
   getUsersCount?: () => number;
   getUsers?: () => any[];
 
@@ -111,7 +111,7 @@ export default function AppHeader({
   fitMode = false,
   onFitModeChange,
   mode,
-  isSyncReady = false,
+  isPresenceReady = false,
   getUsersCount,
   getUsers,
   onFollowUser,
@@ -334,7 +334,7 @@ export default function AppHeader({
               {/* Sync Status Indicator */}
               {getUsers && (
                 <SyncStatusIndicator
-                  isSyncReady={isSyncReady}
+                  isPresenceReady={isPresenceReady}
                   getUsers={getUsers}
                   onFollowUser={onFollowUser}
                   followingUserId={followingUserId}

@@ -11,14 +11,14 @@ interface User {
 }
 
 interface SyncStatusIndicatorProps {
-  isSyncReady: boolean;
+  isPresenceReady: boolean;
   getUsers: () => User[];
   onFollowUser?: (socketId: string) => void;
   followingUserId?: string | null;
 }
 
 export default function SyncStatusIndicator({
-  isSyncReady,
+  isPresenceReady,
   getUsers,
   onFollowUser,
   followingUserId,
@@ -28,7 +28,7 @@ export default function SyncStatusIndicator({
 
   // Update users list when triggered (by WebSocket events, not polling)
   useEffect(() => {
-    if (!isSyncReady) {
+    if (!isPresenceReady) {
       setUsers([]);
       return;
     }
@@ -37,7 +37,7 @@ export default function SyncStatusIndicator({
 
     // Count by socket ID (each connection counts as a separate viewer)
     setUsers(usersList);
-  }, [isSyncReady, getUsers, updateTrigger]);
+  }, [isPresenceReady, getUsers, updateTrigger]);
 
   // Expose update function to parent via window event
   useEffect(() => {
@@ -55,7 +55,7 @@ export default function SyncStatusIndicator({
   return (
     <div className="flex items-center gap-2">
       {/* Viewer Avatars (only show when synced and there are other viewers) */}
-      {isSyncReady && viewersCount >= 1 && (
+      {isPresenceReady && viewersCount >= 1 && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border bg-blue-500/10 border-blue-500/20 text-blue-600">
           <div className="flex items-center -space-x-2">
             {users.slice(0, 5).map((user, index) => {

@@ -58,7 +58,7 @@ interface AppLayoutProps {
   onBackToHome?: () => void;
 
   // Sync status (for canvas mode)
-  isSyncReady?: boolean;
+  isPresenceReady?: boolean;
   getUsersCount?: () => number;
   getUsers?: () => any[];
 
@@ -104,7 +104,7 @@ export default function AppLayout({
   onPageReorder,
   presentationMode = false,
   onBackToHome,
-  isSyncReady,
+  isPresenceReady,
   getUsersCount,
   getUsers,
   onFollowUser,
@@ -171,7 +171,7 @@ export default function AppLayout({
           showColumnControls={showColumnControls}
           fitMode={fitMode}
           onFitModeChange={onFitModeChange}
-          isSyncReady={isSyncReady}
+          isPresenceReady={isPresenceReady}
           getUsersCount={getUsersCount}
           getUsers={getUsers}
           onFollowUser={onFollowUser}
