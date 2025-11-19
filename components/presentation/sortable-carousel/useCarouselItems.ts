@@ -100,13 +100,6 @@ export function useCarouselItems({
     return result;
   }, [artifacts]);
 
-  // Clear expandedCollections when settling starts to prevent false expand animations
-  useEffect(() => {
-    if (isSettling) {
-      setExpandedCollections(new Set());
-    }
-  }, [isSettling]);
-
   // Track newly expanded collections for animation
   useEffect(() => {
     const collectionIds = getAllCollectionIds(artifacts);
@@ -130,14 +123,14 @@ export function useCarouselItems({
       (id) => !prevExpandedRef.current.has(id)
     );
 
-    // Always update ref to prevent stale state
-    prevExpandedRef.current = currentExpanded;
-
     if (newlyExpanded.length > 0) {
       setExpandedCollections(new Set(newlyExpanded));
       const timer = setTimeout(() => setExpandedCollections(new Set()), 400);
+      prevExpandedRef.current = currentExpanded;
       return () => clearTimeout(timer);
     }
+
+    prevExpandedRef.current = currentExpanded;
   }, [artifacts]);
 
   // Sync artifacts with local state (respecting animation state)

@@ -133,8 +133,13 @@ export function reconstructFullArtifactsArray(
 
     const metadata = getCollectionMetadata(visibleItem);
 
-    // If this is part of a collection, check for override with updated metadata
+    // Add the visible item
+    fullReordered.push(visibleItem);
+    seen.add(visibleItem.id);
+
+    // If this is part of a collection, add all other collection items after it
     if (metadata.collection_id) {
+      // Check if we have an override order for this collection
       const overrideItems = collectionOverrides?.get(metadata.collection_id);
       const collectionArtifacts =
         overrideItems ||
@@ -144,20 +149,15 @@ export function reconstructFullArtifactsArray(
       const isFirstInCollection = collectionArtifacts[0]?.id === visibleItem.id;
 
       if (isFirstInCollection) {
-        // Add ALL items from the collection (including first) to preserve metadata
-        collectionArtifacts.forEach((item) => {
+        // Add all other items in the collection (except the first which we just added)
+        collectionArtifacts.slice(1).forEach((item) => {
           if (!seen.has(item.id)) {
             fullReordered.push(item);
             seen.add(item.id);
           }
         });
-        return; // Skip the regular "add visible item" logic below
       }
     }
-
-    // Add the visible item (for non-collection items or non-first collection items)
-    fullReordered.push(visibleItem);
-    seen.add(visibleItem.id);
   });
 
   return fullReordered;
