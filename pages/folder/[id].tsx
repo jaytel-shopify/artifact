@@ -38,14 +38,14 @@ export default function FolderPage() {
 
   const { canEdit } = usePermissions(folderId);
 
-  useEffect(() => {
-    console.log(canEdit);
-  }, [canEdit]);
-
   const handleNewProject = async () => {
     const newProject = await createFolder({
       title: "New Project",
       parent_id: folderId,
+    });
+    const newPage = await createFolder({
+      title: "New Page",
+      parent_id: newProject.id,
     });
     setProjects([newProject, ...projects]);
   };

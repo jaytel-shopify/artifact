@@ -28,7 +28,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   useEffect(() => {
     const fetchArtifacts = async () => {
       const artifacts = await getArtifactsByFolderId(project.id);
-      console.log(artifacts);
       setArtifacts(artifacts);
     };
     fetchArtifacts();

@@ -708,8 +708,8 @@ function PresentationPageWithProvider() {
 
 export default function PresentationPage() {
   return (
-    <Suspense fallback={null}>
-      <PresentationPageWithProvider />
-    </Suspense>
+    // <Suspense fallback={null}>
+    <PresentationPageWithProvider />
+    // </Suspense>
   );
 }

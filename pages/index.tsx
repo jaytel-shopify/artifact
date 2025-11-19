@@ -34,6 +34,10 @@ export default function ProjectsPage() {
     const newProject = await createFolder({
       title: "New Project",
     });
+    const newPage = await createFolder({
+      title: "New Page",
+      parent_id: newProject.id,
+    });
     setProjects([newProject, ...projects]);
   };
 
