@@ -95,8 +95,12 @@ let _foldersArtifacts: FolderArtifact[] = [];
 export const getAllFoldersArtifacts = async (): Promise<FolderArtifact[]> => {
   if (_foldersArtifacts.length > 0) return _foldersArtifacts;
   const quick = await waitForQuick();
+  const folders = await getAllFolders();
   const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
-  _foldersArtifacts = await foldersArtifactsCollection.find();
+  _foldersArtifacts = await foldersArtifactsCollection
+    .where({ folder_id: { $in: folders.map((folder) => folder.id) } })
+    .orderBy("position", "asc")
+    .find();
   return _foldersArtifacts;
 };
 
@@ -249,9 +253,22 @@ export const getArtifactsByFolderId = async (
   folderId: string
 ): Promise<Artifact[]> => {
   const quick = await waitForQuick();
+
+  // Recursively collect all child folder IDs
+  const allChildFolderIds: string[] = [];
+  const collectChildFolders = async (parentId: string): Promise<void> => {
+    const childFolders = await getChildren(parentId);
+    for (const folder of childFolders) {
+      allChildFolderIds.push(folder.id);
+      await collectChildFolders(folder.id);
+    }
+  };
+
+  await collectChildFolders(folderId);
+
   const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
   const folderArtifacts = await foldersArtifactsCollection
-    .where({ folder_id: folderId })
+    .where({ folder_id: { $in: [folderId, ...allChildFolderIds] } })
     .find();
 
   const artifactsCollection = quick.db.collection("artifacts");

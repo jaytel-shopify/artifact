@@ -630,11 +630,6 @@ function PresentationPageInner({
   );
 }
 
-// Simple wrapper - PresentationPageInner gets the room and wraps itself with provider
-function PresentationPageContent() {
-  return <PresentationPageInnerWithProvider />;
-}
-
 // Component that gets room and provides QuickFollowProvider
 function PresentationPageInnerWithProvider() {
   const router = useRouter();
@@ -685,5 +680,5 @@ function PresentationPageInnerWithProvider() {
 }
 
 export default function PresentationPage() {
-  return <PresentationPageContent />;
+  return <PresentationPageInnerWithProvider />;
 }

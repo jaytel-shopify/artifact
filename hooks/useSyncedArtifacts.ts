@@ -3,7 +3,6 @@
 import useSWR from "swr";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  getArtifactsByPage,
   createArtifact as createArtifactDB,
   updateArtifact as updateArtifactDB,
   deleteArtifact as deleteArtifactDB,
