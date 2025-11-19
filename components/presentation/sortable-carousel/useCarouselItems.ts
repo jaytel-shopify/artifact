@@ -8,6 +8,7 @@ import {
 
 interface UseCarouselItemsProps {
   artifacts: Artifact[];
+  expandedCollections?: Set<string>;
   isSettling: boolean;
   pageId?: string;
   containerRef: React.RefObject<HTMLUListElement | null>;
@@ -18,6 +19,7 @@ interface UseCarouselItemsProps {
  */
 export function useCarouselItems({
   artifacts,
+  expandedCollections = new Set(),
   isSettling,
   pageId,
   containerRef,
@@ -25,9 +27,10 @@ export function useCarouselItems({
   const [items, setItems] = useState<Artifact[]>(artifacts);
   const prevPageIdRef = useRef(pageId);
   const prevArtifactsRef = useRef(artifacts);
+  const prevVisibleCountRef = useRef(0);
 
-  // Track newly expanded collections for animation
-  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
+  // Track newly expanded collections for animation (separate from the passed-in state)
+  const [justExpandedCollections, setJustExpandedCollections] = useState<Set<string>>(
     new Set()
   );
   const prevExpandedRef = useRef<Set<string>>(new Set());
@@ -49,10 +52,10 @@ export function useCarouselItems({
           artifacts
         );
 
-        // Check if expanded (use first item's state)
-        const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
+        // Check if expanded using the passed-in state (not metadata)
+        const isExpanded = expandedCollections.has(metadata.collection_id);
 
-        if (firstMeta.is_expanded) {
+        if (isExpanded) {
           // Show all items in order
           collectionArtifacts.forEach((item) => {
             if (!seen.has(item.id)) {
@@ -77,7 +80,7 @@ export function useCarouselItems({
     });
 
     return result;
-  }, [artifacts]);
+  }, [artifacts, expandedCollections]);
 
   // Hidden collection items (collapsed, but stay mounted to preserve video state)
   const hiddenCollectionItems = useMemo(() => {
@@ -89,54 +92,49 @@ export function useCarouselItems({
         collectionId,
         artifacts
       );
-      const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
+      
+      // Check if collapsed using the passed-in state (not metadata)
+      const isExpanded = expandedCollections.has(collectionId);
 
       // If collapsed, hide all items except the first
-      if (!firstMeta.is_expanded && collectionArtifacts.length > 1) {
+      if (!isExpanded && collectionArtifacts.length > 1) {
         result.push(...collectionArtifacts.slice(1));
       }
     });
 
     return result;
-  }, [artifacts]);
+  }, [artifacts, expandedCollections]);
 
   // Track newly expanded collections for animation
   useEffect(() => {
-    const collectionIds = getAllCollectionIds(artifacts);
-    const currentExpanded = new Set<string>();
-
-    collectionIds.forEach((collectionId) => {
-      const collectionArtifacts = getCollectionArtifacts(
-        collectionId,
-        artifacts
-      );
-      if (collectionArtifacts.length > 0) {
-        const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-        if (firstMeta.is_expanded) {
-          currentExpanded.add(collectionId);
-        }
-      }
-    });
-
-    // Find newly expanded collections
-    const newlyExpanded = Array.from(currentExpanded).filter(
+    // Find newly expanded collections by comparing with previous state
+    const newlyExpanded = Array.from(expandedCollections).filter(
       (id) => !prevExpandedRef.current.has(id)
     );
 
     if (newlyExpanded.length > 0) {
-      setExpandedCollections(new Set(newlyExpanded));
-      const timer = setTimeout(() => setExpandedCollections(new Set()), 400);
-      prevExpandedRef.current = currentExpanded;
+      setJustExpandedCollections(new Set(newlyExpanded));
+      const timer = setTimeout(() => setJustExpandedCollections(new Set()), 400);
+      prevExpandedRef.current = new Set(expandedCollections);
       return () => clearTimeout(timer);
     }
 
-    prevExpandedRef.current = currentExpanded;
-  }, [artifacts]);
+    prevExpandedRef.current = new Set(expandedCollections);
+  }, [expandedCollections]);
 
   // Sync artifacts with local state (respecting animation state)
   useEffect(() => {
     // Block sync during animation - critical for smooth animation!
     if (isSettling) return;
+
+    // Quick check: if visible count changed, update immediately
+    // (This catches expand/collapse which changes visible items)
+    if (visibleArtifacts.length !== prevVisibleCountRef.current) {
+      setItems(visibleArtifacts);
+      prevVisibleCountRef.current = visibleArtifacts.length;
+      prevArtifactsRef.current = artifacts;
+      return;
+    }
 
     const prevIds = prevArtifactsRef.current
       .map((a) => a.id)
@@ -153,6 +151,7 @@ export function useCarouselItems({
       setItems(visibleArtifacts);
       prevArtifactsRef.current = artifacts;
       prevPageIdRef.current = pageId;
+      prevVisibleCountRef.current = visibleArtifacts.length;
 
       // Scroll to end if items were added AND page didn't change
       // (don't auto-scroll when switching pages)
@@ -191,6 +190,7 @@ export function useCarouselItems({
     if (orderChanged || itemsChanged) {
       // Top-level order changed or properties changed - update items
       setItems(visibleArtifacts);
+      prevVisibleCountRef.current = visibleArtifacts.length;
     }
 
     prevArtifactsRef.current = artifacts;
@@ -201,7 +201,7 @@ export function useCarouselItems({
     setItems,
     visibleArtifacts,
     hiddenCollectionItems,
-    expandedCollections,
+    expandedCollections: justExpandedCollections,
     prevArtifactsRef,
   };
 }

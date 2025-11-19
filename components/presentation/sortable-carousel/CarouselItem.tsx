@@ -44,9 +44,9 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
     headline?: string;
     subheadline?: string;
     collection_id?: string;
-    is_expanded?: boolean;
   };
   allArtifacts?: Artifact[];
+  expandedCollections?: Set<string>;
   onUpdateMetadata?: (updates: {
     hideUI?: boolean;
     loop?: boolean;
@@ -88,6 +88,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       dragHandleProps,
       metadata,
       allArtifacts = [],
+      expandedCollections,
       onUpdateMetadata,
       onUpdateTitle,
       onDelete,
@@ -135,15 +136,16 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isCollectionFirst = isInCollection && collectionArtifacts.length > 0 && 
       collectionArtifacts[0].id === id.toString();
     
-    const isExpanded = itemMetadata.is_expanded || false;
+    // Check if expanded using the passed-in state (not metadata)
+    const isExpanded = collectionId && expandedCollections ? expandedCollections.has(collectionId) : false;
     const collectionCount = collectionArtifacts.length;
 
     // Handle double-click to expand/collapse collection
     const handleDoubleClick = (e: React.MouseEvent) => {
-      if (isCollectionFirst && onToggleCollection && !isReadOnly) {
+      if (isCollectionFirst && collectionId && onToggleCollection && !isReadOnly) {
         e.stopPropagation();
         e.preventDefault();
-        onToggleCollection(id.toString());
+        onToggleCollection(collectionId);
       }
     };
 

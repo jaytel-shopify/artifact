@@ -7,12 +7,12 @@ import {
   getCollectionArtifacts,
   reconstructFullArtifactsArray,
   getCollectionCleanupIfNeeded,
-  isCollectionExpanded,
 } from "@/lib/collection-utils";
 
 interface UseDragHandlersProps {
   items: Artifact[];
   artifacts: Artifact[];
+  expandedCollections?: Set<string>;
   activeId: UniqueIdentifier | null;
   onUpdateArtifact?: (
     artifactId: string,
@@ -80,6 +80,7 @@ function buildCollectionOverrides(
 export function useDragHandlers({
   items,
   artifacts,
+  expandedCollections = new Set(),
   activeId,
   onUpdateArtifact,
   onReorder,
@@ -100,8 +101,8 @@ export function useDragHandlers({
       const collectionArtifacts = getCollectionArtifacts(collectionId, items);
       if (collectionArtifacts.length === 0) return false;
 
-      const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-      if (!firstMeta.is_expanded) return false;
+      // Check if collection is expanded using the passed-in state
+      if (!expandedCollections.has(collectionId)) return false;
 
       const firstCollectionIndex = items.findIndex(
         (item) => item.id === collectionArtifacts[0].id
@@ -124,7 +125,6 @@ export function useDragHandlers({
 
       const updatedMetadata = { ...activeMetadata };
       delete updatedMetadata.collection_id;
-      delete updatedMetadata.is_expanded;
 
       const applyMetadata = (artifact: Artifact) => {
         if (artifact.id === activeArtifact.id) {
@@ -166,6 +166,7 @@ export function useDragHandlers({
       items,
       activeId,
       artifacts,
+      expandedCollections,
       resetCollectionState,
       onRemoveFromCollection,
       setItems,
@@ -188,7 +189,7 @@ export function useDragHandlers({
 
       if (
         !overMetadata.collection_id ||
-        !isCollectionExpanded(overMetadata.collection_id, artifacts) ||
+        !expandedCollections.has(overMetadata.collection_id) ||
         activeMetadata.collection_id === overMetadata.collection_id ||
         !onUpdateArtifact
       ) {
@@ -199,7 +200,6 @@ export function useDragHandlers({
       const updatedMetadata = {
         ...activeMetadata,
         collection_id: targetCollectionId,
-        is_expanded: true,
       };
 
       const reorderedItems = arrayMove(items, activeIndex, overIndex).map(
@@ -266,6 +266,7 @@ export function useDragHandlers({
       items,
       activeId,
       artifacts,
+      expandedCollections,
       onUpdateArtifact,
       onReorder,
       resetCollectionState,

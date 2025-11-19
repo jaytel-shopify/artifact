@@ -50,6 +50,7 @@ interface Props {
   columns?: number;
   fitMode?: boolean;
   artifacts: Artifact[];
+  expandedCollections?: Set<string>;
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
@@ -117,6 +118,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       columns = 3,
       fitMode = false,
       artifacts,
+      expandedCollections,
       onReorder,
       onCreateCollection,
       onRemoveFromCollection,
@@ -148,10 +150,11 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       items,
       setItems,
       hiddenCollectionItems,
-      expandedCollections,
+      expandedCollections: justExpandedCollections,
       prevArtifactsRef,
     } = useCarouselItems({
       artifacts,
+      expandedCollections,
       isSettling,
       pageId,
       containerRef,
@@ -177,6 +180,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     } = useDragHandlers({
       items,
       artifacts,
+      expandedCollections,
       activeId,
       onUpdateArtifact,
       onReorder,
@@ -352,7 +356,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
             {items.map((artifact, index) => {
               const artifactMetadata = getCollectionMetadata(artifact);
               const isJustExpanded = artifactMetadata.collection_id
-                ? expandedCollections.has(artifactMetadata.collection_id)
+                ? justExpandedCollections.has(artifactMetadata.collection_id)
                 : false;
 
               return (
@@ -382,6 +386,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                   }
                   isJustExpanded={isJustExpanded}
                   allArtifacts={artifacts}
+                  expandedCollections={expandedCollections}
                   onToggleCollection={onToggleCollection}
                   onDelete={
                     onDeleteArtifact
@@ -455,6 +460,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
               layout={layout}
               items={items}
               allArtifacts={artifacts}
+              expandedCollections={expandedCollections}
               isCollectionMode={isCollectionMode}
             />
           ) : null}
@@ -469,11 +475,13 @@ function CarouselItemOverlay({
   id,
   items,
   allArtifacts,
+  expandedCollections,
   isCollectionMode = false,
   ...props
 }: Omit<CarouselItemProps, "index"> & {
   items: Artifact[];
   allArtifacts?: Artifact[];
+  expandedCollections?: Set<string>;
   isCollectionMode?: boolean;
 }) {
   const { activatorEvent, over } = useDndContext();
@@ -495,6 +503,7 @@ function CarouselItemOverlay({
       name={artifact.name}
       metadata={artifact.metadata as VideoMetadata}
       allArtifacts={allArtifacts}
+      expandedCollections={expandedCollections}
       {...props}
       clone
       isCollectionMode={isCollectionMode}
@@ -522,6 +531,7 @@ function SortableCarouselItem({
   isBeingAddedToCollection,
   isJustExpanded,
   allArtifacts,
+  expandedCollections,
   onToggleCollection,
   ...props
 }: CarouselItemProps & {
@@ -535,6 +545,7 @@ function SortableCarouselItem({
   isBeingAddedToCollection?: boolean;
   isJustExpanded?: boolean;
   allArtifacts?: Artifact[];
+  expandedCollections?: Set<string>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
 }) {
   const {
@@ -567,6 +578,7 @@ function SortableCarouselItem({
       isBeingAddedToCollection={isBeingAddedToCollection}
       isJustExpanded={isJustExpanded}
       allArtifacts={allArtifacts}
+      expandedCollections={expandedCollections}
       onToggleCollection={onToggleCollection}
       style={{
         transition,

@@ -33,7 +33,6 @@ function removeCollectionMetadata(
 ): Record<string, any> {
   const cleaned = { ...metadata };
   delete cleaned.collection_id;
-  delete cleaned.is_expanded;
   return cleaned;
 }
 
@@ -113,7 +112,6 @@ export class AddToCollectionCommand extends BaseCommand {
           metadata: {
             ...a.metadata,
             collection_id: this.collectionId,
-            is_expanded: false,
           },
         };
       }
@@ -149,7 +147,6 @@ export class AddToCollectionCommand extends BaseCommand {
           metadata: {
             ...this.targetArtifact.metadata,
             collection_id: this.collectionId,
-            is_expanded: false,
           },
         })
       );
@@ -255,63 +252,6 @@ export class RemoveFromCollectionCommand extends BaseCommand {
 
     // Update positions
     await reorderArtifactsDB(buildPositionUpdates(this.optimisticState));
-  }
-}
-
-export class ToggleCollectionCommand extends BaseCommand {
-  private optimisticState: Artifact[];
-  private firstArtifactId: string;
-  private newExpandedState: boolean;
-
-  constructor(
-    private artifactId: string,
-    currentArtifacts: Artifact[]
-  ) {
-    super(currentArtifacts);
-
-    const artifact = currentArtifacts.find((a) => a.id === artifactId);
-    if (!artifact) throw new Error("Artifact not found");
-
-    const metadata = artifact.metadata as any;
-    const collectionId = metadata?.collection_id;
-    if (!collectionId) throw new Error("Not a collection item");
-
-    const collectionArtifacts = currentArtifacts.filter(
-      (a) => (a.metadata as any)?.collection_id === collectionId
-    );
-    if (collectionArtifacts.length === 0)
-      throw new Error("Collection not found");
-
-    const firstArtifact = collectionArtifacts[0];
-    this.firstArtifactId = firstArtifact.id;
-
-    const firstMeta = firstArtifact.metadata as any;
-    this.newExpandedState = !(firstMeta?.is_expanded || false);
-
-    this.optimisticState = currentArtifacts.map((a) =>
-      a.id === this.firstArtifactId
-        ? {
-            ...a,
-            metadata: { ...a.metadata, is_expanded: this.newExpandedState },
-          }
-        : a
-    );
-  }
-
-  getOptimisticState(): Artifact[] {
-    return this.optimisticState;
-  }
-
-  async execute(): Promise<void> {
-    const firstArtifact = this.currentArtifacts.find(
-      (a) => a.id === this.firstArtifactId
-    )!;
-    await updateArtifactDB(this.firstArtifactId, {
-      metadata: {
-        ...firstArtifact.metadata,
-        is_expanded: this.newExpandedState,
-      },
-    });
   }
 }
 

@@ -21,7 +21,6 @@ import {
   ReorderArtifactsCommand,
   AddToCollectionCommand,
   RemoveFromCollectionCommand,
-  ToggleCollectionCommand,
   UpdateArtifactCommand,
   DeleteArtifactCommand,
 } from "@/lib/artifact-commands";
@@ -77,6 +76,9 @@ function PresentationPageInner({
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  
+  // Track expanded collections locally (not in DB)
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
 
   // Ref to the carousel container for follow sync
   const carouselRef = useRef<HTMLUListElement>(null);
@@ -413,6 +415,7 @@ function PresentationPageInner({
             columns={columns}
             fitMode={fitMode}
             artifacts={artifacts}
+            expandedCollections={expandedCollections}
             pageId={currentPageId || undefined}
             onReorder={async (reorderedArtifacts) => {
               const command = new ReorderArtifactsCommand(reorderedArtifacts, artifacts);
@@ -426,9 +429,17 @@ function PresentationPageInner({
               const command = new RemoveFromCollectionCommand(artifactId, newPosition, artifacts);
               await executeCommand(command, "RemoveFromCollectionCommand");
             }}
-            onToggleCollection={async (artifactId) => {
-              const command = new ToggleCollectionCommand(artifactId, artifacts);
-              await executeCommand(command, "ToggleCollectionCommand");
+            onToggleCollection={async (collectionId) => {
+              // Toggle collection expanded state locally (no DB write)
+              setExpandedCollections((prev) => {
+                const next = new Set(prev);
+                if (next.has(collectionId)) {
+                  next.delete(collectionId);
+                } else {
+                  next.add(collectionId);
+                }
+                return next;
+              });
             }}
             onUpdateArtifact={async (artifactId, updates) => {
               const command = new UpdateArtifactCommand(artifactId, updates, artifacts);

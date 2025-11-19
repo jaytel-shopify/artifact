@@ -11,6 +11,7 @@ import type { Artifact } from "@/types";
 interface CanvasProps {
   columns: number;
   artifacts: Artifact[];
+  expandedCollections?: Set<string>;
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
@@ -33,6 +34,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
   {
     columns,
     artifacts,
+    expandedCollections,
     onReorder,
     onCreateCollection,
     onRemoveFromCollection,
@@ -57,6 +59,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         columns={columns}
         fitMode={fitMode}
         artifacts={artifacts}
+        expandedCollections={expandedCollections}
         onReorder={onReorder}
         onCreateCollection={onCreateCollection}
         onRemoveFromCollection={onRemoveFromCollection}
