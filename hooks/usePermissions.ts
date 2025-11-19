@@ -3,14 +3,16 @@
 import { useEffect, useState } from "react";
 import { useUser } from "./useUser";
 import { FolderMember } from "@/types";
-import { getFolderMembers, getFolderById } from "@/lib/quick/db-new";
+import { getFolderMembersByFolderId, getFolderById } from "@/lib/quick/db-new";
 
 export function usePermissions(folderId: string | null) {
   const [folderMembers, setFolderMembers] = useState<FolderMember[]>([]);
   useEffect(() => {
     const fetchFolderMembers = async (folderId: string | null) => {
       const folder = await getFolderById(folderId);
-      const folderMembers = await getFolderMembers(folder?.id || null);
+      const folderMembers = await getFolderMembersByFolderId(
+        folder?.id || null
+      );
       if (folderMembers.length > 0) {
         setFolderMembers(folderMembers);
       } else if (folder?.parent_id) {

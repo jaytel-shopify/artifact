@@ -124,11 +124,8 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isUrl = type === "url";
 
     // Check if this is part of a collection
-    const itemMetadata = getCollectionMetadata({
-      id: id.toString(),
-      metadata: metadata,
-    } as Artifact);
-    const collectionId = itemMetadata.collection_id;
+    const itemMetadata = { collection_id: null, is_expanded: false }; //getCollectionMetadata(artifact);
+    const collectionId = itemMetadata?.collection_id;
     const isInCollection = !!collectionId;
 
     // Find all items in this collection

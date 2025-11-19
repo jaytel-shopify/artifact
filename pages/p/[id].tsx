@@ -11,7 +11,7 @@ import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
 import type { Folder, Artifact, FolderMember } from "@/types";
-import { getFolderById, getFolderMembers } from "@/lib/quick/db-new";
+import { getFolderById, getFolderMembersByFolderId } from "@/lib/quick/db-new";
 import { useUser } from "@/hooks/useUser";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";

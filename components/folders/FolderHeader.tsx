@@ -23,7 +23,7 @@ interface FolderHeaderProps {
 
 /**
  * FolderHeader
- * 
+ *
  * Header for folder view page with breadcrumb navigation,
  * folder info, and action buttons.
  */
@@ -49,13 +49,13 @@ export default function FolderHeader({
             Projects
           </button>
           <span>/</span>
-          <span className="text-foreground font-medium">{folder.name}</span>
+          <span className="text-foreground font-medium">{folder.title}</span>
         </div>
 
         {/* Folder Info & Actions */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold">{folder.name}</h1>
+            <h1 className="text-2xl font-bold">{folder.title}</h1>
             <p className="text-sm text-muted-foreground">
               {projectCount} {projectCount === 1 ? "project" : "projects"}
             </p>
@@ -63,7 +63,12 @@ export default function FolderHeader({
 
           <div className="flex items-center gap-2">
             {/* Share Folder Button */}
-            <Button variant="outline" size="sm" className="gap-2" onClick={onShare}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={onShare}
+            >
               <Share className="h-4 w-4" />
               Share
             </Button>
@@ -100,4 +105,3 @@ export default function FolderHeader({
     </div>
   );
 }
-

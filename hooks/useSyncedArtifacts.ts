@@ -235,10 +235,7 @@ export function useSyncedArtifacts(
    * Update an artifact and broadcast to other users
    */
   const updateArtifact = useCallback(
-    async (
-      artifactId: string,
-      updates: { name?: string; metadata?: Record<string, unknown> }
-    ) => {
+    async (artifactId: string, updates: { title?: string; content?: any }) => {
       if (!projectId) return null;
 
       try {
@@ -247,9 +244,9 @@ export function useSyncedArtifacts(
           a.id === artifactId
             ? {
                 ...a,
-                ...(updates.name && { name: updates.name }),
-                ...(updates.metadata && {
-                  metadata: { ...a.content, ...updates.metadata },
+                ...(updates.title && { title: updates.title }),
+                ...(updates.content && {
+                  content: { ...a.content, ...updates.content },
                 }),
               }
             : a

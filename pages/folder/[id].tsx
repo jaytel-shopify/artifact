@@ -12,7 +12,7 @@ import {
   createFolder,
   getChildren,
   getFolderById,
-  getFolderMembers,
+  getFolderMembersByFolderId,
 } from "@/lib/quick/db-new";
 import { Plus } from "lucide-react";
 
@@ -28,7 +28,7 @@ export default function FolderPage() {
       const [folder, projects, folderMembers] = await Promise.all([
         getFolderById(folderId),
         getChildren(folderId),
-        getFolderMembers(folderId),
+        getFolderMembersByFolderId(folderId),
       ]);
       setFolder(folder);
       setProjects(projects as Folder[]);

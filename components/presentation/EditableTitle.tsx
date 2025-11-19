@@ -158,7 +158,7 @@ export default function EditableTitle({
                   className="flex items-center gap-2"
                 >
                   <FolderIcon className="h-4 w-4" />
-                  Move to {folder.name}
+                  Move to {folder.title}
                 </DropdownMenuItem>
               ))}
 

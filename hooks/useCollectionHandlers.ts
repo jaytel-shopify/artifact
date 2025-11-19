@@ -36,8 +36,10 @@ export function useCollectionHandlers({
         const targetMetadata = getCollectionMetadata(targetArtifact);
 
         // Check if dragged item is already in this collection
-        if (draggedMetadata.collection_id && 
-            draggedMetadata.collection_id === targetMetadata.collection_id) {
+        if (
+          draggedMetadata.collection_id &&
+          draggedMetadata.collection_id === targetMetadata.collection_id
+        ) {
           toast.error("Item is already in this collection");
           return;
         }
@@ -50,11 +52,11 @@ export function useCollectionHandlers({
         } else {
           // Create new collection - use a simple timestamp-based ID
           collectionId = `collection-${Date.now()}`;
-          
+
           // Add target to the collection
           await updateArtifact(targetId, {
             metadata: {
-              ...targetArtifact.metadata,
+              ...targetArtifact.content,
               collection_id: collectionId,
               is_expanded: false,
             },
@@ -64,7 +66,7 @@ export function useCollectionHandlers({
         // Add dragged item to the collection
         await updateArtifact(draggedId, {
           metadata: {
-            ...draggedArtifact.metadata,
+            ...draggedArtifact.content,
             collection_id: collectionId,
           },
         });
@@ -74,14 +76,18 @@ export function useCollectionHandlers({
         const draggedIndex = artifacts.findIndex((a) => a.id === draggedId);
         const targetIndex = artifacts.findIndex((a) => a.id === targetId);
 
-        if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex < targetIndex) {
+        if (
+          draggedIndex !== -1 &&
+          targetIndex !== -1 &&
+          draggedIndex < targetIndex
+        ) {
           // Dragged is currently before target, need to reorder
           // Remove dragged from its position and insert it after target
           const reordered = [...artifacts];
           const [removed] = reordered.splice(draggedIndex, 1);
           const newTargetIndex = reordered.findIndex((a) => a.id === targetId);
           reordered.splice(newTargetIndex + 1, 0, removed);
-          
+
           await reorderArtifacts(reordered);
         }
 
@@ -102,11 +108,14 @@ export function useCollectionHandlers({
 
         const metadata = getCollectionMetadata(artifact);
         const collectionId = metadata.collection_id;
-        
+
         if (!collectionId) return;
 
         // Get all items in this collection
-        const collectionArtifacts = getCollectionArtifacts(collectionId, artifacts);
+        const collectionArtifacts = getCollectionArtifacts(
+          collectionId,
+          artifacts
+        );
         if (collectionArtifacts.length === 0) return;
 
         // Get current expanded state from first item
@@ -119,7 +128,7 @@ export function useCollectionHandlers({
           collectionArtifacts.map((item) =>
             updateArtifact(item.id, {
               metadata: {
-                ...item.metadata,
+                ...item.content,
                 is_expanded: !isExpanded,
               },
             })
@@ -156,9 +165,9 @@ export function useCollectionHandlers({
         }
 
         // Remove collection_id from the item being removed
-        const newMetadata = { ...item.metadata };
-        delete newMetadata.collection_id;
-        delete newMetadata.is_expanded;
+        const newMetadata = { ...item.content };
+        // delete newMetadata.collection_id;
+        // delete newMetadata.is_expanded;
 
         await updateArtifact(itemId, {
           metadata: newMetadata,
@@ -194,4 +203,3 @@ export function useCollectionHandlers({
     handleReorder,
   };
 }
-

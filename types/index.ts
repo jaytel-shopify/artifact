@@ -54,6 +54,7 @@ export type Folder = {
 };
 
 export type FolderArtifact = {
+  id: string;
   folder_id: string;
   artifact_id: string;
   created_at: string;
@@ -63,6 +64,7 @@ export type FolderArtifact = {
 export type Role = "owner" | "editor" | "viewer";
 
 export type FolderMember = {
+  id: string;
   folder_id: string;
   user_id: string;
   role: Role;

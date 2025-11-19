@@ -18,7 +18,7 @@ interface MoveToFolderMenuProps {
 
 /**
  * MoveToFolderMenu
- * 
+ *
  * Context menu sub-menu for moving projects to folders.
  * Shows list of available folders and "Remove from Folder" option.
  */
@@ -46,7 +46,7 @@ export default function MoveToFolderMenu({
                 key={folder.id}
                 onClick={() => onMoveToFolder(folder.id)}
               >
-                {folder.name}
+                {folder.title}
               </ContextMenuItem>
             ))
           ) : (
@@ -70,4 +70,3 @@ export default function MoveToFolderMenu({
     </>
   );
 }
-

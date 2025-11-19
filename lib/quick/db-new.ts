@@ -1,5 +1,11 @@
 import { waitForQuick } from "./index";
-import type { Artifact, Folder, FolderArtifact, FolderMember } from "@/types";
+import type {
+  Artifact,
+  Folder,
+  FolderArtifact,
+  FolderMember,
+  Role,
+} from "@/types";
 
 /****************
  ***** CORE *****
@@ -33,6 +39,10 @@ export const getAllFolderMembers = async (): Promise<FolderMember[]> => {
  ******************/
 
 export const createFolder = async (args: Partial<Folder>): Promise<Folder> => {
+  if (!args.title) {
+    throw new Error("title is required");
+  }
+
   const quick = await waitForQuick();
 
   const now = new Date().toISOString();
@@ -58,6 +68,61 @@ export const createFolder = async (args: Partial<Folder>): Promise<Folder> => {
   });
 
   return newFolder;
+};
+
+export const createArtifact = async (args: {
+  title: string;
+  url: string;
+  folder_id: string;
+  position: number;
+}): Promise<Artifact> => {
+  if (!args.title || !args.url || !args.folder_id) {
+    throw new Error("title, url and folder_id are required");
+  }
+
+  const quick = await waitForQuick();
+  const artifactsCollection = quick.db.collection("artifacts");
+  const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
+
+  const newArtifact = await artifactsCollection.create({
+    type: "url",
+    title: args.title,
+    content: {
+      url: args.url,
+    },
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    author_id: quick.id.user.id,
+    visibility: "private",
+  } as Artifact);
+
+  await foldersArtifactsCollection.create({
+    folder_id: args.folder_id,
+    artifact_id: newArtifact.id,
+    created_at: new Date().toISOString(),
+    position: args.position || 0,
+  });
+
+  return newArtifact;
+};
+
+export const createFolderMember = async (args: {
+  folder_id: string;
+  user_id: string;
+  role?: Role;
+}): Promise<FolderMember> => {
+  if (!args.folder_id || !args.user_id) {
+    throw new Error("Folder ID and user ID are required");
+  }
+
+  const quick = await waitForQuick();
+  const foldersMembersCollection = quick.db.collection("folders-members");
+
+  return await foldersMembersCollection.create({
+    folder_id: args.folder_id,
+    user_id: args.user_id,
+    role: args.role || "viewer",
+  });
 };
 
 /*****************
@@ -115,10 +180,124 @@ export const getArtifactsByFolderId = async (
   );
 };
 
-export const getFolderMembers = async (
+export const getFolderMembersByFolderId = async (
   folderId: string | null
 ): Promise<FolderMember[]> => {
   if (!folderId) return [];
   const folderMembers = await getAllFolderMembers();
   return folderMembers.filter((member) => member.folder_id === folderId);
+};
+
+export const getFolderMembersByMemberId = async (
+  memberId: string | null
+): Promise<FolderMember[]> => {
+  if (!memberId) return [];
+  const folderMembers = await getAllFolderMembers();
+  return folderMembers.filter((member) => member.id === memberId);
+};
+
+export const getFolderMember = async (args: {
+  memberId: string;
+  folderId: string;
+}): Promise<FolderMember | null> => {
+  if (!args.memberId || !args.folderId) {
+    throw new Error("memberId and folderId are required");
+  }
+
+  const folderMembers = await getAllFolderMembers();
+  const member = folderMembers.find(
+    (member) =>
+      member.id === args.memberId && member.folder_id === args.folderId
+  );
+  return member || null;
+};
+
+/*******************
+ ***** UPDATE ******
+ ******************/
+
+export const updateArtifact = async (
+  artifactId: string,
+  updates: Partial<Artifact>
+): Promise<Artifact> => {
+  const quick = await waitForQuick();
+  const artifactsCollection = quick.db.collection("artifacts");
+  await artifactsCollection.update(artifactId, updates);
+  return await artifactsCollection.findById(artifactId);
+};
+
+export const updateFolder = async (
+  folderId: string,
+  updates: Partial<Folder>
+): Promise<Folder> => {
+  const quick = await waitForQuick();
+  const foldersCollection = quick.db.collection("folders");
+  await foldersCollection.update(folderId, updates);
+  return await foldersCollection.findById(folderId);
+};
+
+export const updateFolderMember = async (
+  memberId: string,
+  folderId: string,
+  updates: Partial<FolderMember>
+): Promise<FolderMember> => {
+  if (!memberId || !folderId || !updates) {
+    throw new Error("memberId, folderId and updates are required");
+  }
+
+  const quick = await waitForQuick();
+  const foldersMembersCollection = quick.db.collection("folders-members");
+  const member = await getFolderMember({ memberId, folderId });
+  if (!member) {
+    throw new Error("Member not found");
+  }
+  await foldersMembersCollection.update(member.id, updates);
+  return await foldersMembersCollection.findById(member.id);
+};
+
+/*******************
+ ***** DELETE ******
+ ******************/
+
+export const deleteArtifact = async (artifactId: string): Promise<void> => {
+  const quick = await waitForQuick();
+  const artifactsCollection = quick.db.collection("artifacts");
+  await artifactsCollection.delete(artifactId);
+};
+
+export const deleteFolder = async (folderId: string): Promise<void> => {
+  const quick = await waitForQuick();
+
+  // delete members
+  await deleteFolderMembersByFolderId(folderId);
+
+  // delete child folders
+  const childFolders = await getChildren(folderId);
+  await Promise.all(childFolders.map((folder) => deleteFolder(folder.id)));
+
+  // delete folder
+  const foldersCollection = quick.db.collection("folders");
+  await foldersCollection.delete(folderId);
+};
+
+export const deleteFolderMembersByFolderId = async (
+  folderId: string
+): Promise<void> => {
+  const quick = await waitForQuick();
+  const foldersMembersCollection = quick.db.collection("folders-members");
+  const members = await getFolderMembersByFolderId(folderId);
+  await Promise.all(
+    members.map((member) => foldersMembersCollection.delete(member.id))
+  );
+};
+
+export const deleteFolderMemberByMemberId = async (
+  memberId: string
+): Promise<void> => {
+  const quick = await waitForQuick();
+  const foldersMembersCollection = quick.db.collection("folders-members");
+  const members = await getFolderMembersByMemberId(memberId);
+  await Promise.all(
+    members.map((member) => foldersMembersCollection.delete(member.id))
+  );
 };
