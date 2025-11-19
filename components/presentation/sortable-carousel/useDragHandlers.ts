@@ -7,18 +7,22 @@ import {
   getCollectionArtifacts,
   reconstructFullArtifactsArray,
   getCollectionCleanupIfNeeded,
-  isCollectionExpanded,
 } from "@/lib/collection-utils";
 
 interface UseDragHandlersProps {
   items: Artifact[];
   artifacts: Artifact[];
+  expandedCollections?: Set<string>;
   activeId: UniqueIdentifier | null;
   onUpdateArtifact?: (
     artifactId: string,
     updates: { name?: string; metadata?: Record<string, unknown> }
   ) => Promise<void>;
   onReorder?: (artifacts: Artifact[]) => void;
+  onRemoveFromCollection?: (
+    artifactId: string,
+    newPosition: number
+  ) => Promise<void>;
   resetCollectionState: () => void;
   setItems: (items: Artifact[]) => void;
   setIsSettling: (settling: boolean) => void;
@@ -29,12 +33,58 @@ interface UseDragHandlersProps {
 
 const SETTLE_DURATION_MS = 250;
 
+// Helper: Build collection overrides to preserve order during reconstruction
+function buildCollectionOverrides(
+  reorderedItems: Artifact[],
+  allArtifacts: Artifact[]
+): Map<string, Artifact[]> | undefined {
+  const collectionGroups = new Map<string, Artifact[]>();
+
+  reorderedItems.forEach((item) => {
+    const meta = getCollectionMetadata(item);
+    if (meta.collection_id) {
+      if (!collectionGroups.has(meta.collection_id)) {
+        collectionGroups.set(meta.collection_id, []);
+      }
+      collectionGroups.get(meta.collection_id)!.push(item);
+    }
+  });
+
+  if (collectionGroups.size === 0) return undefined;
+
+  const overrides = new Map<string, Artifact[]>();
+  collectionGroups.forEach((visibleItems, collectionId) => {
+    const allCollectionItems = getCollectionArtifacts(
+      collectionId,
+      allArtifacts
+    );
+    const ordered: Artifact[] = [];
+
+    visibleItems.forEach((visualItem) => {
+      const fullArtifact = allArtifacts.find((a) => a.id === visualItem.id);
+      if (fullArtifact) ordered.push(fullArtifact);
+    });
+
+    allCollectionItems.forEach((item) => {
+      if (!ordered.some((added) => added.id === item.id)) {
+        ordered.push(item);
+      }
+    });
+
+    overrides.set(collectionId, ordered);
+  });
+
+  return overrides;
+}
+
 export function useDragHandlers({
   items,
   artifacts,
+  expandedCollections = new Set(),
   activeId,
   onUpdateArtifact,
   onReorder,
+  onRemoveFromCollection,
   resetCollectionState,
   setItems,
   setIsSettling,
@@ -46,29 +96,14 @@ export function useDragHandlers({
     undefined
   );
 
-  // Helper: Handle adding item to collection (collection mode)
-  const handleAddToCollection = useCallback(
-    async (overId: UniqueIdentifier) => {
-      // This is handled by the collection mode hook
-      // Just a placeholder that gets called from drag end
-      return;
-    },
-    []
-  );
-
-  // Helper: Handle removing item from collection and placing it elsewhere
   const handleRemoveFromCollectionDrag = useCallback(
     (collectionId: string, overIndex: number, activeIndex: number): boolean => {
-      // Get all items in this collection
       const collectionArtifacts = getCollectionArtifacts(collectionId, items);
-
       if (collectionArtifacts.length === 0) return false;
 
-      // Only check bounds if collection is expanded
-      const firstMeta = getCollectionMetadata(collectionArtifacts[0]);
-      if (!firstMeta.is_expanded) return false;
+      // Check if collection is expanded using the passed-in state
+      if (!expandedCollections.has(collectionId)) return false;
 
-      // Find collection bounds in visible items
       const firstCollectionIndex = items.findIndex(
         (item) => item.id === collectionArtifacts[0].id
       );
@@ -80,87 +115,60 @@ export function useDragHandlers({
       if (firstCollectionIndex === -1 || lastCollectionIndex === -1)
         return false;
 
-      // Check if drop position is outside collection bounds
       const isOutsideBounds =
         overIndex < firstCollectionIndex || overIndex > lastCollectionIndex;
+      if (!isOutsideBounds) return false;
 
-      if (isOutsideBounds) {
-        const activeArtifact = items[activeIndex];
-        const activeMetadata = getCollectionMetadata(activeArtifact);
+      const activeArtifact = items[activeIndex];
+      const activeMetadata = getCollectionMetadata(activeArtifact);
+      const cleanup = getCollectionCleanupIfNeeded(activeArtifact, artifacts);
 
-        // Reset collection mode state to clear any hover indicators
-        resetCollectionState();
+      const updatedMetadata = { ...activeMetadata };
+      delete updatedMetadata.collection_id;
 
-        setIsSettling(true);
-        setSettlingId(activeId);
+      const applyMetadata = (artifact: Artifact) => {
+        if (artifact.id === activeArtifact.id) {
+          return { ...artifact, metadata: updatedMetadata };
+        }
+        if (cleanup && artifact.id === cleanup.artifactId) {
+          return { ...artifact, metadata: cleanup.metadata };
+        }
+        return artifact;
+      };
 
-        const updatedMetadata = {
-          ...activeMetadata,
-        };
-        delete updatedMetadata.collection_id;
-        delete updatedMetadata.is_expanded;
+      const modifiedArtifacts = artifacts.map(applyMetadata);
+      const reorderedItems = arrayMove(items, activeIndex, overIndex).map(
+        applyMetadata
+      );
+      const fullReordered = reconstructFullArtifactsArray(
+        reorderedItems,
+        modifiedArtifacts
+      );
 
-        // Update position in local state
-        const reorderedItems = arrayMove(items, activeIndex, overIndex);
-        setItems(reorderedItems);
+      resetCollectionState();
+      setIsSettling(true);
+      setSettlingId(activeId);
+      setItems(reorderedItems);
+      prevArtifactsRef.current = fullReordered;
 
-        // Fire backend update immediately (optimistic update in useSyncedArtifacts)
-        onUpdateArtifact?.(activeArtifact.id, {
-          metadata: updatedMetadata,
-        });
+      onRemoveFromCollection?.(activeArtifact.id, overIndex);
 
-        // Delay parent notification until AFTER animation
-        if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
-        settleTimeoutRef.current = setTimeout(async () => {
-          // Check if we need to cleanup a single remaining item in the collection
-          const cleanup = getCollectionCleanupIfNeeded(
-            activeArtifact,
-            artifacts
-          );
-          if (cleanup && onUpdateArtifact) {
-            await onUpdateArtifact(cleanup.artifactId, {
-              metadata: cleanup.metadata,
-            });
-          }
+      if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
+      settleTimeoutRef.current = setTimeout(() => {
+        setIsSettling(false);
+        setSettlingId(null);
+      }, SETTLE_DURATION_MS);
 
-          // Create modified artifacts where the active item has no collection_id
-          const modifiedArtifacts = artifacts.map((artifact) => {
-            if (artifact.id === activeArtifact.id) {
-              return {
-                ...artifact,
-                metadata: updatedMetadata,
-              };
-            }
-            return artifact;
-          });
-
-          // Reconstruct using the utility with updated metadata
-          const fullReordered = reconstructFullArtifactsArray(
-            reorderedItems,
-            modifiedArtifacts
-          );
-
-          // Update prevArtifactsRef BEFORE ending settling
-          prevArtifactsRef.current = fullReordered;
-
-          onReorder?.(fullReordered);
-          setIsSettling(false);
-          setSettlingId(null);
-        }, SETTLE_DURATION_MS);
-
-        setActiveId(null);
-        return true; // Handled
-      }
-
-      return false; // Not handled
+      setActiveId(null);
+      return true;
     },
     [
       items,
       activeId,
       artifacts,
+      expandedCollections,
       resetCollectionState,
-      onUpdateArtifact,
-      onReorder,
+      onRemoveFromCollection,
       setItems,
       setIsSettling,
       setSettlingId,
@@ -169,76 +177,58 @@ export function useDragHandlers({
     ]
   );
 
-  // Helper: Handle adding item to expanded collection
   const handleAddToExpandedCollection = useCallback(
     (overIndex: number, activeIndex: number): boolean => {
-      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex) {
+      if (activeIndex === -1 || overIndex === -1 || activeIndex === overIndex)
         return false;
-      }
 
       const activeArtifact = items[activeIndex];
       const overArtifact = items[overIndex];
-
       const activeMetadata = getCollectionMetadata(activeArtifact);
       const overMetadata = getCollectionMetadata(overArtifact);
 
-      // Check if dropping onto an item that's in an expanded collection
-      // and the active item is NOT already in that collection
       if (
         !overMetadata.collection_id ||
-        !isCollectionExpanded(overMetadata.collection_id, artifacts) ||
+        !expandedCollections.has(overMetadata.collection_id) ||
         activeMetadata.collection_id === overMetadata.collection_id ||
         !onUpdateArtifact
       ) {
-        return false; // Not handled
+        return false;
       }
 
-      // Add item to the collection
-      setIsSettling(true);
-      setSettlingId(activeId);
-
       const targetCollectionId = overMetadata.collection_id;
-
       const updatedMetadata = {
         ...activeMetadata,
         collection_id: targetCollectionId,
-        is_expanded: true,
       };
 
-      // Update local state with both position AND metadata immediately
-      // This shows visual feedback (hairline border) right away
       const reorderedItems = arrayMove(items, activeIndex, overIndex).map(
         (item) =>
           item.id === activeArtifact.id
             ? { ...item, metadata: updatedMetadata }
             : item
       );
+
+      setIsSettling(true);
+      setSettlingId(activeId);
       setItems(reorderedItems);
 
-      // Fire backend update immediately (optimistic update handles the rest)
-      onUpdateArtifact?.(activeArtifact.id, {
-        metadata: updatedMetadata,
-      });
+      onUpdateArtifact?.(activeArtifact.id, { metadata: updatedMetadata });
 
-      // Delay parent notification until AFTER animation
       if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
       settleTimeoutRef.current = setTimeout(async () => {
-        // Build collection order from VISUAL order (preserves drop position)
         const collectionArtifactsInOrder: Artifact[] = [];
+
         reorderedItems.forEach((visualItem) => {
           const artifact = artifacts.find((a) => a.id === visualItem.id);
           if (!artifact) return;
 
-          // Use updated metadata for item being added, existing for others
           const itemMetadata =
             visualItem.id === activeArtifact.id
               ? updatedMetadata
               : getCollectionMetadata(artifact);
 
-          const isInTargetCollection =
-            itemMetadata.collection_id === targetCollectionId;
-
-          if (isInTargetCollection) {
+          if (itemMetadata.collection_id === targetCollectionId) {
             const artifactWithMetadata =
               visualItem.id === activeArtifact.id
                 ? { ...artifact, metadata: updatedMetadata }
@@ -247,24 +237,14 @@ export function useDragHandlers({
           }
         });
 
-        // Create modified artifacts where the active item has the new collection_id
-        const modifiedArtifacts = artifacts.map((artifact) => {
-          if (artifact.id === activeArtifact.id) {
-            return {
-              ...artifact,
-              metadata: updatedMetadata,
-            };
-          }
-          return artifact;
-        });
+        const modifiedArtifacts = artifacts.map((artifact) =>
+          artifact.id === activeArtifact.id
+            ? { ...artifact, metadata: updatedMetadata }
+            : artifact
+        );
 
         const collectionOverrides = new Map<string, Artifact[]>();
-        if (targetCollectionId) {
-          collectionOverrides.set(
-            targetCollectionId,
-            collectionArtifactsInOrder
-          );
-        }
+        collectionOverrides.set(targetCollectionId, collectionArtifactsInOrder);
 
         const fullReordered = reconstructFullArtifactsArray(
           reorderedItems,
@@ -272,9 +252,7 @@ export function useDragHandlers({
           collectionOverrides
         );
 
-        // Update prevArtifactsRef BEFORE ending settling
         prevArtifactsRef.current = fullReordered;
-
         onReorder?.(fullReordered);
         setIsSettling(false);
         setSettlingId(null);
@@ -282,12 +260,13 @@ export function useDragHandlers({
 
       resetCollectionState();
       setActiveId(null);
-      return true; // Handled
+      return true;
     },
     [
       items,
       activeId,
       artifacts,
+      expandedCollections,
       onUpdateArtifact,
       onReorder,
       resetCollectionState,
@@ -299,28 +278,29 @@ export function useDragHandlers({
     ]
   );
 
-  // Helper: Handle normal reordering
   const handleNormalReorder = useCallback(
     (overIndex: number, activeIndex: number) => {
       if (activeIndex === overIndex || activeIndex === -1) return;
 
-      // Set settling to block parent updates during animation
       setIsSettling(true);
       setSettlingId(activeId);
 
-      // Update local state immediately for smooth animation
       const reorderedItems = arrayMove(items, activeIndex, overIndex);
       setItems(reorderedItems);
 
-      // Delay notifying parent until AFTER animation completes
       if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
       settleTimeoutRef.current = setTimeout(() => {
-        // Reconstruct full artifacts array from reordered visible items
-        const fullReordered = reconstructFullArtifactsArray(
+        const collectionOverrides = buildCollectionOverrides(
           reorderedItems,
           artifacts
         );
+        const fullReordered = reconstructFullArtifactsArray(
+          reorderedItems,
+          artifacts,
+          collectionOverrides
+        );
 
+        prevArtifactsRef.current = fullReordered;
         onReorder?.(fullReordered);
         setIsSettling(false);
         setSettlingId(null);
@@ -334,11 +314,11 @@ export function useDragHandlers({
       setItems,
       setIsSettling,
       setSettlingId,
+      prevArtifactsRef,
     ]
   );
 
   return {
-    handleAddToCollection,
     handleRemoveFromCollectionDrag,
     handleAddToExpandedCollection,
     handleNormalReorder,

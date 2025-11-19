@@ -9,10 +9,7 @@ import { CarouselItemContextMenu } from "./CarouselItemContextMenu";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
 import { Button } from "@/components/ui/button";
 import type { Artifact } from "@/types";
-import {
-  getCollectionMetadata,
-  getCollectionArtifacts,
-} from "@/lib/collection-utils";
+import { getCollectionMetadata, getCollectionArtifacts } from "@/lib/collection-utils";
 
 export enum Position {
   Before = -1,
@@ -47,9 +44,9 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
     headline?: string;
     subheadline?: string;
     collection_id?: string;
-    is_expanded?: boolean;
   };
   allArtifacts?: Artifact[];
+  expandedCollections?: Set<string>;
   onUpdateMetadata?: (updates: {
     hideUI?: boolean;
     loop?: boolean;
@@ -91,6 +88,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       dragHandleProps,
       metadata,
       allArtifacts = [],
+      expandedCollections,
       onUpdateMetadata,
       onUpdateTitle,
       onDelete,
@@ -112,6 +110,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     },
     ref
   ) {
+
     // Use provided data (required now, no mock fallback)
     const url = contentUrl || "";
     const type = contentType;
@@ -124,31 +123,29 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isUrl = type === "url";
 
     // Check if this is part of a collection
-    const itemMetadata = { collection_id: null, is_expanded: false }; //getCollectionMetadata(artifact);
-    const collectionId = itemMetadata?.collection_id;
+    const itemMetadata = getCollectionMetadata({ id: id.toString(), metadata } as Artifact);
+    const collectionId = itemMetadata.collection_id;
     const isInCollection = !!collectionId;
-
+    
     // Find all items in this collection
-    const collectionArtifacts =
-      isInCollection && allArtifacts
-        ? getCollectionArtifacts(collectionId!, allArtifacts)
-        : [];
-
+    const collectionArtifacts = isInCollection && allArtifacts
+      ? getCollectionArtifacts(collectionId!, allArtifacts)
+      : [];
+    
     // This item is the "first" in collection if it's in a collection and is index 0
-    const isCollectionFirst =
-      isInCollection &&
-      collectionArtifacts.length > 0 &&
+    const isCollectionFirst = isInCollection && collectionArtifacts.length > 0 && 
       collectionArtifacts[0].id === id.toString();
-
-    const isExpanded = itemMetadata.is_expanded || false;
+    
+    // Check if expanded using the passed-in state (not metadata)
+    const isExpanded = collectionId && expandedCollections ? expandedCollections.has(collectionId) : false;
     const collectionCount = collectionArtifacts.length;
 
     // Handle double-click to expand/collapse collection
     const handleDoubleClick = (e: React.MouseEvent) => {
-      if (isCollectionFirst && onToggleCollection && !isReadOnly) {
+      if (isCollectionFirst && collectionId && onToggleCollection && !isReadOnly) {
         e.stopPropagation();
         e.preventDefault();
-        onToggleCollection(id.toString());
+        onToggleCollection(collectionId);
       }
     };
 
@@ -213,9 +210,11 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                   {fitMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </Button>
               )}
-              <div className="carousel-item-drag-handle" ref={dragHandleRef}>
-                <GripVertical size={16} />
-              </div>
+              {!isReadOnly && (
+                <div className="carousel-item-drag-handle" ref={dragHandleRef}>
+                  <GripVertical size={16} />
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -253,6 +252,13 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         </div>
       </li>
     );
+
+    // Don't show context menu for collapsed collections (they represent multiple items)
+    const isCollapsedCollection = isCollectionFirst && !isExpanded;
+    
+    if (isCollapsedCollection) {
+      return contentElement;
+    }
 
     return (
       <CarouselItemContextMenu

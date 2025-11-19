@@ -132,10 +132,12 @@ export async function deleteFolder(id: string): Promise<void> {
 // ==================== PROJECT-FOLDER RELATIONS ====================
 
 /**
- * Get all projects in a folder
+ * Get all projects in a folder that the user has explicit access to
+ * If userEmail is not provided, returns all projects in folder (for backward compatibility)
  */
 export async function getProjectsInFolder(
-  folderId: string
+  folderId: string,
+  userEmail?: string
 ): Promise<Project[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
@@ -145,8 +147,27 @@ export async function getProjectsInFolder(
     (p: Project) => p.folder_id === folderId
   );
 
+  // If userEmail provided, filter by explicit project access
+  let accessibleProjects = folderProjects;
+  if (userEmail) {
+    const { checkUserAccess } = await import("./access-control");
+    
+    // Check access for each project in parallel
+    const accessChecks = await Promise.all(
+      folderProjects.map(async (project) => {
+        const access = await checkUserAccess(project.id, "project", userEmail);
+        return { project, hasAccess: access !== null };
+      })
+    );
+
+    // Only include projects where user has explicit access
+    accessibleProjects = accessChecks
+      .filter(({ hasAccess }) => hasAccess)
+      .map(({ project }) => project);
+  }
+
   // Sort by last accessed
-  return folderProjects.sort((a: Project, b: Project) => {
+  return accessibleProjects.sort((a: Project, b: Project) => {
     const aTime = a.last_accessed_at || a.created_at;
     const bTime = b.last_accessed_at || b.created_at;
     return new Date(bTime).getTime() - new Date(aTime).getTime();

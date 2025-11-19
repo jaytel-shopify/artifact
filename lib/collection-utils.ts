@@ -5,7 +5,6 @@ import type { Artifact } from "@/types";
  */
 export interface CollectionMetadata {
   collection_id?: string;
-  is_expanded?: boolean;
   [key: string]: unknown;
 }
 
@@ -37,21 +36,6 @@ export function getCollectionArtifacts(
     const metadata = getCollectionMetadata(a);
     return metadata.collection_id === collectionId;
   });
-}
-
-/**
- * Check if a collection is expanded
- */
-export function isCollectionExpanded(
-  collectionId: string,
-  allArtifacts: Artifact[]
-): boolean {
-  const firstItem = allArtifacts.find((a) => {
-    const metadata = getCollectionMetadata(a);
-    return metadata.collection_id === collectionId;
-  });
-  const metadata = getCollectionMetadata(firstItem);
-  return !!metadata.is_expanded;
 }
 
 /**

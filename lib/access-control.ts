@@ -6,6 +6,7 @@
  */
 
 import { waitForQuick } from "./quick";
+import { getResourceUrl } from "./urls";
 
 export type AccessLevel = "owner" | "editor" | "viewer";
 export type ResourceType = "project" | "folder";
@@ -29,6 +30,7 @@ export interface ShopifyUser {
   firstName: string;
   slackImageUrl?: string;
   slackHandle?: string;
+  slackId?: string;
   title?: string;
 }
 
@@ -70,6 +72,7 @@ export async function searchShopifyUsers(
             firstName: fullName.split(" ")[0] || fullName,
             slackHandle: data.slack_handle,
             slackImageUrl: data.slack_image_url,
+            slackId: data.slack_id,
             title: data.title,
           });
         }
@@ -103,6 +106,82 @@ export async function searchShopifyUsers(
 }
 
 // ==================== ACCESS MANAGEMENT ====================
+
+/**
+ * Send Slack notification to invited user
+ */
+async function sendInviteNotification(
+  invitedUser: {
+    email: string;
+    name: string;
+    slackId?: string;
+  },
+  resourceType: ResourceType,
+  resourceName: string,
+  resourceId: string,
+  accessLevel: AccessLevel,
+  invitedBy: string
+): Promise<void> {
+  try {
+    // Only send if user has Slack ID
+    if (!invitedUser.slackId) {
+      return;
+    }
+
+    const quick = await waitForQuick();
+    const resourceUrl = getResourceUrl(resourceType, resourceId);
+
+    await quick.slack.sendMessage(
+      invitedUser.slackId,
+      `You've been invited to a ${resourceType}!`,
+      {
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*You've been invited to a ${resourceType} on Artifact* 🎉`,
+            },
+          },
+          {
+            type: "section",
+            fields: [
+              {
+                type: "mrkdwn",
+                text: `*${resourceType === "project" ? "Project" : "Folder"}:*\n${resourceName}`,
+              },
+              {
+                type: "mrkdwn",
+                text: `*Access Level:*\n${accessLevel}`,
+              },
+              {
+                type: "mrkdwn",
+                text: `*Invited by:*\n${invitedBy}`,
+              },
+            ],
+          },
+          {
+            type: "actions",
+            elements: [
+              {
+                type: "button",
+                text: {
+                  type: "plain_text",
+                  text: `Open ${resourceType === "project" ? "Project" : "Folder"}`,
+                },
+                url: resourceUrl,
+                style: "primary",
+              },
+            ],
+          },
+        ],
+      }
+    );
+  } catch (error) {
+    // Don't fail the invitation if Slack notification fails
+    console.error("[AccessControl] Failed to send Slack notification:", error);
+  }
+}
 
 /**
  * Get all access entries for a resource (project or folder)
@@ -140,6 +219,44 @@ export async function getAccessList(
 }
 
 /**
+ * Cascade folder access to all projects in the folder
+ */
+async function cascadeAccessToFolderProjects(
+  folderId: string,
+  userEmail: string,
+  accessLevel: AccessLevel,
+  grantedBy: string,
+  userName?: string,
+  userAvatar?: string
+): Promise<void> {
+  try {
+    // Import dynamically to avoid circular dependency
+    const { getProjectsInFolder } = await import("./quick-folders");
+    const projects = await getProjectsInFolder(folderId);
+
+    console.log("[AccessControl] Cascading access to", projects.length, "projects in folder");
+
+    // Grant access to each project (in parallel for speed)
+    await Promise.all(
+      projects.map((project) =>
+        grantAccess(
+          project.id,
+          "project",
+          userEmail,
+          accessLevel,
+          grantedBy,
+          userName,
+          userAvatar
+          // Don't send Slack notifications for cascaded access (too spammy)
+        )
+      )
+    );
+  } catch (error) {
+    console.error("[AccessControl] Failed to cascade folder access:", error);
+  }
+}
+
+/**
  * Grant access to a user
  */
 export async function grantAccess(
@@ -149,7 +266,10 @@ export async function grantAccess(
   accessLevel: AccessLevel,
   grantedBy: string,
   userName?: string,
-  userAvatar?: string
+  userAvatar?: string,
+  resourceName?: string,
+  userSlackId?: string,
+  grantedByName?: string
 ): Promise<AccessEntry | null> {
   try {
     const quick = await waitForQuick();
@@ -165,6 +285,18 @@ export async function grantAccess(
         user_name: userName,
         user_avatar: userAvatar,
       });
+
+      // If updating folder access, cascade to projects
+      if (resourceType === "folder") {
+        await cascadeAccessToFolderProjects(
+          resourceId,
+          userEmail,
+          accessLevel,
+          grantedBy,
+          userName,
+          userAvatar
+        );
+      }
 
       return await collection.findById(existing.id);
     }
@@ -186,6 +318,34 @@ export async function grantAccess(
       userEmail,
       accessLevel,
     });
+
+    // If granting folder access, cascade to all projects in folder
+    if (resourceType === "folder") {
+      await cascadeAccessToFolderProjects(
+        resourceId,
+        userEmail,
+        accessLevel,
+        grantedBy,
+        userName,
+        userAvatar
+      );
+    }
+
+    // Send Slack notification to the invited user
+    if (resourceName && userSlackId) {
+      await sendInviteNotification(
+        {
+          email: userEmail,
+          name: userName || userEmail,
+          slackId: userSlackId,
+        },
+        resourceType,
+        resourceName,
+        resourceId,
+        accessLevel,
+        grantedByName || grantedBy
+      );
+    }
 
     return newAccess as AccessEntry;
   } catch (error) {
@@ -360,6 +520,7 @@ export async function getUserAccessibleResources(
     const allAccess = await collection.find();
     return allAccess.filter(
       (entry: AccessEntry) =>
+        entry.user_email && // Check that user_email exists
         entry.user_email.toLowerCase() === userEmail.toLowerCase().trim() &&
         entry.resource_type === resourceType
     );

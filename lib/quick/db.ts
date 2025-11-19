@@ -9,7 +9,7 @@ import { getArtifactsByFolderId } from "./db-new";
  * Quick.db Service Layer
  *
  * This module provides a clean interface to interact with Quick's JSON database.
- * Collections: projects, pages, artifacts, project_access
+ * Collections: projects, pages, artifacts
  *
  * Note: Quick.db automatically adds these fields to all documents:
  * - id (string): Unique identifier
@@ -20,23 +20,37 @@ import { getArtifactsByFolderId } from "./db-new";
 // ==================== PROJECTS ====================
 
 /**
- * Get all projects, optionally filtered by creator
+ * Get all projects visible to a user
+ * Returns projects they created OR have been granted access to via access control
  */
-export async function getProjects(creatorEmail?: string): Promise<Folder[]> {
+export async function getProjects(userEmail?: string): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
-  let projects = await collection.find();
+  const allProjects = await collection.find();
 
-  // Filter by creator if provided
-  if (creatorEmail) {
-    projects = projects.filter((p: Folder) => p.owner_id === creatorEmail);
+  // If no user email, return all projects (for admin/debugging)
+  if (!userEmail) {
+    return allProjects.sort((a: Project, b: Project) => {
+      const aTime = a.last_accessed_at || a.created_at;
+      const bTime = b.last_accessed_at || b.created_at;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
   }
 
+  // Get projects user has access to via access control system
+  const accessibleProjects = await getUserAccessibleResources(userEmail, "project");
+  const accessibleProjectIds = new Set(accessibleProjects.map(a => a.resource_id));
+
+  // Filter projects: user is creator OR user has access via access control
+  const userProjects = allProjects.filter(
+    (p: Project) => p.creator_id === userEmail || accessibleProjectIds.has(p.id)
+  );
+
   // Sort by last_accessed_at (most recent first), fallback to created_at
-  return projects.sort((a: Folder, b: Folder) => {
-    const aTime = a.updated_at || a.created_at;
-    const bTime = b.updated_at || b.created_at;
+  return userProjects.sort((a: Project, b: Project) => {
+    const aTime = a.last_accessed_at || a.created_at;
+    const bTime = b.last_accessed_at || b.created_at;
     return new Date(bTime).getTime() - new Date(aTime).getTime();
   });
 }
@@ -65,11 +79,6 @@ export async function createProject(data: {
   name: string;
   creator_id: string; // user.email
   folder_id?: string | null; // Optional folder assignment
-  settings?: {
-    default_columns?: number;
-    allow_viewer_control?: boolean;
-    background_color?: string;
-  };
 }): Promise<Folder> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
@@ -78,11 +87,6 @@ export async function createProject(data: {
     name: data.name,
     creator_id: data.creator_id,
     folder_id: data.folder_id || null,
-    settings: data.settings || {
-      default_columns: 3,
-      allow_viewer_control: true,
-      background_color: "#ffffff",
-    },
   };
 
   const project = await collection.create(projectData);

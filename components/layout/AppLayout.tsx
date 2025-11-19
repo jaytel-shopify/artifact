@@ -58,13 +58,16 @@ interface AppLayoutProps {
   onBackToHome?: () => void;
 
   // Sync status (for canvas mode)
-  isSyncReady?: boolean;
+  isPresenceReady?: boolean;
   getUsersCount?: () => number;
   getUsers?: () => any[];
 
   // Follow functionality
   onFollowUser?: (socketId: string) => void;
   followingUserId?: string | null;
+
+  // Artifact creation
+  createArtifact?: any;
 }
 
 export default function AppLayout({
@@ -104,11 +107,12 @@ export default function AppLayout({
   onPageReorder,
   presentationMode = false,
   onBackToHome,
-  isSyncReady,
+  isPresenceReady,
   getUsersCount,
   getUsers,
   onFollowUser,
   followingUserId,
+  createArtifact,
 }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -171,11 +175,12 @@ export default function AppLayout({
           showColumnControls={showColumnControls}
           fitMode={fitMode}
           onFitModeChange={onFitModeChange}
-          isSyncReady={isSyncReady}
+          isPresenceReady={isPresenceReady}
           getUsersCount={getUsersCount}
           getUsers={getUsers}
           onFollowUser={onFollowUser}
           followingUserId={followingUserId}
+          createArtifact={createArtifact}
         />
       )}
 

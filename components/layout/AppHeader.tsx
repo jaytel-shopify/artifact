@@ -71,13 +71,16 @@ interface AppHeaderProps {
   mode: "homepage" | "canvas" | "folder";
 
   // Sync status (for canvas mode)
-  isSyncReady?: boolean;
+  isPresenceReady?: boolean;
   getUsersCount?: () => number;
   getUsers?: () => any[];
 
   // Follow functionality
   onFollowUser?: (socketId: string) => void;
   followingUserId?: string | null;
+
+  // Artifact creation
+  createArtifact?: any;
 }
 
 export default function AppHeader({
@@ -111,11 +114,12 @@ export default function AppHeader({
   fitMode = false,
   onFitModeChange,
   mode,
-  isSyncReady = false,
+  isPresenceReady = false,
   getUsersCount,
   getUsers,
   onFollowUser,
   followingUserId,
+  createArtifact,
 }: AppHeaderProps) {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const { user, loading } = useAuth();
@@ -178,11 +182,12 @@ export default function AppHeader({
               )}
 
               {/* Add Artifact Button (hidden in read-only mode) */}
-              {projectId && currentPageId && onArtifactAdded && (
+              {projectId && currentPageId && onArtifactAdded && createArtifact && (
                 <ArtifactAdder
                   projectId={projectId}
                   pageId={currentPageId}
                   onAdded={onArtifactAdded}
+                  createArtifact={createArtifact}
                 />
               )}
 
@@ -308,7 +313,7 @@ export default function AppHeader({
               {/* Sync Status Indicator */}
               {getUsers && (
                 <SyncStatusIndicator
-                  isSyncReady={isSyncReady}
+                  isPresenceReady={isPresenceReady}
                   getUsers={getUsers}
                   onFollowUser={onFollowUser}
                   followingUserId={followingUserId}

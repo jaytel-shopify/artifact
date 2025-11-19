@@ -39,10 +39,12 @@ export default function ArtifactAdder({
   projectId,
   pageId,
   onAdded,
+  createArtifact,
 }: {
   projectId: string;
   pageId: string;
   onAdded?: () => void;
+  createArtifact: ReturnType<typeof useSyncedArtifacts>['createArtifact'];
 }) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const [url, setUrl] = useState("");
@@ -52,8 +54,6 @@ export default function ArtifactAdder({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const { createArtifact } = useSyncedArtifacts(projectId, pageId);
 
   function resetUrlState() {
     setUrl("");

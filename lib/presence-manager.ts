@@ -1,10 +1,10 @@
 /*!
- * Artifact Sync - User presence management
- * Manages real-time user presence and collaboration features
+ * Presence Manager - User presence and collaboration
+ * Manages real-time user presence tracking via WebSockets
  */
 import { waitForQuick } from "./quick";
 
-export class ArtifactSyncManager {
+export class PresenceManager {
   private room: any = null;
   private projectId: string;
   private pageId: string;

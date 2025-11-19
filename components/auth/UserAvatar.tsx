@@ -7,7 +7,7 @@ interface UserAvatarProps {
   email?: string;
   name?: string;
   imageUrl?: string;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
 }
 
 /**
@@ -22,6 +22,7 @@ export function UserAvatar({ email, name, imageUrl, size = "md" }: UserAvatarPro
   const user = email || name || imageUrl ? { email, fullName: name, slackImageUrl: imageUrl } : currentUser;
 
   const sizeClasses = {
+    xs: "w-4 h-4 min-w-4 text-[10px]",
     sm: "w-6 h-6 min-w-6 text-xs",
     md: "w-8 h-8 min-w-8 text-sm",
     lg: "w-10 h-10 min-w-10 text-base",

@@ -51,8 +51,10 @@ async function fetchProject(projectId: string): Promise<Folder | null> {
 // Inner component that uses useFollow - must be wrapped by QuickFollowProvider
 function PresentationPageInner({
   onBroadcastReady,
+  syncedArtifacts,
 }: {
   onBroadcastReady?: (callback: () => void) => void;
+  syncedArtifacts: ReturnType<typeof useSyncedArtifacts>;
 }) {
   const router = useRouter();
   const projectId = router.query.id;
@@ -62,6 +64,9 @@ function PresentationPageInner({
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  
+  // Track expanded collections locally (not in DB)
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
 
   // Ref to the carousel container for follow sync
   const carouselRef = useRef<HTMLUListElement>(null);
@@ -230,7 +235,7 @@ function PresentationPageInner({
   //   }
   // }, [broadcastCurrentState, onBroadcastReady]);
 
-  // Fetch page-specific artifacts with real-time sync
+  // Use artifacts from prop (already fetched in parent)
   const {
     artifacts,
     createArtifact,
@@ -239,10 +244,24 @@ function PresentationPageInner({
     deleteArtifact,
     replaceMedia: replaceMediaSync,
     refetch: refetchArtifacts,
-    isSyncReady,
+    isPresenceReady,
     getUsersCount,
     getUsers,
-  } = useSyncedArtifacts(project?.id, currentPageId || undefined);
+    onCommandExecutionStart,
+    onCommandExecutionEnd,
+  } = syncedArtifacts;
+
+  // Command executor for artifact operations (handles optimistic updates + DB writes)
+  const { executeCommand } = useArtifactCommands({
+    artifacts,
+    mutate: refetchArtifacts,
+    onError: (error, commandName) => {
+      console.error(`[${commandName}] Failed:`, error);
+      toast.error(`Failed to ${commandName.replace("Command", "").toLowerCase()}. Please try again.`);
+    },
+    onExecutionStart: onCommandExecutionStart,
+    onExecutionEnd: onCommandExecutionEnd,
+  });
 
   // Track project access and set document title
   useProjectTracking(project);
@@ -325,11 +344,12 @@ function PresentationPageInner({
       onPageReorder={canEdit ? reorderPages : undefined}
       presentationMode={presentationMode}
       backUrl={backUrl}
-      isSyncReady={isSyncReady}
+      isPresenceReady={isPresenceReady}
       getUsersCount={getUsersCount}
       getUsers={getUsers}
       onFollowUser={handleFollowUser}
       followingUserId={followedUser?.socketId || null}
+      createArtifact={createArtifact}
     >
       <div className="h-full relative">
         {/* Dropzone for file uploads (only for creators/editors) */}
@@ -387,138 +407,39 @@ function PresentationPageInner({
             columns={columns}
             fitMode={fitMode}
             artifacts={artifacts}
+            expandedCollections={expandedCollections}
             pageId={currentPageId || undefined}
             onReorder={async (reorderedArtifacts) => {
-              try {
-                // With the new structure, the visual order IS the data order!
-                await reorderArtifacts(reorderedArtifacts);
-              } catch (error) {
-                toast.error("Failed to reorder artifacts. Please try again.");
-                console.error("Failed to reorder artifacts:", error);
-              }
+              const command = new ReorderArtifactsCommand(reorderedArtifacts, artifacts);
+              await executeCommand(command, "ReorderCommand");
             }}
             onCreateCollection={async (draggedId, targetId) => {
-              try {
-                const draggedArtifact = artifacts.find(
-                  (a) => a.id === draggedId
-                );
-                const targetArtifact = artifacts.find((a) => a.id === targetId);
-
-                if (!draggedArtifact || !targetArtifact) {
-                  toast.error("Could not find artifacts for collection");
-                  return;
-                }
-
-                const draggedMetadata = draggedArtifact.content as any;
-                const targetMetadata = targetArtifact.content as any;
-
-                // Check if items are already in the same collection
-                if (
-                  draggedMetadata?.collection_id &&
-                  draggedMetadata.collection_id ===
-                    targetMetadata?.collection_id
-                ) {
-                  toast.error("Item is already in this collection");
-                  return;
-                }
-
-                // Determine collection ID to use
-                let collectionId: string;
-                if (targetMetadata?.collection_id) {
-                  // Target is already in a collection
-                  collectionId = targetMetadata.collection_id;
-                } else {
-                  // Create new collection
-                  collectionId = `collection-${Date.now()}`;
-
-                  // Add target to the collection
-                  await updateArtifact(targetId, {
-                    metadata: {
-                      ...targetArtifact.content,
-                      collection_id: collectionId,
-                      is_expanded: false,
-                    },
-                  });
-                }
-
-                // Add dragged item to the collection
-                await updateArtifact(draggedId, {
-                  metadata: {
-                    ...draggedArtifact.content,
-                    collection_id: collectionId,
-                  },
-                });
-
-                // Ensure target comes BEFORE dragged in the artifacts array
-                // Target should be index 0 (the "cover" of the collection)
-                const draggedIndex = artifacts.findIndex(
-                  (a) => a.id === draggedId
-                );
-                const targetIndex = artifacts.findIndex(
-                  (a) => a.id === targetId
-                );
-
-                if (
-                  draggedIndex !== -1 &&
-                  targetIndex !== -1 &&
-                  draggedIndex < targetIndex
-                ) {
-                  // Dragged is currently before target, need to reorder
-                  // Remove dragged from its position and insert it after target
-                  const reordered = [...artifacts];
-                  const [removed] = reordered.splice(draggedIndex, 1);
-                  const newTargetIndex = reordered.findIndex(
-                    (a) => a.id === targetId
-                  );
-                  reordered.splice(newTargetIndex + 1, 0, removed);
-
-                  await reorderArtifacts(reordered);
-                }
-              } catch (error) {
-                toast.error("Failed to create collection. Please try again.");
-                console.error("Failed to create collection:", error);
-              }
+              const command = new AddToCollectionCommand(draggedId, targetId, artifacts);
+              await executeCommand(command, "AddToCollectionCommand");
             }}
-            onToggleCollection={async (artifactId) => {
-              try {
-                const artifact = artifacts.find((a) => a.id === artifactId);
-                if (!artifact) return;
-
-                const metadata = artifact.content as any;
-                const collectionId = metadata?.collection_id;
-
-                if (!collectionId) return;
-
-                // Find all items in the collection
-                const collectionArtifacts = artifacts.filter(
-                  (a) => (a.content as any)?.collection_id === collectionId
-                );
-
-                if (collectionArtifacts.length === 0) return;
-
-                // Get current expanded state from first item
-                const firstArtifact = collectionArtifacts[0];
-                const firstMeta = firstArtifact.content as any;
-                const isExpanded = firstMeta?.is_expanded || false;
-
-                // Only update the first item - this is sufficient since
-                // isCollectionExpanded() only checks the first item
-                await updateArtifact(firstArtifact.id, {
-                  metadata: {
-                    ...firstArtifact.content,
-                    is_expanded: !isExpanded,
-                  },
-                });
-              } catch (error) {
-                toast.error("Failed to toggle collection");
-                console.error("Failed to toggle collection:", error);
-              }
+            onRemoveFromCollection={async (artifactId, newPosition) => {
+              const command = new RemoveFromCollectionCommand(artifactId, newPosition, artifacts);
+              await executeCommand(command, "RemoveFromCollectionCommand");
+            }}
+            onToggleCollection={async (collectionId) => {
+              // Toggle collection expanded state locally (no DB write)
+              setExpandedCollections((prev) => {
+                const next = new Set(prev);
+                if (next.has(collectionId)) {
+                  next.delete(collectionId);
+                } else {
+                  next.add(collectionId);
+                }
+                return next;
+              });
             }}
             onUpdateArtifact={async (artifactId, updates) => {
-              await updateArtifact(artifactId, updates);
+              const command = new UpdateArtifactCommand(artifactId, updates, artifacts);
+              await executeCommand(command, "UpdateArtifactCommand");
             }}
             onDeleteArtifact={async (artifactId) => {
-              await deleteArtifact(artifactId);
+              const command = new DeleteArtifactCommand(artifactId, artifacts);
+              await executeCommand(command, "DeleteArtifactCommand");
             }}
             onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
             onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
@@ -655,16 +576,16 @@ function PresentationPageInnerWithProvider() {
   const { pages } = usePages(project?.id);
   const { currentPageId } = useCurrentPage(pages, project?.id);
 
-  // Get the room from artifact sync - this is the ONLY call to useSyncedArtifacts
-  const { getRoom, isSyncReady } = useSyncedArtifacts(
+  // Single call to useSyncedArtifacts - get everything needed
+  const syncedArtifacts = useSyncedArtifacts(
     project?.id,
     currentPageId || undefined
   );
 
-  const room = getRoom();
+  const room = syncedArtifacts.getRoom();
 
   // Wait for room to be ready before wrapping with provider
-  if (!room || !isSyncReady) {
+  if (!room || !syncedArtifacts.isPresenceReady) {
     return null; // Loading state
   }
 
@@ -674,7 +595,10 @@ function PresentationPageInnerWithProvider() {
       key={project?.id || "no-project"}
       onBroadcastInitialState={broadcastCallback || undefined}
     >
-      <PresentationPageInner onBroadcastReady={wrappedSetBroadcastCallback} />
+      <PresentationPageInner 
+        onBroadcastReady={wrappedSetBroadcastCallback}
+        syncedArtifacts={syncedArtifacts}
+      />
     </QuickFollowProvider>
   );
 }
