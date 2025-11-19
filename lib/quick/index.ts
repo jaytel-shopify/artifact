@@ -1,5 +1,6 @@
 "use client";
 
+let loaded = false;
 export async function waitForQuick(): Promise<typeof window.quick> {
   if (typeof window === "undefined") {
     throw new Error("Quick is only available in the browser");
@@ -13,7 +14,8 @@ export async function waitForQuick(): Promise<typeof window.quick> {
   // Check if running in local development
   const isDev = process.env.NODE_ENV === "development";
 
-  if (isDev) {
+  if (isDev && !loaded) {
+    loaded = true;
     // Use mock implementation for local development
     const { createMockQuick } = await import("./mock");
     const mockQuick = createMockQuick();

@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { Suspense, useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/router";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
@@ -14,8 +14,6 @@ import type { Folder, Artifact, FolderMember } from "@/types";
 import { getFolderById, getFolderMembersByFolderId } from "@/lib/quick/db-new";
 import { useUser } from "@/hooks/useUser";
 import { usePermissions } from "@/hooks/usePermissions";
-import { useAuth } from "@/components/auth/AuthProvider";
-import DevDebugPanel from "@/components/DevDebugPanel";
 import QuickFollowProvider, {
   useFollow,
 } from "@/components/QuickFollowProvider";
@@ -628,22 +626,6 @@ function PresentationPageInner({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Dev Debug Panel - Press '/' to toggle */}
-      {/* <DevDebugPanel
-        isReadOnly={debugReadOnly}
-        onToggleReadOnly={setDebugReadOnly}
-        projectInfo={
-          project
-            ? {
-                id: project.id,
-                name: project.title,
-                creator_id: project.owner_id,
-              }
-            : undefined
-        }
-        userEmail={user?.email}
-      /> */}
     </AppLayout>
   );
 }
@@ -702,14 +684,6 @@ function PresentationPageInnerWithProvider() {
   );
 }
 
-function PresentationPageWithProvider() {
-  return <PresentationPageContent />;
-}
-
 export default function PresentationPage() {
-  return (
-    // <Suspense fallback={null}>
-    <PresentationPageWithProvider />
-    // </Suspense>
-  );
+  return <PresentationPageContent />;
 }
