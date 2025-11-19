@@ -66,7 +66,34 @@ export class ReorderArtifactsCommand extends BaseCommand {
   }
 
   async execute(): Promise<void> {
+    // Update positions
     await reorderArtifactsDB(buildPositionUpdates(this.reorderedArtifacts));
+
+    // Check for is_expanded flag transfers within collections
+    const metadataUpdates: Promise<any>[] = [];
+
+    this.reorderedArtifacts.forEach((reorderedArtifact, index) => {
+      const originalArtifact = this.currentArtifacts.find(
+        (a) => a.id === reorderedArtifact.id
+      );
+      if (!originalArtifact) return;
+
+      const reorderedMeta = reorderedArtifact.metadata as any;
+      const originalMeta = originalArtifact.metadata as any;
+
+      // If is_expanded flag changed, persist it
+      if (reorderedMeta?.is_expanded !== originalMeta?.is_expanded) {
+        metadataUpdates.push(
+          updateArtifactDB(reorderedArtifact.id, {
+            metadata: reorderedArtifact.metadata,
+          })
+        );
+      }
+    });
+
+    if (metadataUpdates.length > 0) {
+      await Promise.all(metadataUpdates);
+    }
   }
 }
 

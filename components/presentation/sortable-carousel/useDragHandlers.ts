@@ -58,7 +58,7 @@ function buildCollectionOverrides(
       collectionId,
       allArtifacts
     );
-    const ordered: Artifact[] = [];
+    let ordered: Artifact[] = [];
 
     visibleItems.forEach((visualItem) => {
       const fullArtifact = allArtifacts.find((a) => a.id === visualItem.id);
@@ -70,6 +70,31 @@ function buildCollectionOverrides(
         ordered.push(item);
       }
     });
+
+    // Transfer is_expanded flag to new first item if order changed
+    const oldFirstItem = allCollectionItems[0];
+    const newFirstItem = ordered[0];
+    
+    if (oldFirstItem && newFirstItem && oldFirstItem.id !== newFirstItem.id) {
+      const oldMeta = getCollectionMetadata(oldFirstItem);
+      
+      if (oldMeta.is_expanded) {
+        // Transfer flag: remove from old first, add to new first
+        ordered = ordered.map((item) => {
+          if (item.id === newFirstItem.id) {
+            return {
+              ...item,
+              metadata: { ...item.metadata, is_expanded: true },
+            };
+          } else if (item.id === oldFirstItem.id) {
+            const cleanMeta = { ...item.metadata };
+            delete cleanMeta.is_expanded;
+            return { ...item, metadata: cleanMeta };
+          }
+          return item;
+        });
+      }
+    }
 
     overrides.set(collectionId, ordered);
   });
