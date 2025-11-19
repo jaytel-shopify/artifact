@@ -316,6 +316,11 @@ export const get = () => {
       role: "owner",
     },
     {
+      folder_id: "project-1",
+      user_id: "user-1",
+      role: "owner",
+    },
+    {
       folder_id: "project-2",
       user_id: "user-1",
       role: "owner",

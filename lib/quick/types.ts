@@ -49,6 +49,9 @@ interface QuickCollection {
 }
 
 interface QuickQuery {
+  where(query: any): QuickQuery;
+  orderBy(field: string, direction: "asc" | "desc"): QuickQuery;
+  offset(n: number): QuickQuery;
   select(fields: string[]): QuickQuery;
   limit(n: number): QuickQuery;
   find(): Promise<any[]>;
