@@ -4,40 +4,28 @@ import type { Artifact, Folder, FolderArtifact, FolderMember } from "@/types";
 /****************
  ***** CORE *****
  ****************/
-let _folders: Folder[] = [];
-export const _getAllFolders = async (): Promise<Folder[]> => {
-  if (_folders.length > 0) return _folders;
+export const getAllFolders = async (): Promise<Folder[]> => {
   const quick = await waitForQuick();
   const foldersCollection = quick.db.collection("folders");
-  _folders = await foldersCollection.find();
-  return _folders;
+  return await foldersCollection.orderBy("created_at", "desc").find();
 };
 
-let _artifacts: Artifact[] = [];
-export const _getAllArtifacts = async (): Promise<Artifact[]> => {
-  if (_artifacts.length > 0) return _artifacts;
+export const getAllArtifacts = async (): Promise<Artifact[]> => {
   const quick = await waitForQuick();
   const artifactsCollection = quick.db.collection("artifacts");
-  _artifacts = await artifactsCollection.find();
-  return _artifacts;
+  return await artifactsCollection.find();
 };
 
-let _foldersArtifacts: FolderArtifact[] = [];
-export const _getAllFoldersArtifacts = async (): Promise<FolderArtifact[]> => {
-  if (_foldersArtifacts.length > 0) return _foldersArtifacts;
+export const getAllFoldersArtifacts = async (): Promise<FolderArtifact[]> => {
   const quick = await waitForQuick();
   const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
-  _foldersArtifacts = await foldersArtifactsCollection.find();
-  return _foldersArtifacts;
+  return await foldersArtifactsCollection.find();
 };
 
-let _folderMembers: FolderMember[] = [];
-export const _getAllFolderMembers = async (): Promise<FolderMember[]> => {
-  if (_folderMembers.length > 0) return _folderMembers;
+export const getAllFolderMembers = async (): Promise<FolderMember[]> => {
   const quick = await waitForQuick();
   const folderMembersCollection = quick.db.collection("folders-members");
-  _folderMembers = await folderMembersCollection.find();
-  return _folderMembers;
+  return await folderMembersCollection.find();
 };
 
 /******************
@@ -47,30 +35,29 @@ export const _getAllFolderMembers = async (): Promise<FolderMember[]> => {
 export const createFolder = async (args: Partial<Folder>): Promise<Folder> => {
   const quick = await waitForQuick();
 
+  const now = new Date().toISOString();
   const data = {
-    id: crypto.randomUUID(),
+    id: self.crypto.randomUUID(),
     title: args.title || "",
     owner_id: args.owner_id || quick.id.user.id,
     depth: args.depth || 0,
     parent_id: args.parent_id || null,
     position: args.position || 0,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: now,
+    updated_at: now,
   } as Folder;
 
   const foldersCollection = quick.db.collection("folders");
-  const createNewFolder = foldersCollection.create(data);
+  const newFolder = await foldersCollection.create(data);
 
   const foldersMembersCollection = quick.db.collection("folders-members");
-  const createNewFolderMember = foldersMembersCollection.create({
-    folder_id: data.id,
+  const newFolderMember = await foldersMembersCollection.create({
+    folder_id: newFolder.id,
     user_id: args.owner_id || quick.id.user.id,
     role: "owner",
   });
 
-  await Promise.all([createNewFolder, createNewFolderMember]);
-
-  return createNewFolder;
+  return newFolder;
 };
 
 /*****************
@@ -78,56 +65,60 @@ export const createFolder = async (args: Partial<Folder>): Promise<Folder> => {
  *****************/
 
 export const getFoldersByDepth = async (depth: number): Promise<Folder[]> => {
-  const folders = await _getAllFolders();
+  const folders = await getAllFolders();
   return folders.filter((folder) => folder.depth === depth);
 };
 
 export const getChildren = async (
-  parentId: string
+  folderId: string | null,
+  deep: boolean = false
 ): Promise<(Folder | Artifact)[]> => {
-  const folders = await _getAllFolders();
+  if (!folderId) return [];
+
+  const folders = await getAllFolders();
   const childFolders = folders.filter(
-    (folder) => folder.parent_id === parentId
+    (folder) => folder.parent_id === folderId
   );
 
-  const childArtifacts = await getArtifactsByFolderId(parentId);
+  if (!deep) return childFolders;
+
+  const childArtifacts = await getArtifactsByFolderId(folderId);
 
   return [...childFolders, ...childArtifacts];
 };
 
-export const getChildFolders = async (
-  parentId: string
-): Promise<(Folder | Artifact)[]> => {
-  const folders = await _getAllFolders();
-  const childFolders = folders.filter(
-    (folder) => folder.parent_id === parentId
-  );
-
-  return childFolders;
-};
-
 export const getFolderById = async (
-  folderId: string
+  folderId: string | null
 ): Promise<Folder | null> => {
-  const folders = await _getAllFolders();
+  if (!folderId) return null;
+  const folders = await getAllFolders();
   return folders.find((folder) => folder.id === folderId) || null;
 };
 
 export const getArtifactsByFolderId = async (
   folderId: string
 ): Promise<Artifact[]> => {
-  const folderArtifacts = await _getAllFoldersArtifacts();
+  const folderArtifacts = await getAllFoldersArtifacts();
   const childArtifactsIds = folderArtifacts
     .filter((artifact) => artifact.folder_id === folderId)
     .map((artifact) => artifact.artifact_id);
 
   if (childArtifactsIds.length === 0) {
-    const childFolders = await getChildFolders(folderId);
+    const childFolders = await getChildren(folderId, false);
+    if (!childFolders.length) return [];
     return getArtifactsByFolderId(childFolders[0].id);
   }
 
-  const artifacts = await _getAllArtifacts();
+  const artifacts = await getAllArtifacts();
   return artifacts.filter((artifact) =>
     childArtifactsIds.includes(artifact.id)
   );
+};
+
+export const getFolderMembers = async (
+  folderId: string | null
+): Promise<FolderMember[]> => {
+  if (!folderId) return [];
+  const folderMembers = await getAllFolderMembers();
+  return folderMembers.filter((member) => member.folder_id === folderId);
 };

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,10 +23,16 @@ interface ProjectCardProps {
   menuItems?: React.ReactNode; // Pass the menu items from parent
 }
 
-export default async function ProjectCard({ project }: ProjectCardProps) {
-  const artifacts = await getArtifactsByFolderId(project.id);
-
-  console.log(artifacts);
+export default function ProjectCard({ project }: ProjectCardProps) {
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  useEffect(() => {
+    const fetchArtifacts = async () => {
+      const artifacts = await getArtifactsByFolderId(project.id);
+      console.log(artifacts);
+      setArtifacts(artifacts);
+    };
+    fetchArtifacts();
+  }, [project.id]);
 
   return (
     <Card

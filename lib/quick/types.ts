@@ -13,7 +13,10 @@ declare global {
     quick: {
       db: QuickDB;
       fs: QuickFS;
-      id: QuickIdentity & { waitForUser(): Promise<QuickIdentity> };
+      id: QuickIdentity & {
+        user: QuickIdentity;
+        waitForUser(): Promise<QuickIdentity>;
+      };
       ai: QuickAI;
       socket: QuickSocket;
       site: QuickSite;
@@ -35,6 +38,9 @@ interface QuickCollection {
   update(id: string, data: any): Promise<void>;
   delete(id: string): Promise<void>;
   where(query: any): QuickQuery;
+  orderBy(field: string, direction: "asc" | "desc"): QuickQuery;
+  limit(n: number): QuickQuery;
+  offset(n: number): QuickQuery;
   subscribe(handlers: {
     onCreate?: (doc: any) => void;
     onUpdate?: (doc: any) => void;

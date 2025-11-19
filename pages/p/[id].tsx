@@ -10,9 +10,10 @@ import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
-import type { Folder, Artifact } from "@/types";
-import { getFolderById } from "@/lib/quick/db-new";
-import { useResourcePermissions } from "@/hooks/useResourcePermissions";
+import type { Folder, Artifact, FolderMember } from "@/types";
+import { getFolderById, getFolderMembers } from "@/lib/quick/db-new";
+import { useUser } from "@/hooks/useUser";
+import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
 import QuickFollowProvider, {
@@ -57,7 +58,8 @@ function PresentationPageInner({
 }) {
   const router = useRouter();
   const projectId = router.query.id;
-  const { user } = useAuth();
+  // const { user } = useAuth();
+  const { user } = useUser();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
@@ -176,13 +178,9 @@ function PresentationPageInner({
   );
 
   // Check permissions
-  const permissions = useResourcePermissions(project?.id || null, "project");
-
-  // Allow debug override of read-only mode
-  const isReadOnly = debugReadOnly || permissions.isReadOnly;
-  const canEdit = !debugReadOnly && permissions.canEdit;
-  const isOwner = permissions.isOwner;
-  const accessLevel = permissions.accessLevel;
+  const { isOwner, canEdit, canView, isReadOnly } = usePermissions(
+    project?.id || null
+  );
 
   // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
@@ -307,7 +305,7 @@ function PresentationPageInner({
       projectName={project.title}
       creatorEmail={project.owner_id}
       isCreator={isOwner}
-      isCollaborator={accessLevel === "editor" || accessLevel === "viewer"}
+      // isCollaborator={accessLevel === "editor" || accessLevel === "viewer"}
       isReadOnly={isReadOnly}
       currentFolderId={project?.parent_id}
       folders={userFolders}
@@ -413,8 +411,8 @@ function PresentationPageInner({
                   return;
                 }
 
-                const draggedMetadata = draggedArtifact.metadata as any;
-                const targetMetadata = targetArtifact.metadata as any;
+                const draggedMetadata = draggedArtifact.content as any;
+                const targetMetadata = targetArtifact.content as any;
 
                 // Check if items are already in the same collection
                 if (
@@ -438,7 +436,7 @@ function PresentationPageInner({
                   // Add target to the collection
                   await updateArtifact(targetId, {
                     metadata: {
-                      ...targetArtifact.metadata,
+                      ...targetArtifact.content,
                       collection_id: collectionId,
                       is_expanded: false,
                     },
@@ -448,7 +446,7 @@ function PresentationPageInner({
                 // Add dragged item to the collection
                 await updateArtifact(draggedId, {
                   metadata: {
-                    ...draggedArtifact.metadata,
+                    ...draggedArtifact.content,
                     collection_id: collectionId,
                   },
                 });
@@ -488,28 +486,28 @@ function PresentationPageInner({
                 const artifact = artifacts.find((a) => a.id === artifactId);
                 if (!artifact) return;
 
-                const metadata = artifact.metadata as any;
+                const metadata = artifact.content as any;
                 const collectionId = metadata?.collection_id;
 
                 if (!collectionId) return;
 
                 // Find all items in the collection
                 const collectionArtifacts = artifacts.filter(
-                  (a) => (a.metadata as any)?.collection_id === collectionId
+                  (a) => (a.content as any)?.collection_id === collectionId
                 );
 
                 if (collectionArtifacts.length === 0) return;
 
                 // Get current expanded state from first item
                 const firstArtifact = collectionArtifacts[0];
-                const firstMeta = firstArtifact.metadata as any;
+                const firstMeta = firstArtifact.content as any;
                 const isExpanded = firstMeta?.is_expanded || false;
 
                 // Only update the first item - this is sufficient since
                 // isCollectionExpanded() only checks the first item
                 await updateArtifact(firstArtifact.id, {
                   metadata: {
-                    ...firstArtifact.metadata,
+                    ...firstArtifact.content,
                     is_expanded: !isExpanded,
                   },
                 });

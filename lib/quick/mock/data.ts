@@ -1,25 +1,8 @@
-"use client";
-
 import type { Folder, Artifact, FolderArtifact, FolderMember } from "@/types";
-import type { QuickIdentity } from "./types";
 
-const now = new Date().toISOString();
+export const get = () => {
+  const now = new Date().toISOString();
 
-export const mockUser: QuickIdentity = {
-  id: "user-1",
-  email: "dev@shopify.com",
-  fullName: "Local Developer",
-  firstName: "Local",
-  slackHandle: "local-dev",
-  slackImageUrl: "https://i.pravatar.cc/150?u=dev@shopify.com",
-  title: "Developer",
-  timestamp: now,
-};
-
-// In-memory database
-const db: Record<string, any[]> = {};
-
-const init = () => {
   const artifacts = [
     {
       id: "art-1",
@@ -172,7 +155,7 @@ const init = () => {
       title: "Sample Project 1",
       owner_id: "user-1",
       depth: 1,
-      parent_id: "folder-1",
+      parent_id: null,
       position: 0,
       created_at: now,
       updated_at: now,
@@ -332,169 +315,17 @@ const init = () => {
       user_id: "user-1",
       role: "owner",
     },
+    {
+      folder_id: "project-2",
+      user_id: "user-1",
+      role: "owner",
+    },
   ] as FolderMember[];
 
-  db.artifacts = artifacts;
-  db.folders = folders;
-  db["folders-artifacts"] = foldersArtifacts;
-  db["folders-members"] = folderMembers;
-};
-
-// Mock collection
-class Collection {
-  constructor(private title: string) {
-    if (!db[this.title]) db[this.title] = [];
-  }
-
-  async create(data: any) {
-    const now = new Date().toISOString();
-    const doc = {
-      ...data,
-      id: self.crypto.randomUUID(),
-      created_at: now,
-      updated_at: now,
-    };
-    db[this.title].push(doc);
-    return doc;
-  }
-
-  async find() {
-    return [...db[this.title]];
-  }
-
-  async findById(id: string) {
-    const doc = db[this.title].find((item) => item.id === id);
-    if (!doc) throw new Error(`Not found: ${id}`);
-    return doc;
-  }
-
-  async update(id: string, data: any) {
-    const index = db[this.title].findIndex((item) => item.id === id);
-    if (index === -1) throw new Error(`Not found: ${id}`);
-    db[this.title][index] = {
-      ...db[this.title][index],
-      ...data,
-      updated_at: new Date().toISOString(),
-    };
-  }
-
-  async delete(id: string) {
-    const index = db[this.title].findIndex((item) => item.id === id);
-    if (index === -1) throw new Error(`Not found: ${id}`);
-    db[this.title].splice(index, 1);
-  }
-
-  where(query: any) {
-    const filter = (items: any[]) =>
-      items.filter((item) =>
-        Object.entries(query).every(([k, v]) => item[k] === v)
-      );
-    const createQuery = (): any => ({
-      find: async () => filter(db[this.title]),
-      limit: (n: number) => ({
-        find: async () => filter(db[this.title]).slice(0, n),
-        select: (fields: string[]) => createQuery(),
-      }),
-      select: (fields: string[]) => createQuery(),
-    });
-    return createQuery();
-  }
-
-  subscribe() {
-    return () => {}; // No-op unsubscribe
-  }
-}
-
-export function createMockQuick() {
-  init();
-
   return {
-    db: {
-      collection: (title: string) => new Collection(title),
-    },
-    fs: {
-      async upload(files: File[]) {
-        return files.map((file, i) => ({
-          originaltitle: file.name,
-          filetitle: `mock-${Date.now()}-${i}-${file.name}`,
-          url: file.type.startsWith("image/")
-            ? `https://picsum.photos/800/600?random=${Date.now() + i}`
-            : file.type.startsWith("video/")
-              ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-              : `/uploads/mock-${file.name}`,
-          fullUrl: file.type.startsWith("image/")
-            ? `https://picsum.photos/800/600?random=${Date.now() + i}`
-            : file.type.startsWith("video/")
-              ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-              : `/uploads/mock-${file.name}`,
-          size: file.size,
-          mimeType: file.type,
-        }));
-      },
-      async uploadFile(file: File, options?: any) {
-        if (options?.onProgress) {
-          setTimeout(
-            () =>
-              options.onProgress({
-                percentage: 100,
-                loaded: file.size,
-                total: file.size,
-              }),
-            100
-          );
-        }
-        const mockUrl = file.type.startsWith("image/")
-          ? `https://picsum.photos/800/600?random=${Date.now()}`
-          : file.type.startsWith("video/")
-            ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
-            : `/uploads/mock-${file.name}`;
-        return {
-          originaltitle: file.name,
-          filetitle: `mock-${Date.now()}-${file.name}`,
-          url: mockUrl,
-          fullUrl: mockUrl,
-          size: file.size,
-          mimeType: file.type,
-        };
-      },
-    },
-    id: {
-      ...mockUser,
-      waitForUser: async function () {
-        return this;
-      },
-    },
-    // Minimal stubs for unused APIs
-    ai: {
-      ask: async () => "Mock",
-      askWithSystem: async () => "Mock",
-      chat: async () => ({ choices: [{ message: { content: "Mock" } }] }),
-      chatStream: async () => {},
-      embed: async () => [],
-    },
-    socket: {
-      room: () => ({
-        join: async () => {},
-        leave: async () => {},
-        on: () => {},
-        emit: () => {},
-        users: new Map(),
-        user: { socketId: "", title: "", email: "", state: {} },
-        updateUserState: () => {},
-      }),
-    },
-    site: {
-      create: async () => ({ message: "Mock", url: "" }),
-      get: async () => null,
-      delete: async () => {},
-    },
-    slack: {
-      sendMessage: async () => ({}),
-      sendAlert: async () => ({}),
-      sendStatus: async () => ({}),
-      sendCode: async () => ({}),
-      sendTable: async () => ({}),
-    },
-    auth: { requestScopes: async () => ({ hasRequiredScopes: true }) },
+    artifacts,
+    folders,
+    foldersArtifacts,
+    folderMembers,
   };
-}
+};

@@ -299,32 +299,6 @@ export default function AppHeader({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-
-              {/* User Avatar */}
-              {loading ? (
-                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
-              ) : user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2">
-                      <UserAvatar />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      disabled
-                      className="flex flex-col items-start"
-                    >
-                      <span className="text-sm font-medium">
-                        {user.fullName ?? "Signed in"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.email}
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
             </div>
           ) : mode === "canvas" ? (
             <div className="flex items-center gap-3">
