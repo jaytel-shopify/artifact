@@ -14,6 +14,23 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Projects | Artifact",
   description: "Collaborative presentation tool for design artifacts",
+  applicationName: "Artifact",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Artifact",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: "/manifest.json",
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    viewportFit: "cover",
+  },
   icons: {
     icon: "/favicons/icon-32.png", // This overrides the default favicon.ico
     shortcut: "/favicons/icon-32.png",
@@ -36,6 +53,20 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* PWA Meta Tags */}
+        <meta name="application-name" content="Artifact" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta
+          name="apple-mobile-web-app-status-bar-style"
+          content="black-translucent"
+        />
+        <meta name="apple-mobile-web-app-title" content="Artifact" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="theme-color" content="#000000" />
+
+        {/* Service Worker Registration */}
+        {/* <script src="/register-sw.js" defer /> */}
+
         {/* Quick Platform SDK - only works on deployed Quick sites */}
         <script src="/client/quick.js" async />
         {/* Quicklytics Analytics - only works on deployed Quick sites */}
@@ -59,7 +90,6 @@ export default function RootLayout({
             <Toaster />
           </ThemeProvider>
         </AuthProvider>
-
       </body>
     </html>
   );

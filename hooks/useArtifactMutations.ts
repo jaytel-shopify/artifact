@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
-import type { Artifact, ArtifactType } from "@/types";
+import type { Artifact, ArtifactType, ArtifactVisibility } from "@/types";
 import {
   createArtifact as createArtifactDB,
   getNextPosition,
@@ -9,6 +9,8 @@ import {
   UpdateArtifactCommand,
   DeleteArtifactCommand,
   ReorderArtifactsCommand,
+  ToggleLikeCommand,
+  ToggleDislikeCommand,
 } from "@/lib/artifact-commands";
 
 interface UseArtifactMutationsProps {
@@ -32,6 +34,7 @@ export function useArtifactMutations({
       file_path?: string | null;
       name?: string;
       metadata?: Record<string, unknown>;
+      visibility?: ArtifactVisibility;
     }) => {
       if (!projectId || !pageId) return null;
 
@@ -51,6 +54,7 @@ export function useArtifactMutations({
           name: artifactData.name || "Untitled",
           position: nextPosition,
           metadata: artifactData.metadata || {},
+          visibility: artifactData.visibility || "private",
         });
 
         return artifact;
@@ -145,12 +149,47 @@ export function useArtifactMutations({
     [projectId, artifacts, mutate]
   );
 
+  const toggleLike = useCallback(
+    async (artifactId: string, userId: string) => {
+      if (!projectId) return;
+
+      try {
+        const command = new ToggleLikeCommand(artifactId, userId, artifacts);
+
+        mutate(command.getOptimisticState(), { revalidate: false });
+        await command.execute();
+      } catch (error) {
+        console.error("Failed to toggle like:", error);
+        mutate();
+      }
+    },
+    [projectId, artifacts, mutate]
+  );
+
+  const toggleDislike = useCallback(
+    async (artifactId: string, userId: string) => {
+      if (!projectId) return;
+
+      try {
+        const command = new ToggleDislikeCommand(artifactId, userId, artifacts);
+
+        mutate(command.getOptimisticState(), { revalidate: false });
+        await command.execute();
+      } catch (error) {
+        console.error("Failed to toggle dislike:", error);
+        mutate();
+      }
+    },
+    [projectId, artifacts, mutate]
+  );
+
   return {
     createArtifact,
     updateArtifact,
     deleteArtifact,
     reorderArtifacts,
     replaceMedia,
+    toggleLike,
+    toggleDislike,
   };
 }
-

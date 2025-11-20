@@ -1,7 +1,13 @@
 "use client";
 
 import { waitForQuick } from "./quick";
-import type { Project, Page, Artifact, ArtifactType } from "@/types";
+import type {
+  Project,
+  Page,
+  Artifact,
+  ArtifactType,
+  ArtifactVisibility,
+} from "@/types";
 import { grantAccess, getUserAccessibleResources } from "./access-control";
 
 /**
@@ -158,11 +164,11 @@ export async function getPages(projectId: string): Promise<Page[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
 
-  // Query for pages by project_id directly
-  const projectPages = await collection.where({ project_id: projectId }).find();
-
-  // Sort by position ascending
-  return projectPages.sort((a: Page, b: Page) => a.position - b.position);
+  // Use .where() and .orderBy() at the database level
+  return await collection
+    .where({ project_id: projectId })
+    .orderBy("position", "asc")
+    .find();
 }
 
 /**
@@ -248,15 +254,11 @@ export async function getArtifactsByProject(
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  // Query for artifacts by project_id directly
-  const projectArtifacts = await collection
+  // Use .where() and .orderBy() at the database level
+  return await collection
     .where({ project_id: projectId })
+    .orderBy("position", "asc")
     .find();
-
-  // Sort by position ascending
-  return projectArtifacts.sort(
-    (a: Artifact, b: Artifact) => a.position - b.position
-  );
 }
 
 /**
@@ -287,13 +289,11 @@ export async function getArtifactsByPage(pageId: string): Promise<Artifact[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  // Query for artifacts by page_id directly
-  const pageArtifacts = await collection.where({ page_id: pageId }).find();
-
-  // Sort by position ascending
-  return pageArtifacts.sort(
-    (a: Artifact, b: Artifact) => a.position - b.position
-  );
+  // Use .where() and .orderBy() at the database level
+  return await collection
+    .where({ page_id: pageId })
+    .orderBy("position", "asc")
+    .find();
 }
 
 /**
@@ -323,6 +323,7 @@ export async function createArtifact(data: {
   name: string;
   position: number;
   metadata?: Record<string, unknown>;
+  visibility?: ArtifactVisibility;
 }): Promise<Artifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
@@ -336,6 +337,8 @@ export async function createArtifact(data: {
     name: data.name,
     position: data.position,
     metadata: data.metadata || {},
+    reactions: { like: [], dislike: [] },
+    visibility: data.visibility || "private",
   };
 
   return await collection.create(artifactData);
@@ -396,7 +399,7 @@ export async function getNextPosition(
   const quick = await waitForQuick();
   const col = quick.db.collection(collection);
 
-  // Query for items by parent field directly
+  // Use .where() to filter by parent field at the database level
   const filteredItems = await col.where({ [parentField]: parentId }).find();
 
   if (filteredItems.length === 0) return 0;

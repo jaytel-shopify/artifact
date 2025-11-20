@@ -21,7 +21,7 @@ export async function getFolders(creatorEmail: string): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
 
-  // Query for folders by creator_id directly
+  // Use .where() to filter by creator_id at the database level
   const userFolders = await collection
     .where({ creator_id: creatorEmail })
     .find();
@@ -142,14 +142,14 @@ export async function getProjectsInFolder(
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
-  // Query for projects by folder_id directly
+  // Use .where() to filter by folder_id at the database level
   const folderProjects = await collection.where({ folder_id: folderId }).find();
 
   // If userEmail provided, filter by explicit project access
   let accessibleProjects = folderProjects;
   if (userEmail) {
     const { checkUserAccess } = await import("./access-control");
-    
+
     // Check access for each project in parallel
     const accessChecks = await Promise.all(
       folderProjects.map(async (project) => {

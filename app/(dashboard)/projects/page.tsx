@@ -13,6 +13,73 @@ import FolderCard from "@/components/folders/FolderCard";
 import FolderDialog from "@/components/folders/FolderDialog";
 import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
 import { SharePanel } from "@/components/access/SharePanel";
+import MoveToFolderMenu from "@/components/folders/MoveToFolderMenu";
+import type { Project, Artifact, Folder } from "@/types";
+import { toast } from "sonner";
+import {
+  getProjects,
+  updateProject,
+  deleteProject,
+  getArtifactsByProject,
+} from "@/lib/quick-db";
+import {
+  getFolders,
+  createFolder,
+  updateFolder as updateFolderDB,
+  deleteFolder,
+  getProjectCountInFolder,
+} from "@/lib/quick-folders";
+import { getUserAccessibleResources } from "@/lib/access-control";
+import {
+  moveProjectToFolder,
+  removeProjectFromFolder,
+} from "@/lib/quick-folders";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+
+/**
+ * Fetcher function for SWR - gets all projects and their first 3 artifacts for covers
+ */
+async function fetcher(userEmail?: string): Promise<{
+  projects: Array<Project & { coverArtifacts: Artifact[] }>;
+  folders: Array<Folder & { projectCount: number }>;
+}> {
+  // Parallel loading - fetch projects and folders simultaneously
+  const [projects, userFoldersAccess] = await Promise.all([
+    getProjects(userEmail),
+    getUserAccessibleResources(userEmail || "", "folder"),
+  ]);
+
+  // Get full folder details from access entries
+  const { getFolderById } = await import("@/lib/quick-folders");
+  const userFolders = await Promise.all(
+    userFoldersAccess.map((access) => getFolderById(access.resource_id))
+  );
+  const validFolders = userFolders.filter((f): f is Folder => f !== null);
+
+  // Get cover artifacts for projects (in parallel)
+  const projectsWithCovers = await Promise.all(
+    projects.map(async (project) => {
+      const artifacts = await getArtifactsByProject(project.id);
+      return {
+        ...project,
+        coverArtifacts: artifacts.slice(0, 3),
+      };
+    })
+  );
+
+  // Get project counts for folders (in parallel)
+  const foldersWithCounts = await Promise.all(
+    validFolders.map(async (folder) => {
+      const count = await getProjectCountInFolder(folder.id);
+      return { ...folder, projectCount: count };
+    })
+  );
+
+  return {
+    projects: projectsWithCovers,
+    folders: foldersWithCounts,
+  };
+}
 import ArtifactCard from "@/components/presentation/ArtifactCard";
 import QuickSiteCard from "@/components/presentation/QuickSiteCard";
 import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
@@ -86,10 +153,41 @@ export default function ProjectsPage() {
 
   return (
     <div className="h-screen flex flex-col bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
-      <ProjectsPageHeader
-        onNewFolder={() => setCreateFolderOpen(true)}
-        onNewProject={handleNewProject}
-      />
+      {/* Header with + New Folder button */}
+      <div
+        className="bg-[var(--color-background-primary)] border-b border-[var(--color-border-primary)]"
+        style={{ height: "var(--header-height)" }}
+      >
+        <div className="flex items-center justify-between h-full px-8">
+          <div className="flex items-center gap-2">
+            <img
+              src="/favicons/icon-256.png"
+              alt="Artifact"
+              className="w-8 h-8"
+              style={{ imageRendering: "crisp-edges" }}
+            />
+            <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
+              Artifact
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setCreateFolderOpen(true)}
+            >
+              <FolderPlus className="h-4 w-4" />
+              New Folder
+            </Button>
+            <Button className="gap-2" onClick={handleNewProject}>
+              New Project
+            </Button>
+
+            <PWAInstallPrompt />
+          </div>
+        </div>
+      </div>
 
       <main className="flex-1 overflow-auto">
         <div className="max-w-[1100px] mx-auto p-6 space-y-10">

@@ -562,14 +562,64 @@ class Collection {
       items.filter((item) =>
         Object.entries(query).every(([k, v]) => item[k] === v)
       );
+
+    const createQuery = (orderField?: string, orderDirection?: string): any => {
+      const sort = (items: any[]) => {
+        if (!orderField) return items;
+
+        return [...items].sort((a, b) => {
+          const aVal = a[orderField];
+          const bVal = b[orderField];
+
+          if (aVal === bVal) return 0;
+          if (aVal == null) return 1;
+          if (bVal == null) return -1;
+
+          const comparison = aVal < bVal ? -1 : 1;
+          return orderDirection === "desc" ? -comparison : comparison;
+        });
+      };
+
+      return {
+        find: async () => sort(filter(db[this.name])),
+        orderBy: (field: string, direction: string = "asc") =>
+          createQuery(field, direction),
+        limit: (n: number) => ({
+          find: async () => sort(filter(db[this.name])).slice(0, n),
+          orderBy: (field: string, direction: string = "asc") =>
+            createQuery(field, direction),
+          select: (fields: string[]) => createQuery(orderField, orderDirection),
+        }),
+        select: (fields: string[]) => createQuery(orderField, orderDirection),
+      };
+    };
+
+    return createQuery();
+  }
+
+  orderBy(field: string, direction: string = "asc") {
+    const sort = (items: any[]) => {
+      return [...items].sort((a, b) => {
+        const aVal = a[field];
+        const bVal = b[field];
+
+        if (aVal === bVal) return 0;
+        if (aVal == null) return 1;
+        if (bVal == null) return -1;
+
+        const comparison = aVal < bVal ? -1 : 1;
+        return direction === "desc" ? -comparison : comparison;
+      });
+    };
+
     const createQuery = (): any => ({
-      find: async () => filter(db[this.name]),
+      find: async () => sort(db[this.name]),
+      where: (query: any) => this.where(query).orderBy(field, direction),
       limit: (n: number) => ({
-        find: async () => filter(db[this.name]).slice(0, n),
-        select: (fields: string[]) => createQuery(),
+        find: async () => sort(db[this.name]).slice(0, n),
       }),
-      select: (fields: string[]) => createQuery(),
     });
+
     return createQuery();
   }
 
