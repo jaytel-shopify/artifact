@@ -59,6 +59,7 @@ import {
   moveProjectToFolder,
   removeProjectFromFolder,
 } from "@/lib/quick-folders";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 /**
  * Fetcher function for SWR - gets all projects and their first 3 artifacts for covers
@@ -354,6 +355,8 @@ export default function ProjectsPage() {
             <Button className="gap-2" onClick={handleNewProject}>
               New Project
             </Button>
+
+            <PWAInstallPrompt />
           </div>
         </div>
       </div>

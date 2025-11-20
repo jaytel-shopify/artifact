@@ -44,6 +44,13 @@ Artifact is an internal Shopify tool for creating and sharing visual presentatio
 - Full-screen artifact viewing
 - Responsive layout
 
+**Progressive Web App (PWA)**
+
+- 📱 **Install as App** - Add to home screen on any device
+- 🔌 **Offline Support** - Access cached content without internet
+- ⚡ **Fast Loading** - Service worker caching for instant loads
+- 🎯 **Standalone Mode** - Runs like a native app without browser UI
+
 ---
 
 ## 🏗️ Architecture
@@ -515,6 +522,7 @@ This is expected! Quick SDK (quick.db, quick.fs, quick.id) only works on deploye
 - **`PHASE-3-ENHANCED-PLAN.md`** - Collaborative editing details
 - **`FOLLOW-FEATURE-README.md`** - Follow/spectate feature guide
 - **`docs/follow-feature.md`** - Complete follow feature API reference
+- **`docs/pwa-setup.md`** - Progressive Web App setup and configuration
 - **`AGENTS.md`** / **`CLAUDE.md`** - Quick platform API reference
 
 ---
