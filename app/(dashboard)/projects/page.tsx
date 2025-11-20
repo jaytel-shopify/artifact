@@ -13,76 +13,9 @@ import FolderCard from "@/components/folders/FolderCard";
 import FolderDialog from "@/components/folders/FolderDialog";
 import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
 import { SharePanel } from "@/components/access/SharePanel";
-import MoveToFolderMenu from "@/components/folders/MoveToFolderMenu";
-import type { Project, Artifact, Folder } from "@/types";
-import { toast } from "sonner";
-import {
-  getProjects,
-  updateProject,
-  deleteProject,
-  getArtifactsByProject,
-} from "@/lib/quick-db";
-import {
-  getFolders,
-  createFolder,
-  updateFolder as updateFolderDB,
-  deleteFolder,
-  getProjectCountInFolder,
-} from "@/lib/quick-folders";
-import { getUserAccessibleResources } from "@/lib/access-control";
-import {
-  moveProjectToFolder,
-  removeProjectFromFolder,
-} from "@/lib/quick-folders";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
-
-/**
- * Fetcher function for SWR - gets all projects and their first 3 artifacts for covers
- */
-async function fetcher(userEmail?: string): Promise<{
-  projects: Array<Project & { coverArtifacts: Artifact[] }>;
-  folders: Array<Folder & { projectCount: number }>;
-}> {
-  // Parallel loading - fetch projects and folders simultaneously
-  const [projects, userFoldersAccess] = await Promise.all([
-    getProjects(userEmail),
-    getUserAccessibleResources(userEmail || "", "folder"),
-  ]);
-
-  // Get full folder details from access entries
-  const { getFolderById } = await import("@/lib/quick-folders");
-  const userFolders = await Promise.all(
-    userFoldersAccess.map((access) => getFolderById(access.resource_id))
-  );
-  const validFolders = userFolders.filter((f): f is Folder => f !== null);
-
-  // Get cover artifacts for projects (in parallel)
-  const projectsWithCovers = await Promise.all(
-    projects.map(async (project) => {
-      const artifacts = await getArtifactsByProject(project.id);
-      return {
-        ...project,
-        coverArtifacts: artifacts.slice(0, 3),
-      };
-    })
-  );
-
-  // Get project counts for folders (in parallel)
-  const foldersWithCounts = await Promise.all(
-    validFolders.map(async (folder) => {
-      const count = await getProjectCountInFolder(folder.id);
-      return { ...folder, projectCount: count };
-    })
-  );
-
-  return {
-    projects: projectsWithCovers,
-    folders: foldersWithCounts,
-  };
-}
 import ArtifactCard from "@/components/presentation/ArtifactCard";
 import QuickSiteCard from "@/components/presentation/QuickSiteCard";
-import { ProjectsPageHeader } from "@/components/projects/ProjectsPageHeader";
 import { EmptyProjectsState } from "@/components/projects/EmptyProjectsState";
 import { ProjectMenuItems } from "@/components/projects/ProjectMenuItems";
 import { ProjectDialogs } from "@/components/projects/ProjectDialogs";
@@ -90,6 +23,8 @@ import { useProjectsData } from "@/hooks/useProjectsData";
 import { useProjectActions } from "@/hooks/useProjectActions";
 import { useFolderManagement } from "@/hooks/useFolderManagement";
 import { useQuickSites } from "@/hooks/useQuickSites";
+import { Button } from "@/components/ui/button";
+import { FolderPlus } from "lucide-react";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -264,7 +199,7 @@ export default function ProjectsPage() {
           {/* Quick Sites Section */}
           {!sitesLoading && quickSites.length > 0 && (
             <div className="space-y-4">
-              <img src="/quick.png" alt="quick logo" class="w-[50px]" />
+              <img src="/quick.png" alt="quick logo" className="w-[50px]" />
               <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
                 {quickSites.map((site) => (
                   <QuickSiteCard key={site.subdomain} site={site} />
