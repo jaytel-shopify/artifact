@@ -78,7 +78,7 @@ export default function QuickFollowProvider({
 
   useEffect(() => {
     let manager: QuickFollowManager | null = null;
-    let updateInterval: NodeJS.Timeout | null = null;
+    const updateInterval: NodeJS.Timeout | null = null;
     const cleanupFunctions: (() => void)[] = [];
 
     async function initialize() {

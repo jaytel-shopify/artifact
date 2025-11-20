@@ -48,7 +48,7 @@ Artifact is an internal Shopify tool for creating and sharing visual presentatio
 
 ## 🏗️ Architecture
 
-Artifact is a **pure client-side static site** built with:
+Artifact is a **pure client-side Single Page Application (SPA)** built with:
 
 - **Framework**: Next.js 15 (Static Export)
 - **UI**: React 19 + Tailwind CSS
@@ -56,6 +56,17 @@ Artifact is a **pure client-side static site** built with:
 - **Database**: Quick.db (JSON-based NoSQL)
 - **File Storage**: Quick.fs (CDN-backed storage)
 - **Hosting**: Quick platform (artifact.quick.shopify.io)
+
+### SPA Configuration
+
+This app runs as a true SPA without Server-Side Rendering (SSR):
+
+- ✅ All routing happens client-side
+- ✅ Deep links work correctly (e.g., `/p/abc123`)
+- ✅ Custom 404 page handles fallback routing
+- ✅ Static files only - no server required
+
+**See [`docs/spa-deployment.md`](docs/spa-deployment.md) for complete SPA architecture details.**
 
 ### Why Quick?
 
@@ -509,6 +520,7 @@ This is expected! Quick SDK (quick.db, quick.fs, quick.id) only works on deploye
 
 ## 📖 Additional Documentation
 
+- **`docs/spa-deployment.md`** - ⭐ SPA architecture and deployment guide
 - **`DEPLOYMENT.md`** - Detailed deployment guide
 - **`MIGRATION-PLAN.md`** - Supabase → Quick migration details
 - **`SHARING-IMPLEMENTATION-PLAN.md`** - Sharing system architecture

@@ -6,7 +6,6 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import ProjectCard from "@/components/presentation/ProjectCard";
 import AppLayout from "@/components/layout/AppLayout";
-import { toast } from "sonner";
 import type { Folder } from "@/types";
 import {
   createFolder,
@@ -25,7 +24,7 @@ export default function FolderPage() {
 
   useEffect(() => {
     const fetchFolderData = async () => {
-      const [folder, projects, folderMembers] = await Promise.all([
+      const [folder, projects] = await Promise.all([
         getFolderById(folderId),
         getChildren(folderId),
         getFolderMembersByFolderId(folderId),
@@ -44,7 +43,7 @@ export default function FolderPage() {
       parent_id: folderId,
       depth: 1,
     });
-    const newPage = await createFolder({
+    await createFolder({
       title: "New Page",
       parent_id: newProject.id,
       depth: 2,

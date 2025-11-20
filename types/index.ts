@@ -31,7 +31,12 @@ export type TitleCardContent = {
 
 export type Visibility = "public" | "private";
 
-export type ArtifactContent = (UrlContent | ImageContent | VideoContent | TitleCardContent) & {
+export type ArtifactContent = (
+  | UrlContent
+  | ImageContent
+  | VideoContent
+  | TitleCardContent
+) & {
   collection_id?: string;
   is_expanded?: boolean;
   // Allow any additional metadata fields

@@ -1,18 +1,14 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable static HTML export for Quick deployment
+  // Enable static HTML export for Quick deployment (SPA mode)
   output: "export",
 
   // Output directory for Quick deployment
   distDir: "dist",
 
-  // Add trailing slashes for better static routing
-  trailingSlash: true,
-
-  // Skip validation for dynamic params in static export
-  // This allows client-side dynamic routes
-  skipTrailingSlashRedirect: true,
+  // Disable trailing slashes for cleaner SPA URLs
+  trailingSlash: false,
 
   eslint: {
     // Warning: This allows production builds to successfully complete even if

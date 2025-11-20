@@ -160,7 +160,7 @@ export function useCollectionHandlers({
         const cleanup = getCollectionCleanupIfNeeded(item, artifacts);
         if (cleanup) {
           await updateArtifact(cleanup.artifactId, {
-            content: cleanup.metadata,
+            content: cleanup.content,
           });
         }
 

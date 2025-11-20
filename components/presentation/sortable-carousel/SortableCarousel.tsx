@@ -51,7 +51,10 @@ interface Props {
   expandedCollections?: Set<string>;
   onReorder?: (artifacts: Artifact[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
-  onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
+  onRemoveFromCollection?: (
+    artifactId: string,
+    newPosition: number
+  ) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
@@ -405,7 +408,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                     onUpdateArtifact
                       ? async (updates) =>
                           await onUpdateArtifact(artifact.id, {
-                            metadata: { ...artifact.content, ...updates },
+                            content: { ...artifact.content, ...updates },
                           })
                       : undefined
                   }
@@ -413,7 +416,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                     onUpdateArtifact
                       ? async (newTitle) =>
                           await onUpdateArtifact(artifact.id, {
-                            name: newTitle,
+                            title: newTitle,
                           })
                       : undefined
                   }

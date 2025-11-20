@@ -128,10 +128,10 @@ export function useDragHandlers({
 
       const applyMetadata = (artifact: Artifact) => {
         if (artifact.id === activeArtifact.id) {
-          return { ...artifact, metadata: updatedMetadata };
+          return { ...artifact, content: updatedMetadata };
         }
         if (cleanup && artifact.id === cleanup.artifactId) {
-          return { ...artifact, metadata: cleanup.metadata };
+          return { ...artifact, content: cleanup.content };
         }
         return artifact;
       };
@@ -205,7 +205,7 @@ export function useDragHandlers({
       const reorderedItems = arrayMove(items, activeIndex, overIndex).map(
         (item) =>
           item.id === activeArtifact.id
-            ? { ...item, metadata: updatedMetadata }
+            ? { ...item, content: updatedMetadata }
             : item
       );
 

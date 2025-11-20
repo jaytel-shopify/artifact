@@ -78,7 +78,7 @@ export default function ProjectsPage() {
       title: "New Project",
       depth: 1,
     });
-    const newPage = await createFolder({
+    await createFolder({
       title: "New Page",
       parent_id: newProject.id,
       depth: 2,

@@ -10,8 +10,8 @@ import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
-import type { Folder, Artifact, FolderMember } from "@/types";
-import { getFolderById, getFolderMembersByFolderId } from "@/lib/quick/db-new";
+import type { Folder } from "@/types";
+import { getFolderById } from "@/lib/quick/db-new";
 import { useUser } from "@/hooks/useUser";
 import { usePermissions } from "@/hooks/usePermissions";
 import QuickFollowProvider, {
@@ -113,9 +113,6 @@ function PresentationPageInner({
   const { focusedArtifactId, focusArtifact, unfocusArtifact } =
     useArtifactFocus(columns, setColumns, setFitMode);
 
-  // Debug mode: Override read-only state for testing
-  const [debugReadOnly, setDebugReadOnly] = useState(false);
-
   // Presentation mode: Hide header and sidebar
   const [presentationMode, setPresentationMode] = useState(false);
 
@@ -191,9 +188,7 @@ function PresentationPageInner({
   );
 
   // Check permissions
-  const { isOwner, canEdit, canView, isReadOnly } = usePermissions(
-    project?.id || null
-  );
+  const { isOwner, canEdit, isReadOnly } = usePermissions(project?.id || null);
 
   // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
@@ -218,12 +213,7 @@ function PresentationPageInner({
   }, [currentPageId]);
 
   // // Use follow sync hook to handle all follow broadcast/receive logic (including page changes)
-  // const {
-  //   broadcastCurrentState,
-  //   handleSetColumns,
-  //   handleSetFitMode,
-  //   handleSelectPage,
-  // } = useFollowSync({
+  // const { broadcastCurrentState } = useFollowSync({
   //   followManager,
   //   isFollowing,
   //   followInitialized,
@@ -249,9 +239,7 @@ function PresentationPageInner({
   const {
     artifacts,
     createArtifact,
-    reorderArtifacts,
     updateArtifact,
-    deleteArtifact,
     replaceMedia: replaceMediaSync,
     refetch: refetchArtifacts,
     isPresenceReady,
