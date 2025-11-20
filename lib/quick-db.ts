@@ -38,8 +38,13 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
   }
 
   // Get projects user has access to via access control system
-  const accessibleProjects = await getUserAccessibleResources(userEmail, "project");
-  const accessibleProjectIds = new Set(accessibleProjects.map(a => a.resource_id));
+  const accessibleProjects = await getUserAccessibleResources(
+    userEmail,
+    "project"
+  );
+  const accessibleProjectIds = new Set(
+    accessibleProjects.map((a) => a.resource_id)
+  );
 
   // Filter projects: user is creator OR user has access via access control
   const userProjects = allProjects.filter(
@@ -114,9 +119,7 @@ export async function createProject(data: {
  */
 export async function updateProject(
   id: string,
-  updates: Partial<
-    Pick<Project, "name" | "last_accessed_at" | "folder_id">
-  >
+  updates: Partial<Pick<Project, "name" | "last_accessed_at" | "folder_id">>
 ): Promise<Project> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
@@ -314,6 +317,7 @@ export async function createArtifact(data: {
     name: data.name,
     position: data.position,
     metadata: data.metadata || {},
+    reactions: { like: [], dislike: [] },
   };
 
   return await collection.create(artifactData);

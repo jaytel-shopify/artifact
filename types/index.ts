@@ -40,6 +40,11 @@ export type CollectionMetadata = {
   [key: string]: unknown; // Allow for future extensibility
 };
 
+export type ArtifactReactions = {
+  like: string[]; // Array of user_ids who liked
+  dislike: string[]; // Array of user_ids who disliked
+};
+
 export type Page = {
   id: string;
   project_id: string;
@@ -58,7 +63,14 @@ export type Artifact = {
   file_path: string | null;
   name: string;
   position: number;
-  metadata: Record<string, unknown> & Partial<UrlViewportMetadata & VideoMetadata & TitleCardMetadata & CollectionMetadata>;
+  metadata: Record<string, unknown> &
+    Partial<
+      UrlViewportMetadata &
+        VideoMetadata &
+        TitleCardMetadata &
+        CollectionMetadata
+    >;
+  reactions: ArtifactReactions;
   created_at: string;
   updated_at: string;
 };

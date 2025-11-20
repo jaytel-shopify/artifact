@@ -9,6 +9,8 @@ import {
   UpdateArtifactCommand,
   DeleteArtifactCommand,
   ReorderArtifactsCommand,
+  ToggleLikeCommand,
+  ToggleDislikeCommand,
 } from "@/lib/artifact-commands";
 
 interface UseArtifactMutationsProps {
@@ -145,12 +147,52 @@ export function useArtifactMutations({
     [projectId, artifacts, mutate]
   );
 
+  const toggleLike = useCallback(
+    async (artifactId: string, userId: string) => {
+      if (!projectId) return;
+
+      try {
+        const command = new ToggleLikeCommand(artifactId, userId, artifacts);
+
+        mutate(command.getOptimisticState(), { revalidate: false });
+        await command.execute();
+      } catch (error) {
+        console.error("Failed to toggle like:", error);
+        mutate();
+      }
+    },
+    [projectId, artifacts, mutate]
+  );
+
+  const toggleDislike = useCallback(
+    async (artifactId: string, userId: string) => {
+      if (!projectId) return;
+
+      try {
+        const command = new ToggleDislikeCommand(
+          artifactId,
+          userId,
+          artifacts
+        );
+
+        mutate(command.getOptimisticState(), { revalidate: false });
+        await command.execute();
+      } catch (error) {
+        console.error("Failed to toggle dislike:", error);
+        mutate();
+      }
+    },
+    [projectId, artifacts, mutate]
+  );
+
   return {
     createArtifact,
     updateArtifact,
     deleteArtifact,
     reorderArtifacts,
     replaceMedia,
+    toggleLike,
+    toggleDislike,
   };
 }
 

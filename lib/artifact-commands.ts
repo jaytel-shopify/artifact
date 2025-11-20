@@ -327,3 +327,113 @@ export class DeleteArtifactCommand extends BaseCommand {
     await deleteArtifactDB(this.artifactId);
   }
 }
+
+export class ToggleLikeCommand extends BaseCommand {
+  private optimisticState: Artifact[];
+
+  constructor(
+    private artifactId: string,
+    private userId: string,
+    currentArtifacts: Artifact[]
+  ) {
+    super(currentArtifacts);
+
+    this.optimisticState = currentArtifacts.map((a) => {
+      if (a.id === artifactId) {
+        const currentReactions = a.reactions || { like: [], dislike: [] };
+        const likeArray = currentReactions.like || [];
+        const hasLiked = likeArray.includes(userId);
+
+        return {
+          ...a,
+          reactions: {
+            ...currentReactions,
+            like: hasLiked
+              ? likeArray.filter((id) => id !== userId)
+              : [...likeArray, userId],
+          },
+        };
+      }
+      return a;
+    });
+  }
+
+  getOptimisticState(): Artifact[] {
+    return this.optimisticState;
+  }
+
+  async execute(): Promise<void> {
+    const artifact = this.currentArtifacts.find(
+      (a) => a.id === this.artifactId
+    );
+    if (artifact) {
+      const currentReactions = artifact.reactions || { like: [], dislike: [] };
+      const likeArray = currentReactions.like || [];
+      const hasLiked = likeArray.includes(this.userId);
+
+      await updateArtifactDB(this.artifactId, {
+        reactions: {
+          ...currentReactions,
+          like: hasLiked
+            ? likeArray.filter((id) => id !== this.userId)
+            : [...likeArray, this.userId],
+        },
+      });
+    }
+  }
+}
+
+export class ToggleDislikeCommand extends BaseCommand {
+  private optimisticState: Artifact[];
+
+  constructor(
+    private artifactId: string,
+    private userId: string,
+    currentArtifacts: Artifact[]
+  ) {
+    super(currentArtifacts);
+
+    this.optimisticState = currentArtifacts.map((a) => {
+      if (a.id === artifactId) {
+        const currentReactions = a.reactions || { like: [], dislike: [] };
+        const dislikeArray = currentReactions.dislike || [];
+        const hasDisliked = dislikeArray.includes(userId);
+
+        return {
+          ...a,
+          reactions: {
+            ...currentReactions,
+            dislike: hasDisliked
+              ? dislikeArray.filter((id) => id !== userId)
+              : [...dislikeArray, userId],
+          },
+        };
+      }
+      return a;
+    });
+  }
+
+  getOptimisticState(): Artifact[] {
+    return this.optimisticState;
+  }
+
+  async execute(): Promise<void> {
+    const artifact = this.currentArtifacts.find(
+      (a) => a.id === this.artifactId
+    );
+    if (artifact) {
+      const currentReactions = artifact.reactions || { like: [], dislike: [] };
+      const dislikeArray = currentReactions.dislike || [];
+      const hasDisliked = dislikeArray.includes(this.userId);
+
+      await updateArtifactDB(this.artifactId, {
+        reactions: {
+          ...currentReactions,
+          dislike: hasDisliked
+            ? dislikeArray.filter((id) => id !== this.userId)
+            : [...dislikeArray, this.userId],
+        },
+      });
+    }
+  }
+}
