@@ -4,7 +4,7 @@ import type { Artifact, ArtifactType } from "@/types";
 import {
   createArtifact as createArtifactDB,
   getNextPosition,
-} from "@/lib/quick-db";
+} from "@/lib/quick/db";
 import {
   UpdateArtifactCommand,
   DeleteArtifactCommand,
@@ -153,4 +153,3 @@ export function useArtifactMutations({
     replaceMedia,
   };
 }
-

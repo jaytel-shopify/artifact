@@ -16,9 +16,6 @@ export const formatDate = (dateStr: string) => {
   if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
   return date.toLocaleDateString();
 };
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
 
 export function debounce<T extends (...args: never[]) => unknown>(
   func: T,

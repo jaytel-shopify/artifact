@@ -27,6 +27,7 @@ export const getAllFolders = async (): Promise<Folder[]> => {
   const folders = await foldersCollection
     .where({ id: { $in: myFolderIds } })
     .orderBy("created_at", "desc")
+    .orderBy("position", "asc")
     .find();
 
   // get all folders that are children of the folders directly assigned to the user
@@ -37,6 +38,7 @@ export const getAllFolders = async (): Promise<Folder[]> => {
     const folders = await foldersCollection
       .where({ parent_id: { $in: folderIds } })
       .orderBy("created_at", "desc")
+      .orderBy("position", "asc")
       .find();
 
     if (folders.length === 0) return;
@@ -246,7 +248,8 @@ export const getFolderById = async (
   if (!folderId) return null;
   const quick = await waitForQuick();
   const foldersCollection = quick.db.collection("folders");
-  return await foldersCollection.findById(folderId);
+  const folder = await foldersCollection.findById(folderId);
+  return folder;
 };
 
 export const getArtifactsByFolderId = async (
@@ -342,14 +345,29 @@ export const updateFolder = async (
   const foldersCollection = quick.db.collection("folders");
   await foldersCollection.update(folderId, updates);
   const updatedFolder = await foldersCollection.findById(folderId);
-  if (!updatedFolder) {
-    throw new Error("Folder not found");
-  }
   _folders = _folders.map((folder) =>
     folder.id === folderId ? updatedFolder : folder
   );
   return updatedFolder;
 };
+
+export async function updateFolders(
+  updates: Array<{ id: string; args: Partial<Folder> }>
+): Promise<Folder[]> {
+  const quick = await waitForQuick();
+  const foldersCollection = quick.db.collection("folders");
+  await Promise.all(
+    updates.map(async ({ id, args }) => {
+      await foldersCollection.update(id, args);
+      const updatedFolder = await foldersCollection.findById(id);
+      _folders = _folders.map((folder) =>
+        folder.id === id ? updatedFolder : folder
+      );
+      return updatedFolder;
+    })
+  );
+  return _folders.sort((a, b) => a.position - b.position);
+}
 
 export const updateFolderMember = async (
   memberId: string,

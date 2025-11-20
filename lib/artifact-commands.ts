@@ -6,7 +6,7 @@ import {
   updateArtifact as updateArtifactDB,
   deleteArtifact as deleteArtifactDB,
   reorderArtifacts as reorderArtifactsDB,
-} from "@/lib/quick-db";
+} from "@/lib/quick/db";
 import { getCollectionCleanupIfNeeded } from "@/lib/collection-utils";
 
 export interface ArtifactCommand {

@@ -2,14 +2,14 @@
 
 import useSWR from "swr";
 import { useEffect, useRef, useState } from "react";
-import { getArtifactsByPage } from "@/lib/quick-db";
+import { getArtifactsByFolderId } from "@/lib/quick/db-new";
 import { PresenceManager } from "@/lib/presence-manager";
 import type { Artifact } from "@/types";
 import { waitForQuick } from "@/lib/quick";
 import { useArtifactMutations } from "./useArtifactMutations";
 
 async function fetcher(pageId: string): Promise<Artifact[]> {
-  return await getArtifactsByPage(pageId);
+  return await getArtifactsByFolderId(pageId);
 }
 
 // Module-level singletons to prevent duplicate presence managers (keyed by projectId)

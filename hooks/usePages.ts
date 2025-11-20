@@ -2,14 +2,13 @@
 
 import useSWR from "swr";
 import { useCallback } from "react";
+import { getNextPosition } from "@/lib/quick/db";
 import {
-  createPage as createPageDB,
-  updatePage as updatePageDB,
-  deletePage as deletePageDB,
-  reorderPages as reorderPagesDB,
-  getNextPosition,
-  getPages as getPagesDB,
-} from "@/lib/quick/db";
+  createFolder,
+  updateFolder,
+  deleteFolder,
+  updateFolders,
+} from "@/lib/quick/db-new";
 import { getChildren } from "@/lib/quick/db-new";
 import { Folder } from "@/types";
 
@@ -29,7 +28,13 @@ export function usePages(projectId: string | undefined) {
   } = useSWR<Folder[]>(
     projectId ? `pages-${projectId}` : null,
     () => (projectId ? fetcher(projectId) : []),
-    { revalidateOnFocus: false }
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+      revalidateIfStale: true,
+      shouldRetryOnError: false,
+    }
   );
 
   const createPage = useCallback(
@@ -45,10 +50,11 @@ export function usePages(projectId: string | undefined) {
         );
 
         // Create the page
-        const page = await createPageDB({
-          project_id: projectId,
+        const page = await createFolder({
+          parent_id: projectId,
           title,
           position: nextPosition,
+          depth: 2,
         });
 
         // Revalidate
@@ -70,7 +76,7 @@ export function usePages(projectId: string | undefined) {
       if (!projectId) return null;
 
       try {
-        const page = await updatePageDB(pageId, updates);
+        const page = await updateFolder(pageId, updates);
         await mutate();
         return page;
       } catch (error) {
@@ -86,7 +92,7 @@ export function usePages(projectId: string | undefined) {
       if (!projectId) return;
 
       try {
-        await deletePageDB(pageId);
+        await deleteFolder(pageId);
         await mutate();
       } catch (error) {
         console.error("Failed to delete page:", error);
@@ -107,10 +113,10 @@ export function usePages(projectId: string | undefined) {
         // Update positions in database
         const updates = reorderedPages.map((page, index) => ({
           id: page.id,
-          position: index,
+          args: { position: index },
         }));
 
-        await reorderPagesDB(updates);
+        await updateFolders(updates);
         await mutate();
       } catch (error) {
         // Revert on error

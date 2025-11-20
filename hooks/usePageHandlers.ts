@@ -42,7 +42,7 @@ export function usePageHandlers(
   const handlePageRename = useCallback(
     async (pageId: string, newName: string) => {
       try {
-        await updatePage(pageId, { name: newName });
+        await updatePage(pageId, { title: newName });
       } catch (err) {
         toast.error("Failed to rename page. Please try again.");
         console.error("Failed to rename page:", err);

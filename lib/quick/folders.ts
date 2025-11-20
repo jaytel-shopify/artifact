@@ -150,8 +150,8 @@ export async function getProjectsInFolder(
   // If userEmail provided, filter by explicit project access
   let accessibleProjects = folderProjects;
   if (userEmail) {
-    const { checkUserAccess } = await import("./access-control");
-    
+    const { checkUserAccess } = await import("../access-control");
+
     // Check access for each project in parallel
     const accessChecks = await Promise.all(
       folderProjects.map(async (project) => {

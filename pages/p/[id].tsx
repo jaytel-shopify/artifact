@@ -17,6 +17,14 @@ import { usePermissions } from "@/hooks/usePermissions";
 import QuickFollowProvider, {
   useFollow,
 } from "@/components/QuickFollowProvider";
+import { useArtifactCommands } from "@/hooks/useArtifactCommands";
+import {
+  ReorderArtifactsCommand,
+  AddToCollectionCommand,
+  RemoveFromCollectionCommand,
+  UpdateArtifactCommand,
+  DeleteArtifactCommand,
+} from "@/lib/artifact-commands";
 import { useFollowSync } from "@/hooks/useFollowSync";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useArtifactFocus } from "@/hooks/useArtifactFocus";
@@ -64,9 +72,11 @@ function PresentationPageInner({
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-  
+
   // Track expanded collections locally (not in DB)
-  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(new Set());
+  const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
+    new Set()
+  );
 
   // Ref to the carousel container for follow sync
   const carouselRef = useRef<HTMLUListElement>(null);
@@ -257,7 +267,9 @@ function PresentationPageInner({
     mutate: refetchArtifacts,
     onError: (error, commandName) => {
       console.error(`[${commandName}] Failed:`, error);
-      toast.error(`Failed to ${commandName.replace("Command", "").toLowerCase()}. Please try again.`);
+      toast.error(
+        `Failed to ${commandName.replace("Command", "").toLowerCase()}. Please try again.`
+      );
     },
     onExecutionStart: onCommandExecutionStart,
     onExecutionEnd: onCommandExecutionEnd,
@@ -410,15 +422,26 @@ function PresentationPageInner({
             expandedCollections={expandedCollections}
             pageId={currentPageId || undefined}
             onReorder={async (reorderedArtifacts) => {
-              const command = new ReorderArtifactsCommand(reorderedArtifacts, artifacts);
+              const command = new ReorderArtifactsCommand(
+                reorderedArtifacts,
+                artifacts
+              );
               await executeCommand(command, "ReorderCommand");
             }}
             onCreateCollection={async (draggedId, targetId) => {
-              const command = new AddToCollectionCommand(draggedId, targetId, artifacts);
+              const command = new AddToCollectionCommand(
+                draggedId,
+                targetId,
+                artifacts
+              );
               await executeCommand(command, "AddToCollectionCommand");
             }}
             onRemoveFromCollection={async (artifactId, newPosition) => {
-              const command = new RemoveFromCollectionCommand(artifactId, newPosition, artifacts);
+              const command = new RemoveFromCollectionCommand(
+                artifactId,
+                newPosition,
+                artifacts
+              );
               await executeCommand(command, "RemoveFromCollectionCommand");
             }}
             onToggleCollection={async (collectionId) => {
@@ -434,7 +457,11 @@ function PresentationPageInner({
               });
             }}
             onUpdateArtifact={async (artifactId, updates) => {
-              const command = new UpdateArtifactCommand(artifactId, updates, artifacts);
+              const command = new UpdateArtifactCommand(
+                artifactId,
+                updates,
+                artifacts
+              );
               await executeCommand(command, "UpdateArtifactCommand");
             }}
             onDeleteArtifact={async (artifactId) => {
@@ -595,7 +622,7 @@ function PresentationPageInnerWithProvider() {
       key={project?.id || "no-project"}
       onBroadcastInitialState={broadcastCallback || undefined}
     >
-      <PresentationPageInner 
+      <PresentationPageInner
         onBroadcastReady={wrappedSetBroadcastCallback}
         syncedArtifacts={syncedArtifacts}
       />
