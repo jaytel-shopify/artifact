@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,7 @@ export default function ProjectsPage() {
   const handleNewFolder = async () => {
     const newFolder = await createFolder({
       title: "New Folder",
+      depth: 0,
     });
     setFolders([{ ...newFolder, projectCount: 0 }, ...folders]);
   };
@@ -74,10 +76,12 @@ export default function ProjectsPage() {
   const handleNewProject = async () => {
     const newProject = await createFolder({
       title: "New Project",
+      depth: 1,
     });
     const newPage = await createFolder({
       title: "New Page",
       parent_id: newProject.id,
+      depth: 2,
     });
     setProjects([newProject, ...projects]);
   };
@@ -126,42 +130,52 @@ export default function ProjectsPage() {
     }
   }
 
-  // async function handleMoveToFolder(project: Folder, folderId: string) {
-  //   try {
-  //     await moveProjectToFolder(project.id, folderId);
+  async function handleMoveToFolder(project: Folder, folderId: string) {
+    try {
+      const updatedProject = await updateFolder(project.id, {
+        parent_id: folderId,
+      });
 
-  //     // Update folder counts
-  //     setFolders((prev) =>
-  //       prev.map((f) => {
-  //         // Increment target folder count
-  //         if (f.id === folderId) {
-  //           return { ...f, projectCount: f.projectCount + 1 };
-  //         }
-  //         // Decrement source folder count if project was in another folder
-  //         if (project.parent_id && f.id === project.parent_id) {
-  //           return { ...f, projectCount: Math.max(0, f.projectCount - 1) };
-  //         }
-  //         return f;
-  //       })
-  //     );
+      // Update folder counts
+      setFolders((prev) =>
+        prev.map((f) => {
+          // Increment target folder count
+          if (f.id === folderId) {
+            return { ...f, projectCount: f.projectCount + 1 };
+          }
+          // Decrement source folder count if project was in another folder
+          if (project.parent_id && f.id === project.parent_id) {
+            return { ...f, projectCount: Math.max(0, f.projectCount - 1) };
+          }
+          return f;
+        })
+      );
 
-  //     // mutate(); // Refresh projects
-  //     const folder = folders.find((f) => f.id === folderId);
-  //     toast.success(`Moved to ${folder?.title || "folder"}`);
-  //   } catch (error) {
-  //     console.error("Failed to move project:", error);
-  //     toast.error("Failed to move project");
-  //   }
-  // }
+      setProjects((prev) =>
+        prev
+          .map((f) =>
+            f.id === updatedProject.id ? { ...f, ...updatedProject } : f
+          )
+          .filter((f) => f.parent_id === null)
+      );
 
-  // function handleDeleteProject(project: Folder) {
-  //   setProjectToDelete(project);
-  // }
+      // mutate(); // Refresh projects
+      const folder = folders.find((f) => f.id === folderId);
+      toast.success(`Moved to ${folder?.title || "folder"}`);
+    } catch (error) {
+      console.error("Failed to move project:", error);
+      toast.error("Failed to move project");
+    }
+  }
 
-  // function handleRenameProject(project: Folder) {
-  //   setProjectToRename(project);
-  //   setNewProjectName(project.title);
-  // }
+  function handleDeleteProject(project: Folder) {
+    setProjectToDelete(project);
+  }
+
+  function handleRenameProject(project: Folder) {
+    setProjectToRename(project);
+    setNewProjectName(project.title);
+  }
 
   async function confirmDelete() {
     if (!projectToDelete) return;
@@ -183,8 +197,15 @@ export default function ProjectsPage() {
 
     setIsRenaming(true);
     try {
-      await updateFolder(projectToRename.id, { title: newProjectName.trim() });
-      toast.success(`Project renamed to "${newProjectName.trim()}"`);
+      const updatedFolder = await updateFolder(projectToRename.id, {
+        title: newProjectName.trim(),
+      });
+      setProjects((prev) =>
+        prev.map((f) =>
+          f.id === updatedFolder.id ? { ...f, ...updatedFolder } : f
+        )
+      );
+      toast.success(`Project renamed to "${updatedFolder.title}"`);
       setProjectToRename(null);
       setNewProjectName("");
     } catch (error) {
@@ -240,9 +261,15 @@ export default function ProjectsPage() {
                     key={folder.id}
                     folder={folder}
                     projectCount={folder.projectCount}
-                    onRename={(f) => setFolderToRename(f)}
-                    onManageAccess={(f) => setFolderToManage(f)}
-                    onDelete={(f) => setFolderToDelete(f)}
+                    onRename={(f) =>
+                      setFolderToRename(f as FolderWithProjectCount)
+                    }
+                    onManageAccess={(f) =>
+                      setFolderToManage(f as FolderWithProjectCount)
+                    }
+                    onDelete={(f) =>
+                      setFolderToDelete(f as FolderWithProjectCount)
+                    }
                   />
                 ))}
               </div>
@@ -256,7 +283,42 @@ export default function ProjectsPage() {
               <h2 className="text-lg font-semibold">Projects</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {projects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
+                  <ProjectCard
+                    key={project.id}
+                    project={project}
+                    menuItems={
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => handleRenameProject(project)}
+                        >
+                          Rename Project
+                        </DropdownMenuItem>
+
+                        {/* Move to Folder submenu */}
+                        {folders.length > 0 && (
+                          <>
+                            {folders.map((folder) => (
+                              <DropdownMenuItem
+                                key={folder.id}
+                                onClick={() =>
+                                  handleMoveToFolder(project, folder.id)
+                                }
+                              >
+                                Move to {folder.title}
+                              </DropdownMenuItem>
+                            ))}
+                          </>
+                        )}
+
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => handleDeleteProject(project)}
+                        >
+                          Delete Project
+                        </DropdownMenuItem>
+                      </>
+                    }
+                  />
                 ))}
               </div>
             </div>

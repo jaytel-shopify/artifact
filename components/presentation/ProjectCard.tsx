@@ -23,7 +23,7 @@ interface ProjectCardProps {
   menuItems?: React.ReactNode; // Pass the menu items from parent
 }
 
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard({ project, menuItems }: ProjectCardProps) {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   useEffect(() => {
     const fetchArtifacts = async () => {
@@ -62,6 +62,34 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             Last modified {formatDate(project.updated_at)}
           </p>
         </div>
+
+        {/* Three dots menu button */}
+        {menuItems && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              {menuItems}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </CardFooter>
     </Card>
   );

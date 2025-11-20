@@ -45,10 +45,12 @@ function reorderArray<T>(array: T[], fromIndex: number, toIndex: number): T[] {
 }
 
 // Helper: Build position updates for junction table
-async function updateJunctionTablePositions(artifacts: Artifact[]): Promise<void> {
+async function updateJunctionTablePositions(
+  artifacts: Artifact[]
+): Promise<void> {
   const quick = await waitForQuick();
   const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
-  
+
   // Update each artifact's position in the junction table
   await Promise.all(
     artifacts.map(async (artifact, index) => {
@@ -100,7 +102,7 @@ export class AddToCollectionCommand extends BaseCommand {
       throw new Error("Could not find artifacts for collection");
     }
 
-    const targetMetadata = this.targetArtifact.metadata as any;
+    const targetMetadata = this.targetArtifact.content as any;
     this.collectionId =
       targetMetadata?.collection_id || `collection-${Date.now()}`;
 
@@ -112,15 +114,15 @@ export class AddToCollectionCommand extends BaseCommand {
   }
 
   private calculateOptimisticState(): Artifact[] {
-    const targetMetadata = this.targetArtifact.metadata as any;
+    const targetMetadata = this.targetArtifact.content as any;
     const isNewCollection = !targetMetadata?.collection_id;
 
     let result = this.currentArtifacts.map((a) => {
       if (a.id === this.targetId && isNewCollection) {
         return {
           ...a,
-          metadata: {
-            ...a.metadata,
+          content: {
+            ...a.content,
             collection_id: this.collectionId,
           },
         };
@@ -128,7 +130,7 @@ export class AddToCollectionCommand extends BaseCommand {
       if (a.id === this.draggedId) {
         return {
           ...a,
-          metadata: { ...a.metadata, collection_id: this.collectionId },
+          content: { ...a.content, collection_id: this.collectionId },
         };
       }
       return a;
@@ -148,14 +150,14 @@ export class AddToCollectionCommand extends BaseCommand {
   }
 
   async execute(): Promise<void> {
-    const targetMetadata = this.targetArtifact.metadata as any;
+    const targetMetadata = this.targetArtifact.content as any;
     const metadataUpdates: Promise<any>[] = [];
 
     if (!targetMetadata?.collection_id) {
       metadataUpdates.push(
         updateArtifactDB(this.targetId, {
-          metadata: {
-            ...this.targetArtifact.metadata,
+          content: {
+            ...this.targetArtifact.content,
             collection_id: this.collectionId,
           },
         })
@@ -164,8 +166,8 @@ export class AddToCollectionCommand extends BaseCommand {
 
     metadataUpdates.push(
       updateArtifactDB(this.draggedId, {
-        metadata: {
-          ...this.draggedArtifact.metadata,
+        content: {
+          ...this.draggedArtifact.content,
           collection_id: this.collectionId,
         },
       })
@@ -197,13 +199,13 @@ export class RemoveFromCollectionCommand extends BaseCommand {
     );
     if (!artifact) throw new Error("Artifact not found");
 
-    const metadata = artifact.metadata as any;
+    const metadata = artifact.content as any;
     const collectionId = metadata?.collection_id;
     if (!collectionId) return this.currentArtifacts;
 
     // Find cleanup artifact if needed
     const collectionArtifacts = this.currentArtifacts.filter(
-      (a) => (a.metadata as any)?.collection_id === collectionId
+      (a) => (a.content as any)?.collection_id === collectionId
     );
     const cleanupArtifactId =
       collectionArtifacts.length === 2
@@ -213,7 +215,7 @@ export class RemoveFromCollectionCommand extends BaseCommand {
     // Remove collection metadata
     let result = this.currentArtifacts.map((a) => {
       if (a.id === this.artifactId || a.id === cleanupArtifactId) {
-        return { ...a, metadata: removeCollectionMetadata(a.metadata as any) };
+        return { ...a, content: removeCollectionMetadata(a.content as any) };
       }
       return a;
     });
@@ -235,11 +237,11 @@ export class RemoveFromCollectionCommand extends BaseCommand {
     const artifact = this.currentArtifacts.find(
       (a) => a.id === this.artifactId
     )!;
-    const metadata = artifact.metadata as any;
+    const metadata = artifact.content as any;
     const collectionId = metadata?.collection_id;
 
     const collectionArtifacts = this.currentArtifacts.filter(
-      (a) => (a.metadata as any)?.collection_id === collectionId
+      (a) => (a.content as any)?.collection_id === collectionId
     );
     const cleanupArtifactId =
       collectionArtifacts.length === 2
@@ -248,7 +250,7 @@ export class RemoveFromCollectionCommand extends BaseCommand {
 
     // Update metadata
     await updateArtifactDB(this.artifactId, {
-      metadata: removeCollectionMetadata(metadata),
+      content: removeCollectionMetadata(metadata),
     });
 
     if (cleanupArtifactId) {
@@ -256,7 +258,7 @@ export class RemoveFromCollectionCommand extends BaseCommand {
         (a) => a.id === cleanupArtifactId
       )!;
       await updateArtifactDB(cleanupArtifactId, {
-        metadata: removeCollectionMetadata(cleanupArtifact.metadata as any),
+        content: removeCollectionMetadata(cleanupArtifact.content as any),
       });
     }
 
@@ -270,7 +272,7 @@ export class UpdateArtifactCommand extends BaseCommand {
 
   constructor(
     private artifactId: string,
-    private updates: { name?: string; metadata?: Record<string, unknown> },
+    private updates: { name?: string; content?: Record<string, unknown> },
     currentArtifacts: Artifact[]
   ) {
     super(currentArtifacts);
@@ -280,8 +282,8 @@ export class UpdateArtifactCommand extends BaseCommand {
         ? {
             ...a,
             ...(updates.name && { name: updates.name }),
-            ...(updates.metadata && {
-              metadata: { ...a.metadata, ...updates.metadata },
+            ...(updates.content && {
+              content: { ...a.content, ...updates.content },
             }),
           }
         : a
@@ -331,7 +333,7 @@ export class DeleteArtifactCommand extends BaseCommand {
   async execute(): Promise<void> {
     if (this.cleanup) {
       await updateArtifactDB(this.cleanup.artifactId, {
-        metadata: this.cleanup.metadata,
+        content: this.cleanup.metadata,
       });
     }
     await deleteArtifactDB(this.artifactId);

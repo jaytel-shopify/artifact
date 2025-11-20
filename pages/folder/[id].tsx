@@ -42,10 +42,12 @@ export default function FolderPage() {
     const newProject = await createFolder({
       title: "New Project",
       parent_id: folderId,
+      depth: 1,
     });
     const newPage = await createFolder({
       title: "New Page",
       parent_id: newProject.id,
+      depth: 2,
     });
     setProjects([newProject, ...projects]);
   };
