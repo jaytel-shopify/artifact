@@ -1,7 +1,13 @@
 "use client";
 
 import { waitForQuick } from "./quick";
-import type { Project, Page, Artifact, ArtifactType } from "@/types";
+import type {
+  Project,
+  Page,
+  Artifact,
+  ArtifactType,
+  ArtifactVisibility,
+} from "@/types";
 import { grantAccess, getUserAccessibleResources } from "./access-control";
 
 /**
@@ -304,6 +310,7 @@ export async function createArtifact(data: {
   name: string;
   position: number;
   metadata?: Record<string, unknown>;
+  visibility?: ArtifactVisibility;
 }): Promise<Artifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
@@ -318,6 +325,7 @@ export async function createArtifact(data: {
     position: data.position,
     metadata: data.metadata || {},
     reactions: { like: [], dislike: [] },
+    visibility: data.visibility || "private",
   };
 
   return await collection.create(artifactData);

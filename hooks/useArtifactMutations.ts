@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
-import type { Artifact, ArtifactType } from "@/types";
+import type { Artifact, ArtifactType, ArtifactVisibility } from "@/types";
 import {
   createArtifact as createArtifactDB,
   getNextPosition,
@@ -34,6 +34,7 @@ export function useArtifactMutations({
       file_path?: string | null;
       name?: string;
       metadata?: Record<string, unknown>;
+      visibility?: ArtifactVisibility;
     }) => {
       if (!projectId || !pageId) return null;
 
@@ -53,6 +54,7 @@ export function useArtifactMutations({
           name: artifactData.name || "Untitled",
           position: nextPosition,
           metadata: artifactData.metadata || {},
+          visibility: artifactData.visibility || "private",
         });
 
         return artifact;
@@ -169,11 +171,7 @@ export function useArtifactMutations({
       if (!projectId) return;
 
       try {
-        const command = new ToggleDislikeCommand(
-          artifactId,
-          userId,
-          artifacts
-        );
+        const command = new ToggleDislikeCommand(artifactId, userId, artifacts);
 
         mutate(command.getOptimisticState(), { revalidate: false });
         await command.execute();
@@ -195,4 +193,3 @@ export function useArtifactMutations({
     toggleDislike,
   };
 }
-
