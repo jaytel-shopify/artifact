@@ -54,14 +54,9 @@ export default function FolderCard({
           prefetch={false}
           className="block"
         >
-          <div className="group relative bg-card hover:bg-accent/50 border rounded-lg p-6 cursor-pointer transition-all hover:shadow-md">
-            {/* Folder Icon */}
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Folder className="h-6 w-6 text-primary" />
-              </div>
-
-              {/* Actions Menu (visible on hover) */}
+          <div className="group relative bg-card hover:bg-accent/50 border rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md">
+            {/* Actions Menu (visible on hover) */}
+            <div className="flex items-start justify-end">
               <DropdownMenu>
                 <DropdownMenuTrigger
                   asChild
@@ -100,8 +95,8 @@ export default function FolderCard({
 
             {/* Folder Info */}
             <div className="space-y-1">
-              <h3 className="font-semibold text-lg truncate">{folder.name}</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="font-semibold text-sm truncate">{folder.name}</h3>
+              <p className="text-xs text-muted-foreground">
                 {projectCount} {projectCount === 1 ? "project" : "projects"}
               </p>
             </div>

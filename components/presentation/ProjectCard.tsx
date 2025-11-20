@@ -41,83 +41,13 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
     );
   }
 
-  if (count === 1) {
-    return (
-      <div className="w-full flex-1 flex items-center justify-center p-6">
-        <div
-          className="w-32 h-32 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1"
-          style={{
-            transitionTimingFunction: "var(--spring-elegant-easing-light)",
-          }}
-        >
-          <ArtifactThumbnail artifact={artifacts[0]} />
-        </div>
-      </div>
-    );
-  }
-
-  if (count === 2) {
-    return (
-      <div className="w-full flex-1 relative flex items-center justify-center p-4">
-        {/* Background artifact */}
-        <div
-          className="absolute w-32 h-32 transform rotate-6 translate-x-3 translate-y-2 opacity-80 transition-transform duration-500 group-hover:rotate-8 group-hover:translate-x-4 group-hover:translate-y-1 group-hover:scale-105"
-          style={{
-            transitionTimingFunction: "var(--spring-elegant-easing-light)",
-          }}
-        >
-          <ArtifactThumbnail artifact={artifacts[1]} />
-        </div>
-        {/* Foreground artifact */}
-        <div
-          className="relative w-32 h-32 transform -rotate-3 -translate-x-2 -translate-y-2 z-10 transition-transform duration-500 group-hover:-rotate-5 group-hover:-translate-x-3 group-hover:-translate-y-3 group-hover:scale-105"
-          style={{
-            transitionTimingFunction: "var(--spring-elegant-easing-light)",
-          }}
-        >
-          <ArtifactThumbnail artifact={artifacts[0]} />
-        </div>
-      </div>
-    );
-  }
-
-  // 3+ artifacts - fan layout
   return (
-    <div className="w-full flex-1 relative flex items-center justify-center p-3">
-      {/* Third artifact (bottom) */}
-      <div
-        className="absolute w-32 h-32 transform rotate-12 translate-x-6 translate-y-3 opacity-70 transition-transform duration-500 group-hover:rotate-15 group-hover:translate-x-8 group-hover:translate-y-2 group-hover:scale-105"
-        style={{
-          transitionTimingFunction: "var(--spring-elegant-easing-light)",
-        }}
-      >
-        <ArtifactThumbnail artifact={artifacts[2]} />
-      </div>
-      {/* Second artifact (middle) */}
-      <div
-        className="absolute w-32 h-32 transform rotate-6 translate-x-2 translate-y-1 opacity-85 transition-transform duration-500 group-hover:rotate-9 group-hover:translate-x-3 group-hover:-translate-y-1 group-hover:scale-105"
-        style={{
-          transitionTimingFunction: "var(--spring-elegant-easing-light)",
-        }}
-      >
-        <ArtifactThumbnail artifact={artifacts[1]} />
-      </div>
-      {/* First artifact (top) */}
-      <div
-        className="relative w-32 h-32 transform -rotate-3 -translate-x-3 -translate-y-2 z-10 transition-transform duration-500 group-hover:-rotate-6 group-hover:-translate-x-5 group-hover:-translate-y-4 group-hover:scale-105"
-        style={{
-          transitionTimingFunction: "var(--spring-elegant-easing-light)",
-        }}
-      >
-        <ArtifactThumbnail artifact={artifacts[0]} />
-      </div>
-
-      {/* Artifact count indicator */}
-      {artifacts.length > 3 && (
-        <div className="absolute top-2 right-2 bg-black/60 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-          {artifacts.length}
+    <div className="flex p-2 w-[140%]">
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div key={i} className="p-1 flex-1">
+          {artifacts[i] && <ArtifactThumbnail artifact={artifacts[i]} />}
         </div>
-      )}
+      ))}
     </div>
   );
 }
@@ -143,7 +73,7 @@ export default function ProjectCard({
 
   const cardContent = (
     <Card
-      className="group relative hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden aspect-[4/5] flex flex-col outline-none border-0"
+      className="group relative hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden aspect-[11/10] flex flex-col outline-none border-0"
       style={{
         transition: "all 500ms var(--spring-elegant-easing-light)",
       }}

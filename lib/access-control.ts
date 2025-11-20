@@ -194,11 +194,10 @@ export async function getAccessList(
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const allAccess = await collection.find();
-    const filtered = allAccess.filter(
-      (entry: AccessEntry) =>
-        entry.resource_id === resourceId && entry.resource_type === resourceType
-    );
+    // Query for access entries by resource_id and resource_type directly
+    const filtered = await collection
+      .where({ resource_id: resourceId, resource_type: resourceType })
+      .find();
 
     // Sort by access level (owner first, then editor, then viewer) and creation date
     return filtered.sort((a: AccessEntry, b: AccessEntry) => {

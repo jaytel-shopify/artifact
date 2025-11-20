@@ -38,8 +38,13 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
   }
 
   // Get projects user has access to via access control system
-  const accessibleProjects = await getUserAccessibleResources(userEmail, "project");
-  const accessibleProjectIds = new Set(accessibleProjects.map(a => a.resource_id));
+  const accessibleProjects = await getUserAccessibleResources(
+    userEmail,
+    "project"
+  );
+  const accessibleProjectIds = new Set(
+    accessibleProjects.map((a) => a.resource_id)
+  );
 
   // Filter projects: user is creator OR user has access via access control
   const userProjects = allProjects.filter(
@@ -114,9 +119,7 @@ export async function createProject(data: {
  */
 export async function updateProject(
   id: string,
-  updates: Partial<
-    Pick<Project, "name" | "last_accessed_at" | "folder_id">
-  >
+  updates: Partial<Pick<Project, "name" | "last_accessed_at" | "folder_id">>
 ): Promise<Project> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
@@ -155,8 +158,8 @@ export async function getPages(projectId: string): Promise<Page[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
 
-  const allPages = await collection.find();
-  const projectPages = allPages.filter((p: Page) => p.project_id === projectId);
+  // Query for pages by project_id directly
+  const projectPages = await collection.where({ project_id: projectId }).find();
 
   // Sort by position ascending
   return projectPages.sort((a: Page, b: Page) => a.position - b.position);
@@ -245,14 +248,35 @@ export async function getArtifactsByProject(
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  const allArtifacts = await collection.find();
-  const projectArtifacts = allArtifacts.filter(
-    (a: Artifact) => a.project_id === projectId
-  );
+  // Query for artifacts by project_id directly
+  const projectArtifacts = await collection
+    .where({ project_id: projectId })
+    .find();
 
   // Sort by position ascending
   return projectArtifacts.sort(
     (a: Artifact, b: Artifact) => a.position - b.position
+  );
+}
+
+/**
+ * Get published artifacts for a user
+ * Returns only artifacts where published=true
+ * Sorted by most recently created first
+ */
+export async function getPublishedArtifacts(
+  userEmail?: string
+): Promise<Artifact[]> {
+  const quick = await waitForQuick();
+  const collection = quick.db.collection("artifacts");
+
+  // Query for published artifacts directly
+  const publishedArtifacts = await collection.where({ published: true }).find();
+
+  // Sort by created_at descending (most recent first)
+  return publishedArtifacts.sort(
+    (a: Artifact, b: Artifact) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
 }
 
@@ -263,10 +287,8 @@ export async function getArtifactsByPage(pageId: string): Promise<Artifact[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  const allArtifacts = await collection.find();
-  const pageArtifacts = allArtifacts.filter(
-    (a: Artifact) => a.page_id === pageId
-  );
+  // Query for artifacts by page_id directly
+  const pageArtifacts = await collection.where({ page_id: pageId }).find();
 
   // Sort by position ascending
   return pageArtifacts.sort(
@@ -374,10 +396,8 @@ export async function getNextPosition(
   const quick = await waitForQuick();
   const col = quick.db.collection(collection);
 
-  const allItems = await col.find();
-  const filteredItems = allItems.filter(
-    (item: any) => item[parentField] === parentId
-  );
+  // Query for items by parent field directly
+  const filteredItems = await col.where({ [parentField]: parentId }).find();
 
   if (filteredItems.length === 0) return 0;
 
