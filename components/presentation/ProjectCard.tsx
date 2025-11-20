@@ -40,7 +40,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         transition: "all 500ms var(--spring-elegant-easing-light)",
       }}
     >
-      <div className="w-full flex-1 grid grid-cols-2 gap-2 p-6">
+      <div className="w-full flex-1 grid grid-cols-2 gap-2 p-6 aspect-square">
         {artifacts.slice(0, 4).map((p) => (
           <ArtifactThumbnail artifact={p} />
         ))}

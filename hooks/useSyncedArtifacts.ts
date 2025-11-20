@@ -120,15 +120,18 @@ export function useSyncedArtifacts(
       try {
         const quick = await waitForQuick();
         const artifactsCollection = quick.db.collection("artifacts");
+        const foldersArtifactsCollection =
+          quick.db.collection("folders-artifacts");
 
-        const unsubscribe = artifactsCollection.subscribe({
-          onCreate: (doc) => {
-            if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+        // Subscribe to artifacts collection
+        const unsubscribeArtifacts = artifactsCollection.subscribe({
+          onCreate: () => {
+            if (!isExecutingCommandRef.current) {
               mutate();
             }
           },
-          onUpdate: (doc) => {
-            if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+          onUpdate: () => {
+            if (!isExecutingCommandRef.current) {
               mutate();
             }
           },
@@ -139,7 +142,30 @@ export function useSyncedArtifacts(
           },
         });
 
-        return unsubscribe;
+        // Subscribe to folders-artifacts junction table
+        const unsubscribeFoldersArtifacts =
+          foldersArtifactsCollection.subscribe({
+            onCreate: (doc) => {
+              if (doc.folder_id === pageId && !isExecutingCommandRef.current) {
+                mutate();
+              }
+            },
+            onUpdate: (doc) => {
+              if (doc.folder_id === pageId && !isExecutingCommandRef.current) {
+                mutate();
+              }
+            },
+            onDelete: () => {
+              if (!isExecutingCommandRef.current) {
+                mutate();
+              }
+            },
+          });
+
+        return () => {
+          unsubscribeArtifacts();
+          unsubscribeFoldersArtifacts();
+        };
       } catch (error) {
         console.error(
           "[useSyncedArtifacts] Failed to setup quick.db subscription:",

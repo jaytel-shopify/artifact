@@ -231,7 +231,7 @@ async function cascadeAccessToFolderProjects(
 ): Promise<void> {
   try {
     // Import dynamically to avoid circular dependency
-    const { getProjectsInFolder } = await import("./quick-folders");
+    const { getProjectsInFolder } = await import("./quick/folders");
     const projects = await getProjectsInFolder(folderId);
 
     console.log("[AccessControl] Cascading access to", projects.length, "projects in folder");

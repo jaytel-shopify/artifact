@@ -2,14 +2,13 @@
 
 import useSWR from "swr";
 import { useCallback } from "react";
-import { getNextPosition } from "@/lib/quick/db";
 import {
   createFolder,
   updateFolder,
   deleteFolder,
   updateFolders,
+  getChildren,
 } from "@/lib/quick/db-new";
-import { getChildren } from "@/lib/quick/db-new";
 import { Folder } from "@/types";
 
 /**
@@ -42,12 +41,13 @@ export function usePages(projectId: string | undefined) {
       if (!projectId) return null;
 
       try {
-        // Get next available position
-        const nextPosition = await getNextPosition(
-          "pages",
-          projectId,
-          "project_id"
+        // Calculate next position from existing pages
+        const existingPages = (await getChildren(projectId)) as Folder[];
+        const maxPosition = existingPages.reduce(
+          (max, page) => Math.max(max, page.position || 0),
+          -1
         );
+        const nextPosition = maxPosition + 1;
 
         // Create the page
         const page = await createFolder({

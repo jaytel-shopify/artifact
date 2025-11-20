@@ -3,8 +3,8 @@ import type { KeyedMutator } from "swr";
 import type { Artifact, ArtifactType } from "@/types";
 import {
   createArtifact as createArtifactDB,
-  getNextPosition,
-} from "@/lib/quick/db";
+  getAllFoldersArtifacts,
+} from "@/lib/quick/db-new";
 import {
   UpdateArtifactCommand,
   DeleteArtifactCommand,
@@ -36,21 +36,44 @@ export function useArtifactMutations({
       if (!projectId || !pageId) return null;
 
       try {
-        const nextPosition = await getNextPosition(
-          "artifacts",
-          pageId,
-          "page_id"
+        // Calculate next position from junction table
+        const foldersArtifacts = await getAllFoldersArtifacts();
+        const pageArtifacts = foldersArtifacts.filter(
+          (fa) => fa.folder_id === pageId
         );
+        const maxPosition = pageArtifacts.reduce(
+          (max, fa) => Math.max(max, fa.position || 0),
+          -1
+        );
+        const nextPosition = maxPosition + 1;
+
+        // Map old schema to new schema with content object
+        const url = artifactData.file_path || artifactData.source_url;
+        const metadata = artifactData.metadata || {};
+        
+        const content: any = { url };
+        
+        // Map metadata fields to content based on artifact type
+        if (artifactData.type === "url") {
+          content.viewport = metadata.viewport;
+          content.width = metadata.width;
+          content.height = metadata.height;
+        } else if (artifactData.type === "video") {
+          content.thumbnail_url = metadata.thumbnail_url;
+        } else if (artifactData.type === "image") {
+          content.width = metadata.width;
+          content.height = metadata.height;
+        } else if (artifactData.type === "titleCard") {
+          content.headline = metadata.headline;
+          content.subheadline = metadata.subheadline;
+        }
 
         const artifact = await createArtifactDB({
-          project_id: projectId,
-          page_id: pageId,
           type: artifactData.type,
-          source_url: artifactData.source_url,
-          file_path: artifactData.file_path || undefined,
-          name: artifactData.name || "Untitled",
+          title: artifactData.name || "Untitled",
+          content,
+          folder_id: pageId,
           position: nextPosition,
-          metadata: artifactData.metadata || {},
         });
 
         return artifact;

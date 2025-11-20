@@ -19,9 +19,9 @@ export function useProjectTracking(project: Folder | null | undefined) {
       if (!project) return;
 
       try {
-        const { updateProject } = await import("@/lib/quick/db");
-        await updateProject(project.id, {
-          last_accessed_at: new Date().toISOString(),
+        const { updateFolder } = await import("@/lib/quick/db-new");
+        await updateFolder(project.id, {
+          updated_at: new Date().toISOString(),
         });
       } catch (error) {
         // Silent fail - tracking is not critical

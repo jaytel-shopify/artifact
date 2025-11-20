@@ -1,6 +1,7 @@
 import { waitForQuick } from "./index";
 import type {
   Artifact,
+  ArtifactType,
   Folder,
   FolderArtifact,
   FolderMember,
@@ -156,13 +157,14 @@ export const createFolder = async (args: Partial<Folder>): Promise<Folder> => {
 };
 
 export const createArtifact = async (args: {
+  type: ArtifactType;
   title: string;
-  url: string;
+  content: any;
   folder_id: string;
   position: number;
 }): Promise<Artifact> => {
-  if (!args.title || !args.url || !args.folder_id) {
-    throw new Error("title, url and folder_id are required");
+  if (!args.title || !args.folder_id) {
+    throw new Error("title and folder_id are required");
   }
 
   const quick = await waitForQuick();
@@ -170,11 +172,9 @@ export const createArtifact = async (args: {
   const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
 
   const newArtifact = await artifactsCollection.create({
-    type: "url",
+    type: args.type,
     title: args.title,
-    content: {
-      url: args.url,
-    },
+    content: args.content,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
     author_id: quick.id.user.id,

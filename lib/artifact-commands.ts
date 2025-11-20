@@ -5,9 +5,9 @@ import type { Artifact } from "@/types";
 import {
   updateArtifact as updateArtifactDB,
   deleteArtifact as deleteArtifactDB,
-  reorderArtifacts as reorderArtifactsDB,
-} from "@/lib/quick/db";
+} from "@/lib/quick/db-new";
 import { getCollectionCleanupIfNeeded } from "@/lib/collection-utils";
+import { waitForQuick } from "@/lib/quick";
 
 export interface ArtifactCommand {
   getOptimisticState(): Artifact[];
@@ -44,12 +44,22 @@ function reorderArray<T>(array: T[], fromIndex: number, toIndex: number): T[] {
   return result;
 }
 
-// Helper: Build position updates for DB
-function buildPositionUpdates(artifacts: Artifact[]) {
-  return artifacts.map((artifact, index) => ({
-    id: artifact.id,
-    position: index,
-  }));
+// Helper: Build position updates for junction table
+async function updateJunctionTablePositions(artifacts: Artifact[]): Promise<void> {
+  const quick = await waitForQuick();
+  const foldersArtifactsCollection = quick.db.collection("folders-artifacts");
+  
+  // Update each artifact's position in the junction table
+  await Promise.all(
+    artifacts.map(async (artifact, index) => {
+      // Find the junction record for this artifact
+      const allRecords = await foldersArtifactsCollection.find();
+      const record = allRecords.find((r: any) => r.artifact_id === artifact.id);
+      if (record) {
+        await foldersArtifactsCollection.update(record.id, { position: index });
+      }
+    })
+  );
 }
 
 export class ReorderArtifactsCommand extends BaseCommand {
@@ -65,7 +75,7 @@ export class ReorderArtifactsCommand extends BaseCommand {
   }
 
   async execute(): Promise<void> {
-    await reorderArtifactsDB(buildPositionUpdates(this.reorderedArtifacts));
+    await updateJunctionTablePositions(this.reorderedArtifacts);
   }
 }
 
@@ -164,7 +174,7 @@ export class AddToCollectionCommand extends BaseCommand {
     await Promise.all(metadataUpdates);
 
     if (this.needsReorder) {
-      await reorderArtifactsDB(buildPositionUpdates(this.optimisticState));
+      await updateJunctionTablePositions(this.optimisticState);
     }
   }
 }
@@ -251,7 +261,7 @@ export class RemoveFromCollectionCommand extends BaseCommand {
     }
 
     // Update positions
-    await reorderArtifactsDB(buildPositionUpdates(this.optimisticState));
+    await updateJunctionTablePositions(this.optimisticState);
   }
 }
 

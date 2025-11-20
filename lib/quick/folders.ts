@@ -1,8 +1,8 @@
 "use client";
 
 import { waitForQuick } from "./index";
-import type { Folder, Project } from "@/types";
-import { deleteProject } from "./db";
+import type { Folder } from "@/types";
+import { deleteFolder as deleteFolderDB } from "./db-new";
 import { deleteAllAccessForResource, grantAccess } from "../access-control";
 
 /**
@@ -15,21 +15,21 @@ import { deleteAllAccessForResource, grantAccess } from "../access-control";
 // ==================== FOLDERS ====================
 
 /**
- * Get all folders owned by a user
+ * Get all folders (depth 0) owned by a user
  */
-export async function getFolders(creatorEmail: string): Promise<Folder[]> {
+export async function getFolders(ownerEmail: string): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
 
   const allFolders = await collection.find();
   const userFolders = allFolders.filter(
-    (f: Folder) => f.creator_id === creatorEmail
+    (f: Folder) => f.owner_id === ownerEmail && f.depth === 0
   );
 
-  // Sort by last_accessed_at (most recent first), fallback to created_at
+  // Sort by updated_at (most recent first), fallback to created_at
   return userFolders.sort((a: Folder, b: Folder) => {
-    const aTime = a.last_accessed_at || a.created_at;
-    const bTime = b.last_accessed_at || b.created_at;
+    const aTime = a.updated_at || a.created_at;
+    const bTime = b.updated_at || b.created_at;
     return new Date(bTime).getTime() - new Date(aTime).getTime();
   });
 }
@@ -52,11 +52,11 @@ export async function getFolderById(id: string): Promise<Folder | null> {
 }
 
 /**
- * Create a new folder
+ * Create a new folder (depth 0)
  */
 export async function createFolder(data: {
-  name: string;
-  creator_id: string;
+  title: string;
+  owner_id: string;
   position?: number;
 }): Promise<Folder> {
   const quick = await waitForQuick();
@@ -65,23 +65,28 @@ export async function createFolder(data: {
   // Get next position if not provided
   let position = data.position;
   if (position === undefined) {
-    const userFolders = await getFolders(data.creator_id);
+    const userFolders = await getFolders(data.owner_id);
     position = userFolders.length;
   }
 
+  const now = new Date().toISOString();
   const folder = await collection.create({
-    name: data.name,
-    creator_id: data.creator_id,
+    title: data.title,
+    owner_id: data.owner_id,
+    depth: 0,
+    parent_id: null,
     position,
+    created_at: now,
+    updated_at: now,
   });
 
   // Grant owner access to creator
   await grantAccess(
     folder.id,
     "folder",
-    data.creator_id,
+    data.owner_id,
     "owner",
-    data.creator_id
+    data.owner_id
   );
 
   return folder;
@@ -92,7 +97,7 @@ export async function createFolder(data: {
  */
 export async function updateFolder(
   id: string,
-  updates: Partial<Pick<Folder, "name" | "position" | "last_accessed_at">>
+  updates: Partial<Pick<Folder, "title" | "position" | "updated_at">>
 ): Promise<Folder> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
@@ -112,7 +117,7 @@ export async function deleteFolder(id: string): Promise<void> {
 
   // Delete each project (which will cascade to pages and artifacts)
   await Promise.all(
-    projectsInFolder.map((project) => deleteProject(project.id))
+    projectsInFolder.map((project) => deleteFolderDB(project.id))
   );
 
   // Delete the folder itself
@@ -132,19 +137,19 @@ export async function deleteFolder(id: string): Promise<void> {
 // ==================== PROJECT-FOLDER RELATIONS ====================
 
 /**
- * Get all projects in a folder that the user has explicit access to
+ * Get all projects (folders with depth 1) in a folder that the user has explicit access to
  * If userEmail is not provided, returns all projects in folder (for backward compatibility)
  */
 export async function getProjectsInFolder(
   folderId: string,
   userEmail?: string
-): Promise<Project[]> {
+): Promise<Folder[]> {
   const quick = await waitForQuick();
-  const collection = quick.db.collection("projects");
+  const collection = quick.db.collection("folders");
 
-  const allProjects = await collection.find();
-  const folderProjects = allProjects.filter(
-    (p: Project) => p.folder_id === folderId
+  const allFolders = await collection.find();
+  const folderProjects = allFolders.filter(
+    (f: Folder) => f.parent_id === folderId && f.depth === 1
   );
 
   // If userEmail provided, filter by explicit project access
@@ -166,10 +171,10 @@ export async function getProjectsInFolder(
       .map(({ project }) => project);
   }
 
-  // Sort by last accessed
-  return accessibleProjects.sort((a: Project, b: Project) => {
-    const aTime = a.last_accessed_at || a.created_at;
-    const bTime = b.last_accessed_at || b.created_at;
+  // Sort by updated_at
+  return accessibleProjects.sort((a: Folder, b: Folder) => {
+    const aTime = a.updated_at || a.created_at;
+    const bTime = b.updated_at || b.created_at;
     return new Date(bTime).getTime() - new Date(aTime).getTime();
   });
 }
@@ -182,9 +187,9 @@ export async function moveProjectToFolder(
   folderId: string
 ): Promise<void> {
   const quick = await waitForQuick();
-  const collection = quick.db.collection("projects");
+  const collection = quick.db.collection("folders");
 
-  await collection.update(projectId, { folder_id: folderId });
+  await collection.update(projectId, { parent_id: folderId });
 }
 
 /**
@@ -194,9 +199,9 @@ export async function removeProjectFromFolder(
   projectId: string
 ): Promise<void> {
   const quick = await waitForQuick();
-  const collection = quick.db.collection("projects");
+  const collection = quick.db.collection("folders");
 
-  await collection.update(projectId, { folder_id: null });
+  await collection.update(projectId, { parent_id: null });
 }
 
 /**

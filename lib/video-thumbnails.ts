@@ -2,7 +2,7 @@
 
 import { Input, ALL_FORMATS, BlobSource, CanvasSink } from "mediabunny";
 import { uploadFile } from "./quick/fs";
-import { updateArtifact } from "./quick/db";
+import { updateArtifact, getAllArtifacts } from "./quick/db-new";
 
 /**
  * Generate a thumbnail image from the first frame of a video file
@@ -130,19 +130,19 @@ export async function generateAndUploadThumbnail(
       uploadResult.fullUrl
     );
 
-    // Get the current artifact to preserve existing metadata
-    const { getArtifactById } = await import("./quick/db");
-    const artifact = await getArtifactById(artifactId);
+    // Get the current artifact to preserve existing content
+    const allArtifacts = await getAllArtifacts();
+    const artifact = allArtifacts.find((a) => a.id === artifactId);
 
     if (!artifact) {
       console.error(`Artifact ${artifactId} not found`);
       return;
     }
 
-    // Update the artifact metadata with the thumbnail URL, preserving existing fields
+    // Update the artifact content with the thumbnail URL, preserving existing fields
     await updateArtifact(artifactId, {
-      metadata: {
-        ...artifact.metadata,
+      content: {
+        ...artifact.content,
         thumbnail_url: uploadResult.fullUrl,
       },
     });
