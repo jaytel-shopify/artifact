@@ -164,11 +164,11 @@ export async function getPages(projectId: string): Promise<Page[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
 
-  const allPages = await collection.find();
-  const projectPages = allPages.filter((p: Page) => p.project_id === projectId);
-
-  // Sort by position ascending
-  return projectPages.sort((a: Page, b: Page) => a.position - b.position);
+  // Use .where() and .orderBy() at the database level
+  return await collection
+    .where({ project_id: projectId })
+    .orderBy("position", "asc")
+    .find();
 }
 
 /**
@@ -254,15 +254,11 @@ export async function getArtifactsByProject(
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  const allArtifacts = await collection.find();
-  const projectArtifacts = allArtifacts.filter(
-    (a: Artifact) => a.project_id === projectId
-  );
-
-  // Sort by position ascending
-  return projectArtifacts.sort(
-    (a: Artifact, b: Artifact) => a.position - b.position
-  );
+  // Use .where() and .orderBy() at the database level
+  return await collection
+    .where({ project_id: projectId })
+    .orderBy("position", "asc")
+    .find();
 }
 
 /**
@@ -272,15 +268,11 @@ export async function getArtifactsByPage(pageId: string): Promise<Artifact[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  const allArtifacts = await collection.find();
-  const pageArtifacts = allArtifacts.filter(
-    (a: Artifact) => a.page_id === pageId
-  );
-
-  // Sort by position ascending
-  return pageArtifacts.sort(
-    (a: Artifact, b: Artifact) => a.position - b.position
-  );
+  // Use .where() and .orderBy() at the database level
+  return await collection
+    .where({ page_id: pageId })
+    .orderBy("position", "asc")
+    .find();
 }
 
 /**
@@ -386,10 +378,8 @@ export async function getNextPosition(
   const quick = await waitForQuick();
   const col = quick.db.collection(collection);
 
-  const allItems = await col.find();
-  const filteredItems = allItems.filter(
-    (item: any) => item[parentField] === parentId
-  );
+  // Use .where() to filter by parent field at the database level
+  const filteredItems = await col.where({ [parentField]: parentId }).find();
 
   if (filteredItems.length === 0) return 0;
 

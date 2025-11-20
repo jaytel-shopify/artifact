@@ -21,10 +21,10 @@ export async function getFolders(creatorEmail: string): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
 
-  const allFolders = await collection.find();
-  const userFolders = allFolders.filter(
-    (f: Folder) => f.creator_id === creatorEmail
-  );
+  // Use .where() to filter by creator_id at the database level
+  const userFolders = await collection
+    .where({ creator_id: creatorEmail })
+    .find();
 
   // Sort by last_accessed_at (most recent first), fallback to created_at
   return userFolders.sort((a: Folder, b: Folder) => {
@@ -142,10 +142,10 @@ export async function getProjectsInFolder(
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
-  const allProjects = await collection.find();
-  const folderProjects = allProjects.filter(
-    (p: Project) => p.folder_id === folderId
-  );
+  // Use .where() to filter by folder_id at the database level
+  const folderProjects = await collection
+    .where({ folder_id: folderId })
+    .find();
 
   // If userEmail provided, filter by explicit project access
   let accessibleProjects = folderProjects;

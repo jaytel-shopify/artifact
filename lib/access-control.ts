@@ -194,11 +194,13 @@ export async function getAccessList(
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const allAccess = await collection.find();
-    const filtered = allAccess.filter(
-      (entry: AccessEntry) =>
-        entry.resource_id === resourceId && entry.resource_type === resourceType
-    );
+    // Use .where() to filter at the database level
+    const filtered = await collection
+      .where({
+        resource_id: resourceId,
+        resource_type: resourceType,
+      })
+      .find();
 
     // Sort by access level (owner first, then editor, then viewer) and creation date
     return filtered.sort((a: AccessEntry, b: AccessEntry) => {
@@ -234,7 +236,11 @@ async function cascadeAccessToFolderProjects(
     const { getProjectsInFolder } = await import("./quick-folders");
     const projects = await getProjectsInFolder(folderId);
 
-    console.log("[AccessControl] Cascading access to", projects.length, "projects in folder");
+    console.log(
+      "[AccessControl] Cascading access to",
+      projects.length,
+      "projects in folder"
+    );
 
     // Grant access to each project (in parallel for speed)
     await Promise.all(
@@ -442,15 +448,18 @@ async function findAccessEntry(
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const allAccess = await collection.find();
-    const entry = allAccess.find(
-      (a: AccessEntry) =>
-        a.resource_id === resourceId &&
-        a.resource_type === resourceType &&
-        a.user_email.toLowerCase() === userEmail.toLowerCase().trim()
-    );
+    // Use .where() to filter by resource at the database level
+    // Note: user_email is normalized to lowercase on write, so we can match directly
+    const normalizedEmail = userEmail.toLowerCase().trim();
+    const results = await collection
+      .where({
+        resource_id: resourceId,
+        resource_type: resourceType,
+        user_email: normalizedEmail,
+      })
+      .find();
 
-    return entry || null;
+    return results.length > 0 ? results[0] : null;
   } catch (error) {
     console.error("[AccessControl] Failed to find access entry:", error);
     return null;
@@ -517,13 +526,15 @@ export async function getUserAccessibleResources(
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const allAccess = await collection.find();
-    return allAccess.filter(
-      (entry: AccessEntry) =>
-        entry.user_email && // Check that user_email exists
-        entry.user_email.toLowerCase() === userEmail.toLowerCase().trim() &&
-        entry.resource_type === resourceType
-    );
+    // Use .where() to filter at the database level
+    // Note: user_email is normalized to lowercase on write, so we can match directly
+    const normalizedEmail = userEmail.toLowerCase().trim();
+    return await collection
+      .where({
+        user_email: normalizedEmail,
+        resource_type: resourceType,
+      })
+      .find();
   } catch (error) {
     console.error("[AccessControl] Failed to get user resources:", error);
     return [];

@@ -35,6 +35,7 @@ interface QuickCollection {
   update(id: string, data: any): Promise<void>;
   delete(id: string): Promise<void>;
   where(query: any): QuickQuery;
+  orderBy(field: string, direction?: "asc" | "desc"): QuickQuery;
   subscribe(handlers: {
     onCreate?: (doc: any) => void;
     onUpdate?: (doc: any) => void;
@@ -45,6 +46,7 @@ interface QuickCollection {
 interface QuickQuery {
   select(fields: string[]): QuickQuery;
   limit(n: number): QuickQuery;
+  orderBy(field: string, direction?: "asc" | "desc"): QuickQuery;
   find(): Promise<any[]>;
 }
 
