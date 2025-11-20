@@ -11,7 +11,7 @@ interface UseCollectionHandlersProps {
   artifacts: Artifact[];
   updateArtifact: (
     artifactId: string,
-    updates: { name?: string; metadata?: Record<string, unknown> }
+    updates: { title?: string; content?: Record<string, unknown> }
   ) => Promise<void>;
   reorderArtifacts: (artifacts: Artifact[]) => Promise<void>;
 }
@@ -55,7 +55,7 @@ export function useCollectionHandlers({
 
           // Add target to the collection
           await updateArtifact(targetId, {
-            metadata: {
+            content: {
               ...targetArtifact.content,
               collection_id: collectionId,
               is_expanded: false,
@@ -65,7 +65,7 @@ export function useCollectionHandlers({
 
         // Add dragged item to the collection
         await updateArtifact(draggedId, {
-          metadata: {
+          content: {
             ...draggedArtifact.content,
             collection_id: collectionId,
           },
@@ -127,7 +127,7 @@ export function useCollectionHandlers({
         await Promise.all(
           collectionArtifacts.map((item) =>
             updateArtifact(item.id, {
-              metadata: {
+              content: {
                 ...item.content,
                 is_expanded: !isExpanded,
               },
@@ -160,17 +160,17 @@ export function useCollectionHandlers({
         const cleanup = getCollectionCleanupIfNeeded(item, artifacts);
         if (cleanup) {
           await updateArtifact(cleanup.artifactId, {
-            metadata: cleanup.metadata,
+            content: cleanup.metadata,
           });
         }
 
         // Remove collection_id from the item being removed
-        const newMetadata = { ...item.content };
-        // delete newMetadata.collection_id;
-        // delete newMetadata.is_expanded;
+        const newContent = { ...item.content };
+        delete newContent.collection_id;
+        delete newContent.is_expanded;
 
         await updateArtifact(itemId, {
-          metadata: newMetadata,
+          content: newContent,
         });
 
         toast.success("Item removed from collection");

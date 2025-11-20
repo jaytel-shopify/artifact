@@ -18,7 +18,7 @@ interface CanvasProps {
   onToggleCollection?: (collectionId: string) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
-    updates: { name?: string; metadata?: Record<string, unknown> }
+    updates: { title?: string; content?: Record<string, unknown> }
   ) => Promise<void>;
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;

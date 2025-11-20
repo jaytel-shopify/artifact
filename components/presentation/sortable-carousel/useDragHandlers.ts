@@ -16,7 +16,7 @@ interface UseDragHandlersProps {
   activeId: UniqueIdentifier | null;
   onUpdateArtifact?: (
     artifactId: string,
-    updates: { name?: string; metadata?: Record<string, unknown> }
+    updates: { title?: string; content?: Record<string, unknown> }
   ) => Promise<void>;
   onReorder?: (artifacts: Artifact[]) => void;
   onRemoveFromCollection?: (
@@ -213,7 +213,7 @@ export function useDragHandlers({
       setSettlingId(activeId);
       setItems(reorderedItems);
 
-      onUpdateArtifact?.(activeArtifact.id, { metadata: updatedMetadata });
+      onUpdateArtifact?.(activeArtifact.id, { content: updatedMetadata });
 
       if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
       settleTimeoutRef.current = setTimeout(async () => {
@@ -231,7 +231,7 @@ export function useDragHandlers({
           if (itemMetadata.collection_id === targetCollectionId) {
             const artifactWithMetadata =
               visualItem.id === activeArtifact.id
-                ? { ...artifact, metadata: updatedMetadata }
+                ? { ...artifact, content: updatedMetadata }
                 : artifact;
             collectionArtifactsInOrder.push(artifactWithMetadata);
           }
@@ -239,7 +239,7 @@ export function useDragHandlers({
 
         const modifiedArtifacts = artifacts.map((artifact) =>
           artifact.id === activeArtifact.id
-            ? { ...artifact, metadata: updatedMetadata }
+            ? { ...artifact, content: updatedMetadata }
             : artifact
         );
 

@@ -55,9 +55,12 @@ export function useMediaReplacement(
         const sourceUrlWithCacheBuster = uploadResult.fullUrl + cacheBuster;
 
         // Update artifact in database with new source (synced with other users)
+        // Preserve existing content fields and update the URL
         await replaceMediaSync(artifactId, {
-          source_url: sourceUrlWithCacheBuster,
-          file_path: uploadResult.url,
+          content: {
+            ...artifact.content,
+            url: uploadResult.url,
+          },
         });
 
         // For videos, generate new thumbnail (happens asynchronously)

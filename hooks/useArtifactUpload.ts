@@ -78,22 +78,26 @@ export function useArtifactUpload({
           // Determine file type from MIME type
           const type = getArtifactTypeFromMimeType(upResult.mimeType);
 
-          // Set default metadata for videos (muted, loop, hide controls)
-          const defaultMetadata =
-            type === "video" ? { hideUI: true, loop: true, muted: true } : {};
-
           // Create artifact with generated name
           const artifactName = generateArtifactName(
             type,
             upResult.fullUrl,
             file
           );
+          
+          // Build content object with url (stored file path)
+          const content: any = { url: upResult.url };
+          
+          // For videos, add default playback settings in content (not metadata)
+          // Note: hideUI, loop, muted are not part of the new VideoContent type
+          // They should be stored separately if needed for UI state
+          
           const artifact = await createArtifact({
             type,
             source_url: upResult.fullUrl,
             file_path: upResult.url,
             name: artifactName,
-            metadata: defaultMetadata,
+            metadata: type === "video" ? { hideUI: true, loop: true, muted: true } : {},
           });
 
           // Generate thumbnail asynchronously for videos
@@ -149,6 +153,7 @@ export function useArtifactUpload({
           type: "url",
           source_url: url,
           name: artifactName,
+          metadata: {},
         });
 
         setUploadState((prev) => ({

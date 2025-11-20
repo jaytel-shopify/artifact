@@ -88,7 +88,7 @@ export function useArtifactMutations({
   const updateArtifact = useCallback(
     async (
       artifactId: string,
-      updates: { name?: string; metadata?: Record<string, unknown> }
+      updates: { title?: string; content?: Record<string, unknown> }
     ) => {
       if (!projectId) return null;
 

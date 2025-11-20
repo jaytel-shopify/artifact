@@ -49,9 +49,13 @@ export function useTitleCardEditor(
     }
 
     try {
+      const artifact = artifacts.find((a) => a.id === artifactId);
+      if (!artifact) return;
+
       await updateArtifact(artifactId, {
-        name: headline || "Title Card",
-        metadata: {
+        title: headline || "Title Card",
+        content: {
+          ...artifact.content,
           headline,
           subheadline,
         },

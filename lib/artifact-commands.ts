@@ -272,7 +272,7 @@ export class UpdateArtifactCommand extends BaseCommand {
 
   constructor(
     private artifactId: string,
-    private updates: { name?: string; content?: Record<string, unknown> },
+    private updates: { title?: string; content?: Record<string, unknown> },
     currentArtifacts: Artifact[]
   ) {
     super(currentArtifacts);
@@ -281,7 +281,7 @@ export class UpdateArtifactCommand extends BaseCommand {
       a.id === artifactId
         ? {
             ...a,
-            ...(updates.name && { name: updates.name }),
+            ...(updates.title && { title: updates.title }),
             ...(updates.content && {
               content: { ...a.content, ...updates.content },
             }),
@@ -303,7 +303,7 @@ export class DeleteArtifactCommand extends BaseCommand {
   private optimisticState: Artifact[];
   private cleanup: {
     artifactId: string;
-    metadata: Record<string, unknown>;
+    content: Record<string, unknown>;
   } | null;
 
   constructor(
@@ -320,8 +320,8 @@ export class DeleteArtifactCommand extends BaseCommand {
     this.optimisticState = currentArtifacts
       .filter((a) => a.id !== artifactId)
       .map((a) =>
-        a.id === this.cleanup?.artifactId && this.cleanup.metadata
-          ? { ...a, metadata: this.cleanup.metadata }
+        a.id === this.cleanup?.artifactId && this.cleanup.content
+          ? { ...a, content: this.cleanup.content }
           : a
       );
   }
@@ -333,7 +333,7 @@ export class DeleteArtifactCommand extends BaseCommand {
   async execute(): Promise<void> {
     if (this.cleanup) {
       await updateArtifactDB(this.cleanup.artifactId, {
-        content: this.cleanup.metadata,
+        content: this.cleanup.content,
       });
     }
     await deleteArtifactDB(this.artifactId);

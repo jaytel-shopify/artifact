@@ -63,7 +63,7 @@ export function getAllCollectionIds(artifacts: Artifact[]): string[] {
 export function getCollectionCleanupIfNeeded(
   artifactToRemove: Artifact,
   allArtifacts: Artifact[]
-): { artifactId: string; metadata: Record<string, unknown> } | null {
+): { artifactId: string; content: Record<string, unknown> } | null {
   const metadata = getCollectionMetadata(artifactToRemove);
 
   // Only cleanup if the item being removed is in a collection
@@ -82,13 +82,13 @@ export function getCollectionCleanupIfNeeded(
 
     if (remainingArtifact) {
       // Remove collection metadata from the remaining item
-      const cleanedMetadata = { ...remainingArtifact.content };
-      // delete cleanedMetadata.collection_id;
-      // delete cleanedMetadata.is_expanded;
+      const cleanedContent = { ...remainingArtifact.content };
+      delete cleanedContent.collection_id;
+      delete cleanedContent.is_expanded;
 
       return {
         artifactId: remainingArtifact.id,
-        metadata: cleanedMetadata,
+        content: cleanedContent,
       };
     }
   }
