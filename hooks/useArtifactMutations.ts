@@ -151,8 +151,6 @@ export function useArtifactMutations({
 
   const toggleLike = useCallback(
     async (artifactId: string, userId: string) => {
-      if (!projectId) return;
-
       try {
         const command = new ToggleLikeCommand(artifactId, userId, artifacts);
 
@@ -168,8 +166,6 @@ export function useArtifactMutations({
 
   const toggleDislike = useCallback(
     async (artifactId: string, userId: string) => {
-      if (!projectId) return;
-
       try {
         const command = new ToggleDislikeCommand(artifactId, userId, artifacts);
 

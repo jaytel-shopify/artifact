@@ -6,6 +6,7 @@ import { waitForQuick } from "@/lib/quick";
 import type { Artifact } from "@/types";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { Card } from "@/components/ui/card";
+import Link from "next/link";
 
 /**
  * Fetcher function for SWR - gets all public artifacts
@@ -35,10 +36,6 @@ export default function Home() {
     dedupingInterval: 30000,
     refreshInterval: 60000,
   });
-
-  const handleArtifactClick = (artifact: Artifact) => {
-    router.push(`/p/?id=${artifact.project_id}`);
-  };
 
   if (isLoading) {
     return (
@@ -83,23 +80,26 @@ export default function Home() {
               {artifacts.map((artifact) => (
                 <Card
                   key={artifact.id}
-                  className="group relative hover:shadow-lg cursor-pointer hover:scale-105 overflow-hidden aspect-square flex flex-col outline-none transition-all duration-300"
-                  onClick={() => handleArtifactClick(artifact)}
+                  className="grid relative cursor-pointer overflow-hidden h-fit outline-none"
                 >
-                  <div className="w-full h-full p-4 flex items-center justify-center">
-                    <div className="w-full h-full">
-                      <ArtifactThumbnail artifact={artifact} />
-                    </div>
-                  </div>
+                  <ArtifactThumbnail
+                    artifact={artifact}
+                    className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+                  />
 
                   {/* Artifact Info Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <h3 className="font-medium text-white line-clamp-1">
-                      {artifact.name}
-                    </h3>
-                    <p className="text-sm text-gray-300 capitalize">
-                      {artifact.type}
-                    </p>
+                  <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <Link
+                      href={`/a/?id=${artifact.id}`}
+                      className="after:content-[''] after:absolute after:inset-0 bg-red-500 "
+                    >
+                      <h3 className="font-medium text-white line-clamp-1">
+                        {artifact.name}
+                      </h3>
+                      <p className="text-sm text-gray-300 capitalize">
+                        {artifact.type}
+                      </p>
+                    </Link>
                   </div>
                 </Card>
               ))}
