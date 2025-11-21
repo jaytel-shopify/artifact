@@ -4,8 +4,8 @@
   "description": "Collaborative presentation tool for design artifacts",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#000000",
+  "background_color": "#0F0F0F",
+  "theme_color": "#0F0F0F",
   "orientation": "portrait-primary",
   "scope": "/",
   "icons": [

@@ -45,8 +45,6 @@ export type ArtifactReactions = {
   dislike: string[]; // Array of user_ids who disliked
 };
 
-export type ArtifactVisibility = "public" | "private";
-
 export type Page = {
   id: string;
   project_id: string;
@@ -64,6 +62,7 @@ export type Artifact = {
   source_url: string;
   file_path: string | null;
   name: string;
+  description?: string;
   position: number;
   metadata: Record<string, unknown> &
     Partial<
@@ -73,7 +72,7 @@ export type Artifact = {
         CollectionMetadata
     >;
   reactions: ArtifactReactions;
-  visibility: ArtifactVisibility;
+  published: boolean;
   created_at: string;
   updated_at: string;
 };

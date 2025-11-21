@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { HeaderProvider } from "@/components/layout/HeaderContext";
+import GlobalLayout from "@/components/layout/GlobalLayout";
 import LocalDevWarning from "@/components/LocalDevWarning";
 import "./globals.css";
 
@@ -86,7 +88,11 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
-            {children}
+            <HeaderProvider>
+              <GlobalLayout>
+                {children}
+              </GlobalLayout>
+            </HeaderProvider>
             <Toaster />
           </ThemeProvider>
         </AuthProvider>

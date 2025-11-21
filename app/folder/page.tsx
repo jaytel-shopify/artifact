@@ -2,6 +2,8 @@
 
 import { Suspense, use, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, Share, Plus, MoreVertical } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   ContextMenu,
@@ -9,7 +11,12 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -31,10 +38,12 @@ import {
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ProjectCard from "@/components/presentation/ProjectCard";
-import AppLayout from "@/components/layout/AppLayout";
 import FolderDialog from "@/components/folders/FolderDialog";
 import { SharePanel } from "@/components/access/SharePanel";
 import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
+import EditableTitle from "@/components/presentation/EditableTitle";
+import { useSetHeader } from "@/components/layout/HeaderContext";
+import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { toast } from "sonner";
 import type { Project, Artifact, Folder } from "@/types";
 import {
@@ -52,7 +61,7 @@ import {
 
 function FolderPageContent() {
   const searchParams = useSearchParams();
-  const folderId = searchParams.get("id") || "";
+  const folderId = searchParams?.get("id") || "";
   const router = useRouter();
   const { user } = useAuth();
 
@@ -221,119 +230,173 @@ function FolderPageContent() {
     }
   }
 
-  // Don't render if still loading or folder not found
-  if (loading || !folder) {
-    return null;
-  }
-
   async function handleFolderRename(name: string) {
     // Just update local state - EditableTitle already saved to database
     if (!folder) return;
     setFolder({ ...folder, name });
   }
 
-  return (
-    <AppLayout
-      mode="folder"
-      folderId={folder.id}
-      folderName={folder.name}
-      backUrl={backUrl}
-      onFolderNameUpdate={canEdit ? handleFolderRename : undefined}
-      onFolderShare={() => setAccessDialogOpen(true)}
-      onFolderRename={() => setRenameDialogOpen(true)}
-      onFolderDelete={() => setDeleteDialogOpen(true)}
-      onNewProject={canEdit ? handleNewProject : undefined}
-    >
-      <div className="max-w-7xl mx-auto p-6">
-        {projects.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">
-              No projects in this folder yet
-            </p>
-            {canEdit && (
-              <Button onClick={handleNewProject}>
-                Create Project in Folder
-              </Button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {projects.map((p) => (
-              <ContextMenu key={p.id}>
-                <ContextMenuTrigger asChild>
-                  <div>
-                    <ProjectCard
-                      project={p}
-                      onDelete={() => handleDeleteProject(p)}
-                      menuItems={
-                        <>
-                          <DropdownMenuItem
-                            onClick={() => handleRenameProject(p)}
-                          >
-                            Rename Project
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={async () => {
-                              try {
-                                const { removeProjectFromFolder } =
-                                  await import("@/lib/quick-folders");
-                                await removeProjectFromFolder(p.id);
-                                setProjects((prev) =>
-                                  prev.filter((proj) => proj.id !== p.id)
-                                );
-                                toast.success("Project moved to main Projects");
-                              } catch (error) {
-                                toast.error("Failed to move project");
-                              }
-                            }}
-                          >
-                            Remove from Folder
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => handleDeleteProject(p)}
-                          >
-                            Delete Project
-                          </DropdownMenuItem>
-                        </>
-                      }
-                    />
-                  </div>
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                  <ContextMenuItem onClick={() => handleRenameProject(p)}>
-                    Rename Project
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    onClick={async () => {
-                      try {
-                        const { removeProjectFromFolder } = await import(
-                          "@/lib/quick-folders"
-                        );
-                        await removeProjectFromFolder(p.id);
-                        setProjects((prev) =>
-                          prev.filter((proj) => proj.id !== p.id)
-                        );
-                        toast.success("Project moved to main Projects");
-                      } catch (error) {
-                        toast.error("Failed to move project");
-                      }
-                    }}
-                  >
-                    Remove from Folder
-                  </ContextMenuItem>
-                  <ContextMenuItem
-                    variant="destructive"
-                    onClick={() => handleDeleteProject(p)}
-                  >
-                    Delete Project
-                  </ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
-            ))}
-          </div>
+  // Set header content - must be called before any return statements
+  useSetHeader({
+    left: (
+      <>
+        <Link href={backUrl}>
+          <Button variant="outline" size="icon" aria-label="Back">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+      </>
+    ),
+    center: (
+      <EditableTitle
+        initialValue={folder?.name || "Untitled Folder"}
+        projectId={folder?.id || ""}
+        onUpdated={canEdit ? handleFolderRename : undefined}
+        isReadOnly={!canEdit}
+        isFolder={true}
+      />
+    ),
+    right: (
+      <>
+        {/* Share Button */}
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => setAccessDialogOpen(true)}
+        >
+          <Share className="h-4 w-4" />
+          Share
+        </Button>
+
+        {/* New Project Button */}
+        {canEdit && (
+          <Button className="gap-2" onClick={handleNewProject}>
+            <Plus className="h-4 w-4" />
+            New Project
+          </Button>
         )}
-      </div>
+
+        {/* Folder Actions Menu */}
+        {canEdit && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}>
+                Rename Folder
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setDeleteDialogOpen(true)}
+              >
+                Delete Folder
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+
+        <DarkModeToggle />
+      </>
+    ),
+  });
+
+  // Don't render if still loading or folder not found
+  if (loading || !folder) {
+    return null;
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto p-6">
+      {projects.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground mb-4">
+            No projects in this folder yet
+          </p>
+          {canEdit && (
+            <Button onClick={handleNewProject}>Create Project in Folder</Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((p) => (
+            <ContextMenu key={p.id}>
+              <ContextMenuTrigger asChild>
+                <div>
+                  <ProjectCard
+                    project={p}
+                    onDelete={() => handleDeleteProject(p)}
+                    menuItems={
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => handleRenameProject(p)}
+                        >
+                          Rename Project
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={async () => {
+                            try {
+                              const { removeProjectFromFolder } = await import(
+                                "@/lib/quick-folders"
+                              );
+                              await removeProjectFromFolder(p.id);
+                              setProjects((prev) =>
+                                prev.filter((proj) => proj.id !== p.id)
+                              );
+                              toast.success("Project moved to main Projects");
+                            } catch (error) {
+                              toast.error("Failed to move project");
+                            }
+                          }}
+                        >
+                          Remove from Folder
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          variant="destructive"
+                          onClick={() => handleDeleteProject(p)}
+                        >
+                          Delete Project
+                        </DropdownMenuItem>
+                      </>
+                    }
+                  />
+                </div>
+              </ContextMenuTrigger>
+              <ContextMenuContent>
+                <ContextMenuItem onClick={() => handleRenameProject(p)}>
+                  Rename Project
+                </ContextMenuItem>
+                <ContextMenuItem
+                  onClick={async () => {
+                    try {
+                      const { removeProjectFromFolder } = await import(
+                        "@/lib/quick-folders"
+                      );
+                      await removeProjectFromFolder(p.id);
+                      setProjects((prev) =>
+                        prev.filter((proj) => proj.id !== p.id)
+                      );
+                      toast.success("Project moved to main Projects");
+                    } catch (error) {
+                      toast.error("Failed to move project");
+                    }
+                  }}
+                >
+                  Remove from Folder
+                </ContextMenuItem>
+                <ContextMenuItem
+                  variant="destructive"
+                  onClick={() => handleDeleteProject(p)}
+                >
+                  Delete Project
+                </ContextMenuItem>
+              </ContextMenuContent>
+            </ContextMenu>
+          ))}
+        </div>
+      )}
 
       {/* Dialogs */}
       <FolderDialog
@@ -429,7 +492,7 @@ function FolderPageContent() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </div>
   );
 }
 

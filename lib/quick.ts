@@ -99,6 +99,7 @@ interface QuickFS {
 
 // ==================== IDENTITY ====================
 interface QuickIdentity {
+  id: string;
   email: string;
   fullName: string;
   firstName: string;
@@ -146,6 +147,7 @@ interface QuickRoom {
 }
 
 interface QuickUser {
+  id: string;
   socketId: string;
   name: string;
   email: string;

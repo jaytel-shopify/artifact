@@ -41,10 +41,10 @@ export default function ArtifactAdder({
   onAdded,
   createArtifact,
 }: {
-  projectId: string;
-  pageId: string;
+  projectId?: string;
+  pageId?: string;
   onAdded?: () => void;
-  createArtifact: ReturnType<typeof useSyncedArtifacts>['createArtifact'];
+  createArtifact: ReturnType<typeof useSyncedArtifacts>["createArtifact"];
 }) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const [url, setUrl] = useState("");

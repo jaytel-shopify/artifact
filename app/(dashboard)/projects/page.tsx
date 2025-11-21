@@ -24,7 +24,12 @@ import { useProjectActions } from "@/hooks/useProjectActions";
 import { useFolderManagement } from "@/hooks/useFolderManagement";
 import { useQuickSites } from "@/hooks/useQuickSites";
 import { Button } from "@/components/ui/button";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, Plus } from "lucide-react";
+import { useSetHeader } from "@/components/layout/HeaderContext";
+import Logo from "@/components/layout/header/Logo";
+import ViewToggle from "@/components/layout/header/ViewToggle";
+import SearchBar from "@/components/layout/header/SearchBar";
+import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -81,208 +86,195 @@ export default function ProjectsPage() {
     router.push("/projects/new");
   }
 
+  // Set header content
+  useSetHeader({
+    left: (
+      <>
+        <Logo />
+        <ViewToggle />
+      </>
+    ),
+    center: <SearchBar />,
+    right: (
+      <>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={() => setCreateFolderOpen(true)}
+        >
+          <FolderPlus className="h-4 w-4" />
+          New Folder
+        </Button>
+        <Button className="gap-2" onClick={handleNewProject}>
+          <Plus className="h-4 w-4" />
+          New Project
+        </Button>
+        <PWAInstallPrompt />
+        <DarkModeToggle />
+      </>
+    ),
+  });
+
   // Don't render until data is loaded
   if (isLoading) {
     return null;
   }
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
-      {/* Header with + New Folder button */}
-      <div
-        className="bg-[var(--color-background-primary)] border-b border-[var(--color-border-primary)]"
-        style={{ height: "var(--header-height)" }}
-      >
-        <div className="flex items-center justify-between h-full px-8">
-          <div className="flex items-center gap-2">
-            <img
-              src="/favicons/icon-256.png"
-              alt="Artifact"
-              className="w-8 h-8"
-              style={{ imageRendering: "crisp-edges" }}
-            />
-            <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
-              Artifact
-            </h1>
-          </div>
+    <div className="max-w-[1100px] mx-auto p-6 space-y-10">
+      {error && <p className="text-red-600">{String(error)}</p>}
 
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={() => setCreateFolderOpen(true)}
-            >
-              <FolderPlus className="h-4 w-4" />
-              New Folder
-            </Button>
-            <Button className="gap-2" onClick={handleNewProject}>
-              New Project
-            </Button>
-
-            <PWAInstallPrompt />
-          </div>
-        </div>
-      </div>
-
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-[1100px] mx-auto p-6 space-y-10">
-          {error && <p className="text-red-600">{String(error)}</p>}
-
-          {/* Folders Section */}
-          {localFolders.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Folders</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {localFolders.map((folder) => (
-                  <FolderCard
-                    key={folder.id}
-                    folder={folder}
-                    projectCount={folder.projectCount}
-                    onRename={(f) => setFolderToRename(f)}
-                    onManageAccess={(f) => setFolderToManage(f)}
-                    onDelete={(f) => setFolderToDelete(f)}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Projects Section */}
-          {uncategorizedProjects.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Projects</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {uncategorizedProjects.map((p) => (
-                  <ContextMenu key={p.id}>
-                    <ContextMenuTrigger asChild>
-                      <div>
-                        <ProjectCard
-                          project={p}
-                          onDelete={() => handleDeleteProject(p)}
-                          menuItems={
-                            <ProjectMenuItems
-                              project={p}
-                              folders={localFolders}
-                              onRename={() => handleRenameProject(p)}
-                              onDelete={() => handleDeleteProject(p)}
-                              onMoveToFolder={(folderId) =>
-                                handleMoveToFolder(p, folderId)
-                              }
-                              onRemoveFromFolder={() =>
-                                handleRemoveFromFolder(p)
-                              }
-                              variant="dropdown"
-                            />
-                          }
-                        />
-                      </div>
-                    </ContextMenuTrigger>
-                    <ContextMenuContent>
-                      <ProjectMenuItems
-                        project={p}
-                        folders={localFolders}
-                        onRename={() => handleRenameProject(p)}
-                        onDelete={() => handleDeleteProject(p)}
-                        onMoveToFolder={(folderId) =>
-                          handleMoveToFolder(p, folderId)
-                        }
-                        onRemoveFromFolder={() => handleRemoveFromFolder(p)}
-                        variant="context"
-                      />
-                    </ContextMenuContent>
-                  </ContextMenu>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Quick Sites Section */}
-          {!sitesLoading && quickSites.length > 0 && (
-            <div className="space-y-4">
-              <img src="/quick.png" alt="quick logo" className="w-[50px]" />
-              <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
-                {quickSites.map((site) => (
-                  <QuickSiteCard key={site.subdomain} site={site} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          <hr />
-
-          {/* Published Artifacts Section */}
-          {publishedArtifacts.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold">Published</h2>
-              <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
-                {publishedArtifacts.map((a) => (
-                  <ArtifactCard key={a.id} artifact={a} />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {!isLoading &&
-            localFolders.length === 0 &&
-            uncategorizedProjects.length === 0 &&
-            publishedArtifacts.length === 0 && (
-              <EmptyProjectsState
-                onCreateFolder={() => setCreateFolderOpen(true)}
-                onCreateProject={handleNewProject}
+      {/* Folders Section */}
+      {localFolders.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Folders</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {localFolders.map((folder) => (
+              <FolderCard
+                key={folder.id}
+                folder={folder}
+                projectCount={folder.projectCount}
+                onRename={(f) => setFolderToRename(f)}
+                onManageAccess={(f) => setFolderToManage(f)}
+                onDelete={(f) => setFolderToDelete(f)}
               />
-            )}
-
-          {/* Project Dialogs */}
-          <ProjectDialogs
-            projectToDelete={projectToDelete}
-            isDeleting={isDeleting}
-            onDeleteConfirm={confirmDelete}
-            onDeleteCancel={() => setProjectToDelete(null)}
-            projectToRename={projectToRename}
-            newProjectName={newProjectName}
-            isRenaming={isRenaming}
-            onRenameConfirm={confirmRename}
-            onRenameCancel={() => setProjectToRename(null)}
-            onNameChange={setNewProjectName}
-          />
-
-          {/* Folder Dialogs */}
-          <FolderDialog
-            isOpen={createFolderOpen}
-            onClose={() => setCreateFolderOpen(false)}
-            onSubmit={handleCreateFolder}
-            mode="create"
-          />
-
-          <FolderDialog
-            isOpen={!!folderToRename}
-            onClose={() => setFolderToRename(null)}
-            onSubmit={handleRenameFolder}
-            mode="rename"
-            initialName={folderToRename?.name || ""}
-          />
-
-          {folderToManage && user && (
-            <SharePanel
-              isOpen={!!folderToManage}
-              onClose={() => setFolderToManage(null)}
-              resourceId={folderToManage.id}
-              resourceType="folder"
-              resourceName={folderToManage.name}
-              currentUserEmail={user.email}
-            />
-          )}
-
-          <DeleteFolderDialog
-            isOpen={!!folderToDelete}
-            onClose={() => setFolderToDelete(null)}
-            onConfirm={handleDeleteFolder}
-            folderName={folderToDelete?.name || ""}
-            projectCount={folderToDelete?.projectCount || 0}
-          />
+            ))}
+          </div>
         </div>
-      </main>
+      )}
+
+      {/* Projects Section */}
+      {uncategorizedProjects.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Projects</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {uncategorizedProjects.map((p) => (
+              <ContextMenu key={p.id}>
+                <ContextMenuTrigger asChild>
+                  <div>
+                    <ProjectCard
+                      project={p}
+                      onDelete={() => handleDeleteProject(p)}
+                      menuItems={
+                        <ProjectMenuItems
+                          project={p}
+                          folders={localFolders}
+                          onRename={() => handleRenameProject(p)}
+                          onDelete={() => handleDeleteProject(p)}
+                          onMoveToFolder={(folderId) =>
+                            handleMoveToFolder(p, folderId)
+                          }
+                          onRemoveFromFolder={() => handleRemoveFromFolder(p)}
+                          variant="dropdown"
+                        />
+                      }
+                    />
+                  </div>
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                  <ProjectMenuItems
+                    project={p}
+                    folders={localFolders}
+                    onRename={() => handleRenameProject(p)}
+                    onDelete={() => handleDeleteProject(p)}
+                    onMoveToFolder={(folderId) =>
+                      handleMoveToFolder(p, folderId)
+                    }
+                    onRemoveFromFolder={() => handleRemoveFromFolder(p)}
+                    variant="context"
+                  />
+                </ContextMenuContent>
+              </ContextMenu>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Quick Sites Section */}
+      {!sitesLoading && quickSites.length > 0 && (
+        <div className="space-y-4">
+          <img src="/quick.png" alt="quick logo" className="w-[50px]" />
+          <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
+            {quickSites.map((site) => (
+              <QuickSiteCard key={site.subdomain} site={site} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      <hr />
+
+      {/* Published Artifacts Section */}
+      {publishedArtifacts.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold">Published</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
+            {publishedArtifacts.map((a) => (
+              <ArtifactCard key={a.id} artifact={a} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!isLoading &&
+        localFolders.length === 0 &&
+        uncategorizedProjects.length === 0 &&
+        publishedArtifacts.length === 0 && (
+          <EmptyProjectsState
+            onCreateFolder={() => setCreateFolderOpen(true)}
+            onCreateProject={handleNewProject}
+          />
+        )}
+
+      {/* Project Dialogs */}
+      <ProjectDialogs
+        projectToDelete={projectToDelete}
+        isDeleting={isDeleting}
+        onDeleteConfirm={confirmDelete}
+        onDeleteCancel={() => setProjectToDelete(null)}
+        projectToRename={projectToRename}
+        newProjectName={newProjectName}
+        isRenaming={isRenaming}
+        onRenameConfirm={confirmRename}
+        onRenameCancel={() => setProjectToRename(null)}
+        onNameChange={setNewProjectName}
+      />
+
+      {/* Folder Dialogs */}
+      <FolderDialog
+        isOpen={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onSubmit={handleCreateFolder}
+        mode="create"
+      />
+
+      <FolderDialog
+        isOpen={!!folderToRename}
+        onClose={() => setFolderToRename(null)}
+        onSubmit={handleRenameFolder}
+        mode="rename"
+        initialName={folderToRename?.name || ""}
+      />
+
+      {folderToManage && user && (
+        <SharePanel
+          isOpen={!!folderToManage}
+          onClose={() => setFolderToManage(null)}
+          resourceId={folderToManage.id}
+          resourceType="folder"
+          resourceName={folderToManage.name}
+          currentUserEmail={user.email}
+        />
+      )}
+
+      <DeleteFolderDialog
+        isOpen={!!folderToDelete}
+        onClose={() => setFolderToDelete(null)}
+        onConfirm={handleDeleteFolder}
+        folderName={folderToDelete?.name || ""}
+        projectCount={folderToDelete?.projectCount || 0}
+      />
     </div>
   );
 }
