@@ -143,15 +143,13 @@ export async function getProjectsInFolder(
   const collection = quick.db.collection("projects");
 
   // Use .where() to filter by folder_id at the database level
-  const folderProjects = await collection
-    .where({ folder_id: folderId })
-    .find();
+  const folderProjects = await collection.where({ folder_id: folderId }).find();
 
   // If userEmail provided, filter by explicit project access
   let accessibleProjects = folderProjects;
   if (userEmail) {
     const { checkUserAccess } = await import("./access-control");
-    
+
     // Check access for each project in parallel
     const accessChecks = await Promise.all(
       folderProjects.map(async (project) => {

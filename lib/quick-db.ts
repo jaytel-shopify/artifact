@@ -262,6 +262,27 @@ export async function getArtifactsByProject(
 }
 
 /**
+ * Get published artifacts for a user
+ * Returns only artifacts where published=true
+ * Sorted by most recently created first
+ */
+export async function getPublishedArtifacts(
+  userEmail?: string
+): Promise<Artifact[]> {
+  const quick = await waitForQuick();
+  const collection = quick.db.collection("artifacts");
+
+  // Query for published artifacts directly
+  const publishedArtifacts = await collection.where({ published: true }).find();
+
+  // Sort by created_at descending (most recent first)
+  return publishedArtifacts.sort(
+    (a: Artifact, b: Artifact) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
+}
+
+/**
  * Get all artifacts for a specific page
  */
 export async function getArtifactsByPage(pageId: string): Promise<Artifact[]> {

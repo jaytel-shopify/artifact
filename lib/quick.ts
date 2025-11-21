@@ -176,6 +176,16 @@ interface QuickSite {
     "modified-by": string;
   } | null>;
 
+  list(): Promise<
+    Array<{
+      subdomain: string;
+      url: string;
+      lastModified: string;
+      "modified-by": string;
+      thumbnail?: string;
+    }>
+  >;
+
   delete(
     subdomain: string,
     options?: {

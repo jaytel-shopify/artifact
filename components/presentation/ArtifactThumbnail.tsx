@@ -13,9 +13,9 @@ export default function ArtifactThumbnail({
   className = "",
 }: ArtifactThumbnailProps) {
   const baseClasses = `
-    aspect-square rounded-2xl 
-    flex items-center justify-center overflow-hidden
+    rounded-sm 
     shadow-sm
+    overflow-hidden
     ${className}
   `;
 
@@ -23,20 +23,15 @@ export default function ArtifactThumbnail({
     case "image":
       return (
         <div className={baseClasses}>
-          <img
-            src={artifact.source_url}
-            alt={artifact.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <img src={artifact.source_url} alt={artifact.name} loading="lazy" />
         </div>
       );
 
     case "url":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-blue-500/20 flex items-center justify-center">
-            <Globe className="w-8 h-8 text-blue-400" />
+          <div className="w-full h-full bg-gray-500/20 flex items-center justify-center aspect-[16/11]">
+            <Globe className="w-8 h-8 text-gray-400" />
           </div>
         </div>
       );
@@ -50,7 +45,7 @@ export default function ArtifactThumbnail({
             <img
               src={thumbnailUrl}
               alt={artifact.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover aspect-[16/9]"
               loading="lazy"
             />
           </div>
@@ -59,7 +54,7 @@ export default function ArtifactThumbnail({
       // Fallback to play icon if no thumbnail
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-red-500/20 flex items-center justify-center">
+          <div className="w-full h-full bg-red-500/20 flex items-center justify-center aspect-[16/9]">
             <Play className="w-8 h-8 text-red-400" />
           </div>
         </div>
@@ -68,7 +63,7 @@ export default function ArtifactThumbnail({
     case "figma":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-purple-500/20 flex items-center justify-center">
+          <div className="w-full h-full bg-purple-500/20 flex items-center justify-center aspect-[16/9]">
             <div className="w-8 h-8 bg-purple-500 text-white font-bold rounded-lg flex items-center justify-center text-lg">
               F
             </div>
@@ -79,7 +74,7 @@ export default function ArtifactThumbnail({
     case "titleCard":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center">
+          <div className="w-full h-full bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center aspect-[16/9]">
             <Type className="w-8 h-8 text-white" />
           </div>
         </div>
