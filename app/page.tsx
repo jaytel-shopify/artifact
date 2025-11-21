@@ -9,7 +9,12 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { createArtifact as createArtifactDB } from "@/lib/quick-db";
-import AppLayout from "@/components/layout/AppLayout";
+import { useSetHeader } from "@/components/layout/HeaderContext";
+import Logo from "@/components/layout/header/Logo";
+import ViewToggle from "@/components/layout/header/ViewToggle";
+import SearchBar from "@/components/layout/header/SearchBar";
+import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import ArtifactAdder from "@/components/upload/ArtifactAdder";
 
 /**
  * Fetcher function for SWR - gets all public artifacts
@@ -41,14 +46,6 @@ export default function Home() {
     refreshInterval: 60000,
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
-        <p className="text-[var(--color-text-primary)]">Loading...</p>
-      </div>
-    );
-  }
-
   const createArtifact = async (artifactData: {
     type: ArtifactType;
     source_url: string;
@@ -76,49 +73,68 @@ export default function Home() {
     }
   };
 
+  // Set header content
+  useSetHeader({
+    left: (
+      <>
+        <Logo />
+        <ViewToggle />
+      </>
+    ),
+    center: <SearchBar />,
+    right: (
+      <>
+        <ArtifactAdder onAdded={mutate} createArtifact={createArtifact} />
+        <DarkModeToggle />
+      </>
+    ),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
+        <p className="text-[var(--color-text-primary)]">Loading...</p>
+      </div>
+    );
+  }
+
   return (
-    <AppLayout mode="homepage" createArtifact={createArtifact}>
-      <main className="flex-1 overflow-auto">
-        <div className="max-w-7xl mx-auto p-6">
-          {error && (
-            <p className="text-red-600">Failed to load public artifacts</p>
-          )}
+    <div className="max-w-7xl mx-auto p-6">
+      {error && <p className="text-red-600">Failed to load public artifacts</p>}
 
-          {artifacts && artifacts.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {artifacts.map((artifact) => (
-                <Card
-                  key={artifact.id}
-                  className="grid relative cursor-pointer overflow-hidden h-fit outline-none"
+      {artifacts && artifacts.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {artifacts.map((artifact) => (
+            <Card
+              key={artifact.id}
+              className="grid relative cursor-pointer overflow-hidden h-fit outline-none"
+            >
+              <ArtifactThumbnail
+                artifact={artifact}
+                className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+              />
+
+              <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                <Link
+                  href={`/a/?id=${artifact.id}`}
+                  className="after:content-[''] after:absolute after:inset-0 bg-red-500 "
                 >
-                  <ArtifactThumbnail
-                    artifact={artifact}
-                    className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
-                  />
-
-                  <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
-                    <Link
-                      href={`/a/?id=${artifact.id}`}
-                      className="after:content-[''] after:absolute after:inset-0 bg-red-500 "
-                    >
-                      <h3 className="font-medium text-white line-clamp-1">
-                        {artifact.name}
-                      </h3>
-                      <p className="text-sm text-gray-300 capitalize">
-                        {artifact.type}
-                      </p>
-                    </Link>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No public artifacts yet</p>
-            </div>
-          )}
+                  <h3 className="font-medium text-white line-clamp-1">
+                    {artifact.name}
+                  </h3>
+                  <p className="text-sm text-gray-300 capitalize">
+                    {artifact.type}
+                  </p>
+                </Link>
+              </div>
+            </Card>
+          ))}
         </div>
-      </main>
-    </AppLayout>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">No public artifacts yet</p>
+        </div>
+      )}
+    </div>
   );
 }

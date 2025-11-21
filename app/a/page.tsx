@@ -9,6 +9,9 @@ import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useArtifactMutations } from "@/hooks/useArtifactMutations";
 import Link from "next/link";
+import { ArrowLeft, Save } from "lucide-react";
+import { useSetHeader } from "@/components/layout/HeaderContext";
+import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 
 async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
   return await getArtifactById(artifactId);
@@ -29,6 +32,24 @@ export default function Page() {
   const { toggleLike, toggleDislike } = useArtifactMutations({
     artifacts: artifact ? [artifact] : [],
     mutate: mutate as unknown as KeyedMutator<Artifact[]>,
+  });
+
+  // Set header content
+  useSetHeader({
+    left: (
+      <>
+        <Link href="/">
+          <Button variant="outline" size="icon" aria-label="Back">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+        <Button variant="outline" className="gap-2" disabled>
+          <Save className="h-4 w-4" />
+          Save to Project
+        </Button>
+      </>
+    ),
+    right: <DarkModeToggle />,
   });
 
   if (!artifact) {
@@ -57,10 +78,7 @@ export default function Page() {
     : false;
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-8">
-      <Link href="/" className="absolute top-4 left-4">
-        Back
-      </Link>
+    <div className="flex min-h-full items-center justify-center p-8">
       <div className="flex gap-4">
         <ArtifactThumbnail
           artifact={artifact}

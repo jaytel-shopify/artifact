@@ -4,8 +4,9 @@ import useSWR from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, PanelLeft, PanelLeftClose, Share } from "lucide-react";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
-import AppLayout from "@/components/layout/AppLayout";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
@@ -49,6 +50,15 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useSetHeader } from "@/components/layout/HeaderContext";
+import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import ColumnControl from "@/components/layout/header/ColumnControl";
+import ArtifactAdder from "@/components/upload/ArtifactAdder";
+import EditableTitle from "@/components/presentation/EditableTitle";
+import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
+import { SharePanel } from "@/components/access/SharePanel";
+import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
+import PageNavigationSidebar from "@/components/layout/PageNavigationSidebar";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -112,8 +122,26 @@ function PresentationPageInner({
   // Presentation mode: Hide header and sidebar
   const [presentationMode, setPresentationMode] = useState(false);
 
+  // Sidebar state (extracted from old AppLayout)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   // Load user's folders for folder dropdown
   const userFolders = useUserFolders(user?.email);
+
+  // Load sidebar state from localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem("sidebar_open");
+    if (stored !== null) {
+      setSidebarOpen(JSON.parse(stored));
+    }
+  }, []);
+
+  // Persist sidebar state
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("sidebar_open", JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
 
   // Load column and fit mode preferences
   useEffect(() => {
@@ -192,6 +220,7 @@ function PresentationPageInner({
   const canEdit = !debugReadOnly && permissions.canEdit;
   const isOwner = permissions.isOwner;
   const accessLevel = permissions.accessLevel;
+  const isCollaborator = accessLevel === "editor";
 
   // Fetch and manage pages
   const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
@@ -322,182 +351,302 @@ function PresentationPageInner({
   const isUploading = uploadState.uploading || isPending;
   const isPageLoading = !project || pages.length === 0;
 
-  // Show loading state
+  // Share dialog state
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+
+  // Show loading state - but we still need to render header even when loading
+  // Set header content - must be called before any return statements
+  useSetHeader({
+    left: !presentationMode ? (
+      <>
+        {/* Back Button */}
+        <Link href={backUrl}>
+          <Button variant="outline" size="icon" aria-label="Back">
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        </Link>
+
+        {/* Sidebar Toggle */}
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setSidebarOpen((prev) => !prev)}
+          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+        >
+          {sidebarOpen ? (
+            <PanelLeftClose className="h-4 w-4" />
+          ) : (
+            <PanelLeft className="h-4 w-4" />
+          )}
+        </Button>
+
+        {/* Add Artifact Button */}
+        {project?.id && currentPageId && canEdit && (
+          <ArtifactAdder
+            projectId={project.id}
+            pageId={currentPageId}
+            onAdded={refetchArtifacts}
+            createArtifact={createArtifact}
+          />
+        )}
+
+        {/* Column Controls */}
+        <ColumnControl
+          columns={columns}
+          onColumnsChange={handleSetColumns}
+          fitMode={fitMode}
+          onFitModeChange={handleSetFitMode}
+        />
+      </>
+    ) : undefined,
+    center:
+      !presentationMode && project ? (
+        <EditableTitle
+          initialValue={project.name || "Untitled Project"}
+          projectId={project.id}
+          onUpdated={canEdit ? handleProjectNameUpdate : undefined}
+          isReadOnly={!canEdit}
+          folders={userFolders}
+          currentFolderId={project.folder_id}
+          onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
+          onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
+        />
+      ) : undefined,
+    right: !presentationMode ? (
+      <>
+        {/* Read-Only Badge */}
+        {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
+
+        {/* Sync Status Indicator */}
+        <SyncStatusIndicator
+          isPresenceReady={isPresenceReady}
+          getUsers={getUsers}
+          onFollowUser={handleFollowUser}
+          followingUserId={followedUser?.socketId || null}
+        />
+
+        {/* Share Button */}
+        {project && user && (
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setShareDialogOpen(true)}
+          >
+            <Share className="h-4 w-4" />
+            Share
+          </Button>
+        )}
+
+        <DarkModeToggle />
+      </>
+    ) : undefined,
+  });
+
   if (isPageLoading) {
     return null; // AnimatePresence will handle the fade
   }
 
   return (
-    <AppLayout
-      mode="canvas"
-      projectId={project.id}
-      projectName={project.name}
-      creatorEmail={project.creator_id}
-      isCreator={isOwner}
-      isCollaborator={accessLevel === "editor"}
-      isReadOnly={isReadOnly}
-      currentFolderId={project.folder_id}
-      folders={userFolders}
-      onProjectNameUpdate={canEdit ? handleProjectNameUpdate : undefined}
-      onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
-      onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
-      onArtifactAdded={canEdit ? refetchArtifacts : undefined}
-      columns={columns}
-      onColumnsChange={handleSetColumns}
-      showColumnControls={true}
-      fitMode={fitMode}
-      onFitModeChange={handleSetFitMode}
-      pages={pages}
-      currentPageId={currentPageId || undefined}
-      onPageSelect={handleSelectPage}
-      onPageRename={handlePageRename}
-      onPageCreate={canEdit ? handlePageCreate : undefined}
-      onPageDelete={canEdit ? handlePageDelete : undefined}
-      onPageReorder={canEdit ? reorderPages : undefined}
-      presentationMode={presentationMode}
-      backUrl={backUrl}
-      isPresenceReady={isPresenceReady}
-      getUsersCount={getUsersCount}
-      getUsers={getUsers}
-      onFollowUser={handleFollowUser}
-      followingUserId={followedUser?.socketId || null}
-      createArtifact={createArtifact}
-    >
-      <div className="h-full relative">
-        {/* Dropzone for file uploads (only for creators/editors) */}
-        {project?.id && currentPageId && canEdit && (
-          <DropzoneUploader
-            onFiles={handleFileUpload}
-            onUrl={handleUrlAdd}
-            onDragStateChange={setDragging}
+    <>
+      <div className="flex flex-1 min-h-0 relative">
+        {/* Mobile backdrop overlay */}
+        {sidebarOpen && !presentationMode && (
+          <div
+            className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
+            style={{
+              animationTimingFunction: "var(--spring-elegant-easing-light)",
+            }}
+            onClick={() => setSidebarOpen(false)}
           />
         )}
 
-        {/* Loading/upload overlay */}
-        {(dragging || isUploading) && (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-            <div
-              className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
-              style={{ fontSize: "var(--font-size-sm)" }}
-            >
-              {dragging ? (
-                <div className="text-center">
-                  <div className="font-medium">Drop to upload</div>
-                </div>
-              ) : (
-                <div className="text-center space-y-3 min-w-[200px]">
-                  <div className="font-medium">
-                    Uploading
-                    {uploadState.totalFiles > 1
-                      ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
-                      : ""}
-                    ...
-                  </div>
-                  {uploadState.uploading && (
-                    <div className="space-y-2">
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
-                          style={{ width: `${uploadState.currentProgress}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-gray-600">
-                        {uploadState.currentProgress}%
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+        {/* Sidebar - Hidden in presentation mode */}
+        {!presentationMode && (
+          <div
+            className={`absolute top-0 left-0 h-full z-10 ${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
+            style={{
+              transition: "transform 400ms var(--spring-elegant-easing-light)",
+            }}
+          >
+            <PageNavigationSidebar
+              isOpen={true}
+              pages={pages || []}
+              currentPageId={currentPageId || undefined}
+              onPageSelect={handleSelectPage}
+              onPageRename={handlePageRename}
+              onPageCreate={canEdit ? handlePageCreate : undefined}
+              onPageDelete={canEdit ? handlePageDelete : undefined}
+              onPageReorder={canEdit ? reorderPages : undefined}
+              isReadOnly={isReadOnly}
+            />
           </div>
         )}
 
-        {/* Canvas */}
-        <div className="h-full pt-[var(--spacing-md)]">
-          <Canvas
-            ref={setCarouselRef}
-            columns={columns}
-            fitMode={fitMode}
-            artifacts={artifacts}
-            expandedCollections={expandedCollections}
-            pageId={currentPageId || undefined}
-            onReorder={async (reorderedArtifacts) => {
-              const command = new ReorderArtifactsCommand(
-                reorderedArtifacts,
-                artifacts
-              );
-              await executeCommand(command, "ReorderCommand");
-            }}
-            onCreateCollection={async (draggedId, targetId) => {
-              const command = new AddToCollectionCommand(
-                draggedId,
-                targetId,
-                artifacts
-              );
-              await executeCommand(command, "AddToCollectionCommand");
-            }}
-            onRemoveFromCollection={async (artifactId, newPosition) => {
-              const command = new RemoveFromCollectionCommand(
-                artifactId,
-                newPosition,
-                artifacts
-              );
-              await executeCommand(command, "RemoveFromCollectionCommand");
-            }}
-            onToggleCollection={async (collectionId) => {
-              // Toggle collection expanded state locally (no DB write)
-              setExpandedCollections((prev) => {
-                const next = new Set(prev);
-                if (next.has(collectionId)) {
-                  next.delete(collectionId);
-                } else {
-                  next.add(collectionId);
-                }
-                return next;
-              });
-            }}
-            onUpdateArtifact={async (artifactId, updates) => {
-              const command = new UpdateArtifactCommand(
-                artifactId,
-                updates,
-                artifacts
-              );
-              await executeCommand(command, "UpdateArtifactCommand");
-            }}
-            onDeleteArtifact={async (artifactId) => {
-              const command = new DeleteArtifactCommand(artifactId, artifacts);
-              await executeCommand(command, "DeleteArtifactCommand");
-            }}
-            onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
-            onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
-            onFocusArtifact={(artifactId) => {
-              // If already in focused mode (columns=1, fitMode=true), restore
-              if (columns === 1 && fitMode) {
-                unfocusArtifact();
-                return;
-              }
+        {/* Main Content */}
+        <div
+          className="flex-1 min-w-0"
+          style={{
+            marginLeft:
+              sidebarOpen && !presentationMode ? "var(--sidebar-width)" : "0",
+            transition: "margin-left 400ms var(--spring-elegant-easing-light)",
+          }}
+        >
+          <div className="h-full relative">
+            {/* Dropzone for file uploads (only for creators/editors) */}
+            {project?.id && currentPageId && canEdit && (
+              <DropzoneUploader
+                onFiles={handleFileUpload}
+                onUrl={handleUrlAdd}
+                onDragStateChange={setDragging}
+              />
+            )}
 
-              focusArtifact(artifactId);
+            {/* Loading/upload overlay */}
+            {(dragging || isUploading) && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <div
+                  className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
+                  style={{ fontSize: "var(--font-size-sm)" }}
+                >
+                  {dragging ? (
+                    <div className="text-center">
+                      <div className="font-medium">Drop to upload</div>
+                    </div>
+                  ) : (
+                    <div className="text-center space-y-3 min-w-[200px]">
+                      <div className="font-medium">
+                        Uploading
+                        {uploadState.totalFiles > 1
+                          ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
+                          : ""}
+                        ...
+                      </div>
+                      {uploadState.uploading && (
+                        <div className="space-y-2">
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                              style={{
+                                width: `${uploadState.currentProgress}%`,
+                              }}
+                            />
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            {uploadState.currentProgress}%
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
-              // Immediately scroll after synchronous render
-              requestAnimationFrame(() => {
-                const element = document.querySelector(
-                  `[data-id="${artifactId}"]`
-                );
-                if (element) {
-                  element.scrollIntoView({
-                    behavior: "instant",
-                    block: "nearest",
-                    inline: "start",
+            {/* Canvas */}
+            <div className="h-full pt-[var(--spacing-md)]">
+              <Canvas
+                ref={setCarouselRef}
+                columns={columns}
+                fitMode={fitMode}
+                artifacts={artifacts}
+                expandedCollections={expandedCollections}
+                pageId={currentPageId || undefined}
+                onReorder={async (reorderedArtifacts) => {
+                  const command = new ReorderArtifactsCommand(
+                    reorderedArtifacts,
+                    artifacts
+                  );
+                  await executeCommand(command, "ReorderCommand");
+                }}
+                onCreateCollection={async (draggedId, targetId) => {
+                  const command = new AddToCollectionCommand(
+                    draggedId,
+                    targetId,
+                    artifacts
+                  );
+                  await executeCommand(command, "AddToCollectionCommand");
+                }}
+                onRemoveFromCollection={async (artifactId, newPosition) => {
+                  const command = new RemoveFromCollectionCommand(
+                    artifactId,
+                    newPosition,
+                    artifacts
+                  );
+                  await executeCommand(command, "RemoveFromCollectionCommand");
+                }}
+                onToggleCollection={async (collectionId) => {
+                  // Toggle collection expanded state locally (no DB write)
+                  setExpandedCollections((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(collectionId)) {
+                      next.delete(collectionId);
+                    } else {
+                      next.add(collectionId);
+                    }
+                    return next;
                   });
-                }
-              });
-            }}
-            focusedArtifactId={focusedArtifactId}
-            isReadOnly={isReadOnly}
-          />
+                }}
+                onUpdateArtifact={async (artifactId, updates) => {
+                  const command = new UpdateArtifactCommand(
+                    artifactId,
+                    updates,
+                    artifacts
+                  );
+                  await executeCommand(command, "UpdateArtifactCommand");
+                }}
+                onDeleteArtifact={async (artifactId) => {
+                  const command = new DeleteArtifactCommand(
+                    artifactId,
+                    artifacts
+                  );
+                  await executeCommand(command, "DeleteArtifactCommand");
+                }}
+                onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
+                onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
+                onFocusArtifact={(artifactId) => {
+                  // If already in focused mode (columns=1, fitMode=true), restore
+                  if (columns === 1 && fitMode) {
+                    unfocusArtifact();
+                    return;
+                  }
+
+                  focusArtifact(artifactId);
+
+                  // Immediately scroll after synchronous render
+                  requestAnimationFrame(() => {
+                    const element = document.querySelector(
+                      `[data-id="${artifactId}"]`
+                    );
+                    if (element) {
+                      element.scrollIntoView({
+                        behavior: "instant",
+                        block: "nearest",
+                        inline: "start",
+                      });
+                    }
+                  });
+                }}
+                focusedArtifactId={focusedArtifactId}
+                isReadOnly={isReadOnly}
+              />
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Share Panel */}
+      {project && user && (
+        <SharePanel
+          isOpen={shareDialogOpen}
+          onClose={() => setShareDialogOpen(false)}
+          resourceId={project.id}
+          resourceType="project"
+          resourceName={project.name || "Untitled Project"}
+          currentUserEmail={user.email}
+        />
+      )}
 
       {/* Title Card Edit Dialog */}
       <Dialog
@@ -590,7 +739,7 @@ function PresentationPageInner({
         }
         userEmail={user?.email}
       />
-    </AppLayout>
+    </>
   );
 }
 
