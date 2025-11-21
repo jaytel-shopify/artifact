@@ -86,8 +86,12 @@ export default function Page() {
         />
         <div>
           <h1 className="text-4xl font-bold mb-4">Artifact {artifact.name}</h1>
-          <p className="text-sm text-gray-300 capitalize">{artifact.type}</p>
-          <div className="flex gap-2 justify-center mt-4">
+          {artifact.description && (
+            <p className="text-sm text-gray-300 capitalize">
+              {artifact.description}
+            </p>
+          )}
+          <div className="flex gap-2 mt-4">
             <Button
               onClick={handleLike}
               variant={userLiked ? "default" : "outline"}

@@ -119,6 +119,7 @@ function init() {
       source_url: "/mock/Artifact 1.png",
       file_path: null,
       name: "Sample Image 8",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: false,
       metadata: { width: 800, height: 600 },
@@ -137,6 +138,7 @@ function init() {
       source_url: "/mock/Artifact 2.png",
       file_path: null,
       name: "Sample Image 9",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: false,
       metadata: { width: 800, height: 600 },
@@ -210,6 +212,7 @@ function init() {
         "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
       file_path: null,
       name: "Sample Video - Big Buck Bunny",
+      description: "A sample video with a clean and modern look",
       position: 2,
       published: false,
       metadata: {
@@ -233,6 +236,7 @@ function init() {
       source_url: "/mock/Artifact 6.png",
       file_path: null,
       name: "Placeholder Image - Nature",
+      description: "A sample image with a clean and modern look",
       position: 3,
       published: false,
       metadata: { width: 1200, height: 800 },
@@ -252,6 +256,7 @@ function init() {
         "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
       file_path: null,
       name: "Sample Video - For Bigger Blazes",
+      description: "A sample video with a clean and modern look",
       position: 4,
       published: false,
       metadata: {
@@ -275,6 +280,7 @@ function init() {
       source_url: "https://shopify.com",
       file_path: null,
       name: "Shopify Website",
+      description: "A sample website with a clean and modern look",
       position: 5,
       published: false,
       metadata: {
@@ -297,6 +303,7 @@ function init() {
       source_url: "",
       file_path: null,
       name: "Sample Title Card",
+      description: "A sample title card with a clean and modern look",
       position: 6,
       published: false,
       metadata: {
@@ -320,6 +327,7 @@ function init() {
       source_url: "/mock/Artifact 7.png",
       file_path: null,
       name: "Mobile Home Screen",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: false,
       reactions: {
@@ -338,6 +346,7 @@ function init() {
       source_url: "/mock/Artifact 1.png",
       file_path: null,
       name: "Product Detail",
+      description: "A sample image with a clean and modern look",
       position: 1,
       published: false,
       reactions: {
@@ -356,6 +365,7 @@ function init() {
       source_url: "",
       file_path: null,
       name: "App Features",
+      description: "A sample title card with a clean and modern look",
       position: 2,
       published: false,
       reactions: {
@@ -378,6 +388,7 @@ function init() {
       source_url: "/mock/Artifact 2.png",
       file_path: null,
       name: "Hero Banner",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: false,
       reactions: {
@@ -397,6 +408,7 @@ function init() {
       source_url: "/mock/Artifact 1.png",
       file_path: null,
       name: "Beautiful Sunset",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: true,
       reactions: {
@@ -415,6 +427,7 @@ function init() {
       source_url: "/mock/Artifact 2.png",
       file_path: null,
       name: "Urban Architecture",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: true,
       reactions: {
@@ -433,6 +446,7 @@ function init() {
       source_url: "/mock/Artifact 3.png",
       file_path: null,
       name: "Nature Landscape",
+      description: "A sample image with a clean and modern look",
       position: 0,
       published: true,
       reactions: {
@@ -469,6 +483,7 @@ function init() {
       source_url: "/mock/Artifact 5.png",
       file_path: null,
       name: "Minimalist Design",
+      description: "A minimalist design with a clean and modern look",
       position: 0,
       published: true,
       reactions: {
@@ -487,6 +502,7 @@ function init() {
       source_url: "/mock/Artifact 6.png",
       file_path: null,
       name: "Abstract Pattern",
+      description: "An abstract pattern with a modern and stylish look",
       position: 0,
       published: true,
       reactions: {
@@ -505,6 +521,7 @@ function init() {
       source_url: "/mock/Artifact 7.png",
       file_path: null,
       name: "Modern Aesthetic",
+      description: "A modern aesthetic with a clean and modern look",
       position: 0,
       published: true,
       reactions: {

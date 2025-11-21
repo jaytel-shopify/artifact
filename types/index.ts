@@ -62,6 +62,7 @@ export type Artifact = {
   source_url: string;
   file_path: string | null;
   name: string;
+  description?: string;
   position: number;
   metadata: Record<string, unknown> &
     Partial<
