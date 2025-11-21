@@ -56,7 +56,7 @@ import { canUserEdit } from "@/lib/access-control";
 import {
   updateProject,
   deleteProject as deleteProjectDB,
-  getArtifactsByProject,
+  getProjectCoverArtifacts,
 } from "@/lib/quick-db";
 
 function FolderPageContent() {
@@ -120,13 +120,13 @@ function FolderPageContent() {
           }).catch(console.error);
         }
 
-        // Load cover artifacts for projects (in parallel)
+        // Load cover artifacts for projects from their first page (in parallel)
         const projectsWithCovers = await Promise.all(
           folderProjects.map(async (project) => {
-            const artifacts = await getArtifactsByProject(project.id);
+            const coverArtifacts = await getProjectCoverArtifacts(project.id);
             return {
               ...project,
-              coverArtifacts: artifacts.slice(0, 3),
+              coverArtifacts,
             };
           })
         );

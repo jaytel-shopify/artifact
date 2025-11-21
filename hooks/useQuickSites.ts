@@ -1,18 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { waitForQuick } from "@/lib/quick";
-
-interface QuickSite {
-  subdomain: string;
-  url: string;
-  lastModified: string;
-  "modified-by": string;
-  thumbnail?: string;
-}
+import { getUserQuickSites, QuickSiteRecord } from "@/lib/quick-sites";
 
 export function useQuickSites() {
-  const [sites, setSites] = useState<QuickSite[]>([]);
+  const [sites, setSites] = useState<QuickSiteRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -20,11 +12,9 @@ export function useQuickSites() {
     async function fetchSites() {
       try {
         setIsLoading(true);
-        const quick = await waitForQuick();
-        const quickSites = await quick.site.list();
-        setSites(quickSites);
+        const userSites = await getUserQuickSites();
+        setSites(userSites);
       } catch (err) {
-        console.error("Error fetching Quick sites:", err);
         setError(err instanceof Error ? err : new Error("Failed to fetch sites"));
       } finally {
         setIsLoading(false);
@@ -36,4 +26,3 @@ export function useQuickSites() {
 
   return { sites, isLoading, error };
 }
-

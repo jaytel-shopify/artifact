@@ -2,8 +2,8 @@ import useSWR from "swr";
 import type { Project, Artifact, Folder } from "@/types";
 import {
   getProjects,
-  getArtifactsByProject,
   getPublishedArtifacts,
+  getProjectCoverArtifacts,
 } from "@/lib/quick-db";
 import { getProjectCountInFolder } from "@/lib/quick-folders";
 import { getUserAccessibleResources } from "@/lib/access-control";
@@ -18,7 +18,7 @@ export interface ProjectsData {
 }
 
 /**
- * Fetcher function for SWR - gets all projects and their first 3 artifacts for covers
+ * Fetcher function for SWR - gets all projects and their first 3 artifacts from the first page for covers
  */
 async function fetcher(userEmail?: string): Promise<ProjectsData> {
   // Parallel loading - fetch projects, folders, and published artifacts simultaneously
@@ -35,13 +35,13 @@ async function fetcher(userEmail?: string): Promise<ProjectsData> {
   );
   const validFolders = userFolders.filter((f): f is Folder => f !== null);
 
-  // Get cover artifacts for projects (in parallel)
+  // Get cover artifacts for projects from their first page (in parallel)
   const projectsWithCovers = await Promise.all(
     projects.map(async (project) => {
-      const artifacts = await getArtifactsByProject(project.id);
+      const coverArtifacts = await getProjectCoverArtifacts(project.id);
       return {
         ...project,
-        coverArtifacts: artifacts.slice(0, 3),
+        coverArtifacts,
       };
     })
   );
