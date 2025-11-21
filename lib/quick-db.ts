@@ -403,3 +403,19 @@ export async function getNextPosition(
   );
   return maxPosition + 1;
 }
+
+/**
+ * Get cover artifacts for a project (first 3 artifacts from the first page)
+ * Uses same logic as useCurrentPage to determine which page to use
+ */
+export async function getProjectCoverArtifacts(
+  projectId: string
+): Promise<Artifact[]> {
+  const pages = await getPages(projectId);
+  if (pages.length === 0) {
+    return [];
+  }
+  const firstPage = pages.find((p) => p.position === 0) || pages[0];
+  const artifacts = await getArtifactsByPage(firstPage.id);
+  return artifacts.slice(0, 3);
+}
