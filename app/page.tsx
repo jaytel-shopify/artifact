@@ -3,10 +3,13 @@
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { waitForQuick } from "@/lib/quick";
-import type { Artifact } from "@/types";
+import type { Artifact, ArtifactType } from "@/types";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { createArtifact as createArtifactDB } from "@/lib/quick-db";
+import AppLayout from "@/components/layout/AppLayout";
 
 /**
  * Fetcher function for SWR - gets all public artifacts
@@ -31,6 +34,7 @@ export default function Home() {
     data: artifacts,
     isLoading,
     error,
+    mutate,
   } = useSWR<Artifact[]>("public-artifacts", fetchPublicArtifacts, {
     revalidateOnFocus: false,
     dedupingInterval: 30000,
@@ -45,36 +49,41 @@ export default function Home() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-[var(--color-background-primary)] text-[var(--color-text-primary)]">
-      {/* Header */}
-      <div
-        className="bg-[var(--color-background-primary)] border-b border-[var(--color-border-primary)]"
-        style={{ height: "var(--header-height)" }}
-      >
-        <div className="flex items-center justify-between h-full px-8">
-          <div className="flex items-center gap-2">
-            <img
-              src="/favicons/icon-256.png"
-              alt="Artifact"
-              className="w-8 h-8"
-              style={{ imageRendering: "crisp-edges" }}
-            />
-            <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
-              Public Artifacts
-            </h1>
-          </div>
-        </div>
-      </div>
+  const createArtifact = async (artifactData: {
+    type: ArtifactType;
+    source_url: string;
+    file_path?: string | null;
+    name?: string;
+    metadata?: Record<string, unknown>;
+  }) => {
+    try {
+      const artifact = await createArtifactDB({
+        project_id: "",
+        page_id: "",
+        type: artifactData.type,
+        source_url: artifactData.source_url,
+        file_path: artifactData.file_path || undefined,
+        name: artifactData.name || "Untitled",
+        position: 0,
+        metadata: artifactData.metadata || {},
+        published: true,
+      });
+      mutate();
+      return artifact;
+    } catch (error) {
+      console.error("Failed to create artifact:", error);
+      throw error;
+    }
+  };
 
-      {/* Main Content */}
+  return (
+    <AppLayout mode="homepage" createArtifact={createArtifact}>
       <main className="flex-1 overflow-auto">
         <div className="max-w-7xl mx-auto p-6">
           {error && (
             <p className="text-red-600">Failed to load public artifacts</p>
           )}
 
-          {/* Artifacts Grid */}
           {artifacts && artifacts.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {artifacts.map((artifact) => (
@@ -87,7 +96,6 @@ export default function Home() {
                     className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
                   />
 
-                  {/* Artifact Info Overlay */}
                   <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
                     <Link
                       href={`/a/?id=${artifact.id}`}
@@ -111,6 +119,6 @@ export default function Home() {
           )}
         </div>
       </main>
-    </div>
+    </AppLayout>
   );
 }

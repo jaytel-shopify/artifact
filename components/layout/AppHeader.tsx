@@ -24,7 +24,6 @@ import { SharePanel } from "@/components/access/SharePanel";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/components/auth/AuthProvider";
-import UserAvatar from "@/components/auth/UserAvatar";
 import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
 
 interface AppHeaderProps {
@@ -143,6 +142,10 @@ export default function AppHeader({
               <h1 className="text-lg font-semibold text-[var(--color-text-primary)]">
                 Artifact
               </h1>
+              <ArtifactAdder
+                onAdded={onArtifactAdded}
+                createArtifact={createArtifact}
+              />
             </div>
           ) : (
             /* Canvas/Folder mode: Navigation + Tools */
@@ -182,14 +185,17 @@ export default function AppHeader({
               )}
 
               {/* Add Artifact Button (hidden in read-only mode) */}
-              {projectId && currentPageId && onArtifactAdded && createArtifact && (
-                <ArtifactAdder
-                  projectId={projectId}
-                  pageId={currentPageId}
-                  onAdded={onArtifactAdded}
-                  createArtifact={createArtifact}
-                />
-              )}
+              {projectId &&
+                currentPageId &&
+                onArtifactAdded &&
+                createArtifact && (
+                  <ArtifactAdder
+                    projectId={projectId}
+                    pageId={currentPageId}
+                    onAdded={onArtifactAdded}
+                    createArtifact={createArtifact}
+                  />
+                )}
 
               {/* Column Count Slider (canvas mode) */}
               {mode === "canvas" && showColumnControls && onColumnsChange && (
@@ -304,32 +310,6 @@ export default function AppHeader({
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
-
-              {/* User Avatar */}
-              {loading ? (
-                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
-              ) : user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2">
-                      <UserAvatar />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      disabled
-                      className="flex flex-col items-start"
-                    >
-                      <span className="text-sm font-medium">
-                        {user.fullName ?? "Signed in"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.email}
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
             </div>
           ) : mode === "canvas" ? (
             <div className="flex items-center gap-3">
@@ -369,31 +349,6 @@ export default function AppHeader({
                   />
                 </>
               )}
-
-              {loading ? (
-                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
-              ) : user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2">
-                      <UserAvatar />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      disabled
-                      className="flex flex-col items-start"
-                    >
-                      <span className="text-sm font-medium">
-                        {user.fullName ?? "Signed in"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.email}
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
             </div>
           ) : (
             <div className="flex items-center gap-3">
@@ -403,30 +358,6 @@ export default function AppHeader({
                   New Project
                 </Button>
               )}
-              {loading ? (
-                <div className="w-8 h-8 rounded-full bg-gray-300 animate-pulse" />
-              ) : user ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2">
-                      <UserAvatar />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                      disabled
-                      className="flex flex-col items-start"
-                    >
-                      <span className="text-sm font-medium">
-                        {user.fullName ?? "Signed in"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {user.email}
-                      </span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : null}
             </div>
           )}
         </div>
