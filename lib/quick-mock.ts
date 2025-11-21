@@ -493,6 +493,7 @@ function init() {
     },
   ];
 
+
   console.log("[Mock] Initialized with:", {
     projects: db.projects.length,
     folders: db.folders.length,
@@ -628,6 +629,36 @@ class Collection {
   }
 }
 
+// Mock Quick sites data
+export function getMockQuickSites() {
+  return [
+    {
+      id: "my-portfolio",
+      subdomain: "my-portfolio",
+      url: "https://my-portfolio.quick.shopify.io",
+      owner: "dev@shopify.com",
+      lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      thumbnail: "/mock/Artifact 1.png",
+    },
+    {
+      id: "team-dashboard",
+      subdomain: "team-dashboard",
+      url: "https://team-dashboard.quick.shopify.io",
+      owner: "dev@shopify.com",
+      lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      thumbnail: "/mock/Artifact 2.png",
+    },
+    {
+      id: "project-showcase",
+      subdomain: "project-showcase",
+      url: "https://project-showcase.quick.shopify.io",
+      owner: "dev@shopify.com",
+      lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      thumbnail: "/mock/Artifact 3.png",
+    },
+  ];
+}
+
 export function createMockQuick() {
   init();
 
@@ -715,71 +746,6 @@ export function createMockQuick() {
     site: {
       create: async () => ({ message: "Mock", url: "" }),
       get: async () => null,
-      list: async () => [
-        {
-          subdomain: "my-portfolio",
-          url: "https://my-portfolio.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 2 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 1.png",
-        },
-        {
-          subdomain: "team-dashboard",
-          url: "https://team-dashboard.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 5 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 2.png",
-        },
-        {
-          subdomain: "project-showcase",
-          url: "https://project-showcase.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 7 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 3.png",
-        },
-        {
-          subdomain: "design-system",
-          url: "https://design-system.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 10 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 4.png",
-        },
-        {
-          subdomain: "api-docs",
-          url: "https://api-docs.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 14 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 5.png",
-        },
-        {
-          subdomain: "landing-page",
-          url: "https://landing-page.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 20 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 6.png",
-        },
-        {
-          subdomain: "analytics-report",
-          url: "https://analytics-report.quick.shopify.io",
-          lastModified: new Date(
-            Date.now() - 30 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-          "modified-by": "dev@shopify.com",
-          thumbnail: "/mock/Artifact 7.png",
-        },
-      ],
       delete: async () => {},
     },
     slack: {

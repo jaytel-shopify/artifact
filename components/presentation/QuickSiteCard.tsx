@@ -1,15 +1,9 @@
 "use client";
 
-interface QuickSite {
-  subdomain: string;
-  url: string;
-  lastModified: string;
-  "modified-by": string;
-  thumbnail?: string;
-}
+import { QuickSiteRecord } from "@/lib/quick-sites";
 
 interface QuickSiteCardProps {
-  site: QuickSite;
+  site: QuickSiteRecord;
 }
 
 export default function QuickSiteCard({ site }: QuickSiteCardProps) {
