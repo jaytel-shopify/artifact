@@ -21,7 +21,6 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userEmail, setUserEmail] = useState<string>("");
 
   // Set header content
   useSetHeader({
@@ -50,7 +49,6 @@ export default function SearchPage() {
         // Get user email from quick.id
         const quick = await waitForQuick();
         const email = quick.id.email;
-        setUserEmail(email);
 
         // Perform search
         const searchResults = await searchResources(query, email);

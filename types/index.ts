@@ -6,6 +6,7 @@ export type Project = {
   created_at: string;
   updated_at: string;
   last_accessed_at?: string; // For "last opened" sorting (optional for backward compat)
+  pages?: Page[]; // Optional: populated when needed (e.g., search results)
 };
 
 export type ArtifactType =
