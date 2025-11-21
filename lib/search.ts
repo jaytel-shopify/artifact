@@ -21,10 +21,10 @@ export type SearchResults = {
  * Search through all resources accessible to a user
  *
  * Searches:
- * 1. Public artifacts (visibility: "public")
+ * 1. Public artifacts (published: true)
  * 2. User's accessible folders (created by user OR granted access via access control)
  * 3. User's accessible projects (created by user OR granted access via access control)
- * 4. User's personal artifacts (from accessible projects, visibility: "private")
+ * 4. User's personal artifacts (from accessible projects, published: false)
  *
  * @param query - Search term (case-insensitive)
  * @param userEmail - Email of the user performing the search
@@ -82,7 +82,7 @@ export async function searchResources(
 
 /**
  * Search for public artifacts by name
- * Uses .where() to filter by visibility at the database level
+ * Uses .where() to filter by published at the database level
  */
 async function searchPublicArtifacts(
   normalizedQuery: string,
@@ -90,10 +90,8 @@ async function searchPublicArtifacts(
 ): Promise<Artifact[]> {
   const collection = quick.db.collection("artifacts");
 
-  // Use .where() to filter by visibility at the database level
-  const publicArtifacts = await collection
-    .where({ visibility: "public" })
-    .find();
+  // Use .where() to filter by published at the database level
+  const publicArtifacts = await collection.where({ published: true }).find();
 
   // Client-side filtering for name substring match (case-insensitive)
   return publicArtifacts.filter((artifact: Artifact) =>
@@ -153,13 +151,13 @@ async function searchProjects(
 
 /**
  * Get all private artifacts for filtering by user's accessible projects
- * Uses .where() to filter by visibility at the database level
+ * Uses .where() to filter by published at the database level
  * These will be further filtered to only include artifacts from projects the user has access to
  */
 async function getPrivateArtifacts(quick: any): Promise<Artifact[]> {
   const collection = quick.db.collection("artifacts");
 
-  // Use .where() to filter by visibility at the database level
+  // Use .where() to filter by published at the database level
   // This gets ALL private artifacts, which will be filtered by accessible project IDs
-  return await collection.where({ visibility: "private" }).find();
+  return await collection.where({ published: false }).find();
 }
