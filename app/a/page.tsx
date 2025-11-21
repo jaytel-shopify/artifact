@@ -1,20 +1,20 @@
 "use client";
 
-import useSWR, { KeyedMutator } from "swr";
+import useSWR from "swr";
 import { Artifact } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
-import { getArtifactById } from "@/lib/quick-db";
+import { getArtifactById, updateArtifact } from "@/lib/quick-db";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { useArtifactMutations } from "@/hooks/useArtifactMutations";
 import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 
 async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
-  return await getArtifactById(artifactId);
+  const artifact = await getArtifactById(artifactId);
+  return artifact;
 }
 
 export default function Page() {
@@ -28,11 +28,6 @@ export default function Page() {
   );
 
   const { user } = useAuth();
-
-  const { toggleLike, toggleDislike } = useArtifactMutations({
-    artifacts: artifact ? [artifact] : [],
-    mutate: mutate as unknown as KeyedMutator<Artifact[]>,
-  });
 
   // Set header content
   useSetHeader({
@@ -57,17 +52,63 @@ export default function Page() {
   }
 
   const handleLike = async () => {
-    if (!user?.id) return;
-    await toggleLike(artifact.id, user.id);
-    // Refresh the artifact data to update the UI
-    await mutate();
+    if (!user?.id || !artifact) return;
+
+    const currentReactions = artifact.reactions || { like: [], dislike: [] };
+    const likeArray = currentReactions.like || [];
+    const hasLiked = likeArray.includes(user.id);
+
+    // Optimistic update
+    const optimisticArtifact: Artifact = {
+      ...artifact,
+      reactions: {
+        ...currentReactions,
+        like: hasLiked
+          ? likeArray.filter((id) => id !== user.id)
+          : [...likeArray, user.id],
+      },
+    };
+
+    mutate(optimisticArtifact, { revalidate: false });
+
+    try {
+      await updateArtifact(artifact.id, {
+        reactions: optimisticArtifact.reactions,
+      });
+    } catch (error) {
+      console.error("Failed to toggle like:", error);
+      mutate(); // Revert on error
+    }
   };
 
   const handleDislike = async () => {
-    if (!user?.id) return;
-    await toggleDislike(artifact.id, user.id);
-    // Refresh the artifact data to update the UI
-    await mutate();
+    if (!user?.id || !artifact) return;
+
+    const currentReactions = artifact.reactions || { like: [], dislike: [] };
+    const dislikeArray = currentReactions.dislike || [];
+    const hasDisliked = dislikeArray.includes(user.id);
+
+    // Optimistic update
+    const optimisticArtifact: Artifact = {
+      ...artifact,
+      reactions: {
+        ...currentReactions,
+        dislike: hasDisliked
+          ? dislikeArray.filter((id) => id !== user.id)
+          : [...dislikeArray, user.id],
+      },
+    };
+
+    mutate(optimisticArtifact, { revalidate: false });
+
+    try {
+      await updateArtifact(artifact.id, {
+        reactions: optimisticArtifact.reactions,
+      });
+    } catch (error) {
+      console.error("Failed to toggle dislike:", error);
+      mutate(); // Revert on error
+    }
   };
 
   const userLiked = user?.id

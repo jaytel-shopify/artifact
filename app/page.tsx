@@ -42,8 +42,8 @@ export default function Home() {
     mutate,
   } = useSWR<Artifact[]>("public-artifacts", fetchPublicArtifacts, {
     revalidateOnFocus: false,
-    dedupingInterval: 30000,
-    refreshInterval: 60000,
+    // dedupingInterval: 30000,
+    // refreshInterval: 60000,
   });
 
   const createArtifact = async (artifactData: {

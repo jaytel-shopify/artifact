@@ -366,6 +366,7 @@ export class ToggleLikeCommand extends BaseCommand {
     const artifact = this.currentArtifacts.find(
       (a) => a.id === this.artifactId
     );
+
     if (artifact) {
       const currentReactions = artifact.reactions || { like: [], dislike: [] };
       const likeArray = currentReactions.like || [];

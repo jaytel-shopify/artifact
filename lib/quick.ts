@@ -249,6 +249,11 @@ export async function waitForQuick(): Promise<typeof window.quick> {
     throw new Error("Quick is only available in the browser");
   }
 
+  // Production: wait for real Quick SDK
+  if (window.quick) {
+    return window.quick;
+  }
+
   // Check if running in local development
   const hostname = window.location.hostname;
   const isLocal =
@@ -268,11 +273,6 @@ export async function waitForQuick(): Promise<typeof window.quick> {
 
     console.log("[Quick] Using mock implementation for local development");
     return mockQuick as unknown as typeof window.quick;
-  }
-
-  // Production: wait for real Quick SDK
-  if (window.quick) {
-    return window.quick;
   }
 
   return new Promise((resolve) => {
