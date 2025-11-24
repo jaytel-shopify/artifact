@@ -25,7 +25,7 @@ export default function SearchBar() {
         placeholder="Search..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pl-9 bg-[var(--color-background-secondary)] border-[var(--color-border-primary)]"
+        className="pl-9 bg-[var(--background-secondary)] border-[var(--border)]"
       />
     </form>
   );

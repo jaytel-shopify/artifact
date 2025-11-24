@@ -86,18 +86,22 @@ function SortablePageItem({
 
   if (isEditing) {
     return (
-      <div ref={setNodeRef} style={style} className="flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)]">
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)]"
+      >
         <Input
           type="text"
           value={editingName}
           onChange={(e) => onEditNameChange(e.target.value)}
           onBlur={() => !isRenaming && onEditSave()}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') onEditSave();
-            if (e.key === 'Escape') onEditCancel();
+            if (e.key === "Enter") onEditSave();
+            if (e.key === "Escape") onEditCancel();
           }}
-          className="flex-1 bg-[var(--color-background-secondary)] text-[var(--color-text-primary)] border-[var(--color-border-secondary)] focus:border-[var(--color-accent-primary)] focus:ring-[var(--color-accent-primary)]/20"
-          style={{ fontSize: 'var(--font-size-sm)' }}
+          className="flex-1 bg-secondary text-foreground border focus:border-accent focus:ring-accent/20"
+          style={{ fontSize: "var(--font-size-sm)" }}
           disabled={isRenaming}
           autoFocus
         />
@@ -111,15 +115,15 @@ function SortablePageItem({
         ref={setNodeRef}
         style={style}
         className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
-          isActive 
-            ? 'bg-[var(--color-background-tertiary)]' 
-            : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+          isActive
+            ? "bg-tertiary"
+            : "hover:bg-secondary opacity-50 hover:opacity-100"
         }`}
         onClick={onSelect}
       >
-        <span 
-          className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
-          style={{ fontSize: 'var(--font-size-sm)' }}
+        <span
+          className="text-foreground font-[var(--font-weight-normal)] flex-1"
+          style={{ fontSize: "var(--font-size-sm)" }}
         >
           {page.name}
         </span>
@@ -136,15 +140,15 @@ function SortablePageItem({
           {...attributes}
           {...listeners}
           className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-grab active:cursor-grabbing transition-all ${
-            isActive 
-              ? 'bg-[var(--color-background-tertiary)]' 
-              : 'hover:bg-[var(--color-background-secondary)] opacity-50 hover:opacity-100'
+            isActive
+              ? "bg-tertiary"
+              : "hover:bg-secondary opacity-50 hover:opacity-100"
           }`}
           onClick={onSelect}
         >
-          <span 
-            className="text-[var(--color-text-primary)] font-[var(--font-weight-normal)] flex-1"
-            style={{ fontSize: 'var(--font-size-sm)' }}
+          <span
+            className="text-foreground font-[var(--font-weight-normal)] flex-1"
+            style={{ fontSize: "var(--font-size-sm)" }}
             onDoubleClick={(e) => {
               e.stopPropagation();
               onRename();
@@ -155,13 +159,8 @@ function SortablePageItem({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={onRename}>
-          Rename
-        </ContextMenuItem>
-        <ContextMenuItem 
-          variant="destructive"
-          onClick={onDelete}
-        >
+        <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
+        <ContextMenuItem variant="destructive" onClick={onDelete}>
           Delete
         </ContextMenuItem>
       </ContextMenuContent>
@@ -181,7 +180,7 @@ export default function PageNavigationSidebar({
   isReadOnly = false,
 }: PageNavigationSidebarProps) {
   const [editingPageId, setEditingPageId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
+  const [editingName, setEditingName] = useState("");
   const [isRenaming, setIsRenaming] = useState(false);
 
   const sensors = useSensors(
@@ -202,16 +201,16 @@ export default function PageNavigationSidebar({
 
   const handleNameSave = async (pageId: string) => {
     if (!editingName.trim() || !onPageRename) return;
-    
+
     setIsRenaming(true);
     try {
       await onPageRename(pageId, editingName.trim());
       setEditingPageId(null);
-      setEditingName('');
+      setEditingName("");
       toast.success("Page renamed successfully");
     } catch (error) {
       toast.error("Failed to rename page. Please try again.");
-      console.error('Failed to rename page:', error);
+      console.error("Failed to rename page:", error);
     } finally {
       setIsRenaming(false);
     }
@@ -219,7 +218,7 @@ export default function PageNavigationSidebar({
 
   const handleNameCancel = () => {
     setEditingPageId(null);
-    setEditingName('');
+    setEditingName("");
   };
 
   const handleDeletePage = (pageId: string) => {
@@ -228,7 +227,7 @@ export default function PageNavigationSidebar({
       toast.error("Cannot delete the last page");
       return;
     }
-    
+
     onPageDelete?.(pageId);
     toast.success("Page deleted successfully");
   };
@@ -246,15 +245,18 @@ export default function PageNavigationSidebar({
   };
 
   return (
-    <aside 
-      className="bg-[var(--color-background-primary)] border-r border-[var(--color-border-primary)] h-full flex-shrink-0"
-      style={{ width: 'var(--sidebar-width)' }}
+    <aside
+      className="bg-background border-r border h-full flex-shrink-0"
+      style={{ width: "var(--sidebar-width)" }}
     >
       <div className="flex flex-col h-full p-[var(--spacing-2xl)]">
         {/* Pages List */}
         <div className="flex-1 space-y-0 overflow-y-auto">
           {pages.length === 0 ? (
-            <div className="text-[var(--color-text-secondary)] text-center py-[var(--spacing-xl)]" style={{ fontSize: 'var(--font-size-sm)' }}>
+            <div
+              className="text-muted-foreground text-center py-[var(--spacing-xl)]"
+              style={{ fontSize: "var(--font-size-sm)" }}
+            >
               No pages yet
             </div>
           ) : (
@@ -264,7 +266,7 @@ export default function PageNavigationSidebar({
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={pages.map(p => p.id)}
+                items={pages.map((p) => p.id)}
                 strategy={verticalListSortingStrategy}
               >
                 {pages.map((page) => (
@@ -291,11 +293,10 @@ export default function PageNavigationSidebar({
 
         {/* Add New Page Button (hidden in read-only mode) */}
         {!isReadOnly && onPageCreate && (
-          <div className="pt-[var(--spacing-lg)] border-t border-[var(--color-border-primary)] mt-[var(--spacing-lg)]">
+          <div className="pt-[var(--spacing-lg)] border-t border mt-[var(--spacing-lg)]">
             <button
               onClick={onPageCreate}
-              className="flex items-center gap-[var(--spacing-sm)] w-full p-[var(--spacing-sm)] rounded-[var(--radius-md)] text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-background-secondary)] transition-all cursor-pointer"
-              style={{ fontSize: 'var(--font-size-sm)' }}
+              className="flex items-center gap-[var(--spacing-sm)] w-full p-[var(--spacing-sm)] rounded-[var(--radius-md)] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all cursor-pointer foreground{ fontSize)"
             >
               <span className="text-lg">+</span>
               <span>New Page</span>

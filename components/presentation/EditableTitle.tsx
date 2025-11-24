@@ -86,7 +86,7 @@ export default function EditableTitle({
   if (isReadOnly) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-white font-semibold text-base px-2 py-1">
+        <span className="text-foreground font-semibold text-base px-2 py-1">
           {value || "Untitled Project"}
         </span>
       </div>
@@ -111,7 +111,7 @@ export default function EditableTitle({
                 setEditing(false);
               }
             }}
-            className="bg-white/10 border-white/20 text-white focus:bg-white/20 focus:border-white/40 focus:ring-white/30 min-w-[200px]"
+            className="bg-white/10 border-white/20 text-foreground focus:bg-white/20 focus:border-white/40 focus:ring-white/30 min-w-[200px]"
             disabled={saving}
           />
           <Button
@@ -119,7 +119,7 @@ export default function EditableTitle({
             size="icon"
             onClick={() => save(value)}
             disabled={saving}
-            className="h-8 w-8 text-white hover:bg-white/10"
+            className="h-8 w-8 text-foreground hover:bg-white/10"
             aria-label="Save project name"
           >
             <Check className="h-4 w-4" />
@@ -129,12 +129,14 @@ export default function EditableTitle({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-left text-white font-semibold text-base px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="text-left text-foreground font-semibold text-base px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/30"
         >
           <span>{value || "Untitled Project"}</span>
         </button>
       )}
-      {saving && <span className="text-xs text-white/60 ml-2">Saving…</span>}
+      {saving && (
+        <span className="text-xs text-foreground/60 ml-2">Saving…</span>
+      )}
 
       {/* Folder Actions Dropdown */}
       {showFolderActions && (
@@ -143,7 +145,7 @@ export default function EditableTitle({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 w-8 p-0 text-white/60 hover:text-white hover:bg-white/10"
+              className="h-8 w-8 p-0 text-foreground/60 hover:text-foreground hover:bg-white/10"
             >
               <ChevronDown className="h-4 w-4" />
             </Button>

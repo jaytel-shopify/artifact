@@ -86,7 +86,7 @@ export default function ProjectCard({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 hover:bg-black/70 text-white"
+              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background hover:bg-secondary text-foreground"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -113,10 +113,10 @@ export default function ProjectCard({
       {/* Project Info */}
       <CardFooter className="p-4 space-y-2 mt-auto">
         <div className="space-y-1">
-          <h3 className="font-medium text-white line-clamp-1">
+          <h3 className="font-medium text-foreground line-clamp-1">
             {project.name}
           </h3>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Last modified {formatDate(project.updated_at)}
           </p>
         </div>

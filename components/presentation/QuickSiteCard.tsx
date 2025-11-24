@@ -14,8 +14,8 @@ export default function QuickSiteCard({ site }: QuickSiteCardProps) {
       rel="noopener noreferrer"
       className="flex flex-col gap-2 group"
     >
-      <div className="relative aspect-[16/11] bg-[var(--color-background-secondary)] rounded-lg overflow-hidden">
-        <div className="w-full h-full flex items-center justify-center text-[var(--color-text-tertiary)]">
+      <div className="relative aspect-[16/11] bg-card rounded-lg overflow-hidden">
+        <div className="w-full h-full flex items-center justify-center text-foreground">
           <svg
             className="w-6 h-6"
             fill="none"
@@ -31,7 +31,7 @@ export default function QuickSiteCard({ site }: QuickSiteCardProps) {
           </svg>
         </div>
       </div>
-      <h3 className="text-xs font-medium text-white line-clamp-1">
+      <h3 className="text-xs font-medium text-foreground line-clamp-1">
         {site.subdomain}
       </h3>
     </a>

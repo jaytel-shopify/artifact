@@ -74,8 +74,8 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--color-background-primary)]">
-        <p className="text-[var(--color-text-primary)]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
+        <p className="text-[var(--foreground)]">Loading...</p>
       </div>
     );
   }

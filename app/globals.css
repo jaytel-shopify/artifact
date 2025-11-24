@@ -395,8 +395,8 @@
 }
 
 @theme inline {
-  --color-background: var(--color-background-primary);
-  --color-foreground: var(--color-text-primary);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
   --font-sans: var(--font-family-primary);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -434,8 +434,8 @@
 }
 
 body {
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-family-primary);
 }
 
@@ -525,11 +525,11 @@ a:not(:disabled) {
 input[type="range"]::-webkit-slider-thumb,
 input[type="range"]::-moz-range-thumb {
   -webkit-appearance: none;
-  border: 1px solid var(--color-primary);
+  border: 1px solid var(--foreground);
   height: 16px;
   width: 16px;
   border-radius: 50%;
-  background: var(--color-background-primary);
+  background: var(--background);
   cursor: pointer;
   margin-top: -5px;
 }
@@ -539,7 +539,7 @@ input[type="range"]::-moz-range-track {
   width: 100%;
   height: 8px;
   cursor: pointer;
-  background: var(--color-primary);
+  background: var(--foreground);
   border-radius: 50px;
-  border: 1px solid var(--color-background-primary);
+  border: 1px solid var(--background);
 }

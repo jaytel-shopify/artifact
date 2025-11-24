@@ -16,7 +16,7 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
         href={`/a/?id=${artifact.id}`}
         className="after:content-[''] after:absolute after:inset-0"
       >
-        <h3 className="text-xs font-medium text-white line-clamp-1">
+        <h3 className="text-xs font-medium text-foreground line-clamp-1">
           {artifact.name}
         </h3>
       </Link>
