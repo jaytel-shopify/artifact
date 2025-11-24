@@ -52,6 +52,10 @@ export default function ArtifactAdder({
   const [headline, setHeadline] = useState("");
   const [subheadline, setSubheadline] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFileName, setCurrentFileName] = useState("");
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+  const [totalFiles, setTotalFiles] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,20 +78,31 @@ export default function ArtifactAdder({
 
     setError(null);
     setUploading(true);
+    setTotalFiles(files.length);
+    setCurrentFileIndex(0);
+    setUploadProgress(0);
 
     try {
       // Validate all files first (50MB limit)
       for (const file of files) {
-        const validation = validateFile(file, { maxSizeMB: 50 });
+        const validation = validateFile(file, { maxSizeMB: 250 });
         if (!validation.valid) {
           toast.error(validation.error || "File too large");
+          setUploading(false);
           return;
         }
       }
 
-      for (const file of files) {
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setCurrentFileName(file.name);
+        setCurrentFileIndex(i + 1);
+        setUploadProgress(0);
+
         // Upload file to Quick.fs
-        const upResult = await uploadFile(file);
+        const upResult = await uploadFile(file, (progress) => {
+          setUploadProgress(progress.percentage);
+        });
 
         // Determine file type from MIME type
         const type = getArtifactTypeFromMimeType(upResult.mimeType);
@@ -123,6 +138,10 @@ export default function ArtifactAdder({
       toast.error(e.message || "Upload failed. Please try again.");
     } finally {
       setUploading(false);
+      setUploadProgress(0);
+      setCurrentFileName("");
+      setCurrentFileIndex(0);
+      setTotalFiles(0);
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -385,6 +404,50 @@ export default function ArtifactAdder({
               {uploading ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Upload Progress Dialog */}
+      <Dialog open={uploading} onOpenChange={() => {}}>
+        <DialogContent
+          className="w-full max-w-md text-white border-white/10"
+          style={{ backgroundColor: "var(--color-background-secondary)" }}
+          showCloseButton={false}
+        >
+          <DialogHeader>
+            <DialogTitle className="text-white">Uploading Files</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {totalFiles > 1 && (
+              <div className="text-sm text-white/70">
+                File {currentFileIndex} of {totalFiles}
+              </div>
+            )}
+
+            {currentFileName && (
+              <div className="text-sm text-white/90 truncate">
+                {currentFileName}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-white/70">Progress</span>
+                <span className="text-white/90">
+                  {Math.round(uploadProgress)}%
+                </span>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-white transition-all duration-300 ease-out"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </>

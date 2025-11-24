@@ -74,6 +74,7 @@ export type Artifact = {
     >;
   reactions: ArtifactReactions;
   published: boolean;
+  creator_id: string;
   created_at: string;
   updated_at: string;
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { waitForQuick } from "./quick";
+import { compressFile } from "./compress-video";
 
 /**
  * Quick.fs File Storage Helper
@@ -66,6 +67,12 @@ export async function uploadFile(
 
   if (file.type.startsWith("image/")) {
     file = await resizeImage(file);
+  } else if (file.type.startsWith("video/")) {
+    file = await compressFile(file, {
+      onProgress: (progress) => {
+        onProgress?.(progress);
+      },
+    });
   }
 
   const result = await quick.fs.uploadFile(file, {
