@@ -4,20 +4,53 @@ import { waitForQuick } from "./quick";
 
 /**
  * Quick.fs File Storage Helper
- * 
+ *
  * Provides helper functions for uploading files to Quick's storage system.
  * Quick.fs automatically handles file storage and returns accessible URLs.
  */
 
 export interface UploadResult {
-  url: string;        // Relative URL path
-  fullUrl: string;    // Full absolute URL
-  size: number;       // File size in bytes
-  mimeType: string;   // MIME type (e.g., "image/png")
+  url: string; // Relative URL path
+  fullUrl: string; // Full absolute URL
+  size: number; // File size in bytes
+  mimeType: string; // MIME type (e.g., "image/png")
 }
 
 export interface UploadProgress {
-  percentage: number;  // 0-100
+  percentage: number; // 0-100
+}
+
+const MAX_IMAGE_SIZE = 2500;
+
+async function resizeImage(file: File): Promise<File> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.addEventListener("load", async () => {
+      const longestAxis = Math.max(image.width, image.height);
+
+      if (longestAxis <= MAX_IMAGE_SIZE) {
+        resolve(file);
+        return;
+      }
+
+      const scale = MAX_IMAGE_SIZE / longestAxis;
+      const newWidth = Math.round(image.width * scale);
+      const newHeight = Math.round(image.height * scale);
+      const resized = await createImageBitmap(image, {
+        resizeWidth: newWidth,
+        resizeHeight: newHeight,
+      });
+      const canvas = new OffscreenCanvas(newWidth, newHeight);
+      canvas.getContext("bitmaprenderer")?.transferFromImageBitmap(resized);
+      const blob = await canvas.convertToBlob({
+        type: file.type,
+        quality: 0.9,
+      });
+      const resizedFile = new File([blob], file.name, { type: file.type });
+      resolve(resizedFile);
+    });
+    image.src = URL.createObjectURL(file);
+  });
 }
 
 /**
@@ -29,16 +62,20 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const quick = await waitForQuick();
 
-  console.log('Uploading file to Quick.fs:', file.name, file.type, file.size);
+  console.log("Uploading file to Quick.fs:", file.name, file.type, file.size);
+
+  if (file.type.startsWith("image/")) {
+    file = await resizeImage(file);
+  }
 
   const result = await quick.fs.uploadFile(file, {
     onProgress: (progress) => {
-      console.log('Upload progress:', progress);
+      console.log("Upload progress:", progress);
       onProgress?.(progress);
     },
   });
 
-  console.log('Quick.fs upload result:', result);
+  console.log("Quick.fs upload result:", result);
 
   // Quick.fs returns the file data directly (not wrapped in { files: [...] })
   return {
@@ -62,18 +99,30 @@ export async function uploadFiles(
 ): Promise<UploadResult[]> {
   const quick = await waitForQuick();
 
-  console.log('Uploading multiple files to Quick.fs:', files.map(f => f.name));
+  files = await Promise.all(
+    files.map(async (file) => {
+      if (file.type.startsWith("image/")) {
+        return await resizeImage(file);
+      }
+      return file;
+    })
+  );
+
+  console.log(
+    "Uploading multiple files to Quick.fs:",
+    files.map((f) => f.name)
+  );
 
   const result = await quick.fs.upload(files, {
     strategy: options?.strategy || "hybrid",
   });
 
-  console.log('Quick.fs batch upload result:', result);
+  console.log("Quick.fs batch upload result:", result);
 
   // Quick.fs batch upload might return differently
   // If it returns an array directly, use it
   if (Array.isArray(result)) {
-    return result.map(r => ({
+    return result.map((r) => ({
       url: r.url,
       fullUrl: r.fullUrl,
       size: r.size,
@@ -86,8 +135,8 @@ export async function uploadFiles(
     return result.files;
   }
 
-  console.error('Invalid Quick.fs batch response:', result);
-  throw new Error('Quick.fs did not return valid file data');
+  console.error("Invalid Quick.fs batch response:", result);
+  throw new Error("Quick.fs did not return valid file data");
 }
 
 /**
@@ -96,8 +145,16 @@ export async function uploadFiles(
  */
 export async function uploadFilesSequentially(
   files: File[],
-  onFileProgress?: (fileIndex: number, fileName: string, progress: UploadProgress) => void,
-  onFileComplete?: (fileIndex: number, fileName: string, result: UploadResult) => void
+  onFileProgress?: (
+    fileIndex: number,
+    fileName: string,
+    progress: UploadProgress
+  ) => void,
+  onFileComplete?: (
+    fileIndex: number,
+    fileName: string,
+    result: UploadResult
+  ) => void
 ): Promise<UploadResult[]> {
   const results: UploadResult[] = [];
 
@@ -118,13 +175,15 @@ export async function uploadFilesSequentially(
 /**
  * Determine artifact type based on MIME type
  */
-export function getArtifactTypeFromMimeType(mimeType: string): "image" | "video" {
+export function getArtifactTypeFromMimeType(
+  mimeType: string
+): "image" | "video" {
   if (mimeType.startsWith("image/")) {
     return "image";
   } else if (mimeType.startsWith("video/")) {
     return "video";
   }
-  
+
   // Default to image for unknown types
   return "image";
 }
@@ -170,4 +229,3 @@ export function formatFileSize(bytes: number): string {
 
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
 }
-

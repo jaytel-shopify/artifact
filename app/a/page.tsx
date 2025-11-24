@@ -29,22 +29,30 @@ export default function Page() {
 
   const { user } = useAuth();
 
+  const handleSaveToProject = async () => {};
+
   // Set header content
   useSetHeader({
     left: (
+      <Link href="/">
+        <Button variant="outline" size="icon" aria-label="Back">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+      </Link>
+    ),
+    right: (
       <>
-        <Link href="/">
-          <Button variant="outline" size="icon" aria-label="Back">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <Button variant="outline" className="gap-2" disabled>
+        <Button
+          variant="outline"
+          className="gap-2"
+          onClick={handleSaveToProject}
+        >
           <Save className="h-4 w-4" />
           Save to Project
         </Button>
+        <DarkModeToggle />
       </>
     ),
-    right: <DarkModeToggle />,
   });
 
   if (!artifact) {
