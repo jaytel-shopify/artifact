@@ -356,91 +356,106 @@ function PresentationPageInner({
 
   // Show loading state - but we still need to render header even when loading
   // Set header content - must be called before any return statements
-  useSetHeader({
-    left: !presentationMode ? (
-      <>
-        {/* Back Button */}
-        <Link href={backUrl}>
-          <Button variant="outline" size="icon" aria-label="Back">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+  useSetHeader(
+    {
+      left: !presentationMode ? (
+        <>
+          {/* Back Button */}
+          <Link href={backUrl}>
+            <Button variant="outline" size="icon" aria-label="Back">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
 
-        {/* Sidebar Toggle */}
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setSidebarOpen((prev) => !prev)}
-          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-        >
-          {sidebarOpen ? (
-            <PanelLeftClose className="h-4 w-4" />
-          ) : (
-            <PanelLeft className="h-4 w-4" />
-          )}
-        </Button>
-
-        {/* Add Artifact Button */}
-        {project?.id && currentPageId && canEdit && (
-          <ArtifactAdder
-            projectId={project.id}
-            pageId={currentPageId}
-            onAdded={refetchArtifacts}
-            createArtifact={createArtifact}
-          />
-        )}
-
-        {/* Column Controls */}
-        <ColumnControl
-          columns={columns}
-          onColumnsChange={handleSetColumns}
-          fitMode={fitMode}
-          onFitModeChange={handleSetFitMode}
-        />
-      </>
-    ) : undefined,
-    center:
-      !presentationMode && project ? (
-        <EditableTitle
-          initialValue={project.name || "Untitled Project"}
-          projectId={project.id}
-          onUpdated={canEdit ? handleProjectNameUpdate : undefined}
-          isReadOnly={!canEdit}
-          folders={userFolders}
-          currentFolderId={project.folder_id}
-          onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
-          onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
-        />
-      ) : undefined,
-    right: !presentationMode ? (
-      <>
-        {/* Read-Only Badge */}
-        {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
-
-        {/* Sync Status Indicator */}
-        <SyncStatusIndicator
-          isPresenceReady={isPresenceReady}
-          getUsers={getUsers}
-          onFollowUser={handleFollowUser}
-          followingUserId={followedUser?.socketId || null}
-        />
-
-        {/* Share Button */}
-        {project && user && (
+          {/* Sidebar Toggle */}
           <Button
             variant="outline"
-            className="gap-2"
-            onClick={() => setShareDialogOpen(true)}
+            size="icon"
+            onClick={() => setSidebarOpen((prev) => !prev)}
+            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
           >
-            <Share className="h-4 w-4" />
-            Share
+            {sidebarOpen ? (
+              <PanelLeftClose className="h-4 w-4" />
+            ) : (
+              <PanelLeft className="h-4 w-4" />
+            )}
           </Button>
-        )}
 
-        <DarkModeToggle />
-      </>
-    ) : undefined,
-  });
+          {/* Add Artifact Button */}
+          {project?.id && currentPageId && canEdit && (
+            <ArtifactAdder
+              projectId={project.id}
+              pageId={currentPageId}
+              onAdded={refetchArtifacts}
+              createArtifact={createArtifact}
+            />
+          )}
+
+          {/* Column Controls */}
+          <ColumnControl
+            columns={columns}
+            onColumnsChange={handleSetColumns}
+            fitMode={fitMode}
+            onFitModeChange={handleSetFitMode}
+          />
+        </>
+      ) : undefined,
+      center:
+        !presentationMode && project ? (
+          <EditableTitle
+            initialValue={project.name || "Untitled Project"}
+            projectId={project.id}
+            onUpdated={canEdit ? handleProjectNameUpdate : undefined}
+            isReadOnly={!canEdit}
+            folders={userFolders}
+            currentFolderId={project.folder_id}
+            onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
+            onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
+          />
+        ) : undefined,
+      right: !presentationMode ? (
+        <>
+          {/* Read-Only Badge */}
+          {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
+
+          {/* Sync Status Indicator */}
+          <SyncStatusIndicator
+            isPresenceReady={isPresenceReady}
+            getUsers={getUsers}
+            onFollowUser={handleFollowUser}
+            followingUserId={followedUser?.socketId || null}
+          />
+
+          {/* Share Button */}
+          {project && user && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => setShareDialogOpen(true)}
+            >
+              <Share className="h-4 w-4" />
+              Share
+            </Button>
+          )}
+
+          <DarkModeToggle />
+        </>
+      ) : undefined,
+    },
+    // Add dependencies that affect header content
+    [
+      presentationMode,
+      sidebarOpen,
+      project,
+      canEdit,
+      isReadOnly,
+      isCollaborator,
+      isPresenceReady,
+      followedUser,
+      user,
+      currentPageId,
+    ]
+  );
 
   if (isPageLoading) {
     return null; // AnimatePresence will handle the fade
@@ -467,7 +482,7 @@ function PresentationPageInner({
               sidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
             style={{
-              transition: "transform 400ms var(--spring-elegant-easing-light)",
+              transition: "translate 400ms var(--spring-elegant-easing-light)",
             }}
           >
             <PageNavigationSidebar

@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect, useRef } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useLayoutEffect, useRef } from "react";
 
 interface HeaderContent {
   left?: ReactNode;
@@ -34,7 +34,8 @@ export function useHeader() {
 }
 
 // Hook for pages to set their header content
-export function useSetHeader(content: HeaderContent) {
+// Optional deps parameter allows specifying when content should update
+export function useSetHeader(content: HeaderContent, deps?: React.DependencyList) {
   const { setHeaderContent } = useHeader();
   const contentRef = useRef(content);
   
@@ -53,6 +54,7 @@ export function useSetHeader(content: HeaderContent) {
     return () => {
       setHeaderContent({});
     };
-    // Dependencies are the stable booleans, not the content object itself
-  }, [hasLeft, hasCenter, hasRight, setHeaderContent]);
+    // If deps provided, use those; otherwise use the structure booleans
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps || [hasLeft, hasCenter, hasRight, setHeaderContent]);
 }
