@@ -665,7 +665,12 @@ class Collection {
         Object.entries(query).every(([k, v]) => item[k] === v)
       );
 
-    const createQuery = (orderField?: string, orderDirection?: string): any => {
+    const createQuery = (
+      orderField?: string,
+      orderDirection?: string,
+      limitN?: number,
+      offsetN?: number
+    ): any => {
       const sort = (items: any[]) => {
         if (!orderField) return items;
 
@@ -682,17 +687,26 @@ class Collection {
         });
       };
 
+      const applyPagination = (items: any[]) => {
+        let result = items;
+        if (offsetN !== undefined) {
+          result = result.slice(offsetN);
+        }
+        if (limitN !== undefined) {
+          result = result.slice(0, limitN);
+        }
+        return result;
+      };
+
       return {
-        find: async () => sort(filter(db[this.name])),
+        find: async () => applyPagination(sort(filter(db[this.name]))),
         orderBy: (field: string, direction: string = "asc") =>
-          createQuery(field, direction),
-        limit: (n: number) => ({
-          find: async () => sort(filter(db[this.name])).slice(0, n),
-          orderBy: (field: string, direction: string = "asc") =>
-            createQuery(field, direction),
-          select: (fields: string[]) => createQuery(orderField, orderDirection),
-        }),
-        select: (fields: string[]) => createQuery(orderField, orderDirection),
+          createQuery(field, direction, limitN, offsetN),
+        limit: (n: number) => createQuery(orderField, orderDirection, n, offsetN),
+        offset: (n: number) =>
+          createQuery(orderField, orderDirection, limitN, n),
+        select: (fields: string[]) =>
+          createQuery(orderField, orderDirection, limitN, offsetN),
       };
     };
 
@@ -714,13 +728,25 @@ class Collection {
       });
     };
 
-    const createQuery = (): any => ({
-      find: async () => sort(db[this.name]),
-      where: (query: any) => this.where(query).orderBy(field, direction),
-      limit: (n: number) => ({
-        find: async () => sort(db[this.name]).slice(0, n),
-      }),
-    });
+    const createQuery = (limitN?: number, offsetN?: number): any => {
+      const applyPagination = (items: any[]) => {
+        let result = items;
+        if (offsetN !== undefined) {
+          result = result.slice(offsetN);
+        }
+        if (limitN !== undefined) {
+          result = result.slice(0, limitN);
+        }
+        return result;
+      };
+
+      return {
+        find: async () => applyPagination(sort(db[this.name])),
+        where: (query: any) => this.where(query).orderBy(field, direction),
+        limit: (n: number) => createQuery(n, offsetN),
+        offset: (n: number) => createQuery(limitN, n),
+      };
+    };
 
     return createQuery();
   }
