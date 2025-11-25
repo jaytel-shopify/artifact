@@ -9,13 +9,13 @@ export default function ViewToggle() {
   const isProjects = pathname === "/projects";
 
   return (
-    <div className="grid grid-cols-2 grid-rows-[100%] bg-primary rounded-2xl p-0.5 h-10">
+    <div className="grid grid-cols-2 grid-rows-[100%] bg-primary rounded-button p-0.5 h-10 border border-border">
       <div
-        className={`bg-foreground rounded-xl col-start-1 col-span-1 row-start-1 row-span-1 transition-transform duration-200 ${isExplore ? "translate-x-0" : "translate-x-full"}`}
+        className={`bg-foreground rounded-button-inner col-start-1 col-span-1 row-start-1 row-span-1 transition-transform duration-200 ${isExplore ? "translate-x-0" : "translate-x-full"}`}
       ></div>
       <Link
         href="/"
-        className={`relative flex items-center justify-center px-3 rounded-xl text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-1 ${
+        className={`relative flex items-center justify-center px-3 rounded-button-inner text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-1 ${
           isExplore ? "text-primary" : "text-foreground hover:text-foreground"
         }`}
       >
@@ -23,7 +23,7 @@ export default function ViewToggle() {
       </Link>
       <Link
         href="/projects"
-        className={`relative flex items-center justify-center px-3 rounded-xl text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-2 ${
+        className={`relative flex items-center justify-center px-3 rounded-button-inner text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-2 ${
           isProjects ? "text-primary" : "text-foreground hover:text-foreground"
         }`}
       >

@@ -54,7 +54,7 @@ export default function FolderCard({
           prefetch={false}
           className="block"
         >
-          <div className="group relative bg-card hover:bg-accent/50 border rounded-2xl p-4 cursor-pointer transition-all hover:shadow-md">
+          <div className="group relative bg-card hover:bg-accent/50 rounded-card p-4 cursor-pointer transition-all hover:shadow-md">
             {/* Actions Menu (visible on hover) */}
             <div className="flex items-start justify-end">
               <DropdownMenu>

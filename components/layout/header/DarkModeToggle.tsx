@@ -24,7 +24,7 @@ export default function DarkModeToggle() {
 
   return (
     <Button
-      variant="outline"
+      variant="default"
       size="icon"
       onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
       aria-label="Toggle theme"
@@ -37,4 +37,3 @@ export default function DarkModeToggle() {
     </Button>
   );
 }
-

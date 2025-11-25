@@ -14,7 +14,7 @@ export default function QuickSiteCard({ site }: QuickSiteCardProps) {
       rel="noopener noreferrer"
       className="flex flex-col gap-2 group"
     >
-      <div className="relative aspect-[16/11] bg-card rounded-lg overflow-hidden">
+      <div className="relative aspect-[16/11] bg-card rounded-card-inner overflow-hidden">
         <div className="w-full h-full flex items-center justify-center text-foreground">
           <svg
             className="w-6 h-6"
