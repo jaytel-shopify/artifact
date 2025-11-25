@@ -9,23 +9,22 @@ export default function ViewToggle() {
   const isProjects = pathname === "/projects";
 
   return (
-    <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
+    <div className="grid grid-cols-2 grid-rows-[100%] bg-primary rounded-2xl p-0.5 h-10">
+      <div
+        className={`bg-foreground rounded-xl col-start-1 col-span-1 row-start-1 row-span-1 transition-transform duration-200 ${isExplore ? "translate-x-0" : "translate-x-full"}`}
+      ></div>
       <Link
         href="/"
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          isExplore
-            ? "bg-background text-foreground"
-            : "text-[var(--secondary-foreground)] hover:text-foreground"
+        className={`relative flex items-center justify-center px-3 rounded-xl text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-1 ${
+          isExplore ? "text-primary" : "text-foreground hover:text-foreground"
         }`}
       >
         Explore
       </Link>
       <Link
         href="/projects"
-        className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          isProjects
-            ? "bg-background text-foreground"
-            : "text-[var(--secondary-foreground)] hover:text-foreground"
+        className={`relative flex items-center justify-center px-3 rounded-xl text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-2 ${
+          isProjects ? "text-primary" : "text-foreground hover:text-foreground"
         }`}
       >
         Projects

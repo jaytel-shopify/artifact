@@ -89,9 +89,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <HeaderProvider>
-              <GlobalLayout>
-                {children}
-              </GlobalLayout>
+              <GlobalLayout>{children}</GlobalLayout>
             </HeaderProvider>
             <Toaster />
           </ThemeProvider>

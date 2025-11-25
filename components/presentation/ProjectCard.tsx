@@ -12,7 +12,6 @@ import {
 import { MoreVertical } from "lucide-react";
 import ArtifactThumbnail from "./ArtifactThumbnail";
 import type { Artifact } from "@/types";
-import { SPRING_TRANSITIONS } from "@/lib/easings";
 
 interface ProjectCoverData {
   id: string;
@@ -73,7 +72,7 @@ export default function ProjectCard({
 
   const cardContent = (
     <Card
-      className="group relative hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden aspect-[11/10] flex flex-col outline-none border-0"
+      className="group relative hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden flex flex-col outline-none border-0"
       style={{
         transition: "all 500ms var(--spring-elegant-easing-light)",
       }}
