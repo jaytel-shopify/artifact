@@ -21,7 +21,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
         center={headerContent.center}
         right={headerContent.right}
       />
-      <main className="flex-1 min-h-0 overflow-auto">{children}</main>
+      <main className="flex-1 min-h-0 pt-20">{children}</main>
     </div>
   );
 }

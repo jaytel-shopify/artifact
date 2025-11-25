@@ -18,14 +18,17 @@ export default function SearchBar() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="relative w-64">
+    <form
+      onSubmit={handleSubmit}
+      className="relative w-64 h-10 bg-primary rounded-button"
+    >
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
       <Input
         type="search"
         placeholder="Search..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pl-9 bg-secondary border border-border rounded-button"
+        className="pl-9 border-[0.5px] border-border h-full rounded-button"
       />
     </form>
   );

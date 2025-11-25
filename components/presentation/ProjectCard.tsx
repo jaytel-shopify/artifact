@@ -56,7 +56,6 @@ export default function ProjectCard({
   onClick,
   onDelete,
   menuItems,
-  onHover,
 }: ProjectCardProps) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -72,11 +71,10 @@ export default function ProjectCard({
 
   const cardContent = (
     <Card
-      className="group relative hover:shadow-md cursor-pointer hover:scale-105 overflow-hidden flex flex-col outline-none border-0"
+      className="group relative cursor-pointer overflow-hidden flex flex-col outline-none border-[0.5px] border-border hover:bg-accent/50"
       style={{
         transition: "all 500ms var(--spring-elegant-easing-light)",
       }}
-      onMouseEnter={onHover}
     >
       {/* Three dots menu button */}
       {menuItems && (

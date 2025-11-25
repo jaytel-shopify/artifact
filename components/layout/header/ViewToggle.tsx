@@ -9,7 +9,7 @@ export default function ViewToggle() {
   const isProjects = pathname === "/projects";
 
   return (
-    <div className="grid grid-cols-2 grid-rows-[100%] bg-primary rounded-button p-0.5 h-10 border border-border">
+    <div className="grid grid-cols-2 grid-rows-[100%] bg-primary rounded-button p-0.5 h-10 border-[0.5px] border-border">
       <div
         className={`bg-foreground rounded-button-inner col-start-1 col-span-1 row-start-1 row-span-1 transition-transform duration-200 ${isExplore ? "translate-x-0" : "translate-x-full"}`}
       ></div>
