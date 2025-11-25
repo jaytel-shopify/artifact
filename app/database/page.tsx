@@ -464,12 +464,12 @@ export default function DatabaseViewerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-white p-8">
+      <div className="min-h-screen bg-background text-foreground p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-blue-400">
+          <h1 className="text-3xl font-bold mb-8 text-primary">
             🗄️ Database Viewer
           </h1>
-          <div className="text-center py-20 text-xl text-neutral-400">
+          <div className="text-center py-20 text-xl text-muted-foreground">
             Loading database...
           </div>
         </div>
@@ -479,14 +479,14 @@ export default function DatabaseViewerPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-white p-8">
+      <div className="min-h-screen bg-background text-foreground p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-blue-400">
+          <h1 className="text-3xl font-bold mb-8 text-primary">
             🗄️ Database Viewer
           </h1>
-          <div className="bg-red-950 border border-red-800 rounded-lg p-6">
-            <h2 className="text-xl font-bold text-red-400 mb-2">Error</h2>
-            <p className="text-red-300">{error}</p>
+          <div className="bg-destructive/10 border border-destructive rounded-lg p-6">
+            <h2 className="text-xl font-bold text-destructive mb-2">Error</h2>
+            <p className="text-destructive/80">{error}</p>
           </div>
         </div>
       </div>
@@ -496,15 +496,15 @@ export default function DatabaseViewerPage() {
   const analysis = analyzeRelationships();
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4 text-blue-400">
+        <h1 className="text-3xl font-bold mb-4 text-primary">
           🗄️ Database Viewer
         </h1>
 
         {currentUser && (
-          <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4 mb-6">
-            <div className="text-sm text-neutral-400">
+          <div className="bg-card border border-border rounded-lg p-4 mb-6">
+            <div className="text-sm text-muted-foreground">
               <strong>👤 Logged in as:</strong> {currentUser.fullName} (
               {currentUser.email})
             </div>
@@ -514,37 +514,37 @@ export default function DatabaseViewerPage() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={loadData}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-chart-1 hover:bg-chart-1/80 rounded-lg font-medium transition-colors"
           >
             🔄 Refresh
           </button>
           <button
             onClick={copyToClipboard}
-            className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
           >
             📋 Copy to Clipboard
           </button>
           <button
             onClick={downloadJSON}
-            className="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
           >
             💾 Download JSON
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-neutral-800">
+        <div className="flex gap-2 mb-6 border-b border-border">
           <button
             onClick={() => setActiveTab("relationships")}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === "relationships"
-                ? "text-blue-400 border-b-2 border-blue-400"
-                : "text-neutral-400 hover:text-neutral-200"
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             🔗 Relationships & Access
             {analysis.stats.totalIssues > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-red-900 text-red-300 rounded-full">
+              <span className="ml-2 px-2 py-0.5 text-xs bg-destructive/20 text-destructive rounded-full">
                 {analysis.stats.totalIssues}
               </span>
             )}
@@ -553,8 +553,8 @@ export default function DatabaseViewerPage() {
             onClick={() => setActiveTab("raw")}
             className={`px-6 py-3 font-medium transition-colors ${
               activeTab === "raw"
-                ? "text-blue-400 border-b-2 border-blue-400"
-                : "text-neutral-400 hover:text-neutral-200"
+                ? "text-primary border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             📊 Raw Data
@@ -565,39 +565,39 @@ export default function DatabaseViewerPage() {
           <div className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-                <div className="text-sm text-neutral-400 mb-2">Total Resources</div>
-                <div className="text-3xl font-bold text-blue-400">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-sm text-muted-foreground mb-2">Total Resources</div>
+                <div className="text-3xl font-bold text-primary">
                   {analysis.stats.totalProjects + analysis.stats.totalFolders}
                 </div>
-                <div className="text-xs text-neutral-500 mt-1">
+                <div className="text-xs text-muted-foreground mt-1">
                   {analysis.stats.totalProjects} projects, {analysis.stats.totalFolders} folders
                 </div>
               </div>
-              <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-                <div className="text-sm text-neutral-400 mb-2">With Access Control</div>
-                <div className="text-3xl font-bold text-green-400">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-sm text-muted-foreground mb-2">With Access Control</div>
+                <div className="text-3xl font-bold text-chart-2">
                   {analysis.stats.projectsWithAccess + analysis.stats.foldersWithAccess}
                 </div>
-                <div className="text-xs text-neutral-500 mt-1">
+                <div className="text-xs text-muted-foreground mt-1">
                   {analysis.stats.projectsWithAccess} projects, {analysis.stats.foldersWithAccess} folders
                 </div>
               </div>
-              <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-                <div className="text-sm text-neutral-400 mb-2">Access Entries</div>
-                <div className="text-3xl font-bold text-purple-400">
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-sm text-muted-foreground mb-2">Access Entries</div>
+                <div className="text-3xl font-bold text-chart-4">
                   {analysis.stats.totalAccessEntries}
                 </div>
-                <div className="text-xs text-neutral-500 mt-1">
+                <div className="text-xs text-muted-foreground mt-1">
                   {analysis.stats.orphanedEntries} orphaned
                 </div>
               </div>
-              <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-4">
-                <div className="text-sm text-neutral-400 mb-2">Issues Found</div>
-                <div className={`text-3xl font-bold ${analysis.stats.totalIssues > 0 ? 'text-red-400' : 'text-green-400'}`}>
+              <div className="bg-card border border-border rounded-lg p-4">
+                <div className="text-sm text-muted-foreground mb-2">Issues Found</div>
+                <div className={`text-3xl font-bold ${analysis.stats.totalIssues > 0 ? 'text-destructive' : 'text-chart-2'}`}>
                   {analysis.stats.totalIssues}
                 </div>
-                <div className="text-xs text-neutral-500 mt-1">
+                <div className="text-xs text-muted-foreground mt-1">
                   {analysis.stats.totalIssues === 0 ? 'All good!' : 'Need attention'}
                 </div>
               </div>
@@ -605,18 +605,18 @@ export default function DatabaseViewerPage() {
 
             {/* Global Actions */}
             {analysis.orphanedAccess.length > 0 && (
-              <div className="bg-orange-950 border border-orange-800 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-orange-200 mb-3">🔧 Global Actions</h3>
+              <div className="bg-chart-5/10 border border-chart-5 rounded-lg p-6">
+                <h3 className="text-lg font-bold text-chart-5 mb-3">🔧 Global Actions</h3>
                 <div className="flex gap-3 flex-wrap">
                   <button
                     onClick={deleteOrphanedAccess}
                     disabled={fixing}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+                    className="px-4 py-2 bg-destructive hover:bg-destructive/80 disabled:bg-muted disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
                   >
                     {fixing ? "⏳ Deleting..." : "🗑️ Delete All Orphaned Entries"}
                   </button>
                 </div>
-                <p className="text-sm text-orange-300 mt-3">
+                <p className="text-sm text-chart-5/80 mt-3">
                   This will remove {analysis.orphanedAccess.length} orphaned access entries that point to deleted resources.
                 </p>
               </div>
@@ -624,16 +624,16 @@ export default function DatabaseViewerPage() {
 
             {/* Fix Results */}
             {fixResults.length > 0 && (
-              <div className="bg-neutral-900 border border-neutral-800 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-white mb-3">📋 Results</h3>
-                <div className="bg-neutral-950 rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono">
+              <div className="bg-card border border-border rounded-lg p-6">
+                <h3 className="text-lg font-bold text-foreground mb-3">📋 Results</h3>
+                <div className="bg-secondary rounded-lg p-4 max-h-96 overflow-y-auto">
+                  <pre className="text-sm text-secondary-foreground whitespace-pre-wrap font-mono">
                     {fixResults.join("\n")}
                   </pre>
                 </div>
                 <button
                   onClick={() => setFixResults([])}
-                  className="mt-3 px-4 py-2 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm"
+                  className="mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm"
                 >
                   Clear Results
                 </button>
@@ -642,33 +642,33 @@ export default function DatabaseViewerPage() {
 
             {/* Orphaned Access Entries */}
             {analysis.orphanedAccess.length > 0 && (
-              <div className="bg-red-950 border border-red-800 rounded-lg overflow-hidden">
-                <div className="bg-red-900 px-6 py-4">
-                  <h2 className="text-xl font-bold text-red-200">
+              <div className="bg-destructive/10 border border-destructive rounded-lg overflow-hidden">
+                <div className="bg-destructive/20 px-6 py-4">
+                  <h2 className="text-xl font-bold text-destructive">
                     ⚠️ Orphaned Access Entries ({analysis.orphanedAccess.length})
                   </h2>
-                  <p className="text-sm text-red-300 mt-1">
+                  <p className="text-sm text-destructive/80 mt-1">
                     These access entries point to resources that no longer exist
                   </p>
                 </div>
                 <div className="p-6 space-y-3">
                   {analysis.orphanedAccess.map((entry) => (
-                    <div key={entry.id} className="bg-neutral-950 border border-red-800 rounded-lg p-4">
+                    <div key={entry.id} className="bg-background border border-destructive rounded-lg p-4">
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <span className="text-sm font-bold text-red-400">
+                          <span className="text-sm font-bold text-destructive">
                             {entry.resource_type === "project" ? "📊" : "📁"} {entry.resource_type}
                           </span>
-                          <span className="ml-2 text-xs text-neutral-500">ID: {entry.resource_id}</span>
+                          <span className="ml-2 text-xs text-muted-foreground">ID: {entry.resource_id}</span>
                         </div>
-                        <span className="px-2 py-1 text-xs bg-neutral-800 text-neutral-300 rounded">
+                        <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded">
                           {entry.access_level}
                         </span>
                       </div>
-                      <div className="text-sm text-neutral-300">
+                      <div className="text-sm text-foreground">
                         <strong>User:</strong> {entry.user_email}
                       </div>
-                      <div className="text-xs text-neutral-500 mt-1">
+                      <div className="text-xs text-muted-foreground mt-1">
                         Granted by: {entry.granted_by} • Created: {new Date(entry.created_at).toLocaleDateString()}
                       </div>
                     </div>
@@ -689,28 +689,28 @@ export default function DatabaseViewerPage() {
                     key={resource.resource.id}
                     className={`border rounded-lg overflow-hidden ${
                       resource.issues.length > 0
-                        ? "bg-yellow-950 border-yellow-800"
-                        : "bg-neutral-900 border-neutral-800"
+                        ? "bg-chart-5/10 border-chart-5"
+                        : "bg-card border-border"
                     }`}
                   >
                     <div
                       className={`px-6 py-4 ${
-                        resource.issues.length > 0 ? "bg-yellow-900" : "bg-neutral-800"
+                        resource.issues.length > 0 ? "bg-chart-5/20" : "bg-secondary"
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                             {resource.resourceType === "project" ? "📊" : "📁"} {resource.resource.name}
-                            <span className="text-sm font-normal text-neutral-400">
+                            <span className="text-sm font-normal text-muted-foreground">
                               ({resource.resourceType})
                             </span>
                           </h3>
-                          <div className="text-sm text-neutral-400 mt-1">
+                          <div className="text-sm text-muted-foreground mt-1">
                             Creator: {resource.resource.creator_id} • Created: {new Date(resource.resource.created_at).toLocaleDateString()}
                           </div>
                         </div>
-                        <div className="text-sm text-neutral-400">
+                        <div className="text-sm text-muted-foreground">
                           {resource.accessEntries.length} user{resource.accessEntries.length !== 1 ? 's' : ''}
                         </div>
                       </div>
@@ -723,8 +723,8 @@ export default function DatabaseViewerPage() {
                               key={idx}
                               className={`text-sm px-3 py-2 rounded flex justify-between items-center ${
                                 issue.severity === "error"
-                                  ? "bg-red-900 text-red-200"
-                                  : "bg-yellow-900 text-yellow-200"
+                                  ? "bg-destructive/20 text-destructive"
+                                  : "bg-chart-5/20 text-chart-5"
                               }`}
                             >
                               <span>
@@ -741,7 +741,7 @@ export default function DatabaseViewerPage() {
                                     )
                                   }
                                   disabled={fixing}
-                                  className="ml-3 px-3 py-1 bg-green-600 hover:bg-green-700 disabled:bg-neutral-700 disabled:cursor-not-allowed rounded text-xs font-medium transition-colors"
+                                  className="ml-3 px-3 py-1 bg-chart-2 hover:bg-chart-2/80 disabled:bg-muted disabled:cursor-not-allowed rounded text-xs font-medium transition-colors"
                                 >
                                   {fixing ? "⏳" : "Fix"}
                                 </button>
@@ -759,11 +759,11 @@ export default function DatabaseViewerPage() {
                           {resource.accessEntries.map((entry) => (
                             <div
                               key={entry.id}
-                              className="bg-neutral-950 border border-neutral-800 rounded-lg p-4 flex justify-between items-center gap-4"
+                              className="bg-background border border-border rounded-lg p-4 flex justify-between items-center gap-4"
                             >
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-white truncate">{entry.user_email}</div>
-                                <div className="text-sm text-neutral-400 mt-1">
+                                <div className="font-medium text-foreground truncate">{entry.user_email}</div>
+                                <div className="text-sm text-muted-foreground mt-1">
                                   Granted by: {entry.granted_by} • {new Date(entry.created_at).toLocaleDateString()}
                                 </div>
                               </div>
@@ -779,12 +779,12 @@ export default function DatabaseViewerPage() {
                                     );
                                   }}
                                   disabled={fixing}
-                                  className={`px-3 py-1 text-sm font-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  className={`px-3 py-1 text-sm font-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
                                     entry.access_level === "owner"
-                                      ? "bg-green-900 text-green-200 border-green-700"
+                                      ? "bg-chart-2/20 text-chart-2 border-chart-2"
                                       : entry.access_level === "editor"
-                                      ? "bg-blue-900 text-blue-200 border-blue-700"
-                                      : "bg-neutral-700 text-neutral-200 border-neutral-600"
+                                      ? "bg-chart-1/20 text-chart-1 border-chart-1"
+                                      : "bg-muted text-muted-foreground border-border"
                                   }`}
                                 >
                                   <option value="viewer">viewer</option>
@@ -794,7 +794,7 @@ export default function DatabaseViewerPage() {
                                 <button
                                   onClick={() => removeUserAccess(entry.id, entry.user_email, resource.resource.name)}
                                   disabled={fixing}
-                                  className="px-3 py-1 bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                                  className="px-3 py-1 bg-destructive hover:bg-destructive/80 disabled:bg-muted disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
                                   title="Remove user"
                                 >
                                   🗑️
@@ -806,8 +806,8 @@ export default function DatabaseViewerPage() {
                       )}
 
                       {/* Add User Form */}
-                      <div className="bg-neutral-950 border border-neutral-800 rounded-lg p-4">
-                        <h4 className="text-sm font-bold text-white mb-3">➕ Add User</h4>
+                      <div className="bg-background border border-border rounded-lg p-4">
+                        <h4 className="text-sm font-bold text-foreground mb-3">➕ Add User</h4>
                         <form
                           onSubmit={(e) => {
                             e.preventDefault();
@@ -831,12 +831,12 @@ export default function DatabaseViewerPage() {
                             type="text"
                             name="email"
                             placeholder="user.name or email@shopify.com"
-                            className="flex-1 px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-sm text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="flex-1 px-3 py-2 bg-input border border-border rounded text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             disabled={fixing}
                           />
                           <select
                             name="accessLevel"
-                            className="px-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-3 py-2 bg-input border border-border rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                             disabled={fixing}
                           >
                             <option value="viewer">Viewer</option>
@@ -846,7 +846,7 @@ export default function DatabaseViewerPage() {
                           <button
                             type="submit"
                             disabled={fixing}
-                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-neutral-700 disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                            className="px-4 py-2 bg-chart-1 hover:bg-chart-1/80 disabled:bg-muted disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
                           >
                             {fixing ? "⏳" : "Add"}
                           </button>
@@ -868,7 +868,7 @@ export default function DatabaseViewerPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search all collections..."
-                className="w-full px-4 py-3 bg-neutral-900 border border-neutral-800 rounded-lg text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
@@ -876,12 +876,12 @@ export default function DatabaseViewerPage() {
               {COLLECTIONS.map((name) => (
                 <div
                   key={name}
-                  className="bg-neutral-900 border border-neutral-800 rounded-lg p-4"
+                  className="bg-card border border-border rounded-lg p-4"
                 >
-                  <div className="text-sm text-neutral-400 uppercase tracking-wider mb-2">
+                  <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
                     {name}
                   </div>
-                  <div className="text-3xl font-bold text-blue-400">
+                  <div className="text-3xl font-bold text-primary">
                     {data[name]?.length || 0}
                   </div>
                 </div>
@@ -897,13 +897,13 @@ export default function DatabaseViewerPage() {
                 return (
                   <div
                     key={collectionName}
-                    className="bg-neutral-900 border border-neutral-800 rounded-lg overflow-hidden"
+                    className="bg-card border border-border rounded-lg overflow-hidden"
                   >
-                    <div className="bg-neutral-800 px-6 py-4 flex justify-between items-center">
-                      <h2 className="text-xl font-bold text-blue-400">
+                    <div className="bg-secondary px-6 py-4 flex justify-between items-center">
+                      <h2 className="text-xl font-bold text-primary">
                         {collectionName}
                       </h2>
-                      <div className="text-sm text-neutral-400">
+                      <div className="text-sm text-muted-foreground">
                         {filteredCount === totalCount
                           ? `${totalCount} documents`
                           : `${filteredCount} / ${totalCount} documents`}
@@ -911,7 +911,7 @@ export default function DatabaseViewerPage() {
                     </div>
                     <div className="p-6 max-h-[600px] overflow-y-auto">
                       {collectionData.length === 0 ? (
-                        <div className="text-center py-12 text-neutral-500 italic">
+                        <div className="text-center py-12 text-muted-foreground italic">
                           {totalCount === 0
                             ? "No documents"
                             : "No documents match search"}
@@ -921,12 +921,12 @@ export default function DatabaseViewerPage() {
                           {collectionData.map((doc) => (
                             <div
                               key={doc.id}
-                              className="bg-neutral-950 border border-neutral-800 rounded-lg p-4"
+                              className="bg-background border border-border rounded-lg p-4"
                             >
-                              <div className="font-bold text-yellow-400 text-sm mb-2">
+                              <div className="font-bold text-chart-5 text-sm mb-2">
                                 ID: {doc.id}
                               </div>
-                              <pre className="text-xs text-neutral-300 overflow-x-auto whitespace-pre-wrap">
+                              <pre className="text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
                                 {JSON.stringify(doc, null, 2)}
                               </pre>
                             </div>

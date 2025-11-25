@@ -540,15 +540,15 @@ function PresentationPageInner({
                       </div>
                       {uploadState.uploading && (
                         <div className="space-y-2">
-                          <div className="w-full bg-gray-200 rounded-full h-2">
+                          <div className="w-full bg-muted rounded-full h-2">
                             <div
-                              className="bg-blue-500 h-2 rounded-full transition-all duration-300 ease-out"
+                              className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                               style={{
                                 width: `${uploadState.currentProgress}%`,
                               }}
                             />
                           </div>
-                          <div className="text-xs text-gray-600">
+                          <div className="text-xs text-muted-foreground">
                             {uploadState.currentProgress}%
                           </div>
                         </div>
@@ -711,7 +711,7 @@ function PresentationPageInner({
             </div>
 
             {titleCardError && (
-              <div className="text-sm text-red-400">{titleCardError}</div>
+              <div className="text-sm text-destructive">{titleCardError}</div>
             )}
           </div>
 

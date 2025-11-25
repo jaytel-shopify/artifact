@@ -36,7 +36,7 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
   if (count === 0) {
     return (
       <div className="w-full flex-1 flex items-center justify-center">
-        <span className="text-gray-500 text-sm">No artifacts</span>
+        <span className="text-muted-foreground text-sm">No artifacts</span>
       </div>
     );
   }

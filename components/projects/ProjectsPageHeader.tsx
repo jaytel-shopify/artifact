@@ -11,10 +11,7 @@ export function ProjectsPageHeader({
   onNewProject,
 }: ProjectsPageHeaderProps) {
   return (
-    <div
-      className="bg-[var(--background)] border-b border-[var(--color-border-primary)]"
-      style={{ height: "var(--header-height)" }}
-    >
+    <div className="bg-background border-b border h-header-height">
       <div className="flex items-center justify-between h-full px-8">
         <div className="flex items-center gap-2">
           <img
@@ -23,9 +20,7 @@ export function ProjectsPageHeader({
             className="w-8 h-8"
             style={{ imageRendering: "crisp-edges" }}
           />
-          <h1 className="text-lg font-semibold text-[var(--foreground)]">
-            Artifact
-          </h1>
+          <h1 className="text-lg font-semibold text-foreground">Artifact</h1>
         </div>
 
         <div className="flex items-center gap-3">

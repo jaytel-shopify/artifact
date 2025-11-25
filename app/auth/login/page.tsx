@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle>Welcome to Artifact</CardTitle>
@@ -26,7 +26,7 @@ export default function LoginPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 dark:border-gray-100"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-foreground"></div>
           </CardContent>
         </Card>
       </div>
@@ -38,7 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Welcome to Artifact</CardTitle>
@@ -56,7 +56,7 @@ export default function LoginPage() {
             </ul>
           </div>
           <div className="flex justify-center py-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-gray-100"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
           </div>
         </CardContent>
       </Card>

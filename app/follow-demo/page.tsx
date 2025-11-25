@@ -25,20 +25,20 @@ function DemoContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-chart-4/5 to-chart-5/5 p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold">Quick Follow Feature Demo</h1>
-          <p className="text-xl text-gray-600">
+          <p className="text-xl text-muted-foreground">
             Test the real-time follow functionality with multiple users
           </p>
         </div>
 
         {/* Instructions */}
-        <Card className="p-6 border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+        <Card className="p-6 border-2 border-border shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)]">
           <h2 className="text-2xl font-bold mb-4">How to Use</h2>
-          <ol className="list-decimal list-inside space-y-2 text-gray-700">
+          <ol className="list-decimal list-inside space-y-2 text-foreground">
             <li>
               Open this page in multiple browser tabs or share with colleagues
             </li>
@@ -53,12 +53,12 @@ function DemoContent() {
         {/* Interactive Elements */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Scroll Demo */}
-          <Card className="p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+          <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
             <h3 className="text-xl font-bold mb-4">Scroll Test</h3>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-muted-foreground">
               Scroll this page to see scroll synchronization in action.
             </p>
-            <div className="h-64 overflow-y-auto border-2 border-black p-4 bg-white">
+            <div className="h-64 overflow-y-auto border-2 border-border p-4 bg-card">
               <p className="mb-4">Scroll me!</p>
               {Array.from({ length: 20 }).map((_, i) => (
                 <p key={i} className="mb-2">
@@ -69,9 +69,9 @@ function DemoContent() {
           </Card>
 
           {/* Click Demo */}
-          <Card className="p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+          <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
             <h3 className="text-xl font-bold mb-4">Click Test</h3>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-muted-foreground">
               Click buttons to see click synchronization and highlighting.
             </p>
             <div className="space-y-3">
@@ -100,9 +100,9 @@ function DemoContent() {
           </Card>
 
           {/* Input Demo */}
-          <Card className="p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+          <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
             <h3 className="text-xl font-bold mb-4">Input Test</h3>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-muted-foreground">
               Type in the fields to see input synchronization.
             </p>
             <div className="space-y-3">
@@ -112,7 +112,7 @@ function DemoContent() {
                 onChange={(e) => setInputValue(e.target.value)}
               />
               <textarea
-                className="w-full p-2 border-2 border-black rounded resize-none"
+                className="w-full p-2 border-2 border-border rounded resize-none"
                 rows={4}
                 placeholder="Type in this text area..."
               />
@@ -120,9 +120,9 @@ function DemoContent() {
           </Card>
 
           {/* Navigation Demo */}
-          <Card className="p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+          <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
             <h3 className="text-xl font-bold mb-4">Navigation Test</h3>
-            <p className="mb-4 text-gray-600">
+            <p className="mb-4 text-muted-foreground">
               Navigation events will be synchronized when following a leader.
             </p>
             <div className="space-y-3">
@@ -150,33 +150,33 @@ function DemoContent() {
         </div>
 
         {/* Color Grid for Click Testing */}
-        <Card className="p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)]">
+        <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
           <h3 className="text-xl font-bold mb-4">Color Grid Click Test</h3>
-          <p className="mb-4 text-gray-600">
+          <p className="mb-4 text-muted-foreground">
             Click on colors to test element selection and click highlighting.
           </p>
           <div className="grid grid-cols-8 gap-2">
             {[
-              "bg-red-500",
-              "bg-orange-500",
-              "bg-yellow-500",
-              "bg-green-500",
-              "bg-blue-500",
-              "bg-indigo-500",
-              "bg-purple-500",
-              "bg-pink-500",
-              "bg-red-400",
-              "bg-orange-400",
-              "bg-yellow-400",
-              "bg-green-400",
-              "bg-blue-400",
-              "bg-indigo-400",
-              "bg-purple-400",
-              "bg-pink-400",
+              "bg-destructive",
+              "bg-chart-5",
+              "bg-chart-5",
+              "bg-chart-2",
+              "bg-chart-1",
+              "bg-chart-3",
+              "bg-chart-4",
+              "bg-primary",
+              "bg-destructive/70",
+              "bg-chart-5/70",
+              "bg-chart-5/70",
+              "bg-chart-2/70",
+              "bg-chart-1/70",
+              "bg-chart-3/70",
+              "bg-chart-4/70",
+              "bg-primary/70",
             ].map((color, i) => (
               <button
                 key={i}
-                className={`${color} h-16 border-2 border-black hover:scale-110 transition-transform`}
+                className={`${color} h-16 border-2 border-border hover:scale-110 transition-transform`}
                 onClick={() => console.log(`Clicked ${color}`)}
               />
             ))}
@@ -184,9 +184,9 @@ function DemoContent() {
         </Card>
 
         {/* Status Info */}
-        <Card className="p-6 border-2 border-black shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] bg-gray-50">
+        <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] bg-muted">
           <h3 className="text-xl font-bold mb-4">Technical Details</h3>
-          <div className="space-y-2 text-sm text-gray-700">
+          <div className="space-y-2 text-sm text-foreground">
             <p>
               <strong>Room:</strong> follow
             </p>

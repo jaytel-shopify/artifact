@@ -122,7 +122,7 @@ export default function ProjectsPage() {
 
   return (
     <div className="max-w-[1100px] mx-auto p-6 space-y-10">
-      {error && <p className="text-red-600">{String(error)}</p>}
+      {error && <p className="text-destructive">{String(error)}</p>}
 
       {/* Folders Section */}
       {localFolders.length > 0 && (

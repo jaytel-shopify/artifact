@@ -12,9 +12,7 @@ export default function Logo() {
         className="w-8 h-8"
         style={{ imageRendering: "crisp-edges" }}
       />
-      <h1 className="text-lg font-semibold text-[var(--foreground)]">
-        Artifact
-      </h1>
+      <h1 className="text-lg font-semibold text-foreground">Artifact</h1>
     </Link>
   );
 }

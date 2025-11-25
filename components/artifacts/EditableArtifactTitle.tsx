@@ -130,7 +130,7 @@ export default function EditableArtifactTitle({
   if (isEditing) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <div className="text-gray-500">{getArtifactIcon(artifactType)}</div>
+        <div className="text-muted-foreground">{getArtifactIcon(artifactType)}</div>
         <Input
           ref={inputRef}
           type="text"
@@ -140,7 +140,7 @@ export default function EditableArtifactTitle({
           onBlur={handleBlur}
           disabled={isUpdating}
           placeholder="Untitled"
-          className="h-6 text-xs bg-white/10 text-white border border-white/20 focus:border-white/40 focus:bg-white/20 px-2 py-1 min-w-0 w-full max-w-full"
+          className="h-6 text-xs bg-input text-foreground border border-border focus:border-ring focus:bg-input px-2 py-1 min-w-0 w-full max-w-full"
         />
       </div>
     );
@@ -149,7 +149,7 @@ export default function EditableArtifactTitle({
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       {/* Left: Icon */}
-      <div className="text-gray-500 flex-shrink-0">
+      <div className="text-muted-foreground flex-shrink-0">
         {getArtifactIcon(artifactType)}
       </div>
 
@@ -158,12 +158,12 @@ export default function EditableArtifactTitle({
         className={`${
           readOnly
             ? "px-2 py-1"
-            : "cursor-pointer hover:bg-white/5 rounded-md px-2 py-1 transition-colors duration-200"
+            : "cursor-pointer hover:bg-accent/10 rounded-md px-2 py-1 transition-colors duration-200"
         } flex-1 min-w-0`}
         onDoubleClick={handleDoubleClick}
         title={readOnly ? undefined : "Double-click to edit"}
       >
-        <div className="text-xs text-gray-400 truncate select-none">
+        <div className="text-xs text-muted-foreground truncate select-none">
           {currentTitle || "Untitled"}
         </div>
       </div>
@@ -173,7 +173,7 @@ export default function EditableArtifactTitle({
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 flex-shrink-0 text-gray-500 hover:text-gray-300 hover:bg-white/10"
+          className="h-6 w-6 p-0 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent/10"
           onClick={(e) => {
             e.stopPropagation();
             window.open(sourceUrl, "_blank", "noopener,noreferrer");

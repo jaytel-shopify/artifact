@@ -58,7 +58,7 @@ export default function FollowControlPanel() {
             <h3 className="font-bold text-sm">Follow Mode</h3>
             <div className="flex gap-2">
               {followers.length > 0 && (
-                <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                <span className="text-xs bg-chart-2/20 text-chart-2 px-2 py-1 rounded-full font-medium">
                   {followers.length} follower{followers.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -67,13 +67,13 @@ export default function FollowControlPanel() {
 
           {/* Current status */}
           {isFollowing && followedUser && (
-            <div className="bg-blue-50 border-2 border-blue-200 rounded p-3">
+            <div className="bg-primary/10 border-2 border-primary/20 rounded p-3">
               <div className="flex items-center gap-2 mb-2">
                 {followedUser.slackImageUrl && (
                   <img
                     src={followedUser.slackImageUrl}
                     alt=""
-                    className="w-6 h-6 rounded-full border border-black"
+                    className="w-6 h-6 rounded-full border border-border"
                   />
                 )}
                 <div className="flex-1 min-w-0">
@@ -81,7 +81,7 @@ export default function FollowControlPanel() {
                     Following {followedUser.name || followedUser.email}
                   </div>
                   {followedUser.title && (
-                    <div className="text-xs text-gray-600 truncate">
+                    <div className="text-xs text-muted-foreground truncate">
                       {followedUser.title}
                     </div>
                   )}
@@ -100,12 +100,12 @@ export default function FollowControlPanel() {
 
           {/* Show if you have followers (auto-leading) */}
           {!isFollowing && followers.length > 0 && (
-            <div className="bg-green-50 border-2 border-green-200 rounded p-3">
+            <div className="bg-chart-2/10 border-2 border-chart-2/20 rounded p-3">
               <div className="font-medium text-sm mb-1">
                 🎯 Broadcasting to {followers.length} follower
                 {followers.length !== 1 ? "s" : ""}
               </div>
-              <p className="text-xs text-gray-600">
+              <p className="text-xs text-muted-foreground">
                 Your actions are automatically broadcast when you have followers
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function FollowControlPanel() {
                   </DialogHeader>
                   <div className="space-y-2 mt-4">
                     {availableUsers.length === 0 ? (
-                      <p className="text-sm text-gray-500 text-center py-4">
+                      <p className="text-sm text-muted-foreground text-center py-4">
                         No users available to follow
                       </p>
                     ) : (
@@ -145,14 +145,14 @@ export default function FollowControlPanel() {
                         <button
                           key={user.socketId}
                           onClick={() => handleFollowUser(user.socketId)}
-                          className="w-full p-3 border-2 border-black rounded hover:bg-gray-50 transition-colors"
+                          className="w-full p-3 border-2 border-border rounded hover:bg-accent transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             {user.slackImageUrl && (
                               <img
                                 src={user.slackImageUrl}
                                 alt=""
-                                className="w-10 h-10 rounded-full border-2 border-black"
+                                className="w-10 h-10 rounded-full border-2 border-border"
                               />
                             )}
                             <div className="flex-1 text-left min-w-0">
@@ -160,12 +160,12 @@ export default function FollowControlPanel() {
                                 {user.name || user.email}
                               </div>
                               {user.title && (
-                                <div className="text-sm text-gray-600 truncate">
+                                <div className="text-sm text-muted-foreground truncate">
                                   {user.title}
                                 </div>
                               )}
                               {user.slackHandle && (
-                                <div className="text-xs text-gray-500">
+                                <div className="text-xs text-muted-foreground">
                                   @{user.slackHandle}
                                 </div>
                               )}
@@ -182,8 +182,8 @@ export default function FollowControlPanel() {
 
           {/* Show current followers */}
           {!isFollowing && followers.length > 0 && (
-            <div className="pt-2 border-t-2 border-gray-200">
-              <div className="text-xs font-medium text-gray-600 mb-2">
+            <div className="pt-2 border-t-2 border-border">
+              <div className="text-xs font-medium text-muted-foreground mb-2">
                 Current Followers:
               </div>
               <div className="space-y-1">
@@ -196,7 +196,7 @@ export default function FollowControlPanel() {
                       <img
                         src={follower.slackImageUrl}
                         alt=""
-                        className="w-5 h-5 rounded-full border border-black"
+                        className="w-5 h-5 rounded-full border border-border"
                       />
                     )}
                     <span className="truncate">

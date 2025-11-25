@@ -74,15 +74,17 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-        <p className="text-[var(--foreground)]">Loading...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <p className="text-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto p-6">
-      {error && <p className="text-red-600">Failed to load public artifacts</p>}
+      {error && (
+        <p className="text-destructive">Failed to load public artifacts</p>
+      )}
 
       {artifacts.length > 0 ? (
         <>
@@ -97,15 +99,15 @@ export default function Home() {
                   className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
                 />
 
-                <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
                   <Link
                     href={`/a/?id=${artifact.id}`}
-                    className="after:content-[''] after:absolute after:inset-0 bg-red-500 "
+                    className="after:content-[''] after:absolute after:inset-0"
                   >
-                    <h3 className="font-medium text-white line-clamp-1">
+                    <h3 className="font-medium text-foreground line-clamp-1">
                       {artifact.name}
                     </h3>
-                    <p className="text-sm text-gray-300 capitalize">
+                    <p className="text-sm text-muted-foreground capitalize">
                       {artifact.type}
                     </p>
                   </Link>

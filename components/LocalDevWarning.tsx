@@ -38,7 +38,7 @@ export default function LocalDevWarning() {
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-md">
-      <Card className="border-yellow-500/50 bg-yellow-500/10">
+      <Card className="border-chart-5/50 bg-chart-5/10">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">

@@ -9,13 +9,13 @@ export default function ViewToggle() {
   const isProjects = pathname === "/projects";
 
   return (
-    <div className="flex items-center gap-1 bg-[var(--secondary)] rounded-lg p-1">
+    <div className="flex items-center gap-1 bg-secondary rounded-lg p-1">
       <Link
         href="/"
         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           isExplore
-            ? "bg-[var(--background)] text-[var(--foreground)]"
-            : "text-[var(--secondary-foreground)] hover:text-[var(--foreground)]"
+            ? "bg-background text-foreground"
+            : "text-[var(--secondary-foreground)] hover:text-foreground"
         }`}
       >
         Explore
@@ -24,8 +24,8 @@ export default function ViewToggle() {
         href="/projects"
         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
           isProjects
-            ? "bg-[var(--background)] text-[var(--foreground)]"
-            : "text-[var(--secondary-foreground)] hover:text-[var(--foreground)]"
+            ? "bg-background text-foreground"
+            : "text-[var(--secondary-foreground)] hover:text-foreground"
         }`}
       >
         Projects

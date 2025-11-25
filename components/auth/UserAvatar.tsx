@@ -32,7 +32,7 @@ export function UserAvatar({ email, name, imageUrl, size = "md" }: UserAvatarPro
 
   if (loading && !email) {
     return (
-      <div className={`${sizeClass} flex-shrink-0 rounded-full bg-gray-300 animate-pulse flex items-center justify-center font-medium`}>
+      <div className={`${sizeClass} flex-shrink-0 rounded-full bg-muted animate-pulse flex items-center justify-center font-medium`}>
         <span className="sr-only">Loading...</span>
       </div>
     );
@@ -40,7 +40,7 @@ export function UserAvatar({ email, name, imageUrl, size = "md" }: UserAvatarPro
 
   if (!user) {
     return (
-      <div className={`${sizeClass} flex-shrink-0 rounded-full bg-gray-300 flex items-center justify-center font-medium`}>
+      <div className={`${sizeClass} flex-shrink-0 rounded-full bg-muted flex items-center justify-center font-medium`}>
         ?
       </div>
     );

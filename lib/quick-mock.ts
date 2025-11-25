@@ -116,7 +116,7 @@ function init() {
       project_id: projectId,
       page_id: pageId,
       type: "image",
-      source_url: "/mock/Artifact 1.png",
+      source_url: "/mock/artifact01.png",
       file_path: null,
       name: "Sample Image 8",
       description: "A sample image with a clean and modern look",
@@ -135,7 +135,7 @@ function init() {
       project_id: projectId,
       page_id: pageId,
       type: "image",
-      source_url: "/mock/Artifact 2.png",
+      source_url: "/mock/artifact02.png",
       file_path: null,
       name: "Sample Image 9",
       description: "A sample image with a clean and modern look",
@@ -154,7 +154,7 @@ function init() {
       project_id: projectId,
       page_id: pageId,
       type: "image",
-      source_url: "/mock/Artifact 3.png",
+      source_url: "/mock/artifact03.png",
       file_path: null,
       name: "Sample Image 10",
       position: 0,
@@ -172,7 +172,7 @@ function init() {
       project_id: projectId,
       page_id: pageId,
       type: "image",
-      source_url: "/mock/Artifact 4.png",
+      source_url: "/mock/artifact04.png",
       file_path: null,
       name: "Sample Image 1",
       position: 0,
@@ -190,7 +190,7 @@ function init() {
       project_id: projectId,
       page_id: pageId,
       type: "image",
-      source_url: "/mock/Artifact 5.png",
+      source_url: "/mock/artifact05.png",
       file_path: null,
       name: "Placeholder Image - Dog",
       position: 1,
@@ -219,7 +219,7 @@ function init() {
         duration: 634,
         loop: true,
         muted: true,
-        thumbnail_url: "/mock/Artifact 1.png",
+        thumbnail_url: "/mock/artifact01.png",
       },
       reactions: {
         like: [],
@@ -233,7 +233,7 @@ function init() {
       project_id: projectId,
       page_id: pageId,
       type: "image",
-      source_url: "/mock/Artifact 6.png",
+      source_url: "/mock/artifact06.png",
       file_path: null,
       name: "Placeholder Image - Nature",
       description: "A sample image with a clean and modern look",
@@ -263,7 +263,7 @@ function init() {
         duration: 15,
         loop: true,
         muted: true,
-        thumbnail_url: "/mock/Artifact 3.png",
+        thumbnail_url: "/mock/artifact03.png",
       },
       reactions: {
         like: [],
@@ -324,7 +324,7 @@ function init() {
       project_id: project2Id,
       page_id: page2Id,
       type: "image",
-      source_url: "/mock/Artifact 7.png",
+      source_url: "/mock/artifact07.png",
       file_path: null,
       name: "Mobile Home Screen",
       description: "A sample image with a clean and modern look",
@@ -343,7 +343,7 @@ function init() {
       project_id: project2Id,
       page_id: page2Id,
       type: "image",
-      source_url: "/mock/Artifact 1.png",
+      source_url: "/mock/artifact01.png",
       file_path: null,
       name: "Product Detail",
       description: "A sample image with a clean and modern look",
@@ -385,7 +385,7 @@ function init() {
       project_id: project3Id,
       page_id: page3Id,
       type: "image",
-      source_url: "/mock/Artifact 2.png",
+      source_url: "/mock/artifact02.png",
       file_path: null,
       name: "Hero Banner",
       description: "A sample image with a clean and modern look",
@@ -405,7 +405,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 1.png",
+      source_url: "/mock/artifact01.png",
       file_path: null,
       name: "Beautiful Sunset",
       description: "A sample image with a clean and modern look",
@@ -424,7 +424,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 2.png",
+      source_url: "/mock/artifact02.png",
       file_path: null,
       name: "Urban Architecture",
       description: "A sample image with a clean and modern look",
@@ -443,7 +443,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 3.png",
+      source_url: "/mock/artifact03.png",
       file_path: null,
       name: "Nature Landscape",
       description: "A sample image with a clean and modern look",
@@ -462,7 +462,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 4.png",
+      source_url: "/mock/artifact04.png",
       file_path: null,
       name: "Creative Composition",
       position: 0,
@@ -480,7 +480,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 5.png",
+      source_url: "/mock/artifact05.png",
       file_path: null,
       name: "Minimalist Design",
       description: "A minimalist design with a clean and modern look",
@@ -499,7 +499,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 6.png",
+      source_url: "/mock/artifact06.png",
       file_path: null,
       name: "Abstract Pattern",
       description: "An abstract pattern with a modern and stylish look",
@@ -518,7 +518,7 @@ function init() {
       project_id: null,
       page_id: null,
       type: "image",
-      source_url: "/mock/Artifact 7.png",
+      source_url: "/mock/artifact07.png",
       file_path: null,
       name: "Modern Aesthetic",
       description: "A modern aesthetic with a clean and modern look",
@@ -593,7 +593,6 @@ function init() {
       granted_at: now,
     },
   ];
-
 
   console.log("[Mock] Initialized with:", {
     projects: db.projects.length,
@@ -702,7 +701,8 @@ class Collection {
         find: async () => applyPagination(sort(filter(db[this.name]))),
         orderBy: (field: string, direction: string = "asc") =>
           createQuery(field, direction, limitN, offsetN),
-        limit: (n: number) => createQuery(orderField, orderDirection, n, offsetN),
+        limit: (n: number) =>
+          createQuery(orderField, orderDirection, n, offsetN),
         offset: (n: number) =>
           createQuery(orderField, orderDirection, limitN, n),
         select: (fields: string[]) =>
@@ -764,24 +764,30 @@ export function getMockQuickSites() {
       subdomain: "my-portfolio",
       url: "https://my-portfolio.quick.shopify.io",
       owner: "dev@shopify.com",
-      lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      thumbnail: "/mock/Artifact 1.png",
+      lastModified: new Date(
+        Date.now() - 2 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      thumbnail: "/mock/artifact01.png",
     },
     {
       id: "team-dashboard",
       subdomain: "team-dashboard",
       url: "https://team-dashboard.quick.shopify.io",
       owner: "dev@shopify.com",
-      lastModified: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      thumbnail: "/mock/Artifact 2.png",
+      lastModified: new Date(
+        Date.now() - 5 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      thumbnail: "/mock/artifact02.png",
     },
     {
       id: "project-showcase",
       subdomain: "project-showcase",
       url: "https://project-showcase.quick.shopify.io",
       owner: "dev@shopify.com",
-      lastModified: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-      thumbnail: "/mock/Artifact 3.png",
+      lastModified: new Date(
+        Date.now() - 7 * 24 * 60 * 60 * 1000
+      ).toISOString(),
+      thumbnail: "/mock/artifact03.png",
     },
   ];
 }
@@ -801,12 +807,12 @@ export function createMockQuick() {
             originalName: file.name,
             filename: `mock-${Date.now()}-${i}-${file.name}`,
             url: file.type.startsWith("image/")
-              ? `/mock/Artifact ${imageIndex}.png`
+              ? `/mock/artifact0${imageIndex}.png`
               : file.type.startsWith("video/")
                 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
                 : `/uploads/mock-${file.name}`,
             fullUrl: file.type.startsWith("image/")
-              ? `/mock/Artifact ${imageIndex}.png`
+              ? `/mock/artifact0${imageIndex}.png`
               : file.type.startsWith("video/")
                 ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
                 : `/uploads/mock-${file.name}`,
@@ -829,7 +835,7 @@ export function createMockQuick() {
         }
         const imageIndex = Math.floor(Math.random() * 7) + 1;
         const mockUrl = file.type.startsWith("image/")
-          ? `/mock/Artifact ${imageIndex}.png`
+          ? `/mock/artifact0${imageIndex}.png`
           : file.type.startsWith("video/")
             ? "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4"
             : `/uploads/mock-${file.name}`;

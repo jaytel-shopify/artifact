@@ -75,7 +75,7 @@ export default function DevDebugPanel({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bug className="h-5 w-5 text-purple-600" />
+              <Bug className="h-5 w-5 text-chart-4" />
               Dev Debug Panel
             </DialogTitle>
             <DialogDescription>
@@ -109,7 +109,7 @@ export default function DevDebugPanel({
               </div>
 
               {isReadOnly && (
-                <div className="bg-blue-500/10 border border-blue-500/20 p-3 rounded text-sm text-blue-600">
+                <div className="bg-primary/10 border border-primary/20 p-3 rounded text-sm text-primary">
                   🔒 Read-only mode active: All edit controls are hidden
                 </div>
               )}
@@ -152,8 +152,8 @@ export default function DevDebugPanel({
                     <span
                       className={
                         projectInfo.creator_id === userEmail
-                          ? "text-green-600 font-medium"
-                          : "text-orange-600"
+                          ? "text-chart-2 font-medium"
+                          : "text-chart-5"
                       }
                     >
                       {projectInfo.creator_id === userEmail ? "Yes ✓" : "No"}

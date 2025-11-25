@@ -10,7 +10,7 @@ import { Eye } from "lucide-react";
  */
 export default function ReadOnlyBadge() {
   return (
-    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-600">
+    <div className="flex items-center gap-2 px-3 py-2 rounded-md border border-accent/30 bg-accent/10 text-accent-foreground">
       <Eye className="h-4 w-4" />
       <span className="text-sm font-medium">View only</span>
     </div>

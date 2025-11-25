@@ -313,7 +313,7 @@ export default function ArtifactAdder({
               </div>
             </div>
 
-            {error && <div className="text-sm text-red-400">{error}</div>}
+            {error && <div className="text-sm text-destructive">{error}</div>}
           </div>
 
           <DialogFooter>
@@ -381,7 +381,7 @@ export default function ArtifactAdder({
               />
             </div>
 
-            {error && <div className="text-sm text-red-400">{error}</div>}
+            {error && <div className="text-sm text-destructive">{error}</div>}
           </div>
 
           <DialogFooter>

@@ -200,7 +200,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-gray-500 hover:text-gray-300 hover:bg-white/10"
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     onFocus();
