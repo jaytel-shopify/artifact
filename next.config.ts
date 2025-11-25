@@ -8,11 +8,11 @@ const nextConfig: NextConfig = {
   distDir: "dist",
 
   // Add trailing slashes for better static routing
-  trailingSlash: true,
+  trailingSlash: false,
 
   // Skip validation for dynamic params in static export
   // This allows client-side dynamic routes
-  skipTrailingSlashRedirect: true,
+  skipTrailingSlashRedirect: false,
 
   eslint: {
     // Warning: This allows production builds to successfully complete even if
