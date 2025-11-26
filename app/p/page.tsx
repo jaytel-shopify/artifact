@@ -539,7 +539,7 @@ function PresentationPageInner({
             )}
 
             {/* Canvas */}
-            <div className="h-full pt-[var(--spacing-md)]">
+            <div className="h-full">
               <Canvas
                 ref={setCarouselRef}
                 columns={columns}

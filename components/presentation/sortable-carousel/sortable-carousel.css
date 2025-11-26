@@ -8,6 +8,7 @@
   padding: 0 1rem;
   margin: 0;
   list-style: none;
+  height: calc(100% - 0.5rem);
 }
 
 .carousel-horizontal {
@@ -59,8 +60,10 @@
   position: relative;
   list-style: none;
   width: var(--column-width);
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - var(--header-height) - 0.5rem);
   scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
 }
 .carousel-item-wrapper.active .carousel-item {
   background-color: rgba(60, 60, 60, 0.2);
@@ -194,11 +197,11 @@
   position: relative;
   display: block;
   width: 100%;
-  max-height: calc(100vh - 180px);
+  max-height: 100%;
   border-radius: 3px;
-  box-shadow:
+  /* box-shadow:
     0 0 0 1px rgba(63, 63, 68, 0.05),
-    0 1px 3px 0 rgba(34, 33, 81, 0.15);
+    0 1px 3px 0 rgba(34, 33, 81, 0.15); */
   outline: none;
   border: none;
   overflow: auto;
@@ -461,7 +464,7 @@
   z-index: -1 !important;
   /* Keep dimensions to prevent video from stopping */
   width: var(--column-width);
-  max-height: calc(100vh - 180px);
+  max-height: calc(100vh - var(--header-height) - 1rem);
 }
 
 /* Animate collection items only when they first expand */
