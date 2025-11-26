@@ -16,6 +16,26 @@
   line-height: 1;
 }
 
+@utility button-primary {
+  background: linear-gradient(
+    180deg,
+    #1d1b1c 0%,
+    #191718 81.19%,
+    #252120 96.35%
+  );
+  border: 0.5px solid var(--border);
+  color: #fff;
+  box-shadow:
+    0 0 0.25px 1.25px #262524 inset,
+    3px 5px 2px -4.75px #fff inset,
+    1.25px 1.5px 0 0 rgba(0, 0, 0, 0.75) inset,
+    0 4.5px 0.25px -2.5px #fbfbfb inset,
+    1px 1px 3px 3px #1a1818 inset,
+    0 -3px 1px 0 rgba(0, 0, 0, 0.5) inset,
+    2.5px -2px 3px 0 rgba(124, 108, 94, 0.75) inset,
+    0 -3px 3px 1px rgba(255, 245, 221, 0.1) inset;
+}
+
 :root {
   /* Typography Tokens */
   --font-family-primary: var(--font-inter), sans-serif;
@@ -560,7 +580,7 @@ a:not(:disabled) {
 }
 
 /* Range input styling */
-input[type="range"]::-webkit-slider-thumb,
+/* input[type="range"]::-webkit-slider-thumb,
 input[type="range"]::-moz-range-thumb {
   -webkit-appearance: none;
   border: 1px solid var(--foreground);
@@ -580,4 +600,49 @@ input[type="range"]::-moz-range-track {
   background: var(--foreground);
   border-radius: 50px;
   border: 1px solid var(--background);
+} */
+
+input[type="range"]::-webkit-slider-thumb,
+input[type="range"]::-moz-range-thumb {
+  -webkit-appearance: none;
+  height: 2rem;
+  width: 2rem;
+  border-radius: 50%;
+
+  margin-top: 0.25rem;
+  background: linear-gradient(
+    180deg,
+    #1d1b1c 0%,
+    #191718 81.19%,
+    #252120 96.35%
+  );
+  border: 0.5px solid var(--border);
+  color: #fff;
+  box-shadow:
+    0 0 0.25px 1.25px #262524 inset,
+    3px 5px 2px -4.75px #fff inset,
+    1.25px 1.5px 0 0 rgba(0, 0, 0, 0.75) inset,
+    0 4.5px 0.25px -2.5px #fbfbfb inset,
+    1px 1px 3px 3px #1a1818 inset,
+    0 -3px 1px 0 rgba(0, 0, 0, 0.5) inset,
+    2.5px -2px 3px 0 rgba(124, 108, 94, 0.75) inset,
+    0 -3px 3px 1px rgba(255, 245, 221, 0.1) inset;
+  cursor: grab;
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+input[type="range"]::-webkit-slider-runnable-track,
+input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 2.5rem;
+  cursor: pointer;
+  background: transparent;
+  border-radius: 1rem;
+  @supports (corner-shape: superellipse(1.5)) {
+    border-radius: 1.5rem;
+    corner-shape: superellipse(1.5);
+  }
+  padding-inline: 0.25rem;
 }

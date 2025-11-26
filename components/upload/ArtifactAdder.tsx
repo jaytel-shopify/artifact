@@ -43,7 +43,9 @@ type CreateArtifactFn = (artifactData: {
   name?: string;
   metadata?: Record<string, unknown>;
   published?: boolean;
-}) => Promise<import("@/types").Artifact | import("@/types").ArtifactWithPosition | null>;
+}) => Promise<
+  import("@/types").Artifact | import("@/types").ArtifactWithPosition | null
+>;
 
 export default function ArtifactAdder({
   projectId,
@@ -243,7 +245,7 @@ export default function ArtifactAdder({
       {/* Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" aria-label="Add artifact">
+          <Button variant="primary" size="icon" aria-label="Add artifact">
             <Plus className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

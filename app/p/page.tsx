@@ -360,14 +360,11 @@ function PresentationPageInner({
     {
       left: !presentationMode ? (
         <>
-          {/* Back Button */}
           <Link href={backUrl}>
             <Button variant="outline" size="icon" aria-label="Back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
-
-          {/* Sidebar Toggle */}
           <Button
             variant="outline"
             size="icon"
@@ -380,8 +377,16 @@ function PresentationPageInner({
               <PanelLeft className="h-4 w-4" />
             )}
           </Button>
-
-          {/* Add Artifact Button */}
+        </>
+      ) : undefined,
+      center: (
+        <>
+          <ColumnControl
+            columns={columns}
+            onColumnsChange={handleSetColumns}
+            fitMode={fitMode}
+            onFitModeChange={handleSetFitMode}
+          />
           {project?.id && currentPageId && canEdit && (
             <ArtifactAdder
               projectId={project.id}
@@ -390,43 +395,17 @@ function PresentationPageInner({
               createArtifact={createArtifact}
             />
           )}
-
-          {/* Column Controls */}
-          <ColumnControl
-            columns={columns}
-            onColumnsChange={handleSetColumns}
-            fitMode={fitMode}
-            onFitModeChange={handleSetFitMode}
-          />
         </>
-      ) : undefined,
-      center:
-        !presentationMode && project ? (
-          <EditableTitle
-            initialValue={project.name || "Untitled Project"}
-            projectId={project.id}
-            onUpdated={canEdit ? handleProjectNameUpdate : undefined}
-            isReadOnly={!canEdit}
-            folders={userFolders}
-            currentFolderId={project.folder_id}
-            onMoveToFolder={canEdit ? handleMoveToFolder : undefined}
-            onRemoveFromFolder={canEdit ? handleRemoveFromFolder : undefined}
-          />
-        ) : undefined,
+      ),
       right: !presentationMode ? (
         <>
-          {/* Read-Only Badge */}
           {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
-
-          {/* Sync Status Indicator */}
           <SyncStatusIndicator
             isPresenceReady={isPresenceReady}
             getUsers={getUsers}
             onFollowUser={handleFollowUser}
             followingUserId={followedUser?.socketId || null}
           />
-
-          {/* Share Button */}
           {project && user && (
             <Button
               variant="outline"

@@ -23,11 +23,16 @@ export default function ColumnControl({
   }, [localColumns]);
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="text-xs text-muted-foreground font-medium min-w-[12px]">
-        {localColumns}
-      </span>
-      <div className="w-[120px]">
+    <div className="flex items-center gap-3 bg-primary rounded-button border-[0.5px] border-border">
+      <div className="relative h-10 w-64">
+        <div className="absolute top-0 left-0 size-full flex items-center justify-between pointer-events-none px-4">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="dot-indicator w-2 h-2 bg-foreground/20 rounded-full"
+            ></div>
+          ))}
+        </div>
         <input
           type="range"
           min="1"
@@ -36,8 +41,16 @@ export default function ColumnControl({
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
             setLocalColumns(Number(e.target.value))
           }
-          className="w-full appearance-none"
+          className="relative w-full appearance-none"
         />
+        <span
+          className="absolute pointer-events-none top-1/2 left-1 w-8 z-10 text-xs text-white font-medium min-w-[12px] text-center translate-y-[-50%]"
+          style={{
+            transform: `translateX(${(localColumns - 1) * 96.5}%)`,
+          }}
+        >
+          {localColumns}
+        </span>
       </div>
 
       {/* Fit toggle (only when columns === 1) */}

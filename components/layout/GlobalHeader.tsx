@@ -22,7 +22,7 @@ export default function GlobalHeader({
         </div>
 
         {/* Center Section */}
-        <div className="relative flex items-center justify-center size-full max-w-section-width">
+        <div className="relative flex items-center gap-3 justify-center size-full max-w-section-width">
           {center}
         </div>
 
