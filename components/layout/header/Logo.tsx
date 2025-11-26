@@ -5,6 +5,7 @@ export default function Logo() {
     <Link
       href="/"
       className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+      aria-label="Home"
     >
       <img
         src="/favicons/icon-256.png"
@@ -12,7 +13,6 @@ export default function Logo() {
         className="w-8 h-8"
         style={{ imageRendering: "crisp-edges" }}
       />
-      <h1 className="text-lg font-semibold text-foreground">Artifact</h1>
     </Link>
   );
 }

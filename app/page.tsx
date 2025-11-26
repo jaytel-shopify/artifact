@@ -1,6 +1,6 @@
 "use client";
 
-import type { ArtifactType } from "@/types";
+import type { Artifact, ArtifactType } from "@/types";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { Card } from "@/components/ui/card";
 import Link from "next/link";
@@ -26,6 +26,27 @@ export default function Home() {
     loadMore,
     addArtifact,
   } = usePublicArtifacts();
+
+  const masonryGrid = [
+    { height: 0, artifacts: [] },
+    { height: 0, artifacts: [] },
+    { height: 0, artifacts: [] },
+  ] as {
+    height: number;
+    artifacts: {
+      artifact: Artifact;
+      tabindex: number;
+    }[];
+  }[];
+  artifacts.forEach((artifact, i) => {
+    const index = masonryGrid.reduce(
+      (minIdx, row, idx, arr) =>
+        row.height < arr[minIdx].height ? idx : minIdx,
+      0
+    );
+    masonryGrid[index].artifacts.push({ artifact, tabindex: i + 1 });
+    masonryGrid[index].height += artifact.metadata.height ?? 0;
+  });
 
   const createArtifact = async (artifactData: {
     type: ArtifactType;
@@ -92,31 +113,36 @@ export default function Home() {
 
       {artifacts.length > 0 ? (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {artifacts.map((artifact) => (
-              <Card
-                key={artifact.id}
-                className="grid relative cursor-pointer overflow-hidden h-fit outline-none"
-              >
-                <ArtifactThumbnail
-                  artifact={artifact}
-                  className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
-                />
-
-                <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
-                  <Link
-                    href={`/a/?id=${artifact.id}`}
-                    className="after:content-[''] after:absolute after:inset-0"
+          <div className="grid grid-cols-3 gap-2 lg:gap-6">
+            {masonryGrid.map((row, index) => (
+              <div key={index} className="flex flex-col gap-2 lg:gap-6">
+                {row.artifacts.map(({ artifact, tabindex }) => (
+                  <Card
+                    key={artifact.id}
+                    className="grid relative cursor-pointer overflow-hidden h-fit outline-none focus-within:scale-105"
                   >
-                    <h3 className="font-medium text-foreground line-clamp-1">
-                      {artifact.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {artifact.type}
-                    </p>
-                  </Link>
-                </div>
-              </Card>
+                    <ArtifactThumbnail
+                      artifact={artifact}
+                      className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+                    />
+
+                    <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-2 md:p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                      <Link
+                        href={`/a/?id=${artifact.id}`}
+                        className="after:content-[''] after:absolute after:inset-0"
+                        tabIndex={tabindex}
+                      >
+                        <h3 className="text-medium text-foreground line-clamp-1 overflow-ellipsis">
+                          {artifact.name}
+                        </h3>
+                        <p className="text-small text-muted-foreground overflow-ellipsis">
+                          {artifact.type}
+                        </p>
+                      </Link>
+                    </div>
+                  </Card>
+                ))}
+              </div>
             ))}
           </div>
 
