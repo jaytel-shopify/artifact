@@ -4,11 +4,11 @@ import useSWR from "swr";
 import { useEffect, useRef, useState } from "react";
 import { getArtifactsByPage } from "@/lib/quick-db";
 import { PresenceManager } from "@/lib/presence-manager";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 import { waitForQuick } from "@/lib/quick";
 import { useArtifactMutations } from "./useArtifactMutations";
 
-async function fetcher(pageId: string): Promise<Artifact[]> {
+async function fetcher(pageId: string): Promise<ArtifactWithPosition[]> {
   return await getArtifactsByPage(pageId);
 }
 
@@ -26,7 +26,7 @@ export function useSyncedArtifacts(
     error,
     isLoading,
     mutate,
-  } = useSWR<Artifact[]>(
+  } = useSWR<ArtifactWithPosition[]>(
     pageId ? `synced-artifacts-${pageId}` : null,
     () => (pageId ? fetcher(pageId) : []),
     {
@@ -112,7 +112,7 @@ export function useSyncedArtifacts(
     };
   }, [projectId, pageId]);
 
-  // Subscribe to quick.db for CRUD sync
+  // Subscribe to quick.db for CRUD sync (both artifacts and project_artifacts collections)
   useEffect(() => {
     if (!pageId) return;
 
@@ -120,15 +120,18 @@ export function useSyncedArtifacts(
       try {
         const quick = await waitForQuick();
         const artifactsCollection = quick.db.collection("artifacts");
+        const projectArtifactsCollection =
+          quick.db.collection("project_artifacts");
 
-        const unsubscribe = artifactsCollection.subscribe({
-          onCreate: (doc) => {
-            if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+        // Subscribe to artifacts collection for updates to artifact data
+        const unsubscribeArtifacts = artifactsCollection.subscribe({
+          onCreate: () => {
+            if (!isExecutingCommandRef.current) {
               mutate();
             }
           },
-          onUpdate: (doc) => {
-            if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+          onUpdate: () => {
+            if (!isExecutingCommandRef.current) {
               mutate();
             }
           },
@@ -139,7 +142,30 @@ export function useSyncedArtifacts(
           },
         });
 
-        return unsubscribe;
+        // Subscribe to project_artifacts collection for junction changes
+        const unsubscribeProjectArtifacts =
+          projectArtifactsCollection.subscribe({
+            onCreate: (doc) => {
+              if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+                mutate();
+              }
+            },
+            onUpdate: (doc) => {
+              if (doc.page_id === pageId && !isExecutingCommandRef.current) {
+                mutate();
+              }
+            },
+            onDelete: () => {
+              if (!isExecutingCommandRef.current) {
+                mutate();
+              }
+            },
+          });
+
+        return () => {
+          unsubscribeArtifacts();
+          unsubscribeProjectArtifacts();
+        };
       } catch (error) {
         console.error(
           "[useSyncedArtifacts] Failed to setup quick.db subscription:",

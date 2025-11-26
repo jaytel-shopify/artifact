@@ -612,8 +612,10 @@ function PresentationPageInner({
                   await executeCommand(command, "UpdateArtifactCommand");
                 }}
                 onDeleteArtifact={async (artifactId) => {
+                  if (!user?.email) return;
                   const command = new DeleteArtifactCommand(
                     artifactId,
+                    user.email,
                     artifacts
                   );
                   await executeCommand(command, "DeleteArtifactCommand");

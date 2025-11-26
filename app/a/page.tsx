@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import useSWR from "swr";
 import { Artifact } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import Link from "next/link";
 import { ArrowLeft, Save } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
 
 async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
   const artifact = await getArtifactById(artifactId);
@@ -20,6 +22,7 @@ async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
 export default function Page() {
   const searchParams = useSearchParams();
   const artifactId = searchParams?.get("id") || "";
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
   const { data: artifact, mutate } = useSWR<Artifact | null>(
     artifactId ? `artifact-${artifactId}` : null,
@@ -28,8 +31,6 @@ export default function Page() {
   );
 
   const { user } = useAuth();
-
-  const handleSaveToProject = async () => {};
 
   // Set header content
   useSetHeader({
@@ -45,7 +46,8 @@ export default function Page() {
         <Button
           variant="outline"
           className="gap-2"
-          onClick={handleSaveToProject}
+          onClick={() => setIsSaveDialogOpen(true)}
+          disabled={!user}
         >
           <Save className="h-4 w-4" />
           Save to Project
@@ -156,6 +158,16 @@ export default function Page() {
           </div>
         </div>
       </div>
+
+      {/* Save to Project Dialog */}
+      {user && (
+        <SaveToProjectDialog
+          isOpen={isSaveDialogOpen}
+          onClose={() => setIsSaveDialogOpen(false)}
+          artifactId={artifactId}
+          userEmail={user.email}
+        />
+      )}
     </div>
   );
 }

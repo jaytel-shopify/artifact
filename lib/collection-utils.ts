@@ -9,10 +9,15 @@ export interface CollectionMetadata {
 }
 
 /**
+ * Base artifact type that has the minimum required fields
+ */
+type BaseArtifact = Pick<Artifact, "id" | "metadata">;
+
+/**
  * Get typed collection metadata from an artifact
  */
-export function getCollectionMetadata(
-  artifact: Artifact | undefined
+export function getCollectionMetadata<T extends BaseArtifact>(
+  artifact: T | undefined
 ): CollectionMetadata {
   return (artifact?.metadata || {}) as CollectionMetadata;
 }
@@ -20,18 +25,19 @@ export function getCollectionMetadata(
 /**
  * Check if an artifact is part of a collection
  */
-export function isInCollection(artifact: Artifact): boolean {
+export function isInCollection<T extends BaseArtifact>(artifact: T): boolean {
   const metadata = getCollectionMetadata(artifact);
   return !!metadata.collection_id;
 }
 
 /**
  * Get all artifacts in a collection, in order
+ * Returns the same type as the input array
  */
-export function getCollectionArtifacts(
+export function getCollectionArtifacts<T extends BaseArtifact>(
   collectionId: string,
-  allArtifacts: Artifact[]
-): Artifact[] {
+  allArtifacts: T[]
+): T[] {
   return allArtifacts.filter((a) => {
     const metadata = getCollectionMetadata(a);
     return metadata.collection_id === collectionId;
@@ -41,7 +47,9 @@ export function getCollectionArtifacts(
 /**
  * Get all unique collection IDs from artifacts
  */
-export function getAllCollectionIds(artifacts: Artifact[]): string[] {
+export function getAllCollectionIds<T extends BaseArtifact>(
+  artifacts: T[]
+): string[] {
   const ids = new Set<string>();
   artifacts.forEach((a) => {
     const metadata = getCollectionMetadata(a);
@@ -60,9 +68,9 @@ export function getAllCollectionIds(artifacts: Artifact[]): string[] {
  * @param allArtifacts - All artifacts in the page
  * @returns Null if no cleanup needed, or { artifactId, metadata } for the remaining item
  */
-export function getCollectionCleanupIfNeeded(
-  artifactToRemove: Artifact,
-  allArtifacts: Artifact[]
+export function getCollectionCleanupIfNeeded<T extends BaseArtifact>(
+  artifactToRemove: T,
+  allArtifacts: T[]
 ): { artifactId: string; metadata: Record<string, unknown> } | null {
   const metadata = getCollectionMetadata(artifactToRemove);
 
@@ -103,12 +111,12 @@ export function getCollectionCleanupIfNeeded(
  * @param collectionOverrides - Optional map of collection ID to ordered items for specific collections
  * @returns Full array with all items in correct order
  */
-export function reconstructFullArtifactsArray(
-  visibleItems: Artifact[],
-  allArtifacts: Artifact[],
-  collectionOverrides?: Map<string, Artifact[]>
-): Artifact[] {
-  const fullReordered: Artifact[] = [];
+export function reconstructFullArtifactsArray<T extends BaseArtifact>(
+  visibleItems: T[],
+  allArtifacts: T[],
+  collectionOverrides?: Map<string, T[]>
+): T[] {
+  const fullReordered: T[] = [];
   const seen = new Set<string>();
 
   visibleItems.forEach((visibleItem) => {

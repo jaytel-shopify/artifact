@@ -2,11 +2,11 @@
 
 import { useCallback } from "react";
 import type { ArtifactCommand } from "@/lib/artifact-commands";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 
 interface UseArtifactCommandsProps {
-  artifacts: Artifact[];
-  mutate: (data: Artifact[] | undefined, opts?: { revalidate?: boolean }) => Promise<any>;
+  artifacts: ArtifactWithPosition[];
+  mutate: (data: ArtifactWithPosition[] | undefined, opts?: { revalidate?: boolean }) => Promise<any>;
   onError?: (error: Error, commandName: string) => void;
   onExecutionStart?: () => void;
   onExecutionEnd?: () => void;

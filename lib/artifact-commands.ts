@@ -1,28 +1,28 @@
 // Command Pattern for artifact operations
 // Each command calculates optimistic state, executes DB writes, and can revert on error
 
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 import {
   updateArtifact as updateArtifactDB,
-  deleteArtifact as deleteArtifactDB,
-  reorderArtifacts as reorderArtifactsDB,
+  removeArtifactFromProject,
+  reorderProjectArtifacts,
 } from "@/lib/quick-db";
 import { getCollectionCleanupIfNeeded } from "@/lib/collection-utils";
 
 export interface ArtifactCommand {
-  getOptimisticState(): Artifact[];
+  getOptimisticState(): ArtifactWithPosition[];
   execute(): Promise<void>;
-  getPreviousState(): Artifact[];
+  getPreviousState(): ArtifactWithPosition[];
 }
 
 // Base class to reduce boilerplate
 abstract class BaseCommand implements ArtifactCommand {
-  constructor(protected currentArtifacts: Artifact[]) {}
+  constructor(protected currentArtifacts: ArtifactWithPosition[]) {}
 
-  abstract getOptimisticState(): Artifact[];
+  abstract getOptimisticState(): ArtifactWithPosition[];
   abstract execute(): Promise<void>;
 
-  getPreviousState(): Artifact[] {
+  getPreviousState(): ArtifactWithPosition[] {
     return this.currentArtifacts;
   }
 }
@@ -44,42 +44,42 @@ function reorderArray<T>(array: T[], fromIndex: number, toIndex: number): T[] {
   return result;
 }
 
-// Helper: Build position updates for DB
-function buildPositionUpdates(artifacts: Artifact[]) {
+// Helper: Build position updates for DB (using project_artifact_id)
+function buildPositionUpdates(artifacts: ArtifactWithPosition[]) {
   return artifacts.map((artifact, index) => ({
-    id: artifact.id,
+    id: artifact.project_artifact_id,
     position: index,
   }));
 }
 
 export class ReorderArtifactsCommand extends BaseCommand {
   constructor(
-    private reorderedArtifacts: Artifact[],
-    currentArtifacts: Artifact[]
+    private reorderedArtifacts: ArtifactWithPosition[],
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.reorderedArtifacts;
   }
 
   async execute(): Promise<void> {
-    await reorderArtifactsDB(buildPositionUpdates(this.reorderedArtifacts));
+    await reorderProjectArtifacts(buildPositionUpdates(this.reorderedArtifacts));
   }
 }
 
 export class AddToCollectionCommand extends BaseCommand {
-  private optimisticState: Artifact[];
+  private optimisticState: ArtifactWithPosition[];
   private collectionId: string;
-  private draggedArtifact: Artifact;
-  private targetArtifact: Artifact;
+  private draggedArtifact: ArtifactWithPosition;
+  private targetArtifact: ArtifactWithPosition;
   private needsReorder: boolean;
 
   constructor(
     private draggedId: string,
     private targetId: string,
-    currentArtifacts: Artifact[]
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
 
@@ -101,7 +101,7 @@ export class AddToCollectionCommand extends BaseCommand {
     this.optimisticState = this.calculateOptimisticState();
   }
 
-  private calculateOptimisticState(): Artifact[] {
+  private calculateOptimisticState(): ArtifactWithPosition[] {
     const targetMetadata = this.targetArtifact.metadata as any;
     const isNewCollection = !targetMetadata?.collection_id;
 
@@ -133,7 +133,7 @@ export class AddToCollectionCommand extends BaseCommand {
     return result;
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.optimisticState;
   }
 
@@ -164,24 +164,24 @@ export class AddToCollectionCommand extends BaseCommand {
     await Promise.all(metadataUpdates);
 
     if (this.needsReorder) {
-      await reorderArtifactsDB(buildPositionUpdates(this.optimisticState));
+      await reorderProjectArtifacts(buildPositionUpdates(this.optimisticState));
     }
   }
 }
 
 export class RemoveFromCollectionCommand extends BaseCommand {
-  private optimisticState: Artifact[];
+  private optimisticState: ArtifactWithPosition[];
 
   constructor(
     private artifactId: string,
     private newPosition: number,
-    currentArtifacts: Artifact[]
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
     this.optimisticState = this.calculateOptimisticState();
   }
 
-  private calculateOptimisticState(): Artifact[] {
+  private calculateOptimisticState(): ArtifactWithPosition[] {
     const artifact = this.currentArtifacts.find(
       (a) => a.id === this.artifactId
     );
@@ -217,7 +217,7 @@ export class RemoveFromCollectionCommand extends BaseCommand {
     return result;
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.optimisticState;
   }
 
@@ -251,17 +251,17 @@ export class RemoveFromCollectionCommand extends BaseCommand {
     }
 
     // Update positions
-    await reorderArtifactsDB(buildPositionUpdates(this.optimisticState));
+    await reorderProjectArtifacts(buildPositionUpdates(this.optimisticState));
   }
 }
 
 export class UpdateArtifactCommand extends BaseCommand {
-  private optimisticState: Artifact[];
+  private optimisticState: ArtifactWithPosition[];
 
   constructor(
     private artifactId: string,
     private updates: { name?: string; metadata?: Record<string, unknown> },
-    currentArtifacts: Artifact[]
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
 
@@ -278,7 +278,7 @@ export class UpdateArtifactCommand extends BaseCommand {
     );
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.optimisticState;
   }
 
@@ -288,22 +288,27 @@ export class UpdateArtifactCommand extends BaseCommand {
 }
 
 export class DeleteArtifactCommand extends BaseCommand {
-  private optimisticState: Artifact[];
+  private optimisticState: ArtifactWithPosition[];
   private cleanup: {
     artifactId: string;
     metadata: Record<string, unknown>;
   } | null;
+  private projectArtifactId: string;
 
   constructor(
     private artifactId: string,
-    currentArtifacts: Artifact[]
+    private currentUserEmail: string,
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
 
     const artifactToDelete = currentArtifacts.find((a) => a.id === artifactId);
-    this.cleanup = artifactToDelete
-      ? getCollectionCleanupIfNeeded(artifactToDelete, currentArtifacts)
-      : null;
+    if (!artifactToDelete) {
+      throw new Error("Artifact not found");
+    }
+
+    this.projectArtifactId = artifactToDelete.project_artifact_id;
+    this.cleanup = getCollectionCleanupIfNeeded(artifactToDelete, currentArtifacts);
 
     this.optimisticState = currentArtifacts
       .filter((a) => a.id !== artifactId)
@@ -314,7 +319,7 @@ export class DeleteArtifactCommand extends BaseCommand {
       );
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.optimisticState;
   }
 
@@ -324,17 +329,18 @@ export class DeleteArtifactCommand extends BaseCommand {
         metadata: this.cleanup.metadata,
       });
     }
-    await deleteArtifactDB(this.artifactId);
+    // Use removeArtifactFromProject which handles cascade logic
+    await removeArtifactFromProject(this.projectArtifactId, this.currentUserEmail);
   }
 }
 
 export class ToggleLikeCommand extends BaseCommand {
-  private optimisticState: Artifact[];
+  private optimisticState: ArtifactWithPosition[];
 
   constructor(
     private artifactId: string,
     private userId: string,
-    currentArtifacts: Artifact[]
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
 
@@ -358,7 +364,7 @@ export class ToggleLikeCommand extends BaseCommand {
     });
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.optimisticState;
   }
 
@@ -385,12 +391,12 @@ export class ToggleLikeCommand extends BaseCommand {
 }
 
 export class ToggleDislikeCommand extends BaseCommand {
-  private optimisticState: Artifact[];
+  private optimisticState: ArtifactWithPosition[];
 
   constructor(
     private artifactId: string,
     private userId: string,
-    currentArtifacts: Artifact[]
+    currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
 
@@ -414,7 +420,7 @@ export class ToggleDislikeCommand extends BaseCommand {
     });
   }
 
-  getOptimisticState(): Artifact[] {
+  getOptimisticState(): ArtifactWithPosition[] {
     return this.optimisticState;
   }
 

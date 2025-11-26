@@ -1,9 +1,9 @@
 import { useCallback } from "react";
 import type { KeyedMutator } from "swr";
-import type { Artifact, ArtifactType } from "@/types";
+import type { ArtifactWithPosition, ArtifactType, Artifact } from "@/types";
 import {
-  createArtifact as createArtifactDB,
-  getNextPosition,
+  createArtifactInProject,
+  getNextArtifactPosition,
 } from "@/lib/quick-db";
 import {
   UpdateArtifactCommand,
@@ -12,10 +12,11 @@ import {
   ToggleLikeCommand,
   ToggleDislikeCommand,
 } from "@/lib/artifact-commands";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 interface UseArtifactMutationsProps {
-  artifacts: Artifact[];
-  mutate: KeyedMutator<Artifact[]>;
+  artifacts: ArtifactWithPosition[];
+  mutate: KeyedMutator<ArtifactWithPosition[]>;
   projectId?: string;
   pageId?: string;
 }
@@ -27,6 +28,8 @@ export function useArtifactMutations({
   projectId,
   pageId,
 }: UseArtifactMutationsProps) {
+  const { user } = useAuth();
+
   const createArtifact = useCallback(
     async (artifactData: {
       type: ArtifactType;
@@ -36,34 +39,35 @@ export function useArtifactMutations({
       metadata?: Record<string, unknown>;
       published?: boolean;
     }) => {
-      if (!projectId || !pageId) return null;
+      if (!projectId || !pageId || !user?.email) return null;
 
       try {
-        const nextPosition = await getNextPosition(
-          "artifacts",
-          pageId,
-          "page_id"
-        );
-
-        const artifact = await createArtifactDB({
+        const { artifact, projectArtifact } = await createArtifactInProject({
           project_id: projectId,
           page_id: pageId,
           type: artifactData.type,
           source_url: artifactData.source_url,
           file_path: artifactData.file_path || undefined,
           name: artifactData.name || "Untitled",
-          position: nextPosition,
+          creator_id: user.email,
           metadata: artifactData.metadata || {},
           published: artifactData.published || false,
         });
 
-        return artifact;
+        // Return artifact with position context
+        const artifactWithPosition: ArtifactWithPosition = {
+          ...artifact,
+          position: projectArtifact.position,
+          project_artifact_id: projectArtifact.id,
+        };
+
+        return artifactWithPosition;
       } catch (error) {
         console.error("Failed to create artifact:", error);
         throw error;
       }
     },
-    [projectId, pageId]
+    [projectId, pageId, user?.email]
   );
 
   const updateArtifact = useCallback(
@@ -92,10 +96,14 @@ export function useArtifactMutations({
 
   const deleteArtifact = useCallback(
     async (artifactId: string): Promise<void> => {
-      if (!projectId) return;
+      if (!projectId || !user?.email) return;
 
       try {
-        const command = new DeleteArtifactCommand(artifactId, artifacts);
+        const command = new DeleteArtifactCommand(
+          artifactId,
+          user.email,
+          artifacts
+        );
 
         mutate(command.getOptimisticState(), { revalidate: false });
         await command.execute();
@@ -105,11 +113,11 @@ export function useArtifactMutations({
         throw error;
       }
     },
-    [projectId, mutate, artifacts]
+    [projectId, user?.email, mutate, artifacts]
   );
 
   const reorderArtifacts = useCallback(
-    async (reorderedArtifacts: Artifact[]) => {
+    async (reorderedArtifacts: ArtifactWithPosition[]) => {
       if (!projectId || !pageId) return;
 
       try {
@@ -161,7 +169,7 @@ export function useArtifactMutations({
         mutate();
       }
     },
-    [projectId, artifacts, mutate]
+    [artifacts, mutate]
   );
 
   const toggleDislike = useCallback(
@@ -176,7 +184,7 @@ export function useArtifactMutations({
         mutate();
       }
     },
-    [projectId, artifacts, mutate]
+    [artifacts, mutate]
   );
 
   return {

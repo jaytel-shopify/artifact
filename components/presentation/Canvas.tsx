@@ -3,16 +3,16 @@
 import { forwardRef, type MutableRefObject } from "react";
 import { SortableCarousel } from "./sortable-carousel/SortableCarousel";
 import { Layout } from "./sortable-carousel/CarouselItem";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 
 // Carousel-based Canvas component
 // Original Canvas is backed up as Canvas.backup.tsx
 
 interface CanvasProps {
   columns: number;
-  artifacts: Artifact[];
+  artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
-  onReorder?: (artifacts: Artifact[]) => void;
+  onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;

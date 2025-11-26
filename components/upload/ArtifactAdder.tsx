@@ -35,6 +35,16 @@ import { toast } from "sonner";
 
 type DialogType = "url" | "titleCard" | null;
 
+// Type for createArtifact function - can return either ArtifactWithPosition (from project context) or Artifact (standalone)
+type CreateArtifactFn = (artifactData: {
+  type: import("@/types").ArtifactType;
+  source_url: string;
+  file_path?: string | null;
+  name?: string;
+  metadata?: Record<string, unknown>;
+  published?: boolean;
+}) => Promise<import("@/types").Artifact | import("@/types").ArtifactWithPosition | null>;
+
 export default function ArtifactAdder({
   projectId,
   pageId,
@@ -44,7 +54,7 @@ export default function ArtifactAdder({
   projectId?: string;
   pageId?: string;
   onAdded?: () => void;
-  createArtifact: ReturnType<typeof useSyncedArtifacts>["createArtifact"];
+  createArtifact: CreateArtifactFn;
 }) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const [url, setUrl] = useState("");

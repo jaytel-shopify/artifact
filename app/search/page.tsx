@@ -228,7 +228,7 @@ export default function SearchPage() {
 
                 <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
                   <Link
-                    href={`/p/?id=${artifact.project_id}&page=${artifact.page_id}`}
+                    href={`/a/?id=${artifact.id}`}
                     className="after:content-[''] after:absolute after:inset-0"
                   >
                     <h3 className="font-medium text-foreground line-clamp-1">

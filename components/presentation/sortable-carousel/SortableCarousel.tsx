@@ -33,7 +33,7 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS, isKeyboardEvent } from "@dnd-kit/utilities";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition, Artifact } from "@/types";
 
 import { CarouselItem, Layout, Position } from "./CarouselItem";
 import type { Props as CarouselItemProps } from "./CarouselItem";
@@ -49,9 +49,9 @@ interface Props {
   layout: Layout;
   columns?: number;
   fitMode?: boolean;
-  artifacts: Artifact[];
+  artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
-  onReorder?: (artifacts: Artifact[]) => void;
+  onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
@@ -479,8 +479,8 @@ function CarouselItemOverlay({
   isCollectionMode = false,
   ...props
 }: Omit<CarouselItemProps, "index"> & {
-  items: Artifact[];
-  allArtifacts?: Artifact[];
+  items: ArtifactWithPosition[];
+  allArtifacts?: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   isCollectionMode?: boolean;
 }) {
@@ -544,7 +544,7 @@ function SortableCarouselItem({
   isHoveredForCollection?: boolean;
   isBeingAddedToCollection?: boolean;
   isJustExpanded?: boolean;
-  allArtifacts?: Artifact[];
+  allArtifacts?: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
 }) {

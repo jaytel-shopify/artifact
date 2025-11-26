@@ -57,14 +57,11 @@ export type Page = {
 
 export type Artifact = {
   id: string;
-  project_id: string;
-  page_id: string;
   type: ArtifactType;
   source_url: string;
   file_path: string | null;
   name: string;
   description?: string;
-  position: number;
   metadata: Record<string, unknown> &
     Partial<
       UrlViewportMetadata &
@@ -77,6 +74,31 @@ export type Artifact = {
   creator_id: string;
   created_at: string;
   updated_at: string;
+};
+
+// ==================== PROJECT ARTIFACTS (Junction Table) ====================
+
+/**
+ * Junction table for many-to-many relationship between Artifacts and Projects/Pages.
+ * Allows the same artifact to be added to multiple projects/pages with per-context positioning.
+ */
+export type ProjectArtifact = {
+  id: string;
+  project_id: string;
+  page_id: string;
+  artifact_id: string;
+  position: number; // Position within this page context
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Artifact with position context - returned when querying artifacts by page/project.
+ * Combines the artifact data with its position from the junction table.
+ */
+export type ArtifactWithPosition = Artifact & {
+  position: number;
+  project_artifact_id: string; // ID of the junction entry (for updates/deletes)
 };
 
 export type ViewportState = {

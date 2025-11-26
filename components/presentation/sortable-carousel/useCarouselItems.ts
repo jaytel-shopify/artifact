@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 import {
   getCollectionMetadata,
   getCollectionArtifacts,
@@ -7,7 +7,7 @@ import {
 } from "@/lib/collection-utils";
 
 interface UseCarouselItemsProps {
-  artifacts: Artifact[];
+  artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   isSettling: boolean;
   pageId?: string;
@@ -24,7 +24,7 @@ export function useCarouselItems({
   pageId,
   containerRef,
 }: UseCarouselItemsProps) {
-  const [items, setItems] = useState<Artifact[]>(artifacts);
+  const [items, setItems] = useState<ArtifactWithPosition[]>(artifacts);
   const prevPageIdRef = useRef(pageId);
   const prevArtifactsRef = useRef(artifacts);
   const prevVisibleCountRef = useRef(0);
@@ -38,7 +38,7 @@ export function useCarouselItems({
   // Get visible artifacts based on collection expand/collapse state
   const visibleArtifacts = useMemo(() => {
     const seen = new Set<string>();
-    const result: Artifact[] = [];
+    const result: ArtifactWithPosition[] = [];
 
     artifacts.forEach((artifact) => {
       if (seen.has(artifact.id)) return;
@@ -84,7 +84,7 @@ export function useCarouselItems({
 
   // Hidden collection items (collapsed, but stay mounted to preserve video state)
   const hiddenCollectionItems = useMemo(() => {
-    const result: Artifact[] = [];
+    const result: ArtifactWithPosition[] = [];
     const collectionIds = getAllCollectionIds(artifacts);
 
     collectionIds.forEach((collectionId) => {

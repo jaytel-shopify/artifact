@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import type { DragMoveEvent } from "@dnd-kit/core";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 import {
   getCollectionMetadata,
   getCollectionArtifacts,
@@ -12,7 +12,7 @@ interface UseCollectionModeOptions {
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   stillnessDelayMs?: number;
   movementThresholdPx?: number;
-  artifacts?: Artifact[];
+  artifacts?: ArtifactWithPosition[];
 }
 
 export function useCollectionMode({

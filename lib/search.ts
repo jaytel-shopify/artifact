@@ -3,7 +3,7 @@
 import { waitForQuick } from "./quick";
 import { getProjects } from "./quick-db";
 import { getUserAccessibleResources } from "./access-control";
-import type { Artifact, Project, Folder } from "@/types";
+import type { Artifact, Project, Folder, ProjectArtifact } from "@/types";
 
 /**
  * Search Results
@@ -24,7 +24,7 @@ export type SearchResults = {
  * 1. Public artifacts (published: true)
  * 2. User's accessible folders (created by user OR granted access via access control)
  * 3. User's accessible projects (created by user OR granted access via access control)
- * 4. User's personal artifacts (from accessible projects, published: false)
+ * 4. User's personal artifacts (linked to accessible projects via junction table, published: false)
  *
  * @param query - Search term (case-insensitive)
  * @param userEmail - Email of the user performing the search
@@ -55,21 +55,18 @@ export async function searchResources(
   const quick = await waitForQuick();
 
   // Execute all searches in parallel for performance
-  const [publicArtifacts, folders, projects, privateArtifacts] =
-    await Promise.all([
-      searchPublicArtifacts(normalizedQuery, quick),
-      searchFolders(normalizedQuery, userEmail),
-      searchProjects(normalizedQuery, userEmail),
-      getPrivateArtifacts(quick),
-    ]);
+  const [publicArtifacts, folders, projects] = await Promise.all([
+    searchPublicArtifacts(normalizedQuery, quick),
+    searchFolders(normalizedQuery, userEmail),
+    searchProjects(normalizedQuery, userEmail),
+  ]);
 
-  // Filter personal artifacts from user's accessible projects
-  // 'projects' includes all projects user has access to (owned OR granted access)
-  const accessibleProjectIds = new Set(projects.map((p) => p.id));
-  const personalArtifacts = privateArtifacts.filter(
-    (artifact) =>
-      accessibleProjectIds.has(artifact.project_id) &&
-      artifact.name.toLowerCase().includes(normalizedQuery)
+  // Get personal artifacts linked to user's accessible projects
+  const accessibleProjectIds = projects.map((p) => p.id);
+  const personalArtifacts = await getPersonalArtifactsViaJunction(
+    normalizedQuery,
+    accessibleProjectIds,
+    quick
   );
 
   return {
@@ -150,14 +147,49 @@ async function searchProjects(
 }
 
 /**
- * Get all private artifacts for filtering by user's accessible projects
- * Uses .where() to filter by published at the database level
- * These will be further filtered to only include artifacts from projects the user has access to
+ * Get personal artifacts linked to accessible projects via junction table
+ * Only returns unpublished artifacts that match the search query
  */
-async function getPrivateArtifacts(quick: any): Promise<Artifact[]> {
-  const collection = quick.db.collection("artifacts");
+async function getPersonalArtifactsViaJunction(
+  normalizedQuery: string,
+  accessibleProjectIds: string[],
+  quick: any
+): Promise<Artifact[]> {
+  if (accessibleProjectIds.length === 0) {
+    return [];
+  }
 
-  // Use .where() to filter by published at the database level
-  // This gets ALL private artifacts, which will be filtered by accessible project IDs
-  return await collection.where({ published: false }).find();
+  // Get junction entries for accessible projects
+  const junctionCollection = quick.db.collection("project_artifacts");
+  const allJunctionEntries: ProjectArtifact[] = await junctionCollection.find();
+
+  // Filter junction entries to only those in accessible projects
+  const accessibleProjectIdSet = new Set(accessibleProjectIds);
+  const relevantJunctionEntries = allJunctionEntries.filter(
+    (entry: ProjectArtifact) => accessibleProjectIdSet.has(entry.project_id)
+  );
+
+  if (relevantJunctionEntries.length === 0) {
+    return [];
+  }
+
+  // Get unique artifact IDs from junction entries
+  const artifactIds = new Set(
+    relevantJunctionEntries.map((entry: ProjectArtifact) => entry.artifact_id)
+  );
+
+  // Fetch all artifacts
+  const artifactsCollection = quick.db.collection("artifacts");
+  const allArtifacts: Artifact[] = await artifactsCollection.find();
+
+  // Filter to:
+  // 1. Only artifacts linked to accessible projects
+  // 2. Only unpublished artifacts
+  // 3. Only artifacts matching the search query
+  return allArtifacts.filter(
+    (artifact: Artifact) =>
+      artifactIds.has(artifact.id) &&
+      !artifact.published &&
+      artifact.name.toLowerCase().includes(normalizedQuery)
+  );
 }

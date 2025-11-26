@@ -1,7 +1,7 @@
 import { useCallback, useRef } from "react";
 import type { UniqueIdentifier } from "@dnd-kit/core";
 import { arrayMove } from "@dnd-kit/sortable";
-import type { Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 import {
   getCollectionMetadata,
   getCollectionArtifacts,
@@ -10,35 +10,35 @@ import {
 } from "@/lib/collection-utils";
 
 interface UseDragHandlersProps {
-  items: Artifact[];
-  artifacts: Artifact[];
+  items: ArtifactWithPosition[];
+  artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   activeId: UniqueIdentifier | null;
   onUpdateArtifact?: (
     artifactId: string,
     updates: { name?: string; metadata?: Record<string, unknown> }
   ) => Promise<void>;
-  onReorder?: (artifacts: Artifact[]) => void;
+  onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onRemoveFromCollection?: (
     artifactId: string,
     newPosition: number
   ) => Promise<void>;
   resetCollectionState: () => void;
-  setItems: (items: Artifact[]) => void;
+  setItems: (items: ArtifactWithPosition[]) => void;
   setIsSettling: (settling: boolean) => void;
   setSettlingId: (id: UniqueIdentifier | null) => void;
   setActiveId: (id: UniqueIdentifier | null) => void;
-  prevArtifactsRef: React.MutableRefObject<Artifact[]>;
+  prevArtifactsRef: React.MutableRefObject<ArtifactWithPosition[]>;
 }
 
 const SETTLE_DURATION_MS = 250;
 
 // Helper: Build collection overrides to preserve order during reconstruction
 function buildCollectionOverrides(
-  reorderedItems: Artifact[],
-  allArtifacts: Artifact[]
-): Map<string, Artifact[]> | undefined {
-  const collectionGroups = new Map<string, Artifact[]>();
+  reorderedItems: ArtifactWithPosition[],
+  allArtifacts: ArtifactWithPosition[]
+): Map<string, ArtifactWithPosition[]> | undefined {
+  const collectionGroups = new Map<string, ArtifactWithPosition[]>();
 
   reorderedItems.forEach((item) => {
     const meta = getCollectionMetadata(item);
@@ -52,22 +52,22 @@ function buildCollectionOverrides(
 
   if (collectionGroups.size === 0) return undefined;
 
-  const overrides = new Map<string, Artifact[]>();
+  const overrides = new Map<string, ArtifactWithPosition[]>();
   collectionGroups.forEach((visibleItems, collectionId) => {
     const allCollectionItems = getCollectionArtifacts(
       collectionId,
       allArtifacts
     );
-    const ordered: Artifact[] = [];
+    const ordered: ArtifactWithPosition[] = [];
 
     visibleItems.forEach((visualItem) => {
       const fullArtifact = allArtifacts.find((a) => a.id === visualItem.id);
-      if (fullArtifact) ordered.push(fullArtifact);
+      if (fullArtifact) ordered.push(fullArtifact as ArtifactWithPosition);
     });
 
     allCollectionItems.forEach((item) => {
       if (!ordered.some((added) => added.id === item.id)) {
-        ordered.push(item);
+        ordered.push(item as ArtifactWithPosition);
       }
     });
 
@@ -126,7 +126,7 @@ export function useDragHandlers({
       const updatedMetadata = { ...activeMetadata };
       delete updatedMetadata.collection_id;
 
-      const applyMetadata = (artifact: Artifact) => {
+      const applyMetadata = (artifact: ArtifactWithPosition) => {
         if (artifact.id === activeArtifact.id) {
           return { ...artifact, metadata: updatedMetadata };
         }
@@ -217,7 +217,7 @@ export function useDragHandlers({
 
       if (settleTimeoutRef.current) clearTimeout(settleTimeoutRef.current);
       settleTimeoutRef.current = setTimeout(async () => {
-        const collectionArtifactsInOrder: Artifact[] = [];
+        const collectionArtifactsInOrder: ArtifactWithPosition[] = [];
 
         reorderedItems.forEach((visualItem) => {
           const artifact = artifacts.find((a) => a.id === visualItem.id);
@@ -243,7 +243,7 @@ export function useDragHandlers({
             : artifact
         );
 
-        const collectionOverrides = new Map<string, Artifact[]>();
+        const collectionOverrides = new Map<string, ArtifactWithPosition[]>();
         collectionOverrides.set(targetCollectionId, collectionArtifactsInOrder);
 
         const fullReordered = reconstructFullArtifactsArray(
