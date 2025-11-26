@@ -88,7 +88,7 @@ export default function Home() {
         <ViewToggle />
       </>
     ),
-    center: <SearchBar />,
+    center: <SearchBar mode="public" />,
     right: (
       <>
         <ArtifactAdder createArtifact={createArtifact} />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { searchResources, SearchResults } from "@/lib/search";
+import { searchResources, SearchResults, SearchMode } from "@/lib/search";
 import { waitForQuick } from "@/lib/quick";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
@@ -17,12 +17,19 @@ import { FileText, FolderOpen, Presentation } from "lucide-react";
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const query = searchParams?.get("q") || "";
+  const modeParam = searchParams?.get("mode");
+  
+  // Validate and parse mode parameter
+  const mode: SearchMode = 
+    modeParam === "public" || modeParam === "dashboard" 
+      ? modeParam 
+      : "all";
 
   const [results, setResults] = useState<SearchResults | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Set header content
+  // Set header content - pass the same mode to maintain consistency
   useSetHeader({
     left: (
       <>
@@ -30,7 +37,7 @@ export default function SearchPage() {
         <ViewToggle />
       </>
     ),
-    center: <SearchBar />,
+    center: <SearchBar mode={mode} />,
     right: <DarkModeToggle />,
   });
 
@@ -50,8 +57,8 @@ export default function SearchPage() {
         const quick = await waitForQuick();
         const email = quick.id.email;
 
-        // Perform search
-        const searchResults = await searchResources(query, email);
+        // Perform search with mode
+        const searchResults = await searchResources(query, email, mode);
         setResults(searchResults);
       } catch (err) {
         console.error("Search error:", err);
@@ -62,7 +69,7 @@ export default function SearchPage() {
     }
 
     performSearch();
-  }, [query]);
+  }, [query, mode]);
 
   if (loading) {
     return (
@@ -114,10 +121,15 @@ export default function SearchPage() {
     <div className="max-w-7xl mx-auto p-6">
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">
-          Search results for &quot;{query}&quot;
+          {mode === "public" && "Published artifacts for "}
+          {mode === "dashboard" && "Your content for "}
+          {mode === "all" && "Search results for "}
+          &quot;{query}&quot;
         </h1>
         <p className="text-muted-foreground">
           Found {totalResults} result{totalResults !== 1 ? "s" : ""}
+          {mode === "public" && " in published artifacts"}
+          {mode === "dashboard" && " in your folders, projects, and artifacts"}
         </p>
       </div>
 

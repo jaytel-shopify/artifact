@@ -94,7 +94,7 @@ export default function ProjectsPage() {
         <ViewToggle />
       </>
     ),
-    center: <SearchBar />,
+    center: <SearchBar mode="dashboard" />,
     right: (
       <>
         <Button

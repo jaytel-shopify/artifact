@@ -16,7 +16,7 @@ export default function ViewToggle() {
       <Link
         href="/"
         className={`relative flex items-center justify-center px-3 rounded-button-inner text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-1 ${
-          isExplore ? "text-primary" : "text-foreground hover:text-foreground"
+          isExplore ? "text-white" : "text-foreground hover:text-foreground"
         }`}
       >
         Explore
@@ -24,7 +24,7 @@ export default function ViewToggle() {
       <Link
         href="/projects"
         className={`relative flex items-center justify-center px-3 rounded-button-inner text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-2 ${
-          isProjects ? "text-primary" : "text-foreground hover:text-foreground"
+          isProjects ? "text-white" : "text-foreground hover:text-foreground"
         }`}
       >
         Projects
