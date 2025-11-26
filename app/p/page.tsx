@@ -463,7 +463,7 @@ function PresentationPageInner({
 
   return (
     <>
-      <div className="flex flex-1 min-h-0 relative">
+      <div className="flex flex-1 h-[calc(100vh-var(--header-height))] relative">
         {/* Mobile backdrop overlay */}
         {sidebarOpen && !presentationMode && (
           <div

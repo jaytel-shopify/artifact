@@ -53,7 +53,10 @@ interface Props {
   expandedCollections?: Set<string>;
   onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
-  onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
+  onRemoveFromCollection?: (
+    artifactId: string,
+    newPosition: number
+  ) => Promise<void>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
   onUpdateArtifact?: (
     artifactId: string,
@@ -351,7 +354,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         >
           <ul
             ref={containerRef}
-            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
+            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} h-full ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
           >
             {items.map((artifact, index) => {
               const artifactMetadata = getCollectionMetadata(artifact);

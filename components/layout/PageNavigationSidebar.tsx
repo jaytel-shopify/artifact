@@ -1,5 +1,6 @@
 "use client";
 
+import { Plus } from "lucide-react";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,6 +11,7 @@ import {
 } from "@/components/ui/context-menu";
 import { Page } from "@/types";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
   DndContext,
   closestCenter,
@@ -246,7 +248,7 @@ export default function PageNavigationSidebar({
 
   return (
     <aside
-      className="bg-background border-r border h-full flex-shrink-0"
+      className="bg-background h-full flex-shrink-0"
       style={{ width: "var(--sidebar-width)" }}
     >
       <div className="flex flex-col h-full p-[var(--spacing-2xl)]">
@@ -293,15 +295,10 @@ export default function PageNavigationSidebar({
 
         {/* Add New Page Button (hidden in read-only mode) */}
         {!isReadOnly && onPageCreate && (
-          <div className="pt-[var(--spacing-lg)] border-t border mt-[var(--spacing-lg)]">
-            <button
-              onClick={onPageCreate}
-              className="flex items-center gap-[var(--spacing-sm)] w-full p-[var(--spacing-sm)] rounded-[var(--radius-md)] text-muted-foreground hover:text-foreground hover:bg-secondary transition-all cursor-pointer foreground{ fontSize)"
-            >
-              <span className="text-lg">+</span>
-              <span>New Page</span>
-            </button>
-          </div>
+          <Button onClick={onPageCreate}>
+            <Plus className="h-4 w-4" />
+            <span>New Page</span>
+          </Button>
         )}
       </div>
     </aside>
