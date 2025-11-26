@@ -119,7 +119,7 @@ export default function Home() {
                 {row.artifacts.map(({ artifact, tabindex }) => (
                   <Card
                     key={artifact.id}
-                    className="grid relative cursor-pointer overflow-hidden h-fit outline-none focus-within:scale-105"
+                    className="grid relative cursor-pointer overflow-hidden h-fit rounded-card focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]"
                   >
                     <ArtifactThumbnail
                       artifact={artifact}

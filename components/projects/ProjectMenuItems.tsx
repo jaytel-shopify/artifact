@@ -1,6 +1,12 @@
-import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ContextMenuItem } from "@/components/ui/context-menu";
 import MoveToFolderMenu from "@/components/folders/MoveToFolderMenu";
+import { Folder as FolderIcon, X } from "lucide-react";
 import type { Project } from "@/types";
 import type { FolderWithCount } from "@/hooks/useProjectsData";
 
@@ -42,23 +48,46 @@ export function ProjectMenuItems({
     );
   }
 
-  // Dropdown variant
+  // Dropdown variant - use submenu like context menu
+  const availableFolders = folders.filter((f) => f.id !== project.folder_id);
+
   return (
     <>
       <DropdownMenuItem onClick={onRename}>Rename Project</DropdownMenuItem>
 
       {/* Move to Folder submenu */}
-      {folders.length > 0 && (
-        <>
-          {folders.map((folder) => (
-            <DropdownMenuItem
-              key={folder.id}
-              onClick={() => onMoveToFolder(folder.id)}
-            >
-              Move to {folder.name}
+      <DropdownMenuSub>
+        <DropdownMenuSubTrigger className="flex items-center gap-2">
+          <FolderIcon className="h-4 w-4" />
+          Move to Folder
+        </DropdownMenuSubTrigger>
+        <DropdownMenuSubContent>
+          {availableFolders.length > 0 ? (
+            availableFolders.map((folder) => (
+              <DropdownMenuItem
+                key={folder.id}
+                onClick={() => onMoveToFolder(folder.id)}
+              >
+                {folder.name}
+              </DropdownMenuItem>
+            ))
+          ) : (
+            <DropdownMenuItem disabled>
+              {project.folder_id ? "No other folders" : "No folders yet"}
             </DropdownMenuItem>
-          ))}
-        </>
+          )}
+        </DropdownMenuSubContent>
+      </DropdownMenuSub>
+
+      {/* Remove from Folder option (only if in a folder) */}
+      {project.folder_id && (
+        <DropdownMenuItem
+          onClick={onRemoveFromFolder}
+          className="flex items-center gap-2"
+        >
+          <X className="h-4 w-4" />
+          Remove from Folder
+        </DropdownMenuItem>
       )}
 
       <DropdownMenuItem variant="destructive" onClick={onDelete}>
