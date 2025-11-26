@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 export default function ViewToggle() {
   const pathname = usePathname();
   const isExplore = pathname === "/";
-  const isProjects = pathname === "/projects";
+  const isProjects = pathname.startsWith("/projects");
 
   return (
     <div className="grid grid-cols-2 grid-rows-[100%] bg-primary rounded-button p-0.5 h-10 border-[0.5px] border-border">
