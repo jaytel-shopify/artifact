@@ -40,8 +40,12 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
     );
   }
 
+  const hasHoverEffect = count > 2;
+
   return (
-    <div className="flex p-2 w-[140%]">
+    <div
+      className={`flex p-2 w-[140%] ${hasHoverEffect ? "transition-transform duration-500 ease-spring-light group-hover:-translate-x-[28.57%]" : ""}`}
+    >
       {Array.from({ length: 3 }).map((_, i) => (
         <div key={i} className="p-1 flex-1">
           {artifacts[i] && <ArtifactThumbnail artifact={artifacts[i]} />}
