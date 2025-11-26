@@ -519,6 +519,10 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  --ease-bouyant: var(--spring-bouyant);
+  --ease-spring: var(--spring-elegant-easing);
+  --ease-spring-light: var(--spring-elegant-easing-light);
 }
 
 html,
