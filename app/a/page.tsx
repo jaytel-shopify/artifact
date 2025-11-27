@@ -1,17 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import useSWR, { mutate as globalMutate } from "swr";
+import useSWR from "swr";
 import { Artifact } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
-import { getArtifactById, updateArtifact } from "@/lib/quick-db";
+import { getArtifactById } from "@/lib/quick-db";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ArrowLeft } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
+import { useReactions } from "@/hooks/useReactions";
 
 async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
   const artifact = await getArtifactById(artifactId);
@@ -30,6 +31,10 @@ export default function Page() {
   );
 
   const { user } = useAuth();
+  const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
+    artifact,
+    mutate,
+  });
 
   // Set header content
   useSetHeader({
@@ -55,99 +60,6 @@ export default function Page() {
   if (!artifact) {
     return <div>Artifact not found</div>;
   }
-
-  const handleLike = async () => {
-    if (!user?.id || !artifact) return;
-
-    const currentReactions = artifact.reactions || { like: [], dislike: [] };
-    const likeArray = currentReactions.like || [];
-    const hasLiked = likeArray.includes(user.id);
-
-    // Optimistic update
-    const optimisticArtifact: Artifact = {
-      ...artifact,
-      reactions: {
-        ...currentReactions,
-        like: hasLiked
-          ? likeArray.filter((id) => id !== user.id)
-          : [...likeArray, user.id],
-      },
-    };
-
-    mutate(optimisticArtifact, { revalidate: false });
-
-    // Also update the public-artifacts cache so homepage shows updated reactions
-    globalMutate(
-      "public-artifacts",
-      (current: Artifact[] = []) =>
-        current.map((a) =>
-          a.id === artifact.id
-            ? { ...a, reactions: optimisticArtifact.reactions }
-            : a
-        ),
-      { revalidate: false }
-    );
-
-    try {
-      await updateArtifact(artifact.id, {
-        reactions: optimisticArtifact.reactions,
-      });
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
-      mutate(); // Revert on error
-      globalMutate("public-artifacts"); // Revert homepage cache on error
-    }
-  };
-
-  const handleDislike = async () => {
-    if (!user?.id || !artifact) return;
-
-    const currentReactions = artifact.reactions || { like: [], dislike: [] };
-    const dislikeArray = currentReactions.dislike || [];
-    const hasDisliked = dislikeArray.includes(user.id);
-
-    // Optimistic update
-    const optimisticArtifact: Artifact = {
-      ...artifact,
-      reactions: {
-        ...currentReactions,
-        dislike: hasDisliked
-          ? dislikeArray.filter((id) => id !== user.id)
-          : [...dislikeArray, user.id],
-      },
-    };
-
-    mutate(optimisticArtifact, { revalidate: false });
-
-    // Also update the public-artifacts cache so homepage shows updated reactions
-    globalMutate(
-      "public-artifacts",
-      (current: Artifact[] = []) =>
-        current.map((a) =>
-          a.id === artifact.id
-            ? { ...a, reactions: optimisticArtifact.reactions }
-            : a
-        ),
-      { revalidate: false }
-    );
-
-    try {
-      await updateArtifact(artifact.id, {
-        reactions: optimisticArtifact.reactions,
-      });
-    } catch (error) {
-      console.error("Failed to toggle dislike:", error);
-      mutate(); // Revert on error
-      globalMutate("public-artifacts"); // Revert homepage cache on error
-    }
-  };
-
-  const userLiked = user?.id
-    ? artifact.reactions?.like?.includes(user.id)
-    : false;
-  const userDisliked = user?.id
-    ? artifact.reactions?.dislike?.includes(user.id)
-    : false;
 
   return (
     <div className="flex min-h-full items-center justify-center p-8">
