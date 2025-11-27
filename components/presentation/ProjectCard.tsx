@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
@@ -19,6 +18,7 @@ interface ProjectCoverData {
   created_at: string;
   updated_at: string;
   coverArtifacts: Artifact[];
+  artifactCount: number;
 }
 
 interface ProjectCardProps {
@@ -44,23 +44,23 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
 
   return (
     <div
-      className={`flex w-[140%] p-2 ${hasHoverEffect ? "ease-spring-light transition-transform duration-500 group-hover:-translate-x-[28.57%]" : ""}`}
+      className={`flex flex-1 w-[140%] p-2 pt-0 h-full overflow-hidden ${hasHoverEffect ? "ease-spring-light transition-transform duration-500 group-hover:-translate-x-[28.57%]" : ""}`}
     >
       {Array.from({ length: 3 }).map((_, i) => (
         <div key={i} className="flex-1 p-1">
-          {artifacts[i] && <ArtifactThumbnail artifact={artifacts[i]} className="rounded-card-inner" />}
+          {artifacts[i] && (
+            <ArtifactThumbnail
+              artifact={artifacts[i]}
+              className="rounded-card-inner max-h-full overflow-hidden"
+            />
+          )}
         </div>
       ))}
     </div>
   );
 }
 
-export default function ProjectCard({
-  project,
-  onClick,
-  onDelete,
-  menuItems,
-}: ProjectCardProps) {
+export default function ProjectCard({ project, menuItems }: ProjectCardProps) {
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -75,7 +75,7 @@ export default function ProjectCard({
 
   const cardContent = (
     <Card
-      className="group border-border hover:bg-secondary/10 relative flex cursor-pointer flex-col overflow-hidden border outline-none"
+      className="group border-border hover:bg-secondary/10 relative flex gap-0 cursor-pointer flex-col overflow-hidden border outline-none aspect-[300/250]"
       style={{
         transition: "all 500ms var(--spring-elegant-easing-light)",
       }}
@@ -108,9 +108,6 @@ export default function ProjectCard({
         </DropdownMenu>
       )}
 
-      {/* Dynamic Cover */}
-      <ProjectCover artifacts={project.coverArtifacts} />
-
       {/* Project Info */}
       <CardFooter className="mt-auto space-y-2 p-4">
         <div className="space-y-1">
@@ -118,10 +115,14 @@ export default function ProjectCard({
             {project.name}
           </h3>
           <p className="text-text-secondary text-small">
-            Last modified {formatDate(project.updated_at)}
+            {project.artifactCount}{" "}
+            {project.artifactCount === 1 ? "artifact" : "artifacts"}
           </p>
         </div>
       </CardFooter>
+
+      {/* Dynamic Cover */}
+      <ProjectCover artifacts={project.coverArtifacts} />
     </Card>
   );
 
