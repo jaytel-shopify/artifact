@@ -30,8 +30,8 @@ export default function ArtifactThumbnail({
     case "url":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-muted/20 flex items-center justify-center aspect-[16/11]">
-            <Globe className="w-8 h-8 text-muted-foreground" />
+          <div className="w-full h-full bg-secondary/20 flex items-center justify-center aspect-[16/11]">
+            <Globe className="w-8 h-8 text-text-secondary" />
           </div>
         </div>
       );
@@ -63,8 +63,8 @@ export default function ArtifactThumbnail({
     case "figma":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-chart-4/20 flex items-center justify-center aspect-[16/9]">
-            <div className="w-8 h-8 bg-chart-4 text-primary-foreground font-bold rounded-card-inner flex items-center justify-center text-lg">
+          <div className="w-full h-full bg-primary flex items-center justify-center aspect-[16/9]">
+            <div className="w-8 h-8 bg-primary text-text-primary font-bold rounded-card-inner flex items-center justify-center text-lg">
               F
             </div>
           </div>
@@ -75,7 +75,7 @@ export default function ArtifactThumbnail({
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-gradient-to-br from-secondary to-card flex items-center justify-center aspect-[16/9]">
-            <Type className="w-8 h-8 text-primary-foreground" />
+            <Type className="w-8 h-8 text-text-primary-foreground" />
           </div>
         </div>
       );
@@ -83,8 +83,8 @@ export default function ArtifactThumbnail({
     default:
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-muted/20 flex items-center justify-center">
-            <div className="w-8 h-8 bg-muted-foreground rounded-card-inner" />
+          <div className="w-full h-full bg-secondary/20 flex items-center justify-center">
+            <div className="w-8 h-8 bg-secondary-foreground rounded-card-inner" />
           </div>
         </div>
       );

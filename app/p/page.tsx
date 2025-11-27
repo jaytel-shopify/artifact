@@ -446,7 +446,7 @@ function PresentationPageInner({
         {/* Mobile backdrop overlay */}
         {sidebarOpen && !presentationMode && (
           <div
-            className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
+            className="fixed inset-0 bg-primary/50 z-[5] lg:hidden animate-in fade-in duration-300"
             style={{
               animationTimingFunction: "var(--spring-elegant-easing-light)",
             }}
@@ -499,7 +499,7 @@ function PresentationPageInner({
 
             {/* Loading/upload overlay */}
             {(dragging || isUploading) && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-primary/40 backdrop-blur-sm">
                 <div
                   className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
                   style={{ fontSize: "var(--font-size-sm)" }}
@@ -519,7 +519,7 @@ function PresentationPageInner({
                       </div>
                       {uploadState.uploading && (
                         <div className="space-y-2">
-                          <div className="w-full bg-muted rounded-full h-2">
+                          <div className="w-full bg-secondary rounded-full h-2">
                             <div
                               className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                               style={{
@@ -527,7 +527,7 @@ function PresentationPageInner({
                               }}
                             />
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-xs text-text-secondary">
                             {uploadState.currentProgress}%
                           </div>
                         </div>

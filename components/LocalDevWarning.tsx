@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 /**
  * LocalDevWarning
- * 
+ *
  * Shows a small notice when running on localhost with mock data.
  */
 export default function LocalDevWarning() {
@@ -15,20 +21,22 @@ export default function LocalDevWarning() {
   useEffect(() => {
     // Check if running on localhost
     const hostname = window.location.hostname;
-    const isLocal = hostname === "localhost" || 
-                    hostname === "127.0.0.1" ||
-                    hostname.startsWith("192.168.");
-    
+    const isLocal =
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname.startsWith("192.168.");
+
     setIsLocalhost(isLocal);
 
     // Check if previously dismissed
-    const wasDismissed = localStorage.getItem('local-dev-notice-dismissed') === 'true';
+    const wasDismissed =
+      localStorage.getItem("local-dev-notice-dismissed") === "true";
     setDismissed(wasDismissed);
   }, []);
 
   const handleDismiss = () => {
     setDismissed(true);
-    localStorage.setItem('local-dev-notice-dismissed', 'true');
+    localStorage.setItem("local-dev-notice-dismissed", "true");
   };
 
   // Don't show anything if not on localhost or if dismissed
@@ -38,7 +46,7 @@ export default function LocalDevWarning() {
 
   return (
     <div className="fixed top-4 right-4 z-50 max-w-md">
-      <Card className="border-chart-5/50 bg-chart-5/10">
+      <Card className="border-border bg-primary">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -47,7 +55,7 @@ export default function LocalDevWarning() {
             </CardTitle>
             <button
               onClick={handleDismiss}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-text-secondary hover:text-text-primary transition-colors"
               aria-label="Dismiss"
             >
               ×
@@ -58,10 +66,11 @@ export default function LocalDevWarning() {
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0 pb-3">
-          <p className="text-xs text-muted-foreground mb-2">
-            You&apos;re seeing placeholder data. File uploads will use sample images.
+          <p className="text-xs text-text-secondary mb-2">
+            You&apos;re seeing placeholder data. File uploads will use sample
+            images.
           </p>
-          <div className="bg-muted/50 p-2 rounded text-xs font-mono">
+          <div className="bg-secondary/50 p-2 rounded text-xs font-mono">
             pnpm build && quick deploy dist artifact
           </div>
         </CardContent>
@@ -69,4 +78,3 @@ export default function LocalDevWarning() {
     </div>
   );
 }
-

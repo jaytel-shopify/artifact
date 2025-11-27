@@ -11,7 +11,7 @@ interface UserChipProps {
 
 /**
  * UserChip
- * 
+ *
  * A compact chip component displaying a user with avatar and remove button.
  * Used for showing selected users in multi-select contexts.
  */
@@ -33,7 +33,7 @@ export function UserChip({
   return (
     <div
       className={`
-        flex items-center bg-accent rounded-full font-medium
+        flex items-center bg-secondary rounded-full font-medium
         ${sizeClasses[size]}
       `}
     >
@@ -56,4 +56,3 @@ export function UserChip({
     </div>
   );
 }
-

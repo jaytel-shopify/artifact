@@ -102,7 +102,7 @@ function SortablePageItem({
             if (e.key === "Enter") onEditSave();
             if (e.key === "Escape") onEditCancel();
           }}
-          className="flex-1 bg-secondary text-foreground border focus:border-accent focus:ring-accent/20"
+          className="flex-1 bg-secondary text-text-primary border focus:border-accent focus:ring-accent/20"
           style={{ fontSize: "var(--font-size-sm)" }}
           disabled={isRenaming}
           autoFocus
@@ -118,13 +118,13 @@ function SortablePageItem({
         style={style}
         className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-pointer transition-all ${
           isActive
-            ? "bg-tertiary"
+            ? "bg-secondary"
             : "hover:bg-secondary opacity-50 hover:opacity-100"
         }`}
         onClick={onSelect}
       >
         <span
-          className="text-foreground font-[var(--font-weight-normal)] flex-1"
+          className="text-text-primary font-[var(--font-weight-normal)] flex-1"
           style={{ fontSize: "var(--font-size-sm)" }}
         >
           {page.name}
@@ -143,13 +143,13 @@ function SortablePageItem({
           {...listeners}
           className={`flex items-center p-[var(--spacing-sm)] rounded-[var(--radius-md)] cursor-grab active:cursor-grabbing transition-all ${
             isActive
-              ? "bg-tertiary"
+              ? "bg-secondary"
               : "hover:bg-secondary opacity-50 hover:opacity-100"
           }`}
           onClick={onSelect}
         >
           <span
-            className="text-foreground font-[var(--font-weight-normal)] flex-1"
+            className="text-text-primary font-[var(--font-weight-normal)] flex-1"
             style={{ fontSize: "var(--font-size-sm)" }}
             onDoubleClick={(e) => {
               e.stopPropagation();
@@ -256,7 +256,7 @@ export default function PageNavigationSidebar({
         <div className="flex-1 space-y-0 overflow-y-auto">
           {pages.length === 0 ? (
             <div
-              className="text-muted-foreground text-center py-[var(--spacing-xl)]"
+              className="text-text-secondary text-center py-[var(--spacing-xl)]"
               style={{ fontSize: "var(--font-size-sm)" }}
             >
               No pages yet

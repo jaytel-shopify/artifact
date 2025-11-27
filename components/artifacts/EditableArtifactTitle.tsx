@@ -130,7 +130,9 @@ export default function EditableArtifactTitle({
   if (isEditing) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <div className="text-muted-foreground">{getArtifactIcon(artifactType)}</div>
+        <div className="text-text-secondary">
+          {getArtifactIcon(artifactType)}
+        </div>
         <Input
           ref={inputRef}
           type="text"
@@ -140,7 +142,7 @@ export default function EditableArtifactTitle({
           onBlur={handleBlur}
           disabled={isUpdating}
           placeholder="Untitled"
-          className="h-6 text-xs bg-input text-foreground border border-border focus:border-ring focus:bg-input px-2 py-1 min-w-0 w-full max-w-full"
+          className="h-6 text-xs bg-secondary text-text-primary border border-border focus:border-border focus:bg-secondary px-2 py-1 min-w-0 w-full max-w-full"
         />
       </div>
     );
@@ -149,7 +151,7 @@ export default function EditableArtifactTitle({
   return (
     <div className={`flex items-center gap-1 ${className}`}>
       {/* Left: Icon */}
-      <div className="text-muted-foreground flex-shrink-0">
+      <div className="text-text-secondary flex-shrink-0">
         {getArtifactIcon(artifactType)}
       </div>
 
@@ -158,12 +160,12 @@ export default function EditableArtifactTitle({
         className={`${
           readOnly
             ? "px-2 py-1"
-            : "cursor-pointer hover:bg-accent/10 rounded-md px-2 py-1 transition-colors duration-200"
+            : "cursor-pointer hover:bg-secondary/10 rounded-md px-2 py-1 transition-colors duration-200"
         } flex-1 min-w-0`}
         onDoubleClick={handleDoubleClick}
         title={readOnly ? undefined : "Double-click to edit"}
       >
-        <div className="text-xs text-muted-foreground truncate select-none">
+        <div className="text-xs text-text-secondary truncate select-none">
           {currentTitle || "Untitled"}
         </div>
       </div>
@@ -173,7 +175,7 @@ export default function EditableArtifactTitle({
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 flex-shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent/10"
+          className="h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
           onClick={(e) => {
             e.stopPropagation();
             window.open(sourceUrl, "_blank", "noopener,noreferrer");

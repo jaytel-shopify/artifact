@@ -9,7 +9,10 @@ import { CarouselItemContextMenu } from "./CarouselItemContextMenu";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
 import { Button } from "@/components/ui/button";
 import type { Artifact } from "@/types";
-import { getCollectionMetadata, getCollectionArtifacts } from "@/lib/collection-utils";
+import {
+  getCollectionMetadata,
+  getCollectionArtifacts,
+} from "@/lib/collection-utils";
 
 export enum Position {
   Before = -1,
@@ -110,7 +113,6 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     },
     ref
   ) {
-
     // Use provided data (required now, no mock fallback)
     const url = contentUrl || "";
     const type = contentType;
@@ -123,26 +125,40 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
     const isUrl = type === "url";
 
     // Check if this is part of a collection
-    const itemMetadata = getCollectionMetadata({ id: id.toString(), metadata } as Artifact);
+    const itemMetadata = getCollectionMetadata({
+      id: id.toString(),
+      metadata,
+    } as Artifact);
     const collectionId = itemMetadata.collection_id;
     const isInCollection = !!collectionId;
-    
+
     // Find all items in this collection
-    const collectionArtifacts = isInCollection && allArtifacts
-      ? getCollectionArtifacts(collectionId!, allArtifacts)
-      : [];
-    
+    const collectionArtifacts =
+      isInCollection && allArtifacts
+        ? getCollectionArtifacts(collectionId!, allArtifacts)
+        : [];
+
     // This item is the "first" in collection if it's in a collection and is index 0
-    const isCollectionFirst = isInCollection && collectionArtifacts.length > 0 && 
+    const isCollectionFirst =
+      isInCollection &&
+      collectionArtifacts.length > 0 &&
       collectionArtifacts[0].id === id.toString();
-    
+
     // Check if expanded using the passed-in state (not metadata)
-    const isExpanded = collectionId && expandedCollections ? expandedCollections.has(collectionId) : false;
+    const isExpanded =
+      collectionId && expandedCollections
+        ? expandedCollections.has(collectionId)
+        : false;
     const collectionCount = collectionArtifacts.length;
 
     // Handle double-click to expand/collapse collection
     const handleDoubleClick = (e: React.MouseEvent) => {
-      if (isCollectionFirst && collectionId && onToggleCollection && !isReadOnly) {
+      if (
+        isCollectionFirst &&
+        collectionId &&
+        onToggleCollection &&
+        !isReadOnly
+      ) {
         e.stopPropagation();
         e.preventDefault();
         onToggleCollection(collectionId);
@@ -200,7 +216,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground hover:bg-accent/10"
+                  className="h-6 w-6 p-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     onFocus();
@@ -255,7 +271,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
 
     // Don't show context menu for collapsed collections (they represent multiple items)
     const isCollapsedCollection = isCollectionFirst && !isExpanded;
-    
+
     if (isCollapsedCollection) {
       return contentElement;
     }

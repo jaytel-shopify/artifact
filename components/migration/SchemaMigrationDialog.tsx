@@ -136,15 +136,19 @@ export function SchemaMigrationDialog() {
           {state === "needs-migration" && status && (
             <div className="space-y-4">
               <DialogDescription>
-                Your database contains <strong>{status.oldSchemaArtifactCount}</strong>{" "}
-                artifact{status.oldSchemaArtifactCount !== 1 ? "s" : ""} using an
-                outdated schema. This update will migrate your data to support the
-                new many-to-many relationship between artifacts and projects.
+                Your database contains{" "}
+                <strong>{status.oldSchemaArtifactCount}</strong> artifact
+                {status.oldSchemaArtifactCount !== 1 ? "s" : ""} using an
+                outdated schema. This update will migrate your data to support
+                the new many-to-many relationship between artifacts and
+                projects.
               </DialogDescription>
-              <div className="rounded-lg bg-muted p-3 text-sm">
+              <div className="rounded-lg bg-secondary p-3 text-sm">
                 <p className="font-medium mb-1">What will happen:</p>
-                <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                  <li>Junction entries will be created for project/page links</li>
+                <ul className="list-disc list-inside text-text-secondary space-y-1">
+                  <li>
+                    Junction entries will be created for project/page links
+                  </li>
                   <li>Old schema fields will be removed from artifacts</li>
                   <li>Your data will remain intact</li>
                 </ul>
@@ -165,7 +169,7 @@ export function SchemaMigrationDialog() {
                     {progress.completed} / {progress.total}
                   </span>
                 </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-secondary rounded-full overflow-hidden">
                   <div
                     className="h-full bg-primary transition-all duration-300"
                     style={{
@@ -190,7 +194,7 @@ export function SchemaMigrationDialog() {
               <DialogDescription className="text-destructive">
                 {error || "An error occurred during migration."}
               </DialogDescription>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-text-secondary">
                 Please try again or contact support if the issue persists.
               </p>
             </div>
@@ -231,4 +235,3 @@ export function SchemaMigrationDialog() {
     </Dialog>
   );
 }
-

@@ -40,15 +40,15 @@ export default function SearchBar({ mode = "all" }: SearchBarProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="relative w-64 h-10 bg-primary rounded-button"
+      className="bg-primary rounded-button relative h-10 w-64"
     >
-      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+      <Search className="text-text-secondary pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
       <Input
         type="search"
         placeholder={placeholder}
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="pl-9 border-[0.5px] border-border h-full rounded-button"
+        className="border-border rounded-button h-full border pl-9"
       />
     </form>
   );

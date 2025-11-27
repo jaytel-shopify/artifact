@@ -122,9 +122,9 @@ export function SaveToProjectDialog({
 
         <div className="space-y-4 py-4">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading projects...</p>
+            <p className="text-sm text-text-secondary">Loading projects...</p>
           ) : projects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-secondary">
               No projects found. Create a project first to save artifacts.
             </p>
           ) : (
@@ -187,4 +187,3 @@ export function SaveToProjectDialog({
     </Dialog>
   );
 }
-

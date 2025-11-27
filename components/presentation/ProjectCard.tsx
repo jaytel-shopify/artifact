@@ -34,8 +34,8 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
 
   if (count === 0) {
     return (
-      <div className="w-full flex-1 flex items-center justify-center">
-        <span className="text-muted-foreground text-sm">No artifacts</span>
+      <div className="flex w-full flex-1 items-center justify-center">
+        <span className="text-text-secondary text-sm">No artifacts</span>
       </div>
     );
   }
@@ -44,10 +44,10 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
 
   return (
     <div
-      className={`flex p-2 w-[140%] ${hasHoverEffect ? "transition-transform duration-500 ease-spring-light group-hover:-translate-x-[28.57%]" : ""}`}
+      className={`flex w-[140%] p-2 ${hasHoverEffect ? "ease-spring-light transition-transform duration-500 group-hover:-translate-x-[28.57%]" : ""}`}
     >
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="p-1 flex-1">
+        <div key={i} className="flex-1 p-1">
           {artifacts[i] && <ArtifactThumbnail artifact={artifacts[i]} />}
         </div>
       ))}
@@ -75,7 +75,7 @@ export default function ProjectCard({
 
   const cardContent = (
     <Card
-      className="group relative cursor-pointer overflow-hidden flex flex-col outline-none border-[0.5px] border-border hover:bg-accent/50"
+      className="group border-border hover:bg-secondary/10 relative flex cursor-pointer flex-col overflow-hidden border outline-none"
       style={{
         transition: "all 500ms var(--spring-elegant-easing-light)",
       }}
@@ -87,7 +87,7 @@ export default function ProjectCard({
             <Button
               variant="ghost"
               size="icon"
-              className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-background hover:bg-secondary text-foreground"
+              className="bg-background hover:bg-secondary text-text-primary absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -112,12 +112,12 @@ export default function ProjectCard({
       <ProjectCover artifacts={project.coverArtifacts} />
 
       {/* Project Info */}
-      <CardFooter className="p-4 space-y-2 mt-auto">
+      <CardFooter className="mt-auto space-y-2 p-4">
         <div className="space-y-1">
-          <h3 className="font-medium text-foreground line-clamp-1">
+          <h3 className="text-text-primary line-clamp-1 font-medium">
             {project.name}
           </h3>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-text-secondary text-sm">
             Last modified {formatDate(project.updated_at)}
           </p>
         </div>

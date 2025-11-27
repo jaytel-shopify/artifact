@@ -54,7 +54,7 @@ export default function FolderCard({
           prefetch={false}
           className="block"
         >
-          <div className="group relative bg-card border-[0.5px] border-border hover:bg-accent/50 rounded-card p-4 cursor-pointer transition-all">
+          <div className="group bg-primary border-border hover:bg-secondary/10 rounded-card relative cursor-pointer border p-4 transition-all">
             {/* Actions Menu (visible on hover) */}
             <div className="flex items-start justify-end">
               <DropdownMenu>
@@ -65,7 +65,7 @@ export default function FolderCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -95,8 +95,8 @@ export default function FolderCard({
 
             {/* Folder Info */}
             <div className="space-y-1">
-              <h3 className="font-semibold text-sm truncate">{folder.name}</h3>
-              <p className="text-xs text-muted-foreground">
+              <h3 className="truncate text-sm font-semibold">{folder.name}</h3>
+              <p className="text-text-secondary text-xs">
                 {projectCount} {projectCount === 1 ? "project" : "projects"}
               </p>
             </div>

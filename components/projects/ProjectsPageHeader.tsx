@@ -20,7 +20,7 @@ export function ProjectsPageHeader({
             className="w-8 h-8"
             style={{ imageRendering: "crisp-edges" }}
           />
-          <h1 className="text-lg font-semibold text-foreground">Artifact</h1>
+          <h1 className="text-lg font-semibold text-text-primary">Artifact</h1>
         </div>
 
         <div className="flex items-center gap-3">

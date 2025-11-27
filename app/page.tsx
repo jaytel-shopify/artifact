@@ -99,14 +99,14 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-foreground">Loading...</p>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <p className="text-text-primary">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="mx-auto max-w-7xl p-6">
       {error && (
         <p className="text-destructive">Failed to load public artifacts</p>
       )}
@@ -119,23 +119,23 @@ export default function Home() {
                 {row.artifacts.map(({ artifact, tabindex }) => (
                   <Card
                     key={artifact.id}
-                    className="grid relative cursor-pointer overflow-hidden h-fit rounded-card focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]"
+                    className="rounded-card relative grid h-fit cursor-pointer overflow-hidden focus-within:ring-[3px]"
                   >
                     <ArtifactThumbnail
                       artifact={artifact}
-                      className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+                      className="col-span-1 col-start-1 row-span-2 row-start-1 w-full"
                     />
 
-                    <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-2 md:p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
+                    <div className="from-background/80 col-span-1 col-start-1 row-start-2 bg-gradient-to-t to-transparent p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4">
                       <Link
                         href={`/a/?id=${artifact.id}`}
-                        className="after:content-[''] after:absolute after:inset-0"
+                        className="after:absolute after:inset-0 after:content-['']"
                         tabIndex={tabindex}
                       >
-                        <h3 className="text-medium text-foreground line-clamp-1 overflow-ellipsis">
+                        <h3 className="text-medium text-text-primary line-clamp-1 overflow-ellipsis">
                           {artifact.name}
                         </h3>
-                        <p className="text-small text-muted-foreground overflow-ellipsis">
+                        <p className="text-small text-text-secondary overflow-ellipsis">
                           {artifact.type}
                         </p>
                       </Link>
@@ -147,7 +147,7 @@ export default function Home() {
           </div>
 
           {hasMore && (
-            <div className="flex justify-center mt-8">
+            <div className="mt-8 flex justify-center">
               <Button
                 onClick={loadMore}
                 disabled={isLoadingMore}
@@ -160,8 +160,8 @@ export default function Home() {
           )}
         </>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No public artifacts yet</p>
+        <div className="py-12 text-center">
+          <p className="text-text-secondary">No public artifacts yet</p>
         </div>
       )}
     </div>

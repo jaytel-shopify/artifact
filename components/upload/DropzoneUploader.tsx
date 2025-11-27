@@ -90,7 +90,7 @@ export default function DropzoneUploader({
       style={{ pointerEvents: dragging ? "auto" : "none" }}
     >
       {dragging && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-lg text-white/90 pointer-events-none">
+        <div className="absolute inset-0 flex items-center justify-center bg-primary/60 backdrop-blur-lg text-white/90 pointer-events-none">
           <div className="text-center space-y-3 w-full max-w-xs px-6">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-white/10 border border-white/20">
               <svg

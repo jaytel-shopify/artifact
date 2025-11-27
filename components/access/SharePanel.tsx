@@ -302,7 +302,7 @@ export function SharePanel({
                 </Button>
               )}
 
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-text-secondary">
                 Search and select people to invite. They&apos;ll receive a Slack
                 notification.
               </p>
@@ -311,16 +311,16 @@ export function SharePanel({
 
           {/* Who has access */}
           <div className="space-y-3">
-            <h3 className="text-base font-medium text-muted-foreground">
+            <h3 className="text-text-primary font-medium text-text-secondary">
               Who has access
             </h3>
 
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-text-secondary">
                 Loading...
               </div>
             ) : accessList.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-text-secondary">
                 No one has access yet
               </div>
             ) : (
@@ -340,12 +340,12 @@ export function SharePanel({
                         {owner.user_name || owner.user_email}
                         {owner.user_email.toLowerCase() ===
                           currentUserEmail.toLowerCase() && (
-                          <span className="text-muted-foreground"> (you)</span>
+                          <span className="text-text-secondary"> (you)</span>
                         )}
                       </div>
                     </div>
 
-                    <div className="text-sm text-muted-foreground">owner</div>
+                    <div className="text-sm text-text-secondary">owner</div>
                   </div>
                 )}
 
@@ -367,7 +367,7 @@ export function SharePanel({
                         {access.user_name || access.user_email}
                         {access.user_email.toLowerCase() ===
                           currentUserEmail.toLowerCase() && (
-                          <span className="text-muted-foreground"> (you)</span>
+                          <span className="text-text-secondary"> (you)</span>
                         )}
                       </div>
                     </div>
@@ -405,7 +405,7 @@ export function SharePanel({
                         </SelectContent>
                       </Select>
                     ) : (
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-sm text-text-secondary">
                         {access.access_level}
                       </div>
                     )}

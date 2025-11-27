@@ -13,7 +13,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
 
   return (
     <div
-      className="h-screen flex flex-col bg-background text-foreground"
+      className="h-screen flex flex-col bg-background text-text-primary"
       style={{ fontFamily: "var(--font-family-primary)" }}
     >
       <GlobalHeader

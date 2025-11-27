@@ -138,7 +138,7 @@ export default function Page() {
         <div>
           <h1 className="text-4xl font-bold mb-4">Artifact {artifact.name}</h1>
           {artifact.description && (
-            <p className="text-sm text-muted-foreground capitalize">
+            <p className="text-sm text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}

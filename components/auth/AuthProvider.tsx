@@ -130,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         <div className="min-h-screen flex items-center justify-center bg-background">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
-            <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+            <p className="mt-4 text-sm text-text-secondary">Loading...</p>
           </div>
         </div>
       </AuthContext.Provider>

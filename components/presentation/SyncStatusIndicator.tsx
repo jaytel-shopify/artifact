@@ -56,7 +56,7 @@ export default function SyncStatusIndicator({
     <div className="flex items-center gap-2">
       {/* Viewer Avatars (only show when synced and there are other viewers) */}
       {isPresenceReady && viewersCount >= 1 && (
-        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border bg-primary/10 border-primary/20 text-primary">
+        <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border bg-primary/10 border-primary/20 text-text-primary">
           <div className="flex items-center -space-x-2">
             {users.slice(0, 5).map((user, index) => {
               const displayName = user.name || user.email || "Unknown";
@@ -85,7 +85,7 @@ export default function SyncStatusIndicator({
                     />
                   ) : (
                     <div
-                      className={`w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 bg-gradient-to-br from-primary to-primary flex items-center justify-center text-[10px] font-semibold text-primary-foreground transition-all cursor-pointer ${
+                      className={`w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 bg-gradient-to-br from-primary to-primary flex items-center justify-center text-[10px] font-semibold text-text-primary-foreground transition-all cursor-pointer ${
                         isFollowing
                           ? "border-primary-foreground ring-2 ring-destructive"
                           : "border-primary-foreground ring-1 ring-primary/20 hover:ring-2 hover:ring-primary/40"
@@ -96,7 +96,7 @@ export default function SyncStatusIndicator({
                     </div>
                   )}
                   {/* Tooltip on hover */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-popover text-popover-foreground text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-popover text-text-primary text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                     {displayName}
                   </div>
                 </div>
@@ -104,7 +104,7 @@ export default function SyncStatusIndicator({
             })}
             {viewersCount > 5 && (
               <div
-                className="w-6 h-6 rounded-full border-2 border-primary-foreground ring-1 ring-primary/20 bg-gradient-to-br from-primary to-primary flex items-center justify-center text-[10px] font-semibold text-primary-foreground"
+                className="w-6 h-6 rounded-full border-2 border-primary-foreground ring-1 ring-primary/20 bg-gradient-to-br from-primary to-primary flex items-center justify-center text-[10px] font-semibold text-text-primary-foreground"
                 title={`${viewersCount - 5} more viewer${viewersCount - 5 === 1 ? "" : "s"}`}
               >
                 +{viewersCount - 5}

@@ -58,7 +58,7 @@ export default function FollowControlPanel() {
             <h3 className="font-bold text-sm">Follow Mode</h3>
             <div className="flex gap-2">
               {followers.length > 0 && (
-                <span className="text-xs bg-chart-2/20 text-chart-2 px-2 py-1 rounded-full font-medium">
+                <span className="text-xs bg-primary text-text-primary px-2 py-1 rounded-full font-medium">
                   {followers.length} follower{followers.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -81,7 +81,7 @@ export default function FollowControlPanel() {
                     Following {followedUser.name || followedUser.email}
                   </div>
                   {followedUser.title && (
-                    <div className="text-xs text-muted-foreground truncate">
+                    <div className="text-xs text-text-secondary truncate">
                       {followedUser.title}
                     </div>
                   )}
@@ -100,12 +100,12 @@ export default function FollowControlPanel() {
 
           {/* Show if you have followers (auto-leading) */}
           {!isFollowing && followers.length > 0 && (
-            <div className="bg-chart-2/10 border-2 border-chart-2/20 rounded p-3">
+            <div className="bg-primary border-2 border-border rounded p-3">
               <div className="font-medium text-sm mb-1">
                 🎯 Broadcasting to {followers.length} follower
                 {followers.length !== 1 ? "s" : ""}
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-text-secondary">
                 Your actions are automatically broadcast when you have followers
               </p>
             </div>
@@ -137,7 +137,7 @@ export default function FollowControlPanel() {
                   </DialogHeader>
                   <div className="space-y-2 mt-4">
                     {availableUsers.length === 0 ? (
-                      <p className="text-sm text-muted-foreground text-center py-4">
+                      <p className="text-sm text-text-secondary text-center py-4">
                         No users available to follow
                       </p>
                     ) : (
@@ -145,7 +145,7 @@ export default function FollowControlPanel() {
                         <button
                           key={user.socketId}
                           onClick={() => handleFollowUser(user.socketId)}
-                          className="w-full p-3 border-2 border-border rounded hover:bg-accent transition-colors"
+                          className="w-full p-3 border-2 border-border rounded hover:bg-secondary transition-colors"
                         >
                           <div className="flex items-center gap-3">
                             {user.slackImageUrl && (
@@ -160,12 +160,12 @@ export default function FollowControlPanel() {
                                 {user.name || user.email}
                               </div>
                               {user.title && (
-                                <div className="text-sm text-muted-foreground truncate">
+                                <div className="text-sm text-text-secondary truncate">
                                   {user.title}
                                 </div>
                               )}
                               {user.slackHandle && (
-                                <div className="text-xs text-muted-foreground">
+                                <div className="text-xs text-text-secondary">
                                   @{user.slackHandle}
                                 </div>
                               )}
@@ -183,7 +183,7 @@ export default function FollowControlPanel() {
           {/* Show current followers */}
           {!isFollowing && followers.length > 0 && (
             <div className="pt-2 border-t-2 border-border">
-              <div className="text-xs font-medium text-muted-foreground mb-2">
+              <div className="text-xs font-medium text-text-secondary mb-2">
                 Current Followers:
               </div>
               <div className="space-y-1">

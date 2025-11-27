@@ -312,7 +312,7 @@ function FolderPageContent() {
     <div className="max-w-7xl mx-auto p-6">
       {projects.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-muted-foreground mb-4">
+          <p className="text-text-secondary mb-4">
             No projects in this folder yet
           </p>
           {canEdit && (
