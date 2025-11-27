@@ -1,6 +1,6 @@
 "use client";
 
-import type { Artifact, ArtifactType } from "@/types";
+import type { ArtifactType } from "@/types";
 import FeedCard from "@/components/presentation/FeedCard";
 import { Button } from "@/components/ui/button";
 import { createArtifact as createArtifactDB } from "@/lib/quick-db";
@@ -10,7 +10,10 @@ import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
-import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
+import {
+  usePublicArtifacts,
+  type ArtifactWithCreator,
+} from "@/hooks/usePublicArtifacts";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function Home() {
@@ -32,7 +35,7 @@ export default function Home() {
   ] as {
     height: number;
     artifacts: {
-      artifact: Artifact;
+      artifact: ArtifactWithCreator;
       tabindex: number;
     }[];
   }[];

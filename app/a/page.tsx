@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Artifact } from "@/types";
+import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { getArtifactById } from "@/lib/quick-db";
@@ -13,8 +13,11 @@ import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
 import { useReactions } from "@/hooks/useReactions";
+import { UserAvatar } from "@/components/auth/UserAvatar";
 
-async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
+async function fetchArtifact(
+  artifactId: string
+): Promise<ArtifactWithCreator | null> {
   const artifact = await getArtifactById(artifactId);
   return artifact;
 }
@@ -24,7 +27,7 @@ export default function Page() {
   const artifactId = searchParams?.get("id") || "";
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
-  const { data: artifact, mutate } = useSWR<Artifact | null>(
+  const { data: artifact, mutate } = useSWR<ArtifactWithCreator | null>(
     artifactId ? `artifact-${artifactId}` : null,
     () => (artifactId ? fetchArtifact(artifactId) : null),
     { revalidateOnFocus: false }
@@ -69,12 +72,13 @@ export default function Page() {
           className="w-full max-w-[680px] max-h-full rounded-card"
         />
         <div>
-          <h1 className="text-4xl font-bold mb-4">Artifact {artifact.name}</h1>
+          <h1 className="text-medium mb-4">Artifact {artifact.name}</h1>
           {artifact.description && (
             <p className="text-small text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}
+
           <div className="flex gap-2 mt-4">
             <Button
               onClick={handleLike}
@@ -88,6 +92,19 @@ export default function Page() {
             >
               🤔 {artifact.reactions?.dislike?.length || 0}
             </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <UserAvatar
+              id={artifact.creator?.id}
+              email={artifact.creator?.email}
+              name={artifact.creator?.name}
+              imageUrl={artifact.creator?.slack_image_url}
+              size="sm"
+            />
+            <p className="text-small text-text-secondary capitalize">
+              {artifact.creator?.name}
+            </p>
           </div>
         </div>
       </div>

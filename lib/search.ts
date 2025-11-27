@@ -3,6 +3,7 @@
 import { waitForQuick } from "./quick";
 import { getProjects } from "./quick-db";
 import { getUserAccessibleResources } from "./access-control";
+import { getUserByEmail } from "./quick-users";
 import type { Artifact, Project, Folder, ProjectArtifact } from "@/types";
 
 /**
@@ -154,6 +155,10 @@ async function searchFolders(
   // Get all folders
   const allFolders = await collection.find();
 
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(userEmail);
+  const userId = user?.id;
+
   // Get folders user has access to via access control system
   const accessibleFolders = await getUserAccessibleResources(
     userEmail,
@@ -163,9 +168,9 @@ async function searchFolders(
     accessibleFolders.map((a) => a.resource_id)
   );
 
-  // Filter folders: user is creator OR user has access via access control
+  // Filter folders: user is creator (by User.id) OR user has access via access control
   const userFolders = allFolders.filter(
-    (f: Folder) => f.creator_id === userEmail || accessibleFolderIds.has(f.id)
+    (f: Folder) => (userId && f.creator_id === userId) || accessibleFolderIds.has(f.id)
   );
 
   // Client-side filtering for name substring match (case-insensitive)

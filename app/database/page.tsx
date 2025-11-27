@@ -122,6 +122,25 @@ export default function DatabaseViewerPage() {
     const projects = data.projects || [];
     const folders = data.folders || [];
     const accessEntries = data.access_control || [];
+    const users = data.users || [];
+
+    // Build a map from User.id to email for creator lookups
+    const userIdToEmail = new Map<string, string>();
+    users.forEach((user: any) => {
+      if (user.id && user.email) {
+        userIdToEmail.set(user.id, user.email.toLowerCase());
+      }
+    });
+
+    // Helper to get creator's email from creator_id (which may be UUID or legacy email)
+    const getCreatorEmail = (creatorId: string): string | null => {
+      // Check if it's a UUID (new schema) - look up in users
+      const email = userIdToEmail.get(creatorId);
+      if (email) return email;
+      // Check if it's already an email (legacy data)
+      if (creatorId && creatorId.includes("@")) return creatorId.toLowerCase();
+      return null;
+    };
 
     const resources: ResourceAccess[] = [];
     const orphanedAccess: any[] = [];
@@ -146,17 +165,20 @@ export default function DatabaseViewerPage() {
       }
 
       // Check if creator has owner access
+      // creator_id may be a User.id (UUID) or legacy email
+      const creatorEmail = getCreatorEmail(project.creator_id);
       const creatorAccess = projectAccess.find(
         (entry) =>
-          entry.user_email === project.creator_id &&
+          entry.user_email?.toLowerCase() === creatorEmail &&
           entry.access_level === "owner"
       );
 
       if (!creatorAccess) {
+        const creatorDisplay = creatorEmail || project.creator_id;
         issues.push({
           type: "missing_access",
           severity: "error",
-          message: `Creator (${project.creator_id}) is missing owner access`,
+          message: `Creator (${creatorDisplay}) is missing owner access`,
           resourceId: project.id,
         });
         totalIssues++;
@@ -189,17 +211,20 @@ export default function DatabaseViewerPage() {
       }
 
       // Check if creator has owner access
+      // creator_id may be a User.id (UUID) or legacy email
+      const folderCreatorEmail = getCreatorEmail(folder.creator_id);
       const creatorAccess = folderAccess.find(
         (entry) =>
-          entry.user_email === folder.creator_id &&
+          entry.user_email?.toLowerCase() === folderCreatorEmail &&
           entry.access_level === "owner"
       );
 
       if (!creatorAccess) {
+        const creatorDisplay = folderCreatorEmail || folder.creator_id;
         issues.push({
           type: "missing_access",
           severity: "error",
-          message: `Creator (${folder.creator_id}) is missing owner access`,
+          message: `Creator (${creatorDisplay}) is missing owner access`,
           resourceId: folder.id,
         });
         totalIssues++;

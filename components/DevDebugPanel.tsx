@@ -19,9 +19,10 @@ interface DevDebugPanelProps {
   projectInfo?: {
     id: string;
     name: string;
-    creator_id: string;
+    creator_id: string; // User.id (UUID)
   };
   userEmail?: string;
+  userId?: string; // User.id (UUID) for comparison with creator_id
 }
 
 /**
@@ -41,6 +42,7 @@ export default function DevDebugPanel({
   onToggleReadOnly,
   projectInfo,
   userEmail,
+  userId,
 }: DevDebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -142,8 +144,8 @@ export default function DevDebugPanel({
                     <span className="text-medium">{projectInfo.name}</span>
                   </div>
                   <div>
-                    <span className="text-text-secondary">Owner:</span>{" "}
-                    <span className="text-medium">
+                    <span className="text-text-secondary">Owner (User ID):</span>{" "}
+                    <span className="font-mono text-small">
                       {projectInfo.creator_id}
                     </span>
                   </div>
@@ -151,12 +153,12 @@ export default function DevDebugPanel({
                     <span className="text-text-secondary">Is Creator:</span>{" "}
                     <span
                       className={
-                        projectInfo.creator_id === userEmail
+                        projectInfo.creator_id === userId
                           ? "text-text-primary text-medium"
                           : "text-text-primary"
                       }
                     >
-                      {projectInfo.creator_id === userEmail ? "Yes ✓" : "No"}
+                      {projectInfo.creator_id === userId ? "Yes ✓" : "No"}
                     </span>
                   </div>
                 </div>

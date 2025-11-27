@@ -4,6 +4,7 @@ import { memo } from "react";
 import { useAuth } from "./AuthProvider";
 
 interface UserAvatarProps {
+  id?: string;
   email?: string;
   name?: string;
   imageUrl?: string;
@@ -16,6 +17,7 @@ interface UserAvatarProps {
  * 2. Without props - show current authenticated user's avatar
  */
 export function UserAvatar({
+  id,
   email,
   name,
   imageUrl,
@@ -25,8 +27,8 @@ export function UserAvatar({
 
   // Use provided props or fallback to current user
   const user =
-    email || name || imageUrl
-      ? { email, fullName: name, slackImageUrl: imageUrl }
+    id || email || name || imageUrl
+      ? { id, email, fullName: name, slackImageUrl: imageUrl }
       : currentUser;
 
   const sizeClasses = {

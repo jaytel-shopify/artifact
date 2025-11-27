@@ -4,6 +4,7 @@ import { waitForQuick } from "./quick";
 import type { Folder, Project } from "@/types";
 import { deleteProject } from "./quick-db";
 import { deleteAllAccessForResource, grantAccess } from "./access-control";
+import { getUserByEmail } from "./quick-users";
 
 /**
  * Quick.db Folders Service Layer
@@ -16,14 +17,22 @@ import { deleteAllAccessForResource, grantAccess } from "./access-control";
 
 /**
  * Get all folders owned by a user
+ * @param creatorEmail - Email of the user (will be looked up to find User.id)
  */
 export async function getFolders(creatorEmail: string): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
 
-  // Use .where() to filter by creator_id at the database level
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(creatorEmail);
+  if (!user) {
+    // User not found, return empty array
+    return [];
+  }
+
+  // Use .where() to filter by creator_id (User.id) at the database level
   const userFolders = await collection
-    .where({ creator_id: creatorEmail })
+    .where({ creator_id: user.id })
     .find();
 
   // Sort by last_accessed_at (most recent first), fallback to created_at
@@ -53,14 +62,21 @@ export async function getFolderById(id: string): Promise<Folder | null> {
 
 /**
  * Create a new folder
+ * @param data.creator_id - User's email (will be looked up to store User.id)
  */
 export async function createFolder(data: {
   name: string;
-  creator_id: string;
+  creator_id: string; // User's email
   position?: number;
 }): Promise<Folder> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
+
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(data.creator_id);
+  if (!user) {
+    throw new Error(`User not found for email: ${data.creator_id}`);
+  }
 
   // Get next position if not provided
   let position = data.position;
@@ -71,15 +87,15 @@ export async function createFolder(data: {
 
   const folder = await collection.create({
     name: data.name,
-    creator_id: data.creator_id,
+    creator_id: user.id, // Store User.id, not email
     position,
   });
 
-  // Grant owner access to creator
+  // Grant owner access to creator (access control still uses email)
   await grantAccess(
     folder.id,
     "folder",
-    data.creator_id,
+    data.creator_id, // Use email for access control
     "owner",
     data.creator_id
   );

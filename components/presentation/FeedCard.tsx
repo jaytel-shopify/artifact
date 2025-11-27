@@ -1,16 +1,18 @@
 "use client";
 
-import type { Artifact } from "@/types";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import Link from "next/link";
 import { useReactions } from "@/hooks/useReactions";
+import { ArtifactWithCreator } from "@/hooks/usePublicArtifacts";
+import { UserAvatar } from "@/components/auth/UserAvatar";
 
 interface FeedCardProps {
-  artifact: Artifact;
+  artifact: ArtifactWithCreator;
   tabIndex?: number;
 }
 
 export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
+  console.log(artifact);
   const { userLiked, userDisliked, handleLike, handleDislike, canReact } =
     useReactions({ artifact });
 
@@ -27,9 +29,18 @@ export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
           className="after:absolute after:inset-0 after:content-['']"
           tabIndex={tabIndex}
         >
-          <h3 className="text-small text-text-primary line-clamp-1 overflow-ellipsis px-3 h-8 flex items-center justify-center rounded-button bg-primary/80 backdrop-blur-md">
-            {artifact.name}
-          </h3>
+          <span className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-primary/80 backdrop-blur-md gap-2">
+            <UserAvatar
+              id={artifact.creator?.id}
+              email={artifact.creator?.email}
+              name={artifact.creator?.name}
+              imageUrl={artifact.creator?.slack_image_url}
+              size="sm"
+            />
+            <h3 className="text-small text-text-primary line-clamp-1 overflow-ellipsis">
+              {artifact.creator?.name}
+            </h3>
+          </span>
         </Link>
         <div className="relative z-10 flex gap-2">
           <button

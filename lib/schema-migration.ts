@@ -1,6 +1,8 @@
 "use client";
 
 import { waitForQuick } from "./quick";
+import { getUserByEmail, createUserFromEmail } from "./quick-users";
+import type { User } from "@/types";
 
 /**
  * Schema Migration Utility
@@ -170,5 +172,207 @@ export async function cleanupMigratedArtifacts(): Promise<void> {
       }
     }
   }
+}
+
+// ==================== USER SCHEMA MIGRATION ====================
+
+/**
+ * Status of the User schema migration
+ */
+export interface UserMigrationStatus {
+  needsMigration: boolean;
+  emailBasedCreatorIds: number;
+  totalRecords: number;
+  uniqueEmails: string[];
+}
+
+/**
+ * Check if records need migration from email-based creator_id to User.id
+ * 
+ * Old schema: creator_id = "user@shopify.com" (email)
+ * New schema: creator_id = "uuid-string" (User.id)
+ * 
+ * Detects email-based creator_ids by checking if they contain "@"
+ */
+export async function checkUserMigrationStatus(): Promise<UserMigrationStatus> {
+  const quick = await waitForQuick();
+  
+  const projectsCollection = quick.db.collection("projects");
+  const artifactsCollection = quick.db.collection("artifacts");
+  const foldersCollection = quick.db.collection("folders");
+  
+  const allProjects = await projectsCollection.find();
+  const allArtifacts = await artifactsCollection.find();
+  const allFolders = await foldersCollection.find();
+  
+  // Check for email-based creator_ids (contain "@")
+  const isEmailBased = (creatorId: string | undefined) => 
+    creatorId && creatorId.includes("@");
+  
+  const emailBasedProjects = allProjects.filter((p: any) => isEmailBased(p.creator_id));
+  const emailBasedArtifacts = allArtifacts.filter((a: any) => isEmailBased(a.creator_id));
+  const emailBasedFolders = allFolders.filter((f: any) => isEmailBased(f.creator_id));
+  
+  const totalEmailBased = emailBasedProjects.length + emailBasedArtifacts.length + emailBasedFolders.length;
+  const totalRecords = allProjects.length + allArtifacts.length + allFolders.length;
+  
+  // Collect unique emails
+  const uniqueEmails = new Set<string>();
+  [...emailBasedProjects, ...emailBasedArtifacts, ...emailBasedFolders].forEach((record: any) => {
+    if (record.creator_id && record.creator_id.includes("@")) {
+      uniqueEmails.add(record.creator_id.toLowerCase());
+    }
+  });
+  
+  return {
+    needsMigration: totalEmailBased > 0,
+    emailBasedCreatorIds: totalEmailBased,
+    totalRecords,
+    uniqueEmails: Array.from(uniqueEmails),
+  };
+}
+
+/**
+ * Migrate creator_id from email strings to User.id UUIDs
+ * 
+ * This migration:
+ * 1. Scans all Projects, Artifacts, and Folders for email-based creator_ids
+ * 2. Creates User records for each unique email if they don't exist
+ * 3. Updates creator_id from email to the User's UUID
+ * 
+ * The migration is idempotent (safe to run multiple times).
+ */
+export async function migrateCreatorIdsToUserIds(
+  onProgress?: (completed: number, total: number, stage: string) => void
+): Promise<{ success: boolean; migratedCount: number; usersCreated: number; error?: string }> {
+  try {
+    const quick = await waitForQuick();
+    
+    const projectsCollection = quick.db.collection("projects");
+    const artifactsCollection = quick.db.collection("artifacts");
+    const foldersCollection = quick.db.collection("folders");
+    
+    const allProjects = await projectsCollection.find();
+    const allArtifacts = await artifactsCollection.find();
+    const allFolders = await foldersCollection.find();
+    
+    // Check for email-based creator_ids (contain "@")
+    const isEmailBased = (creatorId: string | undefined) => 
+      creatorId && creatorId.includes("@");
+    
+    const emailBasedProjects = allProjects.filter((p: any) => isEmailBased(p.creator_id));
+    const emailBasedArtifacts = allArtifacts.filter((a: any) => isEmailBased(a.creator_id));
+    const emailBasedFolders = allFolders.filter((f: any) => isEmailBased(f.creator_id));
+    
+    // Collect unique emails
+    const uniqueEmails = new Set<string>();
+    [...emailBasedProjects, ...emailBasedArtifacts, ...emailBasedFolders].forEach((record: any) => {
+      if (record.creator_id && record.creator_id.includes("@")) {
+        uniqueEmails.add(record.creator_id.toLowerCase());
+      }
+    });
+    
+    const emailArray = Array.from(uniqueEmails);
+    const totalRecords = emailBasedProjects.length + emailBasedArtifacts.length + emailBasedFolders.length;
+    
+    // Stage 1: Create users for each unique email
+    onProgress?.(0, emailArray.length, "Creating user records");
+    
+    const emailToUserId = new Map<string, string>();
+    let usersCreated = 0;
+    
+    for (let i = 0; i < emailArray.length; i++) {
+      const email = emailArray[i];
+      
+      // Check if user already exists
+      let user = await getUserByEmail(email);
+      
+      if (!user) {
+        // Create user from email
+        user = await createUserFromEmail(email);
+        usersCreated++;
+      }
+      
+      emailToUserId.set(email.toLowerCase(), user.id);
+      onProgress?.(i + 1, emailArray.length, "Creating user records");
+    }
+    
+    // Stage 2: Update creator_ids in all collections
+    let migratedCount = 0;
+    const totalToMigrate = emailBasedProjects.length + emailBasedArtifacts.length + emailBasedFolders.length;
+    
+    // Update projects
+    onProgress?.(0, totalToMigrate, "Migrating projects");
+    for (const project of emailBasedProjects) {
+      const userId = emailToUserId.get(project.creator_id.toLowerCase());
+      if (userId) {
+        await projectsCollection.update(project.id, { creator_id: userId });
+        migratedCount++;
+        onProgress?.(migratedCount, totalToMigrate, "Migrating projects");
+      }
+    }
+    
+    // Update artifacts
+    onProgress?.(migratedCount, totalToMigrate, "Migrating artifacts");
+    for (const artifact of emailBasedArtifacts) {
+      const userId = emailToUserId.get(artifact.creator_id.toLowerCase());
+      if (userId) {
+        await artifactsCollection.update(artifact.id, { creator_id: userId });
+        migratedCount++;
+        onProgress?.(migratedCount, totalToMigrate, "Migrating artifacts");
+      }
+    }
+    
+    // Update folders
+    onProgress?.(migratedCount, totalToMigrate, "Migrating folders");
+    for (const folder of emailBasedFolders) {
+      const userId = emailToUserId.get(folder.creator_id.toLowerCase());
+      if (userId) {
+        await foldersCollection.update(folder.id, { creator_id: userId });
+        migratedCount++;
+        onProgress?.(migratedCount, totalToMigrate, "Migrating folders");
+      }
+    }
+    
+    return { 
+      success: true, 
+      migratedCount, 
+      usersCreated 
+    };
+  } catch (error) {
+    console.error("User migration failed:", error);
+    return {
+      success: false,
+      migratedCount: 0,
+      usersCreated: 0,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Get migration status for both schema migrations
+ */
+export async function getAllMigrationStatus(): Promise<{
+  schemaNeeedsMigration: boolean;
+  userSchemaNeeedsMigration: boolean;
+  details: {
+    schema: MigrationStatus;
+    user: UserMigrationStatus;
+  };
+}> {
+  const [schemaStatus, userStatus] = await Promise.all([
+    checkMigrationStatus(),
+    checkUserMigrationStatus(),
+  ]);
+  
+  return {
+    schemaNeeedsMigration: schemaStatus.needsMigration,
+    userSchemaNeeedsMigration: userStatus.needsMigration,
+    details: {
+      schema: schemaStatus,
+      user: userStatus,
+    },
+  };
 }
 

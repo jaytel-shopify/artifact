@@ -740,6 +740,7 @@ function PresentationPageInner({
             : undefined
         }
         userEmail={user?.email}
+        userId={user?.id}
       />
     </>
   );

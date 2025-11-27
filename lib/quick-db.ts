@@ -8,8 +8,10 @@ import type {
   ArtifactType,
   ProjectArtifact,
   ArtifactWithPosition,
+  ArtifactWithCreator,
 } from "@/types";
 import { grantAccess, getUserAccessibleResources } from "./access-control";
+import { getUserByEmail, getUserById } from "./quick-users";
 
 /**
  * Quick.db Service Layer
@@ -44,6 +46,10 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
     });
   }
 
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(userEmail);
+  const userId = user?.id;
+
   // Get projects user has access to via access control system
   const accessibleProjects = await getUserAccessibleResources(
     userEmail,
@@ -53,9 +59,9 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
     accessibleProjects.map((a) => a.resource_id)
   );
 
-  // Filter projects: user is creator OR user has access via access control
+  // Filter projects: user is creator (by User.id) OR user has access via access control
   const userProjects = allProjects.filter(
-    (p: Project) => p.creator_id === userEmail || accessibleProjectIds.has(p.id)
+    (p: Project) => (userId && p.creator_id === userId) || accessibleProjectIds.has(p.id)
   );
 
   // Sort by last_accessed_at (most recent first), fallback to created_at
@@ -85,28 +91,35 @@ export async function getProjectById(id: string): Promise<Project | null> {
 
 /**
  * Create a new project
+ * @param data.creator_id - User's email (will be looked up to store User.id)
  */
 export async function createProject(data: {
   name: string;
-  creator_id: string; // user.email
+  creator_id: string; // User's email
   folder_id?: string | null; // Optional folder assignment
 }): Promise<Project> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(data.creator_id);
+  if (!user) {
+    throw new Error(`User not found for email: ${data.creator_id}`);
+  }
+
   const projectData = {
     name: data.name,
-    creator_id: data.creator_id,
+    creator_id: user.id, // Store User.id, not email
     folder_id: data.folder_id || null,
   };
 
   const project = await collection.create(projectData);
 
-  // Grant owner access to creator
+  // Grant owner access to creator (access control still uses email)
   await grantAccess(
     project.id,
     "project",
-    data.creator_id,
+    data.creator_id, // Use email for access control
     "owner",
     data.creator_id
   );
@@ -486,14 +499,26 @@ export async function getArtifactsByPage(
 }
 
 /**
- * Get a single artifact by ID
+ * Get a single artifact by ID with creator user data
  */
-export async function getArtifactById(id: string): Promise<Artifact | null> {
+export async function getArtifactById(
+  id: string
+): Promise<ArtifactWithCreator | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
   try {
-    return await collection.findById(id);
+    const artifact: Artifact = await collection.findById(id);
+
+    // Fetch the creator user
+    const creator = artifact.creator_id
+      ? await getUserById(artifact.creator_id)
+      : null;
+
+    return {
+      ...artifact,
+      creator: creator || undefined,
+    };
   } catch (error) {
     console.error("Artifact not found:", id, error);
     return null;
@@ -503,13 +528,14 @@ export async function getArtifactById(id: string): Promise<Artifact | null> {
 /**
  * Create a new standalone artifact (for public feed)
  * Does NOT create a junction entry - use addArtifactToProject for that
+ * @param data.creator_id - User's email (will be looked up to store User.id)
  */
 export async function createArtifact(data: {
   type: ArtifactType;
   source_url: string;
   file_path?: string | null;
   name: string;
-  creator_id: string;
+  creator_id: string; // User's email
   metadata?: Record<string, unknown>;
   published?: boolean;
   description?: string;
@@ -517,12 +543,18 @@ export async function createArtifact(data: {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(data.creator_id);
+  if (!user) {
+    throw new Error(`User not found for email: ${data.creator_id}`);
+  }
+
   const artifactData = {
     type: data.type,
     source_url: data.source_url,
     file_path: data.file_path || null,
     name: data.name,
-    creator_id: data.creator_id,
+    creator_id: user.id, // Store User.id, not email
     metadata: data.metadata || {},
     reactions: { like: [], dislike: [] },
     published: data.published ?? false,
@@ -535,6 +567,7 @@ export async function createArtifact(data: {
 /**
  * Create artifact and add it to a project/page in one operation
  * Used when creating artifacts from within a project context
+ * @param data.creator_id - User's email (will be looked up to store User.id)
  */
 export async function createArtifactInProject(data: {
   project_id: string;
@@ -543,18 +576,19 @@ export async function createArtifactInProject(data: {
   source_url: string;
   file_path?: string | null;
   name: string;
-  creator_id: string;
+  creator_id: string; // User's email
   metadata?: Record<string, unknown>;
   published?: boolean;
   description?: string;
 }): Promise<{ artifact: Artifact; projectArtifact: ProjectArtifact }> {
   // Create the artifact (unpublished by default when in a project)
+  // Note: createArtifact will handle the email -> User.id lookup
   const artifact = await createArtifact({
     type: data.type,
     source_url: data.source_url,
     file_path: data.file_path,
     name: data.name,
-    creator_id: data.creator_id,
+    creator_id: data.creator_id, // Pass email, createArtifact will look up User.id
     metadata: data.metadata,
     published: data.published ?? false,
     description: data.description,
@@ -651,7 +685,11 @@ export async function removeArtifactFromProject(
     // Artifact is orphaned - check if user is the creator
     const artifact = await getArtifactById(artifactId);
 
-    if (artifact && artifact.creator_id === currentUserEmail) {
+    // Look up user by email to get their User.id
+    const user = await getUserByEmail(currentUserEmail);
+    const userId = user?.id;
+
+    if (artifact && userId && artifact.creator_id === userId) {
       // User is creator and artifact is orphaned - delete it
       await deleteArtifact(artifactId);
       return { junctionDeleted: true, artifactDeleted: true };

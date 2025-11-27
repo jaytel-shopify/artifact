@@ -8,12 +8,14 @@ import {
   type ReactNode,
 } from "react";
 import { waitForQuick, type QuickIdentity } from "@/lib/quick";
+import { getOrCreateUser } from "@/lib/quick-users";
 
 /**
  * Quick User type - extends QuickIdentity with our app-specific fields
+ * The `id` field is the User UUID from the database (not Quick.id's id)
  */
 export interface QuickUser {
-  id: string;
+  id: string; // User.id from Quick.db (UUID)
   email: string;
   fullName: string;
   firstName: string;
@@ -56,8 +58,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isLocalhost) {
       // console.log("[AuthProvider] 🔓 Running on localhost - using mock user");
 
+      // Mock user with a consistent UUID for local development
+      // Note: Quick.db is not available on localhost, so we use a hardcoded mock ID
       const localDevUser: QuickUser = {
-        id: "123",
+        id: "local-dev-user-uuid", // Mock UUID (Quick.db not available locally)
         email: "dev@shopify.com",
         fullName: "Local Developer",
         firstName: "Local",
@@ -88,16 +92,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!isMounted) return;
 
-        const user: QuickUser = {
-          id: userData.id,
+        // Sync user to database and get/create DB record
+        console.log("[AuthProvider] Syncing user to database...");
+        const dbUser = await getOrCreateUser({
           email: userData.email,
           fullName: userData.fullName,
           firstName: userData.firstName,
-          slackHandle: userData.slackHandle,
-          slackId: userData.slackId,
           slackImageUrl: userData.slackImageUrl,
+          slackId: userData.slackId,
+          slackHandle: userData.slackHandle,
           title: userData.title,
           github: userData.github,
+        });
+
+        console.log("[AuthProvider] User synced to DB:", {
+          id: dbUser.id,
+          email: dbUser.email,
+        });
+
+        if (!isMounted) return;
+
+        // Use the DB user's UUID as the canonical ID
+        const user: QuickUser = {
+          id: dbUser.id, // UUID from Quick.db
+          email: dbUser.email,
+          fullName: dbUser.name,
+          firstName: userData.firstName,
+          slackHandle: dbUser.slack_handle,
+          slackId: dbUser.slack_id,
+          slackImageUrl: dbUser.slack_image_url,
+          title: dbUser.title,
+          github: dbUser.github,
         };
 
         setUser(user);

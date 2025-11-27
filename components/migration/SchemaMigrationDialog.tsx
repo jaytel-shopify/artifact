@@ -13,7 +13,10 @@ import { Button } from "@/components/ui/button";
 import {
   checkMigrationStatus,
   migrateToNewSchema,
+  checkUserMigrationStatus,
+  migrateCreatorIdsToUserIds,
   type MigrationStatus,
+  type UserMigrationStatus,
 } from "@/lib/schema-migration";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
@@ -22,7 +25,9 @@ type MigrationState =
   | "checking"
   | "idle"
   | "needs-migration"
+  | "needs-user-migration"
   | "migrating"
+  | "migrating-users"
   | "success"
   | "error";
 
@@ -30,9 +35,11 @@ export function SchemaMigrationDialog() {
   const { user } = useAuth();
   const [state, setState] = useState<MigrationState>("checking");
   const [status, setStatus] = useState<MigrationStatus | null>(null);
-  const [progress, setProgress] = useState({ completed: 0, total: 0 });
+  const [userStatus, setUserStatus] = useState<UserMigrationStatus | null>(null);
+  const [progress, setProgress] = useState({ completed: 0, total: 0, stage: "" });
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [migrationResult, setMigrationResult] = useState<{ migratedCount: number; usersCreated?: number } | null>(null);
 
   // Check migration status on mount
   useEffect(() => {
@@ -46,9 +53,23 @@ export function SchemaMigrationDialog() {
 
     async function check() {
       try {
-        const migrationStatus = await checkMigrationStatus();
-        setStatus(migrationStatus);
-        setState(migrationStatus.needsMigration ? "needs-migration" : "idle");
+        // Check both migration types
+        const [schemaStatus, userMigrationStatus] = await Promise.all([
+          checkMigrationStatus(),
+          checkUserMigrationStatus(),
+        ]);
+        
+        setStatus(schemaStatus);
+        setUserStatus(userMigrationStatus);
+        
+        // Prioritize schema migration first, then user migration
+        if (schemaStatus.needsMigration) {
+          setState("needs-migration");
+        } else if (userMigrationStatus.needsMigration) {
+          setState("needs-user-migration");
+        } else {
+          setState("idle");
+        }
       } catch (e) {
         console.error("Failed to check migration status:", e);
         setState("idle");
@@ -66,16 +87,42 @@ export function SchemaMigrationDialog() {
     }
 
     setState("migrating");
-    setProgress({ completed: 0, total: status?.oldSchemaArtifactCount || 0 });
+    setProgress({ completed: 0, total: status?.oldSchemaArtifactCount || 0, stage: "Migrating artifacts" });
 
     const result = await migrateToNewSchema(user.email, (completed, total) => {
-      setProgress({ completed, total });
+      setProgress({ completed, total, stage: "Migrating artifacts" });
     });
 
     if (result.success) {
-      setState("success");
+      setMigrationResult({ migratedCount: result.migratedCount });
+      
+      // After schema migration, check if user migration is needed
+      const userMigrationStatus = await checkUserMigrationStatus();
+      if (userMigrationStatus.needsMigration) {
+        setUserStatus(userMigrationStatus);
+        setState("needs-user-migration");
+      } else {
+        setState("success");
+      }
     } else {
       setError(result.error || "Migration failed");
+      setState("error");
+    }
+  };
+
+  const handleUserMigrate = async () => {
+    setState("migrating-users");
+    setProgress({ completed: 0, total: userStatus?.emailBasedCreatorIds || 0, stage: "Creating user records" });
+
+    const result = await migrateCreatorIdsToUserIds((completed, total, stage) => {
+      setProgress({ completed, total, stage });
+    });
+
+    if (result.success) {
+      setMigrationResult({ migratedCount: result.migratedCount, usersCreated: result.usersCreated });
+      setState("success");
+    } else {
+      setError(result.error || "User migration failed");
       setState("error");
     }
   };
@@ -111,7 +158,13 @@ export function SchemaMigrationDialog() {
                 Database Schema Update Required
               </>
             )}
-            {state === "migrating" && (
+            {state === "needs-user-migration" && (
+              <>
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                User Schema Migration Required
+              </>
+            )}
+            {(state === "migrating" || state === "migrating-users") && (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Migrating Data...
@@ -156,7 +209,29 @@ export function SchemaMigrationDialog() {
             </div>
           )}
 
-          {state === "migrating" && (
+          {state === "needs-user-migration" && userStatus && (
+            <div className="space-y-4">
+              <DialogDescription>
+                Your database contains{" "}
+                <strong>{userStatus.emailBasedCreatorIds}</strong> record
+                {userStatus.emailBasedCreatorIds !== 1 ? "s" : ""} using
+                email-based creator IDs. This update will migrate to the new
+                User-based schema with proper user references.
+              </DialogDescription>
+              <div className="rounded-lg bg-secondary p-3 text-small">
+                <p className="text-medium mb-1">What will happen:</p>
+                <ul className="list-disc list-inside text-text-secondary space-y-1">
+                  <li>
+                    User records will be created for {userStatus.uniqueEmails.length} unique email{userStatus.uniqueEmails.length !== 1 ? "s" : ""}
+                  </li>
+                  <li>Creator IDs will be updated to reference User records</li>
+                  <li>Your data will remain intact</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {(state === "migrating" || state === "migrating-users") && (
             <div className="space-y-4">
               <DialogDescription>
                 Please wait while your data is being migrated. Do not close this
@@ -164,7 +239,7 @@ export function SchemaMigrationDialog() {
               </DialogDescription>
               <div className="space-y-2">
                 <div className="flex justify-between text-small">
-                  <span>Progress</span>
+                  <span>{progress.stage || "Progress"}</span>
                   <span>
                     {progress.completed} / {progress.total}
                   </span>
@@ -181,11 +256,14 @@ export function SchemaMigrationDialog() {
             </div>
           )}
 
-          {state === "success" && (
+          {state === "success" && migrationResult && (
             <DialogDescription>
-              Successfully migrated {progress.completed} artifact
-              {progress.completed !== 1 ? "s" : ""} to the new schema. The page
-              will reload to apply changes.
+              Successfully migrated {migrationResult.migratedCount} record
+              {migrationResult.migratedCount !== 1 ? "s" : ""}
+              {migrationResult.usersCreated !== undefined && (
+                <> and created {migrationResult.usersCreated} user record{migrationResult.usersCreated !== 1 ? "s" : ""}</>
+              )}
+              . The page will reload to apply changes.
             </DialogDescription>
           )}
 
@@ -211,7 +289,16 @@ export function SchemaMigrationDialog() {
             </>
           )}
 
-          {state === "migrating" && (
+          {state === "needs-user-migration" && (
+            <>
+              <Button variant="outline" onClick={handleDismiss}>
+                Later
+              </Button>
+              <Button onClick={handleUserMigrate}>Migrate Now</Button>
+            </>
+          )}
+
+          {(state === "migrating" || state === "migrating-users") && (
             <Button disabled>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Migrating...
@@ -227,7 +314,7 @@ export function SchemaMigrationDialog() {
               <Button variant="outline" onClick={handleDismiss}>
                 Dismiss
               </Button>
-              <Button onClick={handleMigrate}>Retry</Button>
+              <Button onClick={state === "needs-user-migration" ? handleUserMigrate : handleMigrate}>Retry</Button>
             </>
           )}
         </DialogFooter>
