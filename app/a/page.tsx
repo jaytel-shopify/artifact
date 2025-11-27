@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { Artifact } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { getArtifactById, updateArtifact } from "@/lib/quick-db";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { useAuth } from "@/components/auth/AuthProvider";
-import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
@@ -77,6 +76,18 @@ export default function Page() {
 
     mutate(optimisticArtifact, { revalidate: false });
 
+    // Also update the public-artifacts cache so homepage shows updated reactions
+    globalMutate(
+      "public-artifacts",
+      (current: Artifact[] = []) =>
+        current.map((a) =>
+          a.id === artifact.id
+            ? { ...a, reactions: optimisticArtifact.reactions }
+            : a
+        ),
+      { revalidate: false }
+    );
+
     try {
       await updateArtifact(artifact.id, {
         reactions: optimisticArtifact.reactions,
@@ -84,6 +95,7 @@ export default function Page() {
     } catch (error) {
       console.error("Failed to toggle like:", error);
       mutate(); // Revert on error
+      globalMutate("public-artifacts"); // Revert homepage cache on error
     }
   };
 
@@ -107,6 +119,18 @@ export default function Page() {
 
     mutate(optimisticArtifact, { revalidate: false });
 
+    // Also update the public-artifacts cache so homepage shows updated reactions
+    globalMutate(
+      "public-artifacts",
+      (current: Artifact[] = []) =>
+        current.map((a) =>
+          a.id === artifact.id
+            ? { ...a, reactions: optimisticArtifact.reactions }
+            : a
+        ),
+      { revalidate: false }
+    );
+
     try {
       await updateArtifact(artifact.id, {
         reactions: optimisticArtifact.reactions,
@@ -114,6 +138,7 @@ export default function Page() {
     } catch (error) {
       console.error("Failed to toggle dislike:", error);
       mutate(); // Revert on error
+      globalMutate("public-artifacts"); // Revert homepage cache on error
     }
   };
 
