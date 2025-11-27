@@ -36,7 +36,7 @@ export default function Page() {
   useSetHeader({
     left: (
       <Link href="/">
-        <Button variant="outline" size="icon" aria-label="Back">
+        <Button variant="default" size="icon" aria-label="Back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
       </Link>
@@ -44,7 +44,7 @@ export default function Page() {
     right: (
       <>
         <Button
-          variant="outline"
+          variant="default"
           className="gap-2"
           onClick={() => setIsSaveDialogOpen(true)}
           disabled={!user}

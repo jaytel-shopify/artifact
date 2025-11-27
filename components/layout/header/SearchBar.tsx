@@ -32,7 +32,7 @@ export default function SearchBar({ mode = "all" }: SearchBarProps) {
 
   const placeholder =
     mode === "public"
-      ? "Search published..."
+      ? "Search Artifacts..."
       : mode === "dashboard"
         ? "Search your content..."
         : "Search...";

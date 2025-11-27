@@ -219,7 +219,7 @@ export function SharePanel({
         {/* Header */}
         <DialogHeader className="px-6 py-5 border-b border-border">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold">
+            <DialogTitle className="text-xl font-semibold text-text-primary">
               Share {resourceName}
             </DialogTitle>
 

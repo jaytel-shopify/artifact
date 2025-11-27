@@ -98,11 +98,10 @@ export default function ProjectsPage() {
     right: (
       <>
         <Button
-          variant="outline"
+          variant="ghost"
           className="gap-2"
           onClick={() => setCreateFolderOpen(true)}
         >
-          <FolderPlus className="h-4 w-4" />
           New Folder
         </Button>
         <Button className="gap-2" onClick={handleNewProject}>

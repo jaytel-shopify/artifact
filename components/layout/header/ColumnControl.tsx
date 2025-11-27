@@ -29,7 +29,7 @@ export default function ColumnControl({
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="dot-indicator w-2 h-2 bg-primary/20 rounded-full"
+              className="dot-indicator w-2 h-2 bg-secondary/20 rounded-full"
             ></div>
           ))}
         </div>

@@ -361,12 +361,12 @@ function PresentationPageInner({
       left: !presentationMode ? (
         <>
           <Link href={backUrl}>
-            <Button variant="outline" size="icon" aria-label="Back">
+            <Button variant="default" size="icon" aria-label="Back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
           </Link>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
@@ -408,11 +408,10 @@ function PresentationPageInner({
           />
           {project && user && (
             <Button
-              variant="outline"
+              variant="default"
               className="gap-2"
               onClick={() => setShareDialogOpen(true)}
             >
-              <Share className="h-4 w-4" />
               Share
             </Button>
           )}
@@ -655,16 +654,15 @@ function PresentationPageInner({
         }}
       >
         <DialogContent
-          className="w-full max-w-2xl text-white border-white/10"
-          style={{ backgroundColor: "var(--color-background-secondary)" }}
+          className="w-full max-w-2xl"
         >
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Title Card</DialogTitle>
+            <DialogTitle className="text-text-primary">Edit Title Card</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-white/70">Headline</label>
+              <label className="text-sm text-text-primary/70">Headline</label>
               <Input
                 value={editingTitleCard?.headline || ""}
                 onChange={(e) =>
@@ -673,12 +671,12 @@ function PresentationPageInner({
                   )
                 }
                 placeholder="Enter headline"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                className="w-full bg-white/5 border-white/15 text-text-primary placeholder:text-text-primary/60 focus:border-white/30 focus:ring-white/20"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-white/70">Subheadline</label>
+              <label className="text-sm text-text-primary/70">Subheadline</label>
               <Input
                 value={editingTitleCard?.subheadline || ""}
                 onChange={(e) =>
@@ -687,7 +685,7 @@ function PresentationPageInner({
                   )
                 }
                 placeholder="Enter subheadline"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                className="w-full bg-white/5 border-white/15 text-text-primary placeholder:text-text-primary/60 focus:border-white/30 focus:ring-white/20"
               />
             </div>
 
@@ -703,16 +701,15 @@ function PresentationPageInner({
                 setEditingTitleCard(null);
                 setTitleCardError("");
               }}
-              className="text-white hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button
+              variant="primary"
               onClick={handleTitleCardSubmit}
               disabled={
                 !editingTitleCard?.headline && !editingTitleCard?.subheadline
               }
-              className="bg-white text-black hover:bg-white/90"
             >
               Save
             </Button>

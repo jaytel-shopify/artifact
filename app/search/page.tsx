@@ -143,7 +143,7 @@ export default function SearchPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {results.projects.map((project) => (
               <Link key={project.id} href={`/p/?id=${project.id}`}>
-                <Card className="p-4 hover:bg-[var(--color-background-secondary)] transition-colors cursor-pointer">
+                <Card className="p-4 transition-colors cursor-pointer">
                   <h3 className="font-medium mb-1">{project.name}</h3>
                   <p className="text-sm text-text-secondary">
                     {project.pages?.length || 0} page
@@ -168,7 +168,7 @@ export default function SearchPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {results.folders.map((folder) => (
               <Link key={folder.id} href={`/folder/?id=${folder.id}`}>
-                <Card className="p-4 hover:bg-[var(--color-background-secondary)] transition-colors cursor-pointer">
+                <Card className="p-4 transition-colors cursor-pointer">
                   <h3 className="font-medium">{folder.name}</h3>
                 </Card>
               </Link>

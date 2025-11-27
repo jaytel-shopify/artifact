@@ -241,7 +241,7 @@ function FolderPageContent() {
     left: (
       <>
         <Link href={backUrl}>
-          <Button variant="outline" size="icon" aria-label="Back">
+          <Button variant="default" size="icon" aria-label="Back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
         </Link>
@@ -260,7 +260,7 @@ function FolderPageContent() {
       <>
         {/* Share Button */}
         <Button
-          variant="outline"
+          variant="default"
           className="gap-2"
           onClick={() => setAccessDialogOpen(true)}
         >
