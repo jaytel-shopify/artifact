@@ -136,7 +136,7 @@ export default function SearchPage() {
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-4">
             <Presentation className="h-5 w-5 text-text-secondary" />
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-medium ">
               Projects ({results.projects.length})
             </h2>
           </div>
@@ -144,8 +144,8 @@ export default function SearchPage() {
             {results.projects.map((project) => (
               <Link key={project.id} href={`/p/?id=${project.id}`}>
                 <Card className="p-4 transition-colors cursor-pointer">
-                  <h3 className="font-medium mb-1">{project.name}</h3>
-                  <p className="text-sm text-text-secondary">
+                  <h3 className="text-medium mb-1">{project.name}</h3>
+                  <p className="text-small text-text-secondary">
                     {project.pages?.length || 0} page
                     {project.pages?.length !== 1 ? "s" : ""}
                   </p>
@@ -161,7 +161,7 @@ export default function SearchPage() {
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-4">
             <FolderOpen className="h-5 w-5 text-text-secondary" />
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-medium ">
               Folders ({results.folders.length})
             </h2>
           </div>
@@ -169,7 +169,7 @@ export default function SearchPage() {
             {results.folders.map((folder) => (
               <Link key={folder.id} href={`/folder/?id=${folder.id}`}>
                 <Card className="p-4 transition-colors cursor-pointer">
-                  <h3 className="font-medium">{folder.name}</h3>
+                  <h3 className="text-medium">{folder.name}</h3>
                 </Card>
               </Link>
             ))}
@@ -182,7 +182,7 @@ export default function SearchPage() {
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="h-5 w-5 text-text-secondary" />
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-medium ">
               Public Artifacts ({results.publicArtifacts.length})
             </h2>
           </div>
@@ -194,7 +194,7 @@ export default function SearchPage() {
               >
                 <ArtifactThumbnail
                   artifact={artifact}
-                  className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+                  className="w-full row-start-1 row-span-2 col-start-1 col-span-1 rounded-card-inner"
                 />
 
                 <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -202,10 +202,10 @@ export default function SearchPage() {
                     href={`/a/?id=${artifact.id}`}
                     className="after:content-[''] after:absolute after:inset-0"
                   >
-                    <h3 className="font-medium text-text-primary line-clamp-1">
+                    <h3 className="text-medium text-text-primary line-clamp-1">
                       {artifact.name}
                     </h3>
-                    <p className="text-sm text-text-secondary capitalize">
+                    <p className="text-small text-text-secondary capitalize">
                       {artifact.type}
                     </p>
                   </Link>
@@ -221,7 +221,7 @@ export default function SearchPage() {
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-4">
             <FileText className="h-5 w-5 text-text-secondary" />
-            <h2 className="text-xl font-semibold">
+            <h2 className="text-medium ">
               Your Artifacts ({results.personalArtifacts.length})
             </h2>
           </div>
@@ -233,7 +233,7 @@ export default function SearchPage() {
               >
                 <ArtifactThumbnail
                   artifact={artifact}
-                  className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+                  className="w-full row-start-1 row-span-2 col-start-1 col-span-1 rounded-card-inner"
                 />
 
                 <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
@@ -241,10 +241,10 @@ export default function SearchPage() {
                     href={`/a/?id=${artifact.id}`}
                     className="after:content-[''] after:absolute after:inset-0"
                   >
-                    <h3 className="font-medium text-text-primary line-clamp-1">
+                    <h3 className="text-medium text-text-primary line-clamp-1">
                       {artifact.name}
                     </h3>
-                    <p className="text-sm text-text-secondary capitalize">
+                    <p className="text-small text-text-secondary capitalize">
                       {artifact.type}
                     </p>
                   </Link>

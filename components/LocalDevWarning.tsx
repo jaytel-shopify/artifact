@@ -49,7 +49,7 @@ export default function LocalDevWarning() {
       <Card className="border-border bg-primary">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <CardTitle className="text-medium flex items-center gap-2">
               <span>💡</span>
               <span>Local Development Mode</span>
             </CardTitle>
@@ -61,16 +61,16 @@ export default function LocalDevWarning() {
               ×
             </button>
           </div>
-          <CardDescription className="text-xs">
+          <CardDescription className="text-small">
             Using mock data. Deploy to Quick for full functionality.
           </CardDescription>
         </CardHeader>
         <CardContent className="pt-0 pb-3">
-          <p className="text-xs text-text-secondary mb-2">
+          <p className="text-small text-text-secondary mb-2">
             You&apos;re seeing placeholder data. File uploads will use sample
             images.
           </p>
-          <div className="bg-secondary/50 p-2 rounded text-xs font-mono">
+          <div className="bg-secondary/50 p-2 rounded text-small font-mono">
             pnpm build && quick deploy dist artifact
           </div>
         </CardContent>

@@ -24,7 +24,7 @@ export default function SettingsPage() {
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-semibold">Settings</h1>
+          <h1 className="text-2xl ">Settings</h1>
         </div>
 
         {/* Settings Content */}
@@ -37,7 +37,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-text-secondary">
+              <p className="text-small text-text-secondary">
                 Account settings will be implemented here.
               </p>
             </CardContent>
@@ -51,7 +51,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-text-secondary">
+              <p className="text-small text-text-secondary">
                 Workspace preferences will be implemented here.
               </p>
             </CardContent>
@@ -65,7 +65,7 @@ export default function SettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-text-secondary">Version: 0.1.0</p>
+              <p className="text-small text-text-secondary">Version: 0.1.0</p>
             </CardContent>
           </Card>
         </div>

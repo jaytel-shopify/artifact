@@ -303,8 +303,8 @@ export default function ArtifactAdder({
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm text-text-primary/70">Viewport</p>
-              <div className="flex flex-wrap gap-2 text-xs">
+              <p className="text-small text-text-primary/70">Viewport</p>
+              <div className="flex flex-wrap gap-2 text-small">
                 {Object.entries(VIEWPORTS).map(([key, vp]) => (
                   <button
                     key={key}
@@ -319,7 +319,7 @@ export default function ArtifactAdder({
               </div>
             </div>
 
-            {error && <div className="text-sm text-destructive">{error}</div>}
+            {error && <div className="text-small text-destructive">{error}</div>}
           </div>
 
           <DialogFooter>
@@ -364,7 +364,7 @@ export default function ArtifactAdder({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-text-primary/70">Headline</label>
+              <label className="text-small text-text-primary/70">Headline</label>
               <Input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
@@ -374,7 +374,7 @@ export default function ArtifactAdder({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-text-primary/70">Subheadline</label>
+              <label className="text-small text-text-primary/70">Subheadline</label>
               <Input
                 value={subheadline}
                 onChange={(e) => setSubheadline(e.target.value)}
@@ -383,7 +383,7 @@ export default function ArtifactAdder({
               />
             </div>
 
-            {error && <div className="text-sm text-destructive">{error}</div>}
+            {error && <div className="text-small text-destructive">{error}</div>}
           </div>
 
           <DialogFooter>
@@ -420,19 +420,19 @@ export default function ArtifactAdder({
 
           <div className="space-y-4">
             {totalFiles > 1 && (
-              <div className="text-sm text-text-primary/70">
+              <div className="text-small text-text-primary/70">
                 File {currentFileIndex} of {totalFiles}
               </div>
             )}
 
             {currentFileName && (
-              <div className="text-sm text-text-primary/90 truncate">
+              <div className="text-small text-text-primary/90 truncate">
                 {currentFileName}
               </div>
             )}
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between text-small">
                 <span className="text-text-primary/70">Progress</span>
                 <span className="text-text-primary/90">
                   {Math.round(uploadProgress)}%

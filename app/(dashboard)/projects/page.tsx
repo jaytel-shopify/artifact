@@ -24,7 +24,6 @@ import { useProjectActions } from "@/hooks/useProjectActions";
 import { useFolderManagement } from "@/hooks/useFolderManagement";
 import { useQuickSites } from "@/hooks/useQuickSites";
 import { Button } from "@/components/ui/button";
-import { FolderPlus, Plus } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
@@ -99,13 +98,11 @@ export default function ProjectsPage() {
       <>
         <Button
           variant="ghost"
-          className="gap-2"
           onClick={() => setCreateFolderOpen(true)}
         >
           New Folder
         </Button>
-        <Button className="gap-2" onClick={handleNewProject}>
-          <Plus className="h-4 w-4" />
+        <Button variant="default" onClick={handleNewProject}>
           New Project
         </Button>
         <PWAInstallPrompt />
@@ -126,7 +123,7 @@ export default function ProjectsPage() {
       {/* Folders Section */}
       {localFolders.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Folders</h2>
+          <h2 className="text-medium ">Folders</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {localFolders.map((folder) => (
               <FolderCard
@@ -145,7 +142,7 @@ export default function ProjectsPage() {
       {/* Projects Section */}
       {uncategorizedProjects.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Projects</h2>
+          <h2 className="text-medium ">Projects</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {uncategorizedProjects.map((p) => (
               <ContextMenu key={p.id}>
@@ -206,7 +203,7 @@ export default function ProjectsPage() {
       {/* Published Artifacts Section */}
       {publishedArtifacts.length > 0 && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Published</h2>
+          <h2 className="text-medium ">Published</h2>
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-6">
             {publishedArtifacts.map((a) => (
               <ArtifactCard key={a.id} artifact={a} />

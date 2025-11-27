@@ -491,7 +491,7 @@ export default function DatabaseViewerPage() {
           <h1 className="text-3xl font-bold mb-8 text-text-primary">
             🗄️ Database Viewer
           </h1>
-          <div className="text-center py-20 text-xl text-text-secondary">
+          <div className="text-center py-20 text-medium text-text-secondary">
             Loading database...
           </div>
         </div>
@@ -507,7 +507,7 @@ export default function DatabaseViewerPage() {
             🗄️ Database Viewer
           </h1>
           <div className="bg-destructive/10 border border-destructive rounded-lg p-6">
-            <h2 className="text-xl font-bold text-destructive mb-2">Error</h2>
+            <h2 className="text-medium font-bold text-destructive mb-2">Error</h2>
             <p className="text-destructive/80">{error}</p>
           </div>
         </div>
@@ -526,7 +526,7 @@ export default function DatabaseViewerPage() {
 
         {currentUser && (
           <div className="bg-primary border border-border rounded-lg p-4 mb-6">
-            <div className="text-sm text-text-secondary">
+            <div className="text-small text-text-secondary">
               <strong>👤 Logged in as:</strong> {currentUser.fullName} (
               {currentUser.email})
             </div>
@@ -536,19 +536,19 @@ export default function DatabaseViewerPage() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={loadData}
-            className="px-4 py-2 bg-primary rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-primary rounded-lg text-medium transition-colors"
           >
             🔄 Refresh
           </button>
           <button
             onClick={copyToClipboard}
-            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-medium transition-colors"
           >
             📋 Copy to Clipboard
           </button>
           <button
             onClick={downloadJSON}
-            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-medium transition-colors"
           >
             💾 Download JSON
           </button>
@@ -558,7 +558,7 @@ export default function DatabaseViewerPage() {
         <div className="flex gap-2 mb-6 border-b border-border">
           <button
             onClick={() => setActiveTab("relationships")}
-            className={`px-6 py-3 font-medium transition-colors ${
+            className={`px-6 py-3 text-medium transition-colors ${
               activeTab === "relationships"
                 ? "text-text-primary border-b-2 border-primary"
                 : "text-text-secondary hover:text-text-primary"
@@ -566,14 +566,14 @@ export default function DatabaseViewerPage() {
           >
             🔗 Relationships & Access
             {analysis.stats.totalIssues > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-destructive/20 text-destructive rounded-full">
+              <span className="ml-2 px-2 py-0.5 text-small bg-destructive/20 text-destructive rounded-full">
                 {analysis.stats.totalIssues}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab("raw")}
-            className={`px-6 py-3 font-medium transition-colors ${
+            className={`px-6 py-3 text-medium transition-colors ${
               activeTab === "raw"
                 ? "text-text-primary border-b-2 border-primary"
                 : "text-text-secondary hover:text-text-primary"
@@ -588,43 +588,43 @@ export default function DatabaseViewerPage() {
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
               <div className="bg-primary border border-border rounded-lg p-4">
-                <div className="text-sm text-text-secondary mb-2">
+                <div className="text-small text-text-secondary mb-2">
                   Total Resources
                 </div>
                 <div className="text-3xl font-bold text-text-primary">
                   {analysis.stats.totalProjects + analysis.stats.totalFolders}
                 </div>
-                <div className="text-xs text-text-secondary mt-1">
+                <div className="text-small text-text-secondary mt-1">
                   {analysis.stats.totalProjects} projects,{" "}
                   {analysis.stats.totalFolders} folders
                 </div>
               </div>
               <div className="bg-primary border border-border rounded-lg p-4">
-                <div className="text-sm text-text-secondary mb-2">
+                <div className="text-small text-text-secondary mb-2">
                   With Access Control
                 </div>
                 <div className="text-3xl font-bold text-primary">
                   {analysis.stats.projectsWithAccess +
                     analysis.stats.foldersWithAccess}
                 </div>
-                <div className="text-xs text-text-secondary mt-1">
+                <div className="text-small text-text-secondary mt-1">
                   {analysis.stats.projectsWithAccess} projects,{" "}
                   {analysis.stats.foldersWithAccess} folders
                 </div>
               </div>
               <div className="bg-primary border border-border rounded-lg p-4">
-                <div className="text-sm text-text-secondary mb-2">
+                <div className="text-small text-text-secondary mb-2">
                   Access Entries
                 </div>
                 <div className="text-3xl font-bold text-primary">
                   {analysis.stats.totalAccessEntries}
                 </div>
-                <div className="text-xs text-text-secondary mt-1">
+                <div className="text-small text-text-secondary mt-1">
                   {analysis.stats.orphanedEntries} orphaned
                 </div>
               </div>
               <div className="bg-primary border border-border rounded-lg p-4">
-                <div className="text-sm text-text-secondary mb-2">
+                <div className="text-small text-text-secondary mb-2">
                   Issues Found
                 </div>
                 <div
@@ -632,7 +632,7 @@ export default function DatabaseViewerPage() {
                 >
                   {analysis.stats.totalIssues}
                 </div>
-                <div className="text-xs text-text-secondary mt-1">
+                <div className="text-small text-text-secondary mt-1">
                   {analysis.stats.totalIssues === 0
                     ? "All good!"
                     : "Need attention"}
@@ -643,21 +643,21 @@ export default function DatabaseViewerPage() {
             {/* Global Actions */}
             {analysis.orphanedAccess.length > 0 && (
               <div className="bg-primary rounded-lg p-6">
-                <h3 className="text-lg font-bold text-primary mb-3">
+                <h3 className="text-medium font-bold text-primary mb-3">
                   🔧 Global Actions
                 </h3>
                 <div className="flex gap-3 flex-wrap">
                   <button
                     onClick={deleteOrphanedAccess}
                     disabled={fixing}
-                    className="px-4 py-2 bg-destructive hover:bg-destructive/80 disabled:bg-secondary disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+                    className="px-4 py-2 bg-destructive hover:bg-destructive/80 disabled:bg-secondary disabled:cursor-not-allowed rounded-lg text-medium transition-colors"
                   >
                     {fixing
                       ? "⏳ Deleting..."
                       : "🗑️ Delete All Orphaned Entries"}
                   </button>
                 </div>
-                <p className="text-sm text-text-secondary mt-3">
+                <p className="text-small text-text-secondary mt-3">
                   This will remove {analysis.orphanedAccess.length} orphaned
                   access entries that point to deleted resources.
                 </p>
@@ -667,17 +667,17 @@ export default function DatabaseViewerPage() {
             {/* Fix Results */}
             {fixResults.length > 0 && (
               <div className="bg-primary border border-border rounded-lg p-6">
-                <h3 className="text-lg font-bold text-text-primary mb-3">
+                <h3 className="text-medium font-bold text-text-primary mb-3">
                   📋 Results
                 </h3>
                 <div className="bg-secondary rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-sm text-text-secondary whitespace-pre-wrap font-mono">
+                  <pre className="text-small text-text-secondary whitespace-pre-wrap font-mono">
                     {fixResults.join("\n")}
                   </pre>
                 </div>
                 <button
                   onClick={() => setFixResults([])}
-                  className="mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm"
+                  className="mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-small"
                 >
                   Clear Results
                 </button>
@@ -688,11 +688,11 @@ export default function DatabaseViewerPage() {
             {analysis.orphanedAccess.length > 0 && (
               <div className="bg-destructive/10 border border-destructive rounded-lg overflow-hidden">
                 <div className="bg-destructive/20 px-6 py-4">
-                  <h2 className="text-xl font-bold text-destructive">
+                  <h2 className="text-medium font-bold text-destructive">
                     ⚠️ Orphaned Access Entries ({analysis.orphanedAccess.length}
                     )
                   </h2>
-                  <p className="text-sm text-destructive/80 mt-1">
+                  <p className="text-small text-destructive/80 mt-1">
                     These access entries point to resources that no longer exist
                   </p>
                 </div>
@@ -704,22 +704,22 @@ export default function DatabaseViewerPage() {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <span className="text-sm font-bold text-destructive">
+                          <span className="text-small font-bold text-destructive">
                             {entry.resource_type === "project" ? "📊" : "📁"}{" "}
                             {entry.resource_type}
                           </span>
-                          <span className="ml-2 text-xs text-text-secondary">
+                          <span className="ml-2 text-small text-text-secondary">
                             ID: {entry.resource_id}
                           </span>
                         </div>
-                        <span className="px-2 py-1 text-xs bg-secondary text-text-secondary rounded">
+                        <span className="px-2 py-1 text-small bg-secondary text-text-secondary rounded">
                           {entry.access_level}
                         </span>
                       </div>
-                      <div className="text-sm text-text-primary">
+                      <div className="text-small text-text-primary">
                         <strong>User:</strong> {entry.user_email}
                       </div>
-                      <div className="text-xs text-text-secondary mt-1">
+                      <div className="text-small text-text-secondary mt-1">
                         Granted by: {entry.granted_by} • Created:{" "}
                         {new Date(entry.created_at).toLocaleDateString()}
                       </div>
@@ -756,21 +756,21 @@ export default function DatabaseViewerPage() {
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-lg font-bold text-text-primary flex items-center gap-2">
+                          <h3 className="text-medium font-bold text-text-primary flex items-center gap-2">
                             {resource.resourceType === "project" ? "📊" : "📁"}{" "}
                             {resource.resource.name}
-                            <span className="text-sm font-normal text-text-secondary">
+                            <span className="text-small font-normal text-text-secondary">
                               ({resource.resourceType})
                             </span>
                           </h3>
-                          <div className="text-sm text-text-secondary mt-1">
+                          <div className="text-small text-text-secondary mt-1">
                             Creator: {resource.resource.creator_id} • Created:{" "}
                             {new Date(
                               resource.resource.created_at
                             ).toLocaleDateString()}
                           </div>
                         </div>
-                        <div className="text-sm text-text-secondary">
+                        <div className="text-small text-text-secondary">
                           {resource.accessEntries.length} user
                           {resource.accessEntries.length !== 1 ? "s" : ""}
                         </div>
@@ -782,7 +782,7 @@ export default function DatabaseViewerPage() {
                           {resource.issues.map((issue, idx) => (
                             <div
                               key={idx}
-                              className={`text-sm px-3 py-2 rounded flex justify-between items-center ${
+                              className={`text-small px-3 py-2 rounded flex justify-between items-center ${
                                 issue.severity === "error"
                                   ? "bg-destructive/20 text-destructive"
                                   : "bg-primary text-text-primary"
@@ -804,7 +804,7 @@ export default function DatabaseViewerPage() {
                                       )
                                     }
                                     disabled={fixing}
-                                    className="ml-3 px-3 py-1 bg-primary disabled:bg-secondary disabled:cursor-not-allowed rounded text-xs font-medium transition-colors"
+                                    className="ml-3 px-3 py-1 bg-primary disabled:bg-secondary disabled:cursor-not-allowed rounded text-medium transition-colors"
                                   >
                                     {fixing ? "⏳" : "Fix"}
                                   </button>
@@ -825,10 +825,10 @@ export default function DatabaseViewerPage() {
                               className="bg-background border border-border rounded-lg p-4 flex justify-between items-center gap-4"
                             >
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-text-primary truncate">
+                                <div className="text-medium text-text-primary truncate">
                                   {entry.user_email}
                                 </div>
-                                <div className="text-sm text-text-secondary mt-1">
+                                <div className="text-small text-text-secondary mt-1">
                                   Granted by: {entry.granted_by} •{" "}
                                   {new Date(
                                     entry.created_at
@@ -850,7 +850,7 @@ export default function DatabaseViewerPage() {
                                     );
                                   }}
                                   disabled={fixing}
-                                  className={`px-3 py-1 text-sm font-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  className={`px-3 py-1 text-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
                                     entry.access_level === "owner"
                                       ? "bg-primary text-text-primary border-border"
                                       : entry.access_level === "editor"
@@ -871,7 +871,7 @@ export default function DatabaseViewerPage() {
                                     )
                                   }
                                   disabled={fixing}
-                                  className="px-3 py-1 bg-destructive hover:bg-destructive/80 disabled:bg-secondary disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                                  className="px-3 py-1 bg-destructive hover:bg-destructive/80 disabled:bg-secondary disabled:cursor-not-allowed rounded text-medium transition-colors"
                                   title="Remove user"
                                 >
                                   🗑️
@@ -884,7 +884,7 @@ export default function DatabaseViewerPage() {
 
                       {/* Add User Form */}
                       <div className="bg-background border border-border rounded-lg p-4">
-                        <h4 className="text-sm font-bold text-text-primary mb-3">
+                        <h4 className="text-small font-bold text-text-primary mb-3">
                           ➕ Add User
                         </h4>
                         <form
@@ -913,12 +913,12 @@ export default function DatabaseViewerPage() {
                             type="text"
                             name="email"
                             placeholder="user.name or email@shopify.com"
-                            className="flex-1 px-3 py-2 bg-secondary border border-border rounded text-sm text-text-primary placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-border"
+                            className="flex-1 px-3 py-2 bg-secondary border border-border rounded text-small text-text-primary placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-border"
                             disabled={fixing}
                           />
                           <select
                             name="accessLevel"
-                            className="px-3 py-2 bg-secondary border border-border rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-border"
+                            className="px-3 py-2 bg-secondary border border-border rounded text-small text-text-primary focus:outline-none focus:ring-2 focus:ring-border"
                             disabled={fixing}
                           >
                             <option value="viewer">Viewer</option>
@@ -928,7 +928,7 @@ export default function DatabaseViewerPage() {
                           <button
                             type="submit"
                             disabled={fixing}
-                            className="px-4 py-2 bg-primary disabled:bg-secondary disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                            className="px-4 py-2 bg-primary disabled:bg-secondary disabled:cursor-not-allowed rounded text-medium transition-colors"
                           >
                             {fixing ? "⏳" : "Add"}
                           </button>
@@ -960,7 +960,7 @@ export default function DatabaseViewerPage() {
                   key={name}
                   className="bg-primary border border-border rounded-lg p-4"
                 >
-                  <div className="text-sm text-text-secondary uppercase tracking-wider mb-2">
+                  <div className="text-small text-text-secondary uppercase tracking-wider mb-2">
                     {name}
                   </div>
                   <div className="text-3xl font-bold text-text-primary">
@@ -982,10 +982,10 @@ export default function DatabaseViewerPage() {
                     className="bg-primary border border-border rounded-lg overflow-hidden"
                   >
                     <div className="bg-secondary px-6 py-4 flex justify-between items-center">
-                      <h2 className="text-xl font-bold text-text-primary">
+                      <h2 className="text-medium font-bold text-text-primary">
                         {collectionName}
                       </h2>
-                      <div className="text-sm text-text-secondary">
+                      <div className="text-small text-text-secondary">
                         {filteredCount === totalCount
                           ? `${totalCount} documents`
                           : `${filteredCount} / ${totalCount} documents`}
@@ -1005,10 +1005,10 @@ export default function DatabaseViewerPage() {
                               key={doc.id}
                               className="bg-background border border-border rounded-lg p-4"
                             >
-                              <div className="font-bold text-text-primary text-sm mb-2">
+                              <div className="font-bold text-text-primary text-small mb-2">
                                 ID: {doc.id}
                               </div>
-                              <pre className="text-xs text-text-primary overflow-x-auto whitespace-pre-wrap">
+                              <pre className="text-small text-text-primary overflow-x-auto whitespace-pre-wrap">
                                 {JSON.stringify(doc, null, 2)}
                               </pre>
                             </div>

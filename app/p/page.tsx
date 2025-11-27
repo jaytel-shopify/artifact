@@ -505,11 +505,11 @@ function PresentationPageInner({
                 >
                   {dragging ? (
                     <div className="text-center">
-                      <div className="font-medium">Drop to upload</div>
+                      <div className="text-medium">Drop to upload</div>
                     </div>
                   ) : (
                     <div className="text-center space-y-3 min-w-[200px]">
-                      <div className="font-medium">
+                      <div className="text-medium">
                         Uploading
                         {uploadState.totalFiles > 1
                           ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
@@ -526,7 +526,7 @@ function PresentationPageInner({
                               }}
                             />
                           </div>
-                          <div className="text-xs text-text-secondary">
+                          <div className="text-small text-text-secondary">
                             {uploadState.currentProgress}%
                           </div>
                         </div>
@@ -662,7 +662,7 @@ function PresentationPageInner({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-text-primary/70">Headline</label>
+              <label className="text-small text-text-primary/70">Headline</label>
               <Input
                 value={editingTitleCard?.headline || ""}
                 onChange={(e) =>
@@ -676,7 +676,7 @@ function PresentationPageInner({
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-text-primary/70">Subheadline</label>
+              <label className="text-small text-text-primary/70">Subheadline</label>
               <Input
                 value={editingTitleCard?.subheadline || ""}
                 onChange={(e) =>
@@ -690,7 +690,7 @@ function PresentationPageInner({
             </div>
 
             {titleCardError && (
-              <div className="text-sm text-destructive">{titleCardError}</div>
+              <div className="text-small text-destructive">{titleCardError}</div>
             )}
           </div>
 

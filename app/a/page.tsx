@@ -45,11 +45,9 @@ export default function Page() {
       <>
         <Button
           variant="default"
-          className="gap-2"
           onClick={() => setIsSaveDialogOpen(true)}
           disabled={!user}
         >
-          <Save className="h-4 w-4" />
           Save to Project
         </Button>
         <DarkModeToggle />
@@ -133,12 +131,12 @@ export default function Page() {
       <div className="flex gap-4">
         <ArtifactThumbnail
           artifact={artifact}
-          className="w-full max-w-[680px] max-h-full"
+          className="w-full max-w-[680px] max-h-full rounded-card"
         />
         <div>
           <h1 className="text-4xl font-bold mb-4">Artifact {artifact.name}</h1>
           {artifact.description && (
-            <p className="text-sm text-text-secondary capitalize">
+            <p className="text-small text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}

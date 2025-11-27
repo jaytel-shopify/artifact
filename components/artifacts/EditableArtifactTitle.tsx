@@ -142,7 +142,7 @@ export default function EditableArtifactTitle({
           onBlur={handleBlur}
           disabled={isUpdating}
           placeholder="Untitled"
-          className="h-6 text-xs bg-secondary text-text-primary border border-border focus:border-border focus:bg-secondary px-2 py-1 min-w-0 w-full max-w-full"
+          className="h-6 text-small bg-secondary text-text-primary border border-border focus:border-border focus:bg-secondary px-2 py-1 min-w-0 w-full max-w-full"
         />
       </div>
     );
@@ -165,7 +165,7 @@ export default function EditableArtifactTitle({
         onDoubleClick={handleDoubleClick}
         title={readOnly ? undefined : "Double-click to edit"}
       >
-        <div className="text-xs text-text-secondary truncate select-none">
+        <div className="text-small text-text-secondary truncate select-none">
           {currentTitle || "Untitled"}
         </div>
       </div>

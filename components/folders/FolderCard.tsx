@@ -95,8 +95,8 @@ export default function FolderCard({
 
             {/* Folder Info */}
             <div className="space-y-1">
-              <h3 className="truncate text-sm font-semibold">{folder.name}</h3>
-              <p className="text-text-secondary text-xs">
+              <h3 className="truncate text-medium">{folder.name}</h3>
+              <p className="text-text-secondary text-small">
                 {projectCount} {projectCount === 1 ? "project" : "projects"}
               </p>
             </div>

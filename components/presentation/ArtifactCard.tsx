@@ -14,7 +14,7 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
         href={`/a/?id=${artifact.id}`}
         aria-label={artifact.name}
       >
-        <ArtifactThumbnail artifact={artifact} />
+        <ArtifactThumbnail artifact={artifact} className="rounded-card-inner" />
       </Link>
   );
 }

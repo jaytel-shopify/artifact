@@ -44,7 +44,7 @@ export default function ColumnControl({
           className="relative w-full appearance-none"
         />
         <span
-          className="absolute pointer-events-none top-1/2 left-1 w-8 z-10 text-xs text-white font-medium min-w-[12px] text-center translate-y-[-50%]"
+          className="absolute pointer-events-none top-1/2 left-1 w-8 z-10 text-small text-white text-medium min-w-[12px] text-center translate-y-[-50%]"
           style={{
             transform: `translateX(${(localColumns - 1) * 96.5}%)`,
           }}
@@ -56,7 +56,7 @@ export default function ColumnControl({
       {/* Fit toggle (only when columns === 1) */}
       {/* {columns === 1 && onFitModeChange && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary font-medium">Fit</span>
+          <span className="text-small text-text-secondary text-medium">Fit</span>
           <Switch checked={fitMode} onCheckedChange={onFitModeChange} />
         </div>
       )} */}

@@ -219,7 +219,7 @@ export function SharePanel({
         {/* Header */}
         <DialogHeader className="px-6 py-5 border-b border-border">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold text-text-primary">
+            <DialogTitle className="text-medium  text-text-primary">
               Share {resourceName}
             </DialogTitle>
 
@@ -302,7 +302,7 @@ export function SharePanel({
                 </Button>
               )}
 
-              <p className="text-xs text-text-secondary">
+              <p className="text-small text-text-secondary">
                 Search and select people to invite. They&apos;ll receive a Slack
                 notification.
               </p>
@@ -311,7 +311,7 @@ export function SharePanel({
 
           {/* Who has access */}
           <div className="space-y-3">
-            <h3 className="text-text-primary font-medium text-text-secondary">
+            <h3 className="text-text-primary text-medium text-text-secondary">
               Who has access
             </h3>
 
@@ -336,7 +336,7 @@ export function SharePanel({
                     />
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-medium truncate">
                         {owner.user_name || owner.user_email}
                         {owner.user_email.toLowerCase() ===
                           currentUserEmail.toLowerCase() && (
@@ -345,7 +345,7 @@ export function SharePanel({
                       </div>
                     </div>
 
-                    <div className="text-sm text-text-secondary">owner</div>
+                    <div className="text-small text-text-secondary">owner</div>
                   </div>
                 )}
 
@@ -363,7 +363,7 @@ export function SharePanel({
                     />
 
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium truncate">
+                      <div className="text-medium truncate">
                         {access.user_name || access.user_email}
                         {access.user_email.toLowerCase() ===
                           currentUserEmail.toLowerCase() && (
@@ -405,7 +405,7 @@ export function SharePanel({
                         </SelectContent>
                       </Select>
                     ) : (
-                      <div className="text-sm text-text-secondary">
+                      <div className="text-small text-text-secondary">
                         {access.access_level}
                       </div>
                     )}

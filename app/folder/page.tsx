@@ -261,7 +261,6 @@ function FolderPageContent() {
         {/* Share Button */}
         <Button
           variant="default"
-          className="gap-2"
           onClick={() => setAccessDialogOpen(true)}
         >
           <Share className="h-4 w-4" />
@@ -270,8 +269,7 @@ function FolderPageContent() {
 
         {/* New Project Button */}
         {canEdit && (
-          <Button className="gap-2" onClick={handleNewProject}>
-            <Plus className="h-4 w-4" />
+          <Button variant="default" onClick={handleNewProject}>
             New Project
           </Button>
         )}

@@ -17,13 +17,13 @@ export default function QuickSiteCard({ site }: QuickSiteCardProps) {
       rel="noopener noreferrer"
       className="flex flex-col gap-2 group"
     >
-      <h3 className="text-xs font-medium text-text-primary line-clamp-1">
+      <h3 className="text-medium text-text-primary line-clamp-1">
         {site.subdomain}
       </h3>
-      <p className="text-xs text-text-secondary line-clamp-1">
+      <p className="text-small text-text-secondary line-clamp-1">
         {site.description}
       </p>
-      <p className="text-xs text-text-secondary line-clamp-1">
+      <p className="text-small text-text-secondary line-clamp-1">
         {site.lastModified}
       </p>
     </a>

@@ -13,7 +13,6 @@ export default function ArtifactThumbnail({
   className = "",
 }: ArtifactThumbnailProps) {
   const baseClasses = `
-    rounded-card-inner 
     shadow-sm
     overflow-hidden
     ${className}
@@ -64,7 +63,7 @@ export default function ArtifactThumbnail({
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-primary flex items-center justify-center aspect-[16/9]">
-            <div className="w-8 h-8 bg-primary text-text-primary font-bold rounded-card-inner flex items-center justify-center text-lg">
+            <div className="w-8 h-8 bg-primary text-text-primary font-bold rounded-card-inner flex items-center justify-center text-medium">
               F
             </div>
           </div>
@@ -75,7 +74,7 @@ export default function ArtifactThumbnail({
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-gradient-to-br from-secondary to-card flex items-center justify-center aspect-[16/9]">
-            <Type className="w-8 h-8 text-text-primary-foreground" />
+            <Type className="w-8 h-8 text-text-primary" />
           </div>
         </div>
       );

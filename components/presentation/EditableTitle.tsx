@@ -86,7 +86,7 @@ export default function EditableTitle({
   if (isReadOnly) {
     return (
       <div className="flex items-center gap-2">
-        <span className="text-text-primary font-semibold text-text-primary px-2 py-1">
+        <span className="text-text-primary  text-text-primary px-2 py-1">
           {value || "Untitled Project"}
         </span>
       </div>
@@ -129,13 +129,13 @@ export default function EditableTitle({
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="text-left text-text-primary font-semibold text-text-primary px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/30"
+          className="text-left text-text-primary  text-text-primary px-2 py-1 rounded hover:bg-white/10 transition-colors cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/30"
         >
           <span>{value || "Untitled Project"}</span>
         </button>
       )}
       {saving && (
-        <span className="text-xs text-text-primary/60 ml-2">Saving…</span>
+        <span className="text-small text-text-primary/60 ml-2">Saving…</span>
       )}
 
       {/* Folder Actions Dropdown */}

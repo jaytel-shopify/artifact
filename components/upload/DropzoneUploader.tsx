@@ -114,10 +114,10 @@ export default function DropzoneUploader({
                 />
               </svg>
             </div>
-            <div className="text-sm font-medium">
+            <div className="text-medium">
               Drop to upload your artifacts
             </div>
-            <div className="text-xs text-white/70">
+            <div className="text-small text-white/70">
               Images or videos up to 50MB each
             </div>
             <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">

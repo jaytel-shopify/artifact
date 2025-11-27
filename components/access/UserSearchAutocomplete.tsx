@@ -172,7 +172,7 @@ export function UserSearchAutocomplete({
 
               {/* User Name */}
               <div className="flex-1 text-left min-w-0">
-                <div className="text-sm font-medium truncate">
+                <div className="text-medium truncate">
                   {user.fullName}
                 </div>
               </div>

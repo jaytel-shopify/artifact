@@ -30,9 +30,9 @@ export function UserAvatar({
       : currentUser;
 
   const sizeClasses = {
-    xs: "w-4 h-4 min-w-4 text-[10px]",
-    sm: "w-6 h-6 min-w-6 text-xs",
-    md: "w-8 h-8 min-w-8 text-sm",
+    xs: "w-4 h-4 min-w-4 text-small",
+    sm: "w-6 h-6 min-w-6 text-small",
+    md: "w-8 h-8 min-w-8 text-small",
     lg: "w-10 h-10 min-w-10 text-text-primary",
   };
 
@@ -41,7 +41,7 @@ export function UserAvatar({
   if (loading && !email) {
     return (
       <div
-        className={`${sizeClass} flex-shrink-0 rounded-full bg-secondary animate-pulse flex items-center justify-center font-medium`}
+        className={`${sizeClass} flex-shrink-0 rounded-full bg-secondary animate-pulse flex items-center justify-center text-medium`}
       >
         <span className="sr-only">Loading...</span>
       </div>
@@ -51,7 +51,7 @@ export function UserAvatar({
   if (!user) {
     return (
       <div
-        className={`${sizeClass} flex-shrink-0 rounded-full bg-secondary flex items-center justify-center font-medium`}
+        className={`${sizeClass} flex-shrink-0 rounded-full bg-secondary flex items-center justify-center text-medium`}
       >
         ?
       </div>
@@ -81,7 +81,7 @@ export function UserAvatar({
 
   return (
     <div
-      className={`${sizeClass} flex-shrink-0 rounded-full bg-primary text-text-primary-foreground flex items-center justify-center font-medium`}
+      className={`${sizeClass} flex-shrink-0 rounded-full bg-primary text-text-primary flex items-center justify-center text-medium`}
       title={displayName}
     >
       {initials}

@@ -69,7 +69,7 @@ export default function DeleteFolderDialog({
           <AlertDialogDescription className="space-y-3 pt-2">
             {projectCount > 0 ? (
               <>
-                <p className="font-semibold text-destructive">
+                <p className=" text-destructive">
                   This folder contains {projectCount}{" "}
                   {projectCount === 1 ? "project" : "projects"}.
                 </p>
@@ -77,12 +77,12 @@ export default function DeleteFolderDialog({
                   All projects inside will be{" "}
                   <strong>permanently deleted</strong>, including:
                 </p>
-                <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                <ul className="list-disc list-inside text-small space-y-1 ml-2">
                   <li>All pages and artifacts</li>
                   <li>All uploaded files</li>
                   <li>All project data</li>
                 </ul>
-                <p className="font-semibold">This action cannot be undone.</p>
+                <p className="">This action cannot be undone.</p>
               </>
             ) : (
               <p>This folder is empty. Are you sure you want to delete it?</p>
@@ -92,7 +92,7 @@ export default function DeleteFolderDialog({
 
         {projectCount > 0 && (
           <div className="py-4 space-y-2">
-            <label className="text-sm font-medium">
+            <label className="text-medium">
               Type{" "}
               <span className="font-mono bg-secondary px-1 rounded">
                 DELETE

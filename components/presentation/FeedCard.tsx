@@ -12,10 +12,10 @@ interface FeedCardProps {
 
 export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
   return (
-    <Card className="rounded-card relative grid h-fit cursor-pointer overflow-hidden focus-within:ring-[3px]">
+    <Card className="rounded-card relative grid h-fit cursor-pointer overflow-hidden">
       <ArtifactThumbnail
         artifact={artifact}
-        className="col-span-1 col-start-1 row-span-2 row-start-1 w-full"
+        className="col-span-1 col-start-1 row-span-2 row-start-1 w-full rounded-card"
       />
 
       <div className="from-background/80 col-span-1 col-start-1 row-start-2 bg-gradient-to-t to-transparent p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4">

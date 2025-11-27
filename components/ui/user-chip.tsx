@@ -23,8 +23,8 @@ export function UserChip({
   size = "md",
 }: UserChipProps) {
   const sizeClasses = {
-    sm: "px-2 py-1 text-xs gap-1.5",
-    md: "px-3 py-1.5 text-sm gap-2",
+    sm: "px-2 py-1 text-small gap-1.5",
+    md: "px-3 py-1.5 text-small gap-2",
   };
 
   const avatarSize = size === "sm" ? "xs" : "xs";
@@ -33,7 +33,7 @@ export function UserChip({
   return (
     <div
       className={`
-        flex items-center bg-secondary rounded-full font-medium
+        flex items-center bg-secondary rounded-full text-medium
         ${sizeClasses[size]}
       `}
     >

@@ -35,7 +35,7 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
   if (count === 0) {
     return (
       <div className="flex w-full flex-1 items-center justify-center">
-        <span className="text-text-secondary text-sm">No artifacts</span>
+        <span className="text-text-secondary text-medium">No artifacts</span>
       </div>
     );
   }
@@ -48,7 +48,7 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
     >
       {Array.from({ length: 3 }).map((_, i) => (
         <div key={i} className="flex-1 p-1">
-          {artifacts[i] && <ArtifactThumbnail artifact={artifacts[i]} />}
+          {artifacts[i] && <ArtifactThumbnail artifact={artifacts[i]} className="rounded-card-inner" />}
         </div>
       ))}
     </div>
@@ -114,10 +114,10 @@ export default function ProjectCard({
       {/* Project Info */}
       <CardFooter className="mt-auto space-y-2 p-4">
         <div className="space-y-1">
-          <h3 className="text-text-primary line-clamp-1 font-medium">
+          <h3 className="text-text-primary line-clamp-1 text-medium">
             {project.name}
           </h3>
-          <p className="text-text-secondary text-sm">
+          <p className="text-text-secondary text-small">
             Last modified {formatDate(project.updated_at)}
           </p>
         </div>

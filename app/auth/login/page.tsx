@@ -52,7 +52,7 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="text-sm text-text-secondary">
+          <div className="text-small text-text-secondary">
             <p>
               If you&apos;re not automatically authenticated, please ensure:
             </p>

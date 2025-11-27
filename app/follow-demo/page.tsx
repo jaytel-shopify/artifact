@@ -30,7 +30,7 @@ function DemoContent() {
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold">Quick Follow Feature Demo</h1>
-          <p className="text-xl text-text-secondary">
+          <p className="text-medium text-text-secondary">
             Test the real-time follow functionality with multiple users
           </p>
         </div>
@@ -54,7 +54,7 @@ function DemoContent() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Scroll Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Scroll Test</h3>
+            <h3 className="text-medium font-bold mb-4">Scroll Test</h3>
             <p className="mb-4 text-text-secondary">
               Scroll this page to see scroll synchronization in action.
             </p>
@@ -70,7 +70,7 @@ function DemoContent() {
 
           {/* Click Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Click Test</h3>
+            <h3 className="text-medium font-bold mb-4">Click Test</h3>
             <p className="mb-4 text-text-secondary">
               Click buttons to see click synchronization and highlighting.
             </p>
@@ -101,7 +101,7 @@ function DemoContent() {
 
           {/* Input Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Input Test</h3>
+            <h3 className="text-medium font-bold mb-4">Input Test</h3>
             <p className="mb-4 text-text-secondary">
               Type in the fields to see input synchronization.
             </p>
@@ -121,7 +121,7 @@ function DemoContent() {
 
           {/* Navigation Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Navigation Test</h3>
+            <h3 className="text-medium font-bold mb-4">Navigation Test</h3>
             <p className="mb-4 text-text-secondary">
               Navigation events will be synchronized when following a leader.
             </p>
@@ -151,8 +151,8 @@ function DemoContent() {
 
         {/* Status Info */}
         <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] bg-secondary">
-          <h3 className="text-xl font-bold mb-4">Technical Details</h3>
-          <div className="space-y-2 text-sm text-text-primary">
+          <h3 className="text-medium font-bold mb-4">Technical Details</h3>
+          <div className="space-y-2 text-small text-text-primary">
             <p>
               <strong>Room:</strong> follow
             </p>

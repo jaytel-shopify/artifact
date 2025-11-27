@@ -143,8 +143,8 @@ export function SchemaMigrationDialog() {
                 the new many-to-many relationship between artifacts and
                 projects.
               </DialogDescription>
-              <div className="rounded-lg bg-secondary p-3 text-sm">
-                <p className="font-medium mb-1">What will happen:</p>
+              <div className="rounded-lg bg-secondary p-3 text-small">
+                <p className="text-medium mb-1">What will happen:</p>
                 <ul className="list-disc list-inside text-text-secondary space-y-1">
                   <li>
                     Junction entries will be created for project/page links
@@ -163,7 +163,7 @@ export function SchemaMigrationDialog() {
                 window.
               </DialogDescription>
               <div className="space-y-2">
-                <div className="flex justify-between text-sm">
+                <div className="flex justify-between text-small">
                   <span>Progress</span>
                   <span>
                     {progress.completed} / {progress.total}
@@ -194,7 +194,7 @@ export function SchemaMigrationDialog() {
               <DialogDescription className="text-destructive">
                 {error || "An error occurred during migration."}
               </DialogDescription>
-              <p className="text-sm text-text-secondary">
+              <p className="text-small text-text-secondary">
                 Please try again or contact support if the issue persists.
               </p>
             </div>
