@@ -40,6 +40,7 @@ export function SchemaMigrationDialog() {
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [migrationResult, setMigrationResult] = useState<{ migratedCount: number; usersCreated?: number } | null>(null);
+  const [lastMigrationType, setLastMigrationType] = useState<"schema" | "user">("schema");
 
   // Check migration status on mount
   useEffect(() => {
@@ -86,6 +87,7 @@ export function SchemaMigrationDialog() {
       return;
     }
 
+    setLastMigrationType("schema");
     setState("migrating");
     setProgress({ completed: 0, total: status?.oldSchemaArtifactCount || 0, stage: "Migrating artifacts" });
 
@@ -111,6 +113,7 @@ export function SchemaMigrationDialog() {
   };
 
   const handleUserMigrate = async () => {
+    setLastMigrationType("user");
     setState("migrating-users");
     setProgress({ completed: 0, total: userStatus?.emailBasedCreatorIds || 0, stage: "Creating user records" });
 
@@ -314,7 +317,7 @@ export function SchemaMigrationDialog() {
               <Button variant="outline" onClick={handleDismiss}>
                 Dismiss
               </Button>
-              <Button onClick={state === "needs-user-migration" ? handleUserMigrate : handleMigrate}>Retry</Button>
+              <Button onClick={lastMigrationType === "user" ? handleUserMigrate : handleMigrate}>Retry</Button>
             </>
           )}
         </DialogFooter>

@@ -44,7 +44,7 @@ export default function ArtifactThumbnail({
             <img
               src={thumbnailUrl}
               alt={artifact.name}
-              className="w-full h-full object-cover aspect-[16/9]"
+              className="w-full h-full object-cover"
               loading="lazy"
             />
           </div>

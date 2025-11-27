@@ -57,6 +57,7 @@ import {
   updateProject,
   deleteProject as deleteProjectDB,
   getProjectCoverArtifacts,
+  getProjectArtifactsByProject,
 } from "@/lib/quick-db";
 
 function FolderPageContent() {
@@ -67,7 +68,7 @@ function FolderPageContent() {
 
   const [folder, setFolder] = useState<Folder | null>(null);
   const [projects, setProjects] = useState<
-    Array<Project & { coverArtifacts: Artifact[] }>
+    Array<Project & { coverArtifacts: Artifact[]; artifactCount: number }>
   >([]);
   const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -80,11 +81,11 @@ function FolderPageContent() {
   // Project actions
   const [isDeleting, setIsDeleting] = useState(false);
   const [projectToDelete, setProjectToDelete] = useState<
-    (Project & { coverArtifacts: Artifact[] }) | null
+    (Project & { coverArtifacts: Artifact[]; artifactCount: number }) | null
   >(null);
   const [isRenaming, setIsRenaming] = useState(false);
   const [projectToRename, setProjectToRename] = useState<
-    (Project & { coverArtifacts: Artifact[] }) | null
+    (Project & { coverArtifacts: Artifact[]; artifactCount: number }) | null
   >(null);
   const [newProjectName, setNewProjectName] = useState("");
 
@@ -120,13 +121,17 @@ function FolderPageContent() {
           }).catch(console.error);
         }
 
-        // Load cover artifacts for projects from their first page (in parallel)
+        // Load cover artifacts and artifact count for projects (in parallel)
         const projectsWithCovers = await Promise.all(
           folderProjects.map(async (project) => {
-            const coverArtifacts = await getProjectCoverArtifacts(project.id);
+            const [coverArtifacts, allArtifacts] = await Promise.all([
+              getProjectCoverArtifacts(project.id),
+              getProjectArtifactsByProject(project.id),
+            ]);
             return {
               ...project,
               coverArtifacts,
+              artifactCount: allArtifacts.length,
             };
           })
         );
@@ -177,13 +182,13 @@ function FolderPageContent() {
   const backUrl = "/projects/";
 
   function handleDeleteProject(
-    project: Project & { coverArtifacts: Artifact[] }
+    project: Project & { coverArtifacts: Artifact[]; artifactCount: number }
   ) {
     setProjectToDelete(project);
   }
 
   function handleRenameProject(
-    project: Project & { coverArtifacts: Artifact[] }
+    project: Project & { coverArtifacts: Artifact[]; artifactCount: number }
   ) {
     setProjectToRename(project);
     setNewProjectName(project.name);

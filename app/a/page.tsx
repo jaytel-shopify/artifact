@@ -6,7 +6,7 @@ import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { getArtifactById } from "@/lib/quick-db";
-import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
+import Artifact from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { ArrowLeft } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
@@ -67,9 +67,9 @@ export default function Page() {
   return (
     <div className="flex min-h-full items-center justify-center p-8">
       <div className="flex gap-4">
-        <ArtifactThumbnail
+        <Artifact
           artifact={artifact}
-          className="w-full max-w-[680px] max-h-full rounded-card"
+          className="w-full max-w-[800px] max-h-[80vh] rounded-card overflow-hidden"
         />
         <div>
           <h1 className="text-medium mb-4">Artifact {artifact.name}</h1>
