@@ -10,16 +10,11 @@ interface ArtifactCardProps {
 
 export default function ArtifactCard({ artifact }: ArtifactCardProps) {
   return (
-    <div className="relative flex flex-col gap-2">
-      <ArtifactThumbnail artifact={artifact} />
       <Link
         href={`/a/?id=${artifact.id}`}
-        className="after:content-[''] after:absolute after:inset-0"
+        aria-label={artifact.name}
       >
-        <h3 className="text-xs font-medium text-text-primary line-clamp-1">
-          {artifact.name}
-        </h3>
+        <ArtifactThumbnail artifact={artifact} />
       </Link>
-    </div>
   );
 }

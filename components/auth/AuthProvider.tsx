@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.hostname.endsWith(".local"));
 
     if (isLocalhost) {
-      console.log("[AuthProvider] 🔓 Running on localhost - using mock user");
+      // console.log("[AuthProvider] 🔓 Running on localhost - using mock user");
 
       const localDevUser: QuickUser = {
         id: "123",

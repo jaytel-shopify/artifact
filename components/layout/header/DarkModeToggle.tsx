@@ -22,11 +22,21 @@ export default function DarkModeToggle() {
     );
   }
 
+  const handleToggleTheme = () => {
+    if(document.startViewTransition) {
+      document.startViewTransition(() => {
+        setTheme(theme === "dark" ? "light" : "dark");
+      });
+    } else {
+      setTheme(theme === "dark" ? "light" : "dark");
+    }
+  };
+
   return (
     <Button
       variant="default"
       size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={handleToggleTheme}
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (

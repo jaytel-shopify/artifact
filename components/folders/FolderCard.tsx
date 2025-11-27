@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Folder, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,

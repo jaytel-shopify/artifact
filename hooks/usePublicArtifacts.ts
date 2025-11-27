@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 import { waitForQuick } from "@/lib/quick";
 import type { Artifact } from "@/types";
@@ -27,19 +27,21 @@ async function fetchPublicArtifacts(
 }
 
 export function usePublicArtifacts() {
-  const [offset, setOffset] = useState(0);
-  const [allArtifacts, setAllArtifacts] = useState<Artifact[]>([]);
+  const offsetRef = useRef(PAGE_SIZE);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { isLoading, error, mutate } = useSWR<Artifact[]>(
+  const { data: artifacts = [], isLoading, error, mutate } = useSWR<Artifact[]>(
     "public-artifacts",
     () => fetchPublicArtifacts(0, PAGE_SIZE),
     {
       revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60000, // 1 minute deduplication window
+      keepPreviousData: true,
       onSuccess: (data) => {
-        setAllArtifacts(data);
-        setOffset(PAGE_SIZE);
+        offsetRef.current = PAGE_SIZE;
         setHasMore(data.length === PAGE_SIZE);
       },
     }
@@ -50,20 +52,15 @@ export function usePublicArtifacts() {
 
     setIsLoadingMore(true);
     try {
-      const newArtifacts = await fetchPublicArtifacts(offset, PAGE_SIZE);
+      const newArtifacts = await fetchPublicArtifacts(offsetRef.current, PAGE_SIZE);
 
       if (newArtifacts.length > 0) {
-        // Append to existing artifacts using functional update
-        setAllArtifacts((current) => {
-          const updatedArtifacts = [...current, ...newArtifacts];
-
-          // Update SWR cache with all artifacts
-          mutate(updatedArtifacts, false);
-
-          return updatedArtifacts;
-        });
-
-        setOffset(offset + PAGE_SIZE);
+        // Append to SWR cache
+        await mutate(
+          (current = []) => [...current, ...newArtifacts],
+          { revalidate: false }
+        );
+        offsetRef.current += PAGE_SIZE;
         setHasMore(newArtifacts.length === PAGE_SIZE);
       } else {
         setHasMore(false);
@@ -75,28 +72,39 @@ export function usePublicArtifacts() {
     }
   };
 
-  const refresh = () => {
-    // Reset pagination and refetch
-    setOffset(0);
-    setAllArtifacts([]);
-    mutate();
+  const refresh = async () => {
+    offsetRef.current = PAGE_SIZE;
+    setHasMore(true);
+    await mutate();
   };
 
   const addArtifact = (artifact: Artifact) => {
-    // Optimistically add artifact to the beginning
-    // Use functional update to get the latest state
-    setAllArtifacts((current) => {
-      const updatedArtifacts = [artifact, ...current];
+    // Optimistically add artifact to the beginning of SWR cache
+    mutate(
+      (current = []) => [artifact, ...current],
+      { revalidate: false }
+    );
+  };
 
-      // Update SWR cache
-      mutate(updatedArtifacts, false);
+  const removeArtifact = (artifactId: string) => {
+    // Optimistically remove artifact from SWR cache
+    mutate(
+      (current = []) => current.filter((a) => a.id !== artifactId),
+      { revalidate: false }
+    );
+  };
 
-      return updatedArtifacts;
-    });
+  const updateArtifact = (artifactId: string, updates: Partial<Artifact>) => {
+    // Optimistically update artifact in SWR cache
+    mutate(
+      (current = []) =>
+        current.map((a) => (a.id === artifactId ? { ...a, ...updates } : a)),
+      { revalidate: false }
+    );
   };
 
   return {
-    artifacts: allArtifacts,
+    artifacts,
     isLoading,
     isLoadingMore,
     error,
@@ -104,5 +112,7 @@ export function usePublicArtifacts() {
     loadMore,
     refresh,
     addArtifact,
+    removeArtifact,
+    updateArtifact,
   };
 }

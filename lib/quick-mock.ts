@@ -659,15 +659,6 @@ function init() {
       granted_at: now,
     },
   ];
-
-  console.log("[Mock] Initialized with:", {
-    projects: db.projects.length,
-    folders: db.folders.length,
-    pages: db.pages.length,
-    artifacts: db.artifacts.length,
-    project_artifacts: db.project_artifacts.length,
-    published: db.artifacts.filter((a: any) => a.published).length,
-  });
 }
 
 // Mock collection
@@ -693,13 +684,6 @@ class Collection {
 
   async find() {
     const result = [...db[this.name]];
-    if (this.name === "projects") {
-      console.log(
-        "[Mock] Returning projects:",
-        result.length,
-        result.map((p) => p.name)
-      );
-    }
     return result;
   }
 

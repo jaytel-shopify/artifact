@@ -1,9 +1,7 @@
 "use client";
 
 import type { Artifact, ArtifactType } from "@/types";
-import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
-import { Card } from "@/components/ui/card";
-import Link from "next/link";
+import FeedCard from "@/components/presentation/FeedCard";
 import { Button } from "@/components/ui/button";
 import { createArtifact as createArtifactDB } from "@/lib/quick-db";
 import { useSetHeader } from "@/components/layout/HeaderContext";
@@ -38,7 +36,7 @@ export default function Home() {
       tabindex: number;
     }[];
   }[];
-  artifacts.forEach((artifact, i) => {
+  artifacts?.forEach((artifact, i) => {
     const index = masonryGrid.reduce(
       (minIdx, row, idx, arr) =>
         row.height < arr[minIdx].height ? idx : minIdx,
@@ -117,30 +115,11 @@ export default function Home() {
             {masonryGrid.map((row, index) => (
               <div key={index} className="flex flex-col gap-2 lg:gap-6">
                 {row.artifacts.map(({ artifact, tabindex }) => (
-                  <Card
+                  <FeedCard
                     key={artifact.id}
-                    className="rounded-card relative grid h-fit cursor-pointer overflow-hidden focus-within:ring-[3px]"
-                  >
-                    <ArtifactThumbnail
-                      artifact={artifact}
-                      className="col-span-1 col-start-1 row-span-2 row-start-1 w-full"
-                    />
-
-                    <div className="from-background/80 col-span-1 col-start-1 row-start-2 bg-gradient-to-t to-transparent p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4">
-                      <Link
-                        href={`/a/?id=${artifact.id}`}
-                        className="after:absolute after:inset-0 after:content-['']"
-                        tabIndex={tabindex}
-                      >
-                        <h3 className="text-medium text-text-primary line-clamp-1 overflow-ellipsis">
-                          {artifact.name}
-                        </h3>
-                        <p className="text-small text-text-secondary overflow-ellipsis">
-                          {artifact.type}
-                        </p>
-                      </Link>
-                    </div>
-                  </Card>
+                    artifact={artifact}
+                    tabIndex={tabindex}
+                  />
                 ))}
               </div>
             ))}

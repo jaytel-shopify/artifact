@@ -194,7 +194,7 @@ export default function ProjectsPage() {
       {!sitesLoading && quickSites.length > 0 && (
         <div className="space-y-4">
           <img src="/quick.png" alt="quick logo" className="w-[50px]" />
-          <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
             {quickSites.map((site) => (
               <QuickSiteCard key={site.subdomain} site={site} />
             ))}
@@ -208,7 +208,7 @@ export default function ProjectsPage() {
       {publishedArtifacts.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-lg font-semibold">Published</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-6 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-6 gap-6">
             {publishedArtifacts.map((a) => (
               <ArtifactCard key={a.id} artifact={a} />
             ))}

@@ -262,7 +262,6 @@ export async function waitForQuick(): Promise<typeof window.quick> {
       (window as any).quick = mockQuick;
     }
 
-    console.log("[Quick] Using mock implementation for local development");
     return mockQuick as unknown as typeof window.quick;
   }
 
