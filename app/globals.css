@@ -17,23 +17,32 @@
 }
 
 @utility button-primary {
-  background: linear-gradient(
-    180deg,
-    #1d1b1c 0%,
-    #191718 81.19%,
-    #252120 96.35%
-  );
-  border: 0.5px solid var(--border);
+  border: 1px solid transparent;
   color: #fff;
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(180deg, var(--c-dark) 0%, #0f1315 80%, #2a3133 96%)
+      content-box,
+    conic-gradient(
+        from 180deg at 50% 50%,
+        #58595a 0deg,
+        #2c2e2f 45.907530784606934deg,
+        #52585b 215.1486110687256deg,
+        #c2cfd4 230.4279327392578deg,
+        #1c1f20 252.46597051620483deg,
+        #1c1f20 311.1993098258972deg,
+        #58595a 360deg
+      )
+      border-box;
   box-shadow:
-    0 0 0.25px 1.25px #262524 inset,
-    3px 5px 2px -4.75px #fff inset,
-    1.25px 1.5px 0 0 rgba(0, 0, 0, 0.75) inset,
-    0 4.5px 0.25px -2.5px #fbfbfb inset,
-    1px 1px 3px 3px #1a1818 inset,
-    0 -3px 1px 0 rgba(0, 0, 0, 0.5) inset,
-    2.5px -2px 3px 0 rgba(124, 108, 94, 0.75) inset,
-    0 -3px 3px 1px rgba(255, 245, 221, 0.1) inset;
+    0 0 0 1px #0f1315 inset,
+    3px 5px 2px -5px #fff inset,
+    1px 1.5px 0 0 rgba(15, 19, 21, 0.75) inset,
+    0 4px 0.25px -2px #fbfbfb inset,
+    1px 1px 3px 3px #131718 inset,
+    0 -3px 1px 0 rgba(15, 19, 21, 0.5) inset,
+    2px -2px 3px 0 rgba(11, 54, 72, 0.75) inset,
+    0 -3px 3px 1px rgba(214, 221, 223, 0.1) inset;
 }
 
 :root {
@@ -525,54 +534,14 @@ a:not(:disabled) {
   }
 }
 
-/* Range input styling */
-/* input[type="range"]::-webkit-slider-thumb,
-input[type="range"]::-moz-range-thumb {
-  -webkit-appearance: none;
-  border: 1px solid var(--c-text-primary);
-  height: 16px;
-  width: 16px;
-  border-radius: 50%;
-  background: var(--c-background);
-  cursor: pointer;
-  margin-top: -5px;
-}
-
-input[type="range"]::-webkit-slider-runnable-track,
-input[type="range"]::-moz-range-track {
-  width: 100%;
-  height: 8px;
-  cursor: pointer;
-  background: var(--c-text-primary);
-  border-radius: 50px;
-  border: 1px solid var(--c-background);
-} */
-
 input[type="range"]::-webkit-slider-thumb,
 input[type="range"]::-moz-range-thumb {
+  @apply button-primary;
   -webkit-appearance: none;
   height: 2rem;
   width: 2rem;
-  border-radius: 50%;
-
   margin-top: 0.25rem;
-  background: linear-gradient(
-    180deg,
-    #1d1b1c 0%,
-    #191718 81.19%,
-    #252120 96.35%
-  );
-  border: 0.5px solid var(--c-border);
-  color: #fff;
-  box-shadow:
-    0 0 0.25px 1.25px #262524 inset,
-    3px 5px 2px -4.75px #fff inset,
-    1.25px 1.5px 0 0 rgba(0, 0, 0, 0.75) inset,
-    0 4.5px 0.25px -2.5px #fbfbfb inset,
-    1px 1px 3px 3px #1a1818 inset,
-    0 -3px 1px 0 rgba(0, 0, 0, 0.5) inset,
-    2.5px -2px 3px 0 rgba(124, 108, 94, 0.75) inset,
-    0 -3px 3px 1px rgba(255, 245, 221, 0.1) inset;
+  border-radius: 50%;
   cursor: grab;
   &:active {
     cursor: grabbing;
