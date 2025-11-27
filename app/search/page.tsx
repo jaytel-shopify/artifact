@@ -161,9 +161,7 @@ export default function SearchPage() {
         <section className="mb-12">
           <div className="flex items-center gap-2 mb-4">
             <FolderOpen className="h-5 w-5 text-text-secondary" />
-            <h2 className="text-medium ">
-              Folders ({results.folders.length})
-            </h2>
+            <h2 className="text-medium ">Folders ({results.folders.length})</h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {results.folders.map((folder) => (

@@ -240,11 +240,9 @@ function FolderPageContent() {
   useSetHeader({
     left: (
       <>
-        <Link href={backUrl}>
-          <Button variant="default" size="icon" aria-label="Back">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
+        <Button variant="default" size="icon" href={backUrl} aria-label="Back">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
       </>
     ),
     center: (
@@ -259,11 +257,7 @@ function FolderPageContent() {
     right: (
       <>
         {/* Share Button */}
-        <Button
-          variant="default"
-          onClick={() => setAccessDialogOpen(true)}
-        >
-          <Share className="h-4 w-4" />
+        <Button variant="default" onClick={() => setAccessDialogOpen(true)}>
           Share
         </Button>
 
@@ -307,10 +301,10 @@ function FolderPageContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="mx-auto max-w-7xl p-6">
       {projects.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-text-secondary mb-4">
+        <div className="py-12 text-center">
+          <p className="mb-4 text-text-secondary">
             No projects in this folder yet
           </p>
           {canEdit && (
@@ -318,7 +312,7 @@ function FolderPageContent() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
             <ContextMenu key={p.id}>
               <ContextMenuTrigger asChild>
@@ -336,9 +330,8 @@ function FolderPageContent() {
                         <DropdownMenuItem
                           onClick={async () => {
                             try {
-                              const { removeProjectFromFolder } = await import(
-                                "@/lib/quick-folders"
-                              );
+                              const { removeProjectFromFolder } =
+                                await import("@/lib/quick-folders");
                               await removeProjectFromFolder(p.id);
                               setProjects((prev) =>
                                 prev.filter((proj) => proj.id !== p.id)
@@ -369,9 +362,8 @@ function FolderPageContent() {
                 <ContextMenuItem
                   onClick={async () => {
                     try {
-                      const { removeProjectFromFolder } = await import(
-                        "@/lib/quick-folders"
-                      );
+                      const { removeProjectFromFolder } =
+                        await import("@/lib/quick-folders");
                       await removeProjectFromFolder(p.id);
                       setProjects((prev) =>
                         prev.filter((proj) => proj.id !== p.id)

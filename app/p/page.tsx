@@ -360,11 +360,14 @@ function PresentationPageInner({
     {
       left: !presentationMode ? (
         <>
-          <Link href={backUrl}>
-            <Button variant="default" size="icon" aria-label="Back">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
+          <Button
+            href={backUrl}
+            variant="default"
+            size="icon"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -653,16 +656,18 @@ function PresentationPageInner({
           }
         }}
       >
-        <DialogContent
-          className="w-full max-w-2xl"
-        >
+        <DialogContent className="w-full max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-text-primary">Edit Title Card</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Edit Title Card
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-small text-text-primary/70">Headline</label>
+              <label className="text-small text-text-primary/70">
+                Headline
+              </label>
               <Input
                 value={editingTitleCard?.headline || ""}
                 onChange={(e) =>
@@ -676,7 +681,9 @@ function PresentationPageInner({
             </div>
 
             <div className="space-y-2">
-              <label className="text-small text-text-primary/70">Subheadline</label>
+              <label className="text-small text-text-primary/70">
+                Subheadline
+              </label>
               <Input
                 value={editingTitleCard?.subheadline || ""}
                 onChange={(e) =>
@@ -690,7 +697,9 @@ function PresentationPageInner({
             </div>
 
             {titleCardError && (
-              <div className="text-small text-destructive">{titleCardError}</div>
+              <div className="text-small text-destructive">
+                {titleCardError}
+              </div>
             )}
           </div>
 

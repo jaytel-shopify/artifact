@@ -35,11 +35,9 @@ export default function Page() {
   // Set header content
   useSetHeader({
     left: (
-      <Link href="/">
-        <Button variant="default" size="icon" aria-label="Back">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-      </Link>
+      <Button variant="default" size="icon" href="/" aria-label="Back">
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
     ),
     right: (
       <>
