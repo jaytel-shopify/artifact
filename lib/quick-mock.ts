@@ -832,6 +832,7 @@ export function getMockQuickSites() {
     {
       id: "my-portfolio",
       subdomain: "my-portfolio",
+      description: "My portfolio site",
       url: "https://my-portfolio.quick.shopify.io",
       owner: "dev@shopify.com",
       lastModified: new Date(
@@ -842,6 +843,7 @@ export function getMockQuickSites() {
     {
       id: "team-dashboard",
       subdomain: "team-dashboard",
+      description: "Team dashboard site",
       url: "https://team-dashboard.quick.shopify.io",
       owner: "dev@shopify.com",
       lastModified: new Date(
@@ -852,6 +854,7 @@ export function getMockQuickSites() {
     {
       id: "project-showcase",
       subdomain: "project-showcase",
+      description: "Project showcase site",
       url: "https://project-showcase.quick.shopify.io",
       owner: "dev@shopify.com",
       lastModified: new Date(

@@ -188,42 +188,54 @@ export interface UserMigrationStatus {
 
 /**
  * Check if records need migration from email-based creator_id to User.id
- * 
+ *
  * Old schema: creator_id = "user@shopify.com" (email)
  * New schema: creator_id = "uuid-string" (User.id)
- * 
+ *
  * Detects email-based creator_ids by checking if they contain "@"
  */
 export async function checkUserMigrationStatus(): Promise<UserMigrationStatus> {
   const quick = await waitForQuick();
-  
+
   const projectsCollection = quick.db.collection("projects");
   const artifactsCollection = quick.db.collection("artifacts");
   const foldersCollection = quick.db.collection("folders");
-  
+
   const allProjects = await projectsCollection.find();
   const allArtifacts = await artifactsCollection.find();
   const allFolders = await foldersCollection.find();
-  
+
   // Check for email-based creator_ids (contain "@")
-  const isEmailBased = (creatorId: string | undefined) => 
+  const isEmailBased = (creatorId: string | undefined) =>
     creatorId && creatorId.includes("@");
-  
-  const emailBasedProjects = allProjects.filter((p: any) => isEmailBased(p.creator_id));
-  const emailBasedArtifacts = allArtifacts.filter((a: any) => isEmailBased(a.creator_id));
-  const emailBasedFolders = allFolders.filter((f: any) => isEmailBased(f.creator_id));
-  
-  const totalEmailBased = emailBasedProjects.length + emailBasedArtifacts.length + emailBasedFolders.length;
-  const totalRecords = allProjects.length + allArtifacts.length + allFolders.length;
-  
+
+  const emailBasedProjects = allProjects.filter((p: any) =>
+    isEmailBased(p.creator_id)
+  );
+  const emailBasedArtifacts = allArtifacts.filter((a: any) =>
+    isEmailBased(a.creator_id)
+  );
+  const emailBasedFolders = allFolders.filter((f: any) =>
+    isEmailBased(f.creator_id)
+  );
+
+  const totalEmailBased =
+    emailBasedProjects.length +
+    emailBasedArtifacts.length +
+    emailBasedFolders.length;
+  const totalRecords =
+    allProjects.length + allArtifacts.length + allFolders.length;
+
   // Collect unique emails
   const uniqueEmails = new Set<string>();
-  [...emailBasedProjects, ...emailBasedArtifacts, ...emailBasedFolders].forEach((record: any) => {
-    if (record.creator_id && record.creator_id.includes("@")) {
-      uniqueEmails.add(record.creator_id.toLowerCase());
+  [...emailBasedProjects, ...emailBasedArtifacts, ...emailBasedFolders].forEach(
+    (record: any) => {
+      if (record.creator_id && record.creator_id.includes("@")) {
+        uniqueEmails.add(record.creator_id.toLowerCase());
+      }
     }
-  });
-  
+  );
+
   return {
     needsMigration: totalEmailBased > 0,
     emailBasedCreatorIds: totalEmailBased,
@@ -234,73 +246,94 @@ export async function checkUserMigrationStatus(): Promise<UserMigrationStatus> {
 
 /**
  * Migrate creator_id from email strings to User.id UUIDs
- * 
+ *
  * This migration:
  * 1. Scans all Projects, Artifacts, and Folders for email-based creator_ids
  * 2. Creates User records for each unique email if they don't exist
  * 3. Updates creator_id from email to the User's UUID
- * 
+ *
  * The migration is idempotent (safe to run multiple times).
  */
 export async function migrateCreatorIdsToUserIds(
   onProgress?: (completed: number, total: number, stage: string) => void
-): Promise<{ success: boolean; migratedCount: number; usersCreated: number; error?: string }> {
+): Promise<{
+  success: boolean;
+  migratedCount: number;
+  usersCreated: number;
+  error?: string;
+}> {
   try {
     const quick = await waitForQuick();
-    
+
     const projectsCollection = quick.db.collection("projects");
     const artifactsCollection = quick.db.collection("artifacts");
     const foldersCollection = quick.db.collection("folders");
-    
+
     const allProjects = await projectsCollection.find();
     const allArtifacts = await artifactsCollection.find();
     const allFolders = await foldersCollection.find();
-    
+
     // Check for email-based creator_ids (contain "@")
-    const isEmailBased = (creatorId: string | undefined) => 
+    const isEmailBased = (creatorId: string | undefined) =>
       creatorId && creatorId.includes("@");
-    
-    const emailBasedProjects = allProjects.filter((p: any) => isEmailBased(p.creator_id));
-    const emailBasedArtifacts = allArtifacts.filter((a: any) => isEmailBased(a.creator_id));
-    const emailBasedFolders = allFolders.filter((f: any) => isEmailBased(f.creator_id));
-    
+
+    const emailBasedProjects = allProjects.filter((p: any) =>
+      isEmailBased(p.creator_id)
+    );
+    const emailBasedArtifacts = allArtifacts.filter((a: any) =>
+      isEmailBased(a.creator_id)
+    );
+    const emailBasedFolders = allFolders.filter((f: any) =>
+      isEmailBased(f.creator_id)
+    );
+
     // Collect unique emails
     const uniqueEmails = new Set<string>();
-    [...emailBasedProjects, ...emailBasedArtifacts, ...emailBasedFolders].forEach((record: any) => {
+    [
+      ...emailBasedProjects,
+      ...emailBasedArtifacts,
+      ...emailBasedFolders,
+    ].forEach((record: any) => {
       if (record.creator_id && record.creator_id.includes("@")) {
         uniqueEmails.add(record.creator_id.toLowerCase());
       }
     });
-    
+
     const emailArray = Array.from(uniqueEmails);
-    const totalRecords = emailBasedProjects.length + emailBasedArtifacts.length + emailBasedFolders.length;
-    
+    const totalRecords =
+      emailBasedProjects.length +
+      emailBasedArtifacts.length +
+      emailBasedFolders.length;
+
     // Stage 1: Create users for each unique email
     onProgress?.(0, emailArray.length, "Creating user records");
-    
+
     const emailToUserId = new Map<string, string>();
     let usersCreated = 0;
-    
+
     for (let i = 0; i < emailArray.length; i++) {
       const email = emailArray[i];
-      
+
       // Check if user already exists
       let user = await getUserByEmail(email);
-      
+
       if (!user) {
         // Create user from email
         user = await createUserFromEmail(email);
         usersCreated++;
       }
-      
+
       emailToUserId.set(email.toLowerCase(), user.id);
       onProgress?.(i + 1, emailArray.length, "Creating user records");
     }
-    
+
     // Stage 2: Update creator_ids in all collections
     let migratedCount = 0;
-    const totalToMigrate = emailBasedProjects.length + emailBasedArtifacts.length + emailBasedFolders.length;
-    
+    const totalToMigrate =
+      emailBasedProjects.length +
+      emailBasedArtifacts.length +
+      emailBasedFolders.length;
+
     // Update projects
     onProgress?.(0, totalToMigrate, "Migrating projects");
     for (const project of emailBasedProjects) {
@@ -311,7 +344,7 @@ export async function migrateCreatorIdsToUserIds(
         onProgress?.(migratedCount, totalToMigrate, "Migrating projects");
       }
     }
-    
+
     // Update artifacts
     onProgress?.(migratedCount, totalToMigrate, "Migrating artifacts");
     for (const artifact of emailBasedArtifacts) {
@@ -322,7 +355,7 @@ export async function migrateCreatorIdsToUserIds(
         onProgress?.(migratedCount, totalToMigrate, "Migrating artifacts");
       }
     }
-    
+
     // Update folders
     onProgress?.(migratedCount, totalToMigrate, "Migrating folders");
     for (const folder of emailBasedFolders) {
@@ -333,11 +366,11 @@ export async function migrateCreatorIdsToUserIds(
         onProgress?.(migratedCount, totalToMigrate, "Migrating folders");
       }
     }
-    
-    return { 
-      success: true, 
-      migratedCount, 
-      usersCreated 
+
+    return {
+      success: true,
+      migratedCount,
+      usersCreated,
     };
   } catch (error) {
     console.error("User migration failed:", error);
@@ -365,7 +398,7 @@ export async function getAllMigrationStatus(): Promise<{
     checkMigrationStatus(),
     checkUserMigrationStatus(),
   ]);
-  
+
   return {
     schemaNeeedsMigration: schemaStatus.needsMigration,
     userSchemaNeeedsMigration: userStatus.needsMigration,
@@ -376,3 +409,205 @@ export async function getAllMigrationStatus(): Promise<{
   };
 }
 
+// ==================== ARTIFACT SCHEMA NORMALIZATION ====================
+
+/**
+ * Status of the Artifact schema normalization
+ */
+export interface ArtifactNormalizationStatus {
+  needsNormalization: boolean;
+  missingPublished: number;
+  missingReactions: number;
+  hasOldSchemaFields: number;
+  missingDescription: number;
+  totalArtifacts: number;
+}
+
+/**
+ * Check if artifacts need normalization to match the current schema
+ *
+ * Checks for:
+ * - Missing `published` field (should be boolean, default false)
+ * - Missing `reactions` field (should be { like: [], dislike: [] })
+ * - Old schema fields (project_id, page_id, position should be null/removed)
+ * - Missing `description` field (should default to "")
+ */
+export async function checkArtifactNormalizationStatus(): Promise<ArtifactNormalizationStatus> {
+  const quick = await waitForQuick();
+  const artifactsCollection = quick.db.collection("artifacts");
+
+  const allArtifacts = await artifactsCollection.find();
+
+  let missingPublished = 0;
+  let missingReactions = 0;
+  let hasOldSchemaFields = 0;
+  let missingDescription = 0;
+
+  for (const artifact of allArtifacts) {
+    // Check for missing published field
+    if (artifact.published === undefined) {
+      missingPublished++;
+    }
+
+    // Check for missing or invalid reactions field
+    if (
+      !artifact.reactions ||
+      !Array.isArray(artifact.reactions.like) ||
+      !Array.isArray(artifact.reactions.dislike)
+    ) {
+      missingReactions++;
+    }
+
+    // Check for old schema fields (non-null values)
+    if (
+      (artifact.project_id !== undefined && artifact.project_id !== null) ||
+      (artifact.page_id !== undefined && artifact.page_id !== null) ||
+      (artifact.position !== undefined && artifact.position !== null)
+    ) {
+      hasOldSchemaFields++;
+    }
+
+    // Check for missing description
+    if (artifact.description === undefined) {
+      missingDescription++;
+    }
+  }
+
+  const needsNormalization =
+    missingPublished > 0 ||
+    missingReactions > 0 ||
+    hasOldSchemaFields > 0 ||
+    missingDescription > 0;
+
+  return {
+    needsNormalization,
+    missingPublished,
+    missingReactions,
+    hasOldSchemaFields,
+    missingDescription,
+    totalArtifacts: allArtifacts.length,
+  };
+}
+
+/**
+ * Normalize all artifacts to match the current schema
+ *
+ * This migration:
+ * 1. Adds `published: false` to artifacts missing it
+ * 2. Adds `reactions: { like: [], dislike: [] }` to artifacts missing it
+ * 3. Sets old schema fields (project_id, page_id, position) to null
+ * 4. Adds `description: ""` to artifacts missing it
+ *
+ * The migration is idempotent (safe to run multiple times).
+ */
+export async function normalizeArtifactSchema(
+  onProgress?: (completed: number, total: number) => void
+): Promise<{ success: boolean; normalizedCount: number; error?: string }> {
+  try {
+    const quick = await waitForQuick();
+    const artifactsCollection = quick.db.collection("artifacts");
+
+    const allArtifacts = await artifactsCollection.find();
+    let normalizedCount = 0;
+
+    for (let i = 0; i < allArtifacts.length; i++) {
+      const artifact = allArtifacts[i];
+      const updates: Record<string, any> = {};
+      let needsUpdate = false;
+
+      // Add published field if missing
+      if (artifact.published === undefined) {
+        updates.published = false;
+        needsUpdate = true;
+      }
+
+      // Add reactions field if missing or invalid
+      if (
+        !artifact.reactions ||
+        !Array.isArray(artifact.reactions.like) ||
+        !Array.isArray(artifact.reactions.dislike)
+      ) {
+        // Preserve existing reactions if partially valid
+        const existingLikes = Array.isArray(artifact.reactions?.like)
+          ? artifact.reactions.like
+          : [];
+        const existingDislikes = Array.isArray(artifact.reactions?.dislike)
+          ? artifact.reactions.dislike
+          : [];
+        updates.reactions = {
+          like: existingLikes,
+          dislike: existingDislikes,
+        };
+        needsUpdate = true;
+      }
+
+      // Set old schema fields to null
+      if (artifact.project_id !== undefined && artifact.project_id !== null) {
+        updates.project_id = null;
+        needsUpdate = true;
+      }
+      if (artifact.page_id !== undefined && artifact.page_id !== null) {
+        updates.page_id = null;
+        needsUpdate = true;
+      }
+      if (artifact.position !== undefined && artifact.position !== null) {
+        updates.position = null;
+        needsUpdate = true;
+      }
+
+      // Add description field if missing
+      if (artifact.description === undefined) {
+        updates.description = "";
+        needsUpdate = true;
+      }
+
+      // Apply updates if any
+      if (needsUpdate) {
+        await artifactsCollection.update(artifact.id, updates);
+        normalizedCount++;
+      }
+
+      onProgress?.(i + 1, allArtifacts.length);
+    }
+
+    return { success: true, normalizedCount };
+  } catch (error) {
+    console.error("Artifact normalization failed:", error);
+    return {
+      success: false,
+      normalizedCount: 0,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
+ * Get comprehensive migration status for all migrations
+ */
+export async function getComprehensiveMigrationStatus(): Promise<{
+  schemaNeeedsMigration: boolean;
+  userSchemaNeeedsMigration: boolean;
+  artifactNormalizationNeeded: boolean;
+  details: {
+    schema: MigrationStatus;
+    user: UserMigrationStatus;
+    artifactNormalization: ArtifactNormalizationStatus;
+  };
+}> {
+  const [schemaStatus, userStatus, normalizationStatus] = await Promise.all([
+    checkMigrationStatus(),
+    checkUserMigrationStatus(),
+    checkArtifactNormalizationStatus(),
+  ]);
+
+  return {
+    schemaNeeedsMigration: schemaStatus.needsMigration,
+    userSchemaNeeedsMigration: userStatus.needsMigration,
+    artifactNormalizationNeeded: normalizationStatus.needsNormalization,
+    details: {
+      schema: schemaStatus,
+      user: userStatus,
+      artifactNormalization: normalizationStatus,
+    },
+  };
+}

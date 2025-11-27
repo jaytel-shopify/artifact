@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
@@ -23,6 +23,18 @@ import { useProjectsData } from "@/hooks/useProjectsData";
 import { useProjectActions } from "@/hooks/useProjectActions";
 import { useFolderManagement } from "@/hooks/useFolderManagement";
 import { useQuickSites } from "@/hooks/useQuickSites";
+import { deleteArtifact } from "@/lib/quick-db";
+import type { Artifact } from "@/types";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import Logo from "@/components/layout/header/Logo";
@@ -40,6 +52,30 @@ export default function ProjectsPage() {
 
   // Fetch Quick sites
   const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
+
+  // Artifact deletion state
+  const [artifactToDelete, setArtifactToDelete] = useState<Artifact | null>(
+    null
+  );
+  const [isDeletingArtifact, setIsDeletingArtifact] = useState(false);
+
+  async function handleDeleteArtifact(artifact: Artifact) {
+    setArtifactToDelete(artifact);
+  }
+
+  async function confirmDeleteArtifact() {
+    if (!artifactToDelete) return;
+    setIsDeletingArtifact(true);
+    try {
+      await deleteArtifact(artifactToDelete.id);
+      mutate();
+    } catch (error) {
+      console.error("Failed to delete artifact:", error);
+    } finally {
+      setIsDeletingArtifact(false);
+      setArtifactToDelete(null);
+    }
+  }
 
   // Folder management
   const {
@@ -96,10 +132,7 @@ export default function ProjectsPage() {
     center: <SearchBar mode="dashboard" />,
     right: (
       <>
-        <Button
-          variant="ghost"
-          onClick={() => setCreateFolderOpen(true)}
-        >
+        <Button variant="ghost" onClick={() => setCreateFolderOpen(true)}>
           New Folder
         </Button>
         <Button variant="default" onClick={handleNewProject}>
@@ -206,7 +239,11 @@ export default function ProjectsPage() {
           <h2 className="text-medium ">Published</h2>
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-6">
             {publishedArtifacts.map((a) => (
-              <ArtifactCard key={a.id} artifact={a} />
+              <ArtifactCard
+                key={a.id}
+                artifact={a}
+                onDelete={handleDeleteArtifact}
+              />
             ))}
           </div>
         </div>
@@ -271,6 +308,34 @@ export default function ProjectsPage() {
         folderName={folderToDelete?.name || ""}
         projectCount={folderToDelete?.projectCount || 0}
       />
+
+      {/* Artifact Delete Dialog */}
+      <AlertDialog
+        open={!!artifactToDelete}
+        onOpenChange={() => setArtifactToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete artifact?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &quot;{artifactToDelete?.name}&quot;.
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingArtifact}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteArtifact}
+              disabled={isDeletingArtifact}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingArtifact ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

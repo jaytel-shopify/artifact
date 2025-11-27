@@ -15,8 +15,11 @@ import {
   migrateToNewSchema,
   checkUserMigrationStatus,
   migrateCreatorIdsToUserIds,
+  checkArtifactNormalizationStatus,
+  normalizeArtifactSchema,
   type MigrationStatus,
   type UserMigrationStatus,
+  type ArtifactNormalizationStatus,
 } from "@/lib/schema-migration";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
@@ -26,8 +29,10 @@ type MigrationState =
   | "idle"
   | "needs-migration"
   | "needs-user-migration"
+  | "needs-normalization"
   | "migrating"
   | "migrating-users"
+  | "normalizing"
   | "success"
   | "error";
 
@@ -36,11 +41,12 @@ export function SchemaMigrationDialog() {
   const [state, setState] = useState<MigrationState>("checking");
   const [status, setStatus] = useState<MigrationStatus | null>(null);
   const [userStatus, setUserStatus] = useState<UserMigrationStatus | null>(null);
+  const [normalizationStatus, setNormalizationStatus] = useState<ArtifactNormalizationStatus | null>(null);
   const [progress, setProgress] = useState({ completed: 0, total: 0, stage: "" });
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [migrationResult, setMigrationResult] = useState<{ migratedCount: number; usersCreated?: number } | null>(null);
-  const [lastMigrationType, setLastMigrationType] = useState<"schema" | "user">("schema");
+  const [lastMigrationType, setLastMigrationType] = useState<"schema" | "user" | "normalize">("schema");
 
   // Check migration status on mount
   useEffect(() => {
@@ -54,20 +60,24 @@ export function SchemaMigrationDialog() {
 
     async function check() {
       try {
-        // Check both migration types
-        const [schemaStatus, userMigrationStatus] = await Promise.all([
+        // Check all migration types
+        const [schemaStatus, userMigrationStatus, artifactNormStatus] = await Promise.all([
           checkMigrationStatus(),
           checkUserMigrationStatus(),
+          checkArtifactNormalizationStatus(),
         ]);
         
         setStatus(schemaStatus);
         setUserStatus(userMigrationStatus);
+        setNormalizationStatus(artifactNormStatus);
         
-        // Prioritize schema migration first, then user migration
+        // Prioritize schema migration first, then user migration, then normalization
         if (schemaStatus.needsMigration) {
           setState("needs-migration");
         } else if (userMigrationStatus.needsMigration) {
           setState("needs-user-migration");
+        } else if (artifactNormStatus.needsNormalization) {
+          setState("needs-normalization");
         } else {
           setState("idle");
         }
@@ -98,11 +108,18 @@ export function SchemaMigrationDialog() {
     if (result.success) {
       setMigrationResult({ migratedCount: result.migratedCount });
       
-      // After schema migration, check if user migration is needed
-      const userMigrationStatus = await checkUserMigrationStatus();
+      // After schema migration, check if user migration or normalization is needed
+      const [userMigrationStatus, artifactNormStatus] = await Promise.all([
+        checkUserMigrationStatus(),
+        checkArtifactNormalizationStatus(),
+      ]);
+      
       if (userMigrationStatus.needsMigration) {
         setUserStatus(userMigrationStatus);
         setState("needs-user-migration");
+      } else if (artifactNormStatus.needsNormalization) {
+        setNormalizationStatus(artifactNormStatus);
+        setState("needs-normalization");
       } else {
         setState("success");
       }
@@ -123,9 +140,35 @@ export function SchemaMigrationDialog() {
 
     if (result.success) {
       setMigrationResult({ migratedCount: result.migratedCount, usersCreated: result.usersCreated });
-      setState("success");
+      
+      // After user migration, check if normalization is needed
+      const artifactNormStatus = await checkArtifactNormalizationStatus();
+      if (artifactNormStatus.needsNormalization) {
+        setNormalizationStatus(artifactNormStatus);
+        setState("needs-normalization");
+      } else {
+        setState("success");
+      }
     } else {
       setError(result.error || "User migration failed");
+      setState("error");
+    }
+  };
+
+  const handleNormalize = async () => {
+    setLastMigrationType("normalize");
+    setState("normalizing");
+    setProgress({ completed: 0, total: normalizationStatus?.totalArtifacts || 0, stage: "Normalizing artifacts" });
+
+    const result = await normalizeArtifactSchema((completed, total) => {
+      setProgress({ completed, total, stage: "Normalizing artifacts" });
+    });
+
+    if (result.success) {
+      setMigrationResult({ migratedCount: result.normalizedCount });
+      setState("success");
+    } else {
+      setError(result.error || "Artifact normalization failed");
       setState("error");
     }
   };
@@ -167,7 +210,13 @@ export function SchemaMigrationDialog() {
                 User Schema Migration Required
               </>
             )}
-            {(state === "migrating" || state === "migrating-users") && (
+            {state === "needs-normalization" && (
+              <>
+                <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                Artifact Schema Normalization Required
+              </>
+            )}
+            {(state === "migrating" || state === "migrating-users" || state === "normalizing") && (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Migrating Data...
@@ -234,7 +283,41 @@ export function SchemaMigrationDialog() {
             </div>
           )}
 
-          {(state === "migrating" || state === "migrating-users") && (
+          {state === "needs-normalization" && normalizationStatus && (
+            <div className="space-y-4">
+              <DialogDescription>
+                Your database contains{" "}
+                <strong>{normalizationStatus.totalArtifacts}</strong> artifact
+                {normalizationStatus.totalArtifacts !== 1 ? "s" : ""} that need
+                schema normalization to match the current data model.
+              </DialogDescription>
+              <div className="rounded-lg bg-secondary p-3 text-small">
+                <p className="text-medium mb-1">Issues found:</p>
+                <ul className="list-disc list-inside text-text-secondary space-y-1">
+                  {normalizationStatus.missingPublished > 0 && (
+                    <li>{normalizationStatus.missingPublished} missing &quot;published&quot; field</li>
+                  )}
+                  {normalizationStatus.missingReactions > 0 && (
+                    <li>{normalizationStatus.missingReactions} missing &quot;reactions&quot; field</li>
+                  )}
+                  {normalizationStatus.hasOldSchemaFields > 0 && (
+                    <li>{normalizationStatus.hasOldSchemaFields} with old schema fields</li>
+                  )}
+                  {normalizationStatus.missingDescription > 0 && (
+                    <li>{normalizationStatus.missingDescription} missing &quot;description&quot; field</li>
+                  )}
+                </ul>
+                <p className="text-medium mt-2 mb-1">What will happen:</p>
+                <ul className="list-disc list-inside text-text-secondary space-y-1">
+                  <li>Missing fields will be added with default values</li>
+                  <li>Old schema fields will be cleaned up</li>
+                  <li>Your data will remain intact</li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {(state === "migrating" || state === "migrating-users" || state === "normalizing") && (
             <div className="space-y-4">
               <DialogDescription>
                 Please wait while your data is being migrated. Do not close this
@@ -301,7 +384,16 @@ export function SchemaMigrationDialog() {
             </>
           )}
 
-          {(state === "migrating" || state === "migrating-users") && (
+          {state === "needs-normalization" && (
+            <>
+              <Button variant="outline" onClick={handleDismiss}>
+                Later
+              </Button>
+              <Button onClick={handleNormalize}>Normalize Now</Button>
+            </>
+          )}
+
+          {(state === "migrating" || state === "migrating-users" || state === "normalizing") && (
             <Button disabled>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Migrating...
@@ -317,7 +409,13 @@ export function SchemaMigrationDialog() {
               <Button variant="outline" onClick={handleDismiss}>
                 Dismiss
               </Button>
-              <Button onClick={lastMigrationType === "user" ? handleUserMigrate : handleMigrate}>Retry</Button>
+              <Button onClick={
+                lastMigrationType === "user" 
+                  ? handleUserMigrate 
+                  : lastMigrationType === "normalize" 
+                    ? handleNormalize 
+                    : handleMigrate
+              }>Retry</Button>
             </>
           )}
         </DialogFooter>
