@@ -352,7 +352,7 @@ async function processPost(
         metadata.hideUI = true;
         metadata.loop = true;
         metadata.muted = true;
-        
+
         // Generate thumbnail for video
         try {
           onLog({
@@ -360,11 +360,11 @@ async function processPost(
             type: "info",
             message: `   🎬 Generating thumbnail...`,
           });
-          
+
           const thumbnailFile = await generateThumbnailFromVideo(upload.url);
           const thumbnailResult = await uploadFile(thumbnailFile);
           metadata.thumbnail_url = thumbnailResult.fullUrl;
-          
+
           onLog({
             timestamp: new Date().toISOString(),
             type: "success",
