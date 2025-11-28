@@ -399,11 +399,11 @@
   --c-dark: #03131a;
   --c-light: #ffffff;
 
-  --c-background: #e4e9eb;
+  --c-background: #f2f1f6;
   --c-primary: var(--c-light);
   --c-secondary: #5c727b;
   --c-disabled: #a3b4bb;
-  --c-border: #ffffff80;
+  --c-border: #ffffff26;
 
   --c-text-primary: var(--c-dark);
   --c-text-secondary: var(--c-secondary);
