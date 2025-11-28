@@ -1,14 +1,10 @@
 // Service Worker for Artifact PWA
-const CACHE_NAME = "artifact-v1";
-const RUNTIME_CACHE = "artifact-runtime";
+const CACHE_NAME = "artifact-v2";
+const RUNTIME_CACHE = "artifact-runtime-v2";
 
 // Assets to cache on install
-const PRECACHE_ASSETS = [
-  "/",
-  "/globals.css",
-  "/favicons/icon-256.png",
-  "/manifest.json",
-];
+// Note: Don't cache manifest.json as it can cause CORS issues with Quick's auth
+const PRECACHE_ASSETS = ["/", "/favicons/icon-256.png"];
 
 // Install event - cache essential assets
 self.addEventListener("install", (event) => {
@@ -47,11 +43,22 @@ self.addEventListener("fetch", (event) => {
   // Skip chrome-extension and other schemes
   if (!event.request.url.startsWith("http")) return;
 
+  // IMPORTANT: Skip navigation requests entirely to allow Next.js client-side routing
+  // Intercepting these can cause hard refreshes instead of SPA navigation
+  if (event.request.mode === "navigate") {
+    return;
+  }
+
   // Skip Quick API calls - always fetch fresh
   if (
     event.request.url.includes("/client/quick.js") ||
     event.request.url.includes("quicklytics")
   ) {
+    return;
+  }
+
+  // Skip Next.js data requests to ensure client-side navigation works
+  if (event.request.url.includes("/_next/")) {
     return;
   }
 
@@ -75,11 +82,6 @@ self.addEventListener("fetch", (event) => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) {
             return cachedResponse;
-          }
-
-          // Return a basic offline page for navigation requests
-          if (event.request.mode === "navigate") {
-            return caches.match("/");
           }
 
           return new Response("Offline - content not available", {

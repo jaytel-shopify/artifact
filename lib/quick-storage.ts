@@ -15,6 +15,8 @@ export interface UploadResult {
   fullUrl: string; // Full absolute URL
   size: number; // File size in bytes
   mimeType: string; // MIME type (e.g., "image/png")
+  width?: number; // Media width in pixels (for images/videos)
+  height?: number; // Media height in pixels (for images/videos)
 }
 
 export interface UploadProgress {
@@ -44,10 +46,10 @@ async function resizeImage(file: File): Promise<File> {
       const canvas = new OffscreenCanvas(newWidth, newHeight);
       canvas.getContext("bitmaprenderer")?.transferFromImageBitmap(resized);
       const blob = await canvas.convertToBlob({
-        type: file.type,
+        type: "image/webp",
         quality: 0.9,
       });
-      const resizedFile = new File([blob], file.name, { type: file.type });
+      const resizedFile = new File([blob], file.name, { type: "image/webp" });
       resolve(resizedFile);
     });
     image.src = URL.createObjectURL(file);
@@ -65,17 +67,23 @@ export async function uploadFile(
 
   console.log("Uploading file to Quick.fs:", file.name, file.type, file.size);
 
+  // Track processed file for dimension extraction
+  let processedFile: File = file;
+
   if (file.type.startsWith("image/")) {
-    file = await resizeImage(file);
+    processedFile = await resizeImage(file);
   } else if (file.type.startsWith("video/")) {
-    file = await compressFile(file, {
+    processedFile = await compressFile(file, {
       onProgress: (progress) => {
         onProgress?.(progress);
       },
     });
   }
 
-  const result = await quick.fs.uploadFile(file, {
+  // Get dimensions from the processed file (after resize/compression)
+  const dimensions = await getMediaDimensions(processedFile);
+
+  const result = await quick.fs.uploadFile(processedFile, {
     onProgress: (progress) => {
       console.log("Upload progress:", progress);
       onProgress?.(progress);
@@ -90,6 +98,8 @@ export async function uploadFile(
     fullUrl: result.fullUrl,
     size: result.size,
     mimeType: result.mimeType,
+    width: dimensions?.width,
+    height: dimensions?.height,
   };
 }
 
@@ -235,4 +245,65 @@ export function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+}
+
+export interface MediaDimensions {
+  width: number;
+  height: number;
+}
+
+/**
+ * Get dimensions (width/height) from an image file
+ */
+export function getImageDimensions(file: File): Promise<MediaDimensions> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      resolve({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src);
+      reject(new Error("Failed to load image for dimension extraction"));
+    };
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+/**
+ * Get dimensions (width/height) from a video file
+ */
+export function getVideoDimensions(file: File): Promise<MediaDimensions> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src);
+      resolve({ width: video.videoWidth, height: video.videoHeight });
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src);
+      reject(new Error("Failed to load video for dimension extraction"));
+    };
+    video.src = URL.createObjectURL(file);
+  });
+}
+
+/**
+ * Get dimensions from any media file (image or video)
+ */
+export async function getMediaDimensions(
+  file: File
+): Promise<MediaDimensions | null> {
+  try {
+    if (file.type.startsWith("image/")) {
+      return await getImageDimensions(file);
+    } else if (file.type.startsWith("video/")) {
+      return await getVideoDimensions(file);
+    }
+    return null;
+  } catch (error) {
+    console.error("Failed to get media dimensions:", error);
+    return null;
+  }
 }

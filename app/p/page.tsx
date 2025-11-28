@@ -4,19 +4,14 @@ import useSWR from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, PanelLeft, PanelLeftClose, Share } from "lucide-react";
+import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
-import type { Project, Artifact } from "@/types";
-import {
-  getProjectById,
-  updateArtifact as updateArtifactDB,
-  reorderArtifacts as reorderArtifactsDB,
-} from "@/lib/quick-db";
+import type { Project, Page } from "@/types";
+import { getProjectById } from "@/lib/quick-db";
 import { useArtifactCommands } from "@/hooks/useArtifactCommands";
 import {
   ReorderArtifactsCommand,
@@ -25,6 +20,7 @@ import {
   UpdateArtifactCommand,
   DeleteArtifactCommand,
 } from "@/lib/artifact-commands";
+import { cacheKeys } from "@/lib/cache-keys";
 import { useResourcePermissions } from "@/hooks/useResourcePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
@@ -40,7 +36,6 @@ import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import { useTitleCardEditor } from "@/hooks/useTitleCardEditor";
 import { useMediaReplacement } from "@/hooks/useMediaReplacement";
 import { usePageHandlers } from "@/hooks/usePageHandlers";
-import { useFolderActions } from "@/hooks/useFolderActions";
 import {
   Dialog,
   DialogContent,
@@ -54,7 +49,6 @@ import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import ColumnControl from "@/components/layout/header/ColumnControl";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
-import EditableTitle from "@/components/presentation/EditableTitle";
 import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
 import { SharePanel } from "@/components/access/SharePanel";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
@@ -75,9 +69,26 @@ async function fetchProject(projectId: string): Promise<Project | null> {
 function PresentationPageInner({
   onBroadcastReady,
   syncedArtifacts,
+  pages,
+  currentPageId,
+  selectPage: selectPageProp,
+  createPage,
+  updatePage,
+  deletePage,
+  reorderPages,
 }: {
   onBroadcastReady?: (callback: () => void) => void;
   syncedArtifacts: ReturnType<typeof useSyncedArtifacts>;
+  pages: Page[];
+  currentPageId: string | null;
+  selectPage: (pageId: string) => void;
+  createPage: (name: string) => Promise<Page | null>;
+  updatePage: (
+    pageId: string,
+    updates: Partial<Pick<Page, "name" | "position">>
+  ) => Promise<Page | null>;
+  deletePage: (pageId: string) => Promise<void>;
+  reorderPages: (reorderedPages: Page[]) => Promise<void>;
 }) {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get("id") || "";
@@ -124,9 +135,6 @@ function PresentationPageInner({
 
   // Sidebar state (extracted from old AppLayout)
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Load user's folders for folder dropdown
-  const userFolders = useUserFolders(user?.email);
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -207,7 +215,7 @@ function PresentationPageInner({
 
   // Fetch project data
   const { data: project } = useSWR<Project | null>(
-    projectId ? `project-${projectId}` : null,
+    cacheKeys.projectData(projectId),
     () => (projectId ? fetchProject(projectId) : null),
     { revalidateOnFocus: false }
   );
@@ -218,15 +226,11 @@ function PresentationPageInner({
   // Allow debug override of read-only mode
   const isReadOnly = debugReadOnly || permissions.isReadOnly;
   const canEdit = !debugReadOnly && permissions.canEdit;
-  const isOwner = permissions.isOwner;
   const accessLevel = permissions.accessLevel;
   const isCollaborator = accessLevel === "editor";
 
-  // Fetch and manage pages
-  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
-    project?.id
-  );
-  const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
+  // Use page state from props (managed by parent to keep artifacts in sync)
+  const selectPage = selectPageProp;
 
   // Disable browser scroll restoration to prevent carousel scroll memory
   useEffect(() => {
@@ -318,13 +322,6 @@ function PresentationPageInner({
   const { handlePageCreate, handlePageDelete, handlePageRename } =
     usePageHandlers(pages, createPage, updatePage, deletePage, selectPage);
 
-  // Folder actions
-  const {
-    handleProjectNameUpdate,
-    handleMoveToFolder,
-    handleRemoveFromFolder,
-  } = useFolderActions(project, userFolders);
-
   // Title card editor
   const {
     editingTitleCard,
@@ -360,13 +357,16 @@ function PresentationPageInner({
     {
       left: !presentationMode ? (
         <>
-          <Link href={backUrl}>
-            <Button variant="outline" size="icon" aria-label="Back">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
           <Button
-            variant="outline"
+            href={backUrl}
+            variant="default"
+            size="icon"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen((prev) => !prev)}
             aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
@@ -408,11 +408,10 @@ function PresentationPageInner({
           />
           {project && user && (
             <Button
-              variant="outline"
+              variant="default"
               className="gap-2"
               onClick={() => setShareDialogOpen(true)}
             >
-              <Share className="h-4 w-4" />
               Share
             </Button>
           )}
@@ -446,7 +445,7 @@ function PresentationPageInner({
         {/* Mobile backdrop overlay */}
         {sidebarOpen && !presentationMode && (
           <div
-            className="fixed inset-0 bg-black/50 z-[5] lg:hidden animate-in fade-in duration-300"
+            className="fixed inset-0 bg-primary/50 z-[5] lg:hidden animate-in fade-in duration-300"
             style={{
               animationTimingFunction: "var(--spring-elegant-easing-light)",
             }}
@@ -499,18 +498,18 @@ function PresentationPageInner({
 
             {/* Loading/upload overlay */}
             {(dragging || isUploading) && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+              <div className="absolute inset-0 z-30 flex items-center justify-center bg-primary/40 backdrop-blur-sm">
                 <div
                   className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
                   style={{ fontSize: "var(--font-size-sm)" }}
                 >
                   {dragging ? (
                     <div className="text-center">
-                      <div className="font-medium">Drop to upload</div>
+                      <div className="text-medium">Drop to upload</div>
                     </div>
                   ) : (
                     <div className="text-center space-y-3 min-w-[200px]">
-                      <div className="font-medium">
+                      <div className="text-medium">
                         Uploading
                         {uploadState.totalFiles > 1
                           ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
@@ -519,7 +518,7 @@ function PresentationPageInner({
                       </div>
                       {uploadState.uploading && (
                         <div className="space-y-2">
-                          <div className="w-full bg-muted rounded-full h-2">
+                          <div className="w-full bg-secondary rounded-full h-2">
                             <div
                               className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
                               style={{
@@ -527,7 +526,7 @@ function PresentationPageInner({
                               }}
                             />
                           </div>
-                          <div className="text-xs text-muted-foreground">
+                          <div className="text-small text-text-secondary">
                             {uploadState.currentProgress}%
                           </div>
                         </div>
@@ -654,17 +653,18 @@ function PresentationPageInner({
           }
         }}
       >
-        <DialogContent
-          className="w-full max-w-2xl text-white border-white/10"
-          style={{ backgroundColor: "var(--color-background-secondary)" }}
-        >
+        <DialogContent className="w-full max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Title Card</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Edit Title Card
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-white/70">Headline</label>
+              <label className="text-small text-text-primary/70">
+                Headline
+              </label>
               <Input
                 value={editingTitleCard?.headline || ""}
                 onChange={(e) =>
@@ -673,12 +673,14 @@ function PresentationPageInner({
                   )
                 }
                 placeholder="Enter headline"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                className="w-full bg-white/5 border-white/15 text-text-primary placeholder:text-text-primary/60 focus:border-white/30 focus:ring-white/20"
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-white/70">Subheadline</label>
+              <label className="text-small text-text-primary/70">
+                Subheadline
+              </label>
               <Input
                 value={editingTitleCard?.subheadline || ""}
                 onChange={(e) =>
@@ -687,12 +689,14 @@ function PresentationPageInner({
                   )
                 }
                 placeholder="Enter subheadline"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
+                className="w-full bg-white/5 border-white/15 text-text-primary placeholder:text-text-primary/60 focus:border-white/30 focus:ring-white/20"
               />
             </div>
 
             {titleCardError && (
-              <div className="text-sm text-destructive">{titleCardError}</div>
+              <div className="text-small text-destructive">
+                {titleCardError}
+              </div>
             )}
           </div>
 
@@ -703,16 +707,15 @@ function PresentationPageInner({
                 setEditingTitleCard(null);
                 setTitleCardError("");
               }}
-              className="text-white hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button
+              variant="primary"
               onClick={handleTitleCardSubmit}
               disabled={
                 !editingTitleCard?.headline && !editingTitleCard?.subheadline
               }
-              className="bg-white text-black hover:bg-white/90"
             >
               Save
             </Button>
@@ -734,6 +737,7 @@ function PresentationPageInner({
             : undefined
         }
         userEmail={user?.email}
+        userId={user?.id}
       />
     </>
   );
@@ -762,13 +766,16 @@ function PresentationPageInnerWithProvider() {
 
   // Fetch project
   const { data: project } = useSWR<Project | null>(
-    projectId ? `project-${projectId}` : null,
+    cacheKeys.projectData(projectId),
     () => (projectId ? fetchProject(projectId) : null),
     { revalidateOnFocus: false }
   );
 
-  const { pages } = usePages(project?.id);
-  const { currentPageId } = useCurrentPage(pages, project?.id);
+  // Page state managed here so artifacts stay in sync with selected page
+  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
+    project?.id
+  );
+  const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
   // Single call to useSyncedArtifacts - get everything needed
   const syncedArtifacts = useSyncedArtifacts(
@@ -792,6 +799,13 @@ function PresentationPageInnerWithProvider() {
       <PresentationPageInner
         onBroadcastReady={wrappedSetBroadcastCallback}
         syncedArtifacts={syncedArtifacts}
+        pages={pages}
+        currentPageId={currentPageId}
+        selectPage={selectPage}
+        createPage={createPage}
+        updatePage={updatePage}
+        deletePage={deletePage}
+        reorderPages={reorderPages}
       />
     </QuickFollowProvider>
   );

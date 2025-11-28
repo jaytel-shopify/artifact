@@ -4,11 +4,16 @@ import {
   getProjects,
   getPublishedArtifacts,
   getProjectCoverArtifacts,
+  getProjectArtifactsByProject,
 } from "@/lib/quick-db";
 import { getProjectCountInFolder } from "@/lib/quick-folders";
 import { getUserAccessibleResources } from "@/lib/access-control";
+import { cacheKeys } from "@/lib/cache-keys";
 
-export type ProjectWithCover = Project & { coverArtifacts: Artifact[] };
+export type ProjectWithCover = Project & {
+  coverArtifacts: Artifact[];
+  artifactCount: number;
+};
 export type FolderWithCount = Folder & { projectCount: number };
 
 export interface ProjectsData {
@@ -35,13 +40,17 @@ async function fetcher(userEmail?: string): Promise<ProjectsData> {
   );
   const validFolders = userFolders.filter((f): f is Folder => f !== null);
 
-  // Get cover artifacts for projects from their first page (in parallel)
+  // Get cover artifacts and total artifact count for projects (in parallel)
   const projectsWithCovers = await Promise.all(
     projects.map(async (project) => {
-      const coverArtifacts = await getProjectCoverArtifacts(project.id);
+      const [coverArtifacts, allProjectArtifacts] = await Promise.all([
+        getProjectCoverArtifacts(project.id),
+        getProjectArtifactsByProject(project.id),
+      ]);
       return {
         ...project,
         coverArtifacts,
+        artifactCount: allProjectArtifacts.length,
       };
     })
   );
@@ -66,14 +75,14 @@ async function fetcher(userEmail?: string): Promise<ProjectsData> {
  */
 export function useProjectsData(userEmail?: string) {
   const { data, isLoading, error, mutate } = useSWR<ProjectsData>(
-    userEmail ? `projects-folders-${userEmail}` : null,
+    cacheKeys.projectsData(userEmail),
     () =>
       userEmail
         ? fetcher(userEmail)
         : { projects: [], folders: [], publishedArtifacts: [] },
     {
       revalidateOnFocus: false,
-      dedupingInterval: 30000,
+      dedupingInterval: 2000, // Reduced to allow rapid mutations
       refreshInterval: 60000,
     }
   );

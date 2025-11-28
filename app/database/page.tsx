@@ -27,7 +27,9 @@ export default function DatabaseViewerPage() {
   const [data, setData] = useState<CollectionData>({});
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"raw" | "relationships">("relationships");
+  const [activeTab, setActiveTab] = useState<"raw" | "relationships">(
+    "relationships"
+  );
   const [fixing, setFixing] = useState(false);
   const [fixResults, setFixResults] = useState<string[]>([]);
 
@@ -120,6 +122,25 @@ export default function DatabaseViewerPage() {
     const projects = data.projects || [];
     const folders = data.folders || [];
     const accessEntries = data.access_control || [];
+    const users = data.users || [];
+
+    // Build a map from User.id to email for creator lookups
+    const userIdToEmail = new Map<string, string>();
+    users.forEach((user: any) => {
+      if (user.id && user.email) {
+        userIdToEmail.set(user.id, user.email.toLowerCase());
+      }
+    });
+
+    // Helper to get creator's email from creator_id (which may be UUID or legacy email)
+    const getCreatorEmail = (creatorId: string): string | null => {
+      // Check if it's a UUID (new schema) - look up in users
+      const email = userIdToEmail.get(creatorId);
+      if (email) return email;
+      // Check if it's already an email (legacy data)
+      if (creatorId && creatorId.includes("@")) return creatorId.toLowerCase();
+      return null;
+    };
 
     const resources: ResourceAccess[] = [];
     const orphanedAccess: any[] = [];
@@ -144,17 +165,20 @@ export default function DatabaseViewerPage() {
       }
 
       // Check if creator has owner access
+      // creator_id may be a User.id (UUID) or legacy email
+      const creatorEmail = getCreatorEmail(project.creator_id);
       const creatorAccess = projectAccess.find(
         (entry) =>
-          entry.user_email === project.creator_id &&
+          entry.user_email?.toLowerCase() === creatorEmail &&
           entry.access_level === "owner"
       );
 
       if (!creatorAccess) {
+        const creatorDisplay = creatorEmail || project.creator_id;
         issues.push({
           type: "missing_access",
           severity: "error",
-          message: `Creator (${project.creator_id}) is missing owner access`,
+          message: `Creator (${creatorDisplay}) is missing owner access`,
           resourceId: project.id,
         });
         totalIssues++;
@@ -187,17 +211,20 @@ export default function DatabaseViewerPage() {
       }
 
       // Check if creator has owner access
+      // creator_id may be a User.id (UUID) or legacy email
+      const folderCreatorEmail = getCreatorEmail(folder.creator_id);
       const creatorAccess = folderAccess.find(
         (entry) =>
-          entry.user_email === folder.creator_id &&
+          entry.user_email?.toLowerCase() === folderCreatorEmail &&
           entry.access_level === "owner"
       );
 
       if (!creatorAccess) {
+        const creatorDisplay = folderCreatorEmail || folder.creator_id;
         issues.push({
           type: "missing_access",
           severity: "error",
-          message: `Creator (${folder.creator_id}) is missing owner access`,
+          message: `Creator (${creatorDisplay}) is missing owner access`,
           resourceId: folder.id,
         });
         totalIssues++;
@@ -225,11 +252,15 @@ export default function DatabaseViewerPage() {
     });
 
     const projectsWithAccess = projects.filter((p) =>
-      accessEntries.some((e) => e.resource_type === "project" && e.resource_id === p.id)
+      accessEntries.some(
+        (e) => e.resource_type === "project" && e.resource_id === p.id
+      )
     ).length;
 
     const foldersWithAccess = folders.filter((f) =>
-      accessEntries.some((e) => e.resource_type === "folder" && e.resource_id === f.id)
+      accessEntries.some(
+        (e) => e.resource_type === "folder" && e.resource_id === f.id
+      )
     ).length;
 
     return {
@@ -270,7 +301,9 @@ export default function DatabaseViewerPage() {
         granted_by: creatorEmail,
       });
 
-      results.push(`✅ Fixed ${resourceType}: ${resourceName} (${creatorEmail})`);
+      results.push(
+        `✅ Fixed ${resourceType}: ${resourceName} (${creatorEmail})`
+      );
       setFixResults(results);
 
       // Reload data to show updated state
@@ -278,7 +311,9 @@ export default function DatabaseViewerPage() {
         loadData();
       }, 500);
     } catch (err: any) {
-      results.push(`❌ Failed to fix ${resourceType} ${resourceName}: ${err.message}`);
+      results.push(
+        `❌ Failed to fix ${resourceType} ${resourceName}: ${err.message}`
+      );
       setFixResults(results);
     } finally {
       setFixing(false);
@@ -315,7 +350,9 @@ export default function DatabaseViewerPage() {
       );
 
       if (existing) {
-        results.push(`⚠️ User ${fullEmail} already has access to this ${resourceType}`);
+        results.push(
+          `⚠️ User ${fullEmail} already has access to this ${resourceType}`
+        );
         setFixResults(results);
         setFixing(false);
         return;
@@ -330,7 +367,9 @@ export default function DatabaseViewerPage() {
         granted_by: currentUser?.email || "system",
       });
 
-      results.push(`✅ Added ${fullEmail} as ${accessLevel} to ${resourceName}`);
+      results.push(
+        `✅ Added ${fullEmail} as ${accessLevel} to ${resourceName}`
+      );
       setFixResults(results);
 
       // Reload data
@@ -363,7 +402,9 @@ export default function DatabaseViewerPage() {
         access_level: newAccessLevel,
       });
 
-      results.push(`✅ Updated ${userEmail} to ${newAccessLevel} on ${resourceName}`);
+      results.push(
+        `✅ Updated ${userEmail} to ${newAccessLevel} on ${resourceName}`
+      );
       setFixResults(results);
 
       // Reload data
@@ -413,7 +454,11 @@ export default function DatabaseViewerPage() {
   }
 
   async function deleteOrphanedAccess() {
-    if (!confirm("This will DELETE all orphaned access control entries. This cannot be undone. Continue?")) {
+    if (
+      !confirm(
+        "This will DELETE all orphaned access control entries. This cannot be undone. Continue?"
+      )
+    ) {
       return;
     }
 
@@ -432,7 +477,9 @@ export default function DatabaseViewerPage() {
       for (const entry of analysis.orphanedAccess) {
         try {
           await accessCollection.delete(entry.id);
-          results.push(`🗑️ Deleted orphaned ${entry.resource_type} access for ${entry.user_email}`);
+          results.push(
+            `🗑️ Deleted orphaned ${entry.resource_type} access for ${entry.user_email}`
+          );
           deleted++;
         } catch (err: any) {
           results.push(`❌ Failed to delete entry ${entry.id}: ${err.message}`);
@@ -464,12 +511,12 @@ export default function DatabaseViewerPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-8">
+      <div className="min-h-screen bg-background text-text-primary p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-primary">
+          <h1 className="text-3xl font-bold mb-8 text-text-primary">
             🗄️ Database Viewer
           </h1>
-          <div className="text-center py-20 text-xl text-muted-foreground">
+          <div className="text-center py-20 text-medium text-text-secondary">
             Loading database...
           </div>
         </div>
@@ -479,13 +526,13 @@ export default function DatabaseViewerPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background text-foreground p-8">
+      <div className="min-h-screen bg-background text-text-primary p-8">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8 text-primary">
+          <h1 className="text-3xl font-bold mb-8 text-text-primary">
             🗄️ Database Viewer
           </h1>
           <div className="bg-destructive/10 border border-destructive rounded-lg p-6">
-            <h2 className="text-xl font-bold text-destructive mb-2">Error</h2>
+            <h2 className="text-medium font-bold text-destructive mb-2">Error</h2>
             <p className="text-destructive/80">{error}</p>
           </div>
         </div>
@@ -496,15 +543,15 @@ export default function DatabaseViewerPage() {
   const analysis = analyzeRelationships();
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-8">
+    <div className="min-h-screen bg-background text-text-primary p-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4 text-primary">
+        <h1 className="text-3xl font-bold mb-4 text-text-primary">
           🗄️ Database Viewer
         </h1>
 
         {currentUser && (
-          <div className="bg-card border border-border rounded-lg p-4 mb-6">
-            <div className="text-sm text-muted-foreground">
+          <div className="bg-primary border border-border rounded-lg p-4 mb-6">
+            <div className="text-small text-text-secondary">
               <strong>👤 Logged in as:</strong> {currentUser.fullName} (
               {currentUser.email})
             </div>
@@ -514,19 +561,19 @@ export default function DatabaseViewerPage() {
         <div className="flex gap-3 mb-6">
           <button
             onClick={loadData}
-            className="px-4 py-2 bg-chart-1 hover:bg-chart-1/80 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-primary rounded-lg text-medium transition-colors"
           >
             🔄 Refresh
           </button>
           <button
             onClick={copyToClipboard}
-            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-medium transition-colors"
           >
             📋 Copy to Clipboard
           </button>
           <button
             onClick={downloadJSON}
-            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg font-medium transition-colors"
+            className="px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-medium transition-colors"
           >
             💾 Download JSON
           </button>
@@ -536,25 +583,25 @@ export default function DatabaseViewerPage() {
         <div className="flex gap-2 mb-6 border-b border-border">
           <button
             onClick={() => setActiveTab("relationships")}
-            className={`px-6 py-3 font-medium transition-colors ${
+            className={`px-6 py-3 text-medium transition-colors ${
               activeTab === "relationships"
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-text-primary border-b-2 border-primary"
+                : "text-text-secondary hover:text-text-primary"
             }`}
           >
             🔗 Relationships & Access
             {analysis.stats.totalIssues > 0 && (
-              <span className="ml-2 px-2 py-0.5 text-xs bg-destructive/20 text-destructive rounded-full">
+              <span className="ml-2 px-2 py-0.5 text-small bg-destructive/20 text-destructive rounded-full">
                 {analysis.stats.totalIssues}
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveTab("raw")}
-            className={`px-6 py-3 font-medium transition-colors ${
+            className={`px-6 py-3 text-medium transition-colors ${
               activeTab === "raw"
-                ? "text-primary border-b-2 border-primary"
-                : "text-muted-foreground hover:text-foreground"
+                ? "text-text-primary border-b-2 border-primary"
+                : "text-text-secondary hover:text-text-primary"
             }`}
           >
             📊 Raw Data
@@ -565,75 +612,97 @@ export default function DatabaseViewerPage() {
           <div className="space-y-6">
             {/* Stats */}
             <div className="grid grid-cols-4 gap-4">
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-sm text-muted-foreground mb-2">Total Resources</div>
-                <div className="text-3xl font-bold text-primary">
+              <div className="bg-primary border border-border rounded-lg p-4">
+                <div className="text-small text-text-secondary mb-2">
+                  Total Resources
+                </div>
+                <div className="text-3xl font-bold text-text-primary">
                   {analysis.stats.totalProjects + analysis.stats.totalFolders}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {analysis.stats.totalProjects} projects, {analysis.stats.totalFolders} folders
+                <div className="text-small text-text-secondary mt-1">
+                  {analysis.stats.totalProjects} projects,{" "}
+                  {analysis.stats.totalFolders} folders
                 </div>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-sm text-muted-foreground mb-2">With Access Control</div>
-                <div className="text-3xl font-bold text-chart-2">
-                  {analysis.stats.projectsWithAccess + analysis.stats.foldersWithAccess}
+              <div className="bg-primary border border-border rounded-lg p-4">
+                <div className="text-small text-text-secondary mb-2">
+                  With Access Control
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {analysis.stats.projectsWithAccess} projects, {analysis.stats.foldersWithAccess} folders
+                <div className="text-3xl font-bold text-primary">
+                  {analysis.stats.projectsWithAccess +
+                    analysis.stats.foldersWithAccess}
+                </div>
+                <div className="text-small text-text-secondary mt-1">
+                  {analysis.stats.projectsWithAccess} projects,{" "}
+                  {analysis.stats.foldersWithAccess} folders
                 </div>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-sm text-muted-foreground mb-2">Access Entries</div>
-                <div className="text-3xl font-bold text-chart-4">
+              <div className="bg-primary border border-border rounded-lg p-4">
+                <div className="text-small text-text-secondary mb-2">
+                  Access Entries
+                </div>
+                <div className="text-3xl font-bold text-primary">
                   {analysis.stats.totalAccessEntries}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
+                <div className="text-small text-text-secondary mt-1">
                   {analysis.stats.orphanedEntries} orphaned
                 </div>
               </div>
-              <div className="bg-card border border-border rounded-lg p-4">
-                <div className="text-sm text-muted-foreground mb-2">Issues Found</div>
-                <div className={`text-3xl font-bold ${analysis.stats.totalIssues > 0 ? 'text-destructive' : 'text-chart-2'}`}>
+              <div className="bg-primary border border-border rounded-lg p-4">
+                <div className="text-small text-text-secondary mb-2">
+                  Issues Found
+                </div>
+                <div
+                  className={`text-3xl font-bold ${analysis.stats.totalIssues > 0 ? "text-destructive" : "text-primary"}`}
+                >
                   {analysis.stats.totalIssues}
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {analysis.stats.totalIssues === 0 ? 'All good!' : 'Need attention'}
+                <div className="text-small text-text-secondary mt-1">
+                  {analysis.stats.totalIssues === 0
+                    ? "All good!"
+                    : "Need attention"}
                 </div>
               </div>
             </div>
 
             {/* Global Actions */}
             {analysis.orphanedAccess.length > 0 && (
-              <div className="bg-chart-5/10 border border-chart-5 rounded-lg p-6">
-                <h3 className="text-lg font-bold text-chart-5 mb-3">🔧 Global Actions</h3>
+              <div className="bg-primary rounded-lg p-6">
+                <h3 className="text-medium font-bold text-primary mb-3">
+                  🔧 Global Actions
+                </h3>
                 <div className="flex gap-3 flex-wrap">
                   <button
                     onClick={deleteOrphanedAccess}
                     disabled={fixing}
-                    className="px-4 py-2 bg-destructive hover:bg-destructive/80 disabled:bg-muted disabled:cursor-not-allowed rounded-lg font-medium transition-colors"
+                    className="px-4 py-2 bg-destructive hover:bg-destructive/80 disabled:bg-secondary disabled:cursor-not-allowed rounded-lg text-medium transition-colors"
                   >
-                    {fixing ? "⏳ Deleting..." : "🗑️ Delete All Orphaned Entries"}
+                    {fixing
+                      ? "⏳ Deleting..."
+                      : "🗑️ Delete All Orphaned Entries"}
                   </button>
                 </div>
-                <p className="text-sm text-chart-5/80 mt-3">
-                  This will remove {analysis.orphanedAccess.length} orphaned access entries that point to deleted resources.
+                <p className="text-small text-text-secondary mt-3">
+                  This will remove {analysis.orphanedAccess.length} orphaned
+                  access entries that point to deleted resources.
                 </p>
               </div>
             )}
 
             {/* Fix Results */}
             {fixResults.length > 0 && (
-              <div className="bg-card border border-border rounded-lg p-6">
-                <h3 className="text-lg font-bold text-foreground mb-3">📋 Results</h3>
+              <div className="bg-primary border border-border rounded-lg p-6">
+                <h3 className="text-medium font-bold text-text-primary mb-3">
+                  📋 Results
+                </h3>
                 <div className="bg-secondary rounded-lg p-4 max-h-96 overflow-y-auto">
-                  <pre className="text-sm text-secondary-foreground whitespace-pre-wrap font-mono">
+                  <pre className="text-small text-text-secondary whitespace-pre-wrap font-mono">
                     {fixResults.join("\n")}
                   </pre>
                 </div>
                 <button
                   onClick={() => setFixResults([])}
-                  className="mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-sm"
+                  className="mt-3 px-4 py-2 bg-secondary hover:bg-secondary/80 rounded-lg text-small"
                 >
                   Clear Results
                 </button>
@@ -644,32 +713,40 @@ export default function DatabaseViewerPage() {
             {analysis.orphanedAccess.length > 0 && (
               <div className="bg-destructive/10 border border-destructive rounded-lg overflow-hidden">
                 <div className="bg-destructive/20 px-6 py-4">
-                  <h2 className="text-xl font-bold text-destructive">
-                    ⚠️ Orphaned Access Entries ({analysis.orphanedAccess.length})
+                  <h2 className="text-medium font-bold text-destructive">
+                    ⚠️ Orphaned Access Entries ({analysis.orphanedAccess.length}
+                    )
                   </h2>
-                  <p className="text-sm text-destructive/80 mt-1">
+                  <p className="text-small text-destructive/80 mt-1">
                     These access entries point to resources that no longer exist
                   </p>
                 </div>
                 <div className="p-6 space-y-3">
                   {analysis.orphanedAccess.map((entry) => (
-                    <div key={entry.id} className="bg-background border border-destructive rounded-lg p-4">
+                    <div
+                      key={entry.id}
+                      className="bg-background border border-destructive rounded-lg p-4"
+                    >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <span className="text-sm font-bold text-destructive">
-                            {entry.resource_type === "project" ? "📊" : "📁"} {entry.resource_type}
+                          <span className="text-small font-bold text-destructive">
+                            {entry.resource_type === "project" ? "📊" : "📁"}{" "}
+                            {entry.resource_type}
                           </span>
-                          <span className="ml-2 text-xs text-muted-foreground">ID: {entry.resource_id}</span>
+                          <span className="ml-2 text-small text-text-secondary">
+                            ID: {entry.resource_id}
+                          </span>
                         </div>
-                        <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded">
+                        <span className="px-2 py-1 text-small bg-secondary text-text-secondary rounded">
                           {entry.access_level}
                         </span>
                       </div>
-                      <div className="text-sm text-foreground">
+                      <div className="text-small text-text-primary">
                         <strong>User:</strong> {entry.user_email}
                       </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        Granted by: {entry.granted_by} • Created: {new Date(entry.created_at).toLocaleDateString()}
+                      <div className="text-small text-text-secondary mt-1">
+                        Granted by: {entry.granted_by} • Created:{" "}
+                        {new Date(entry.created_at).toLocaleDateString()}
                       </div>
                     </div>
                   ))}
@@ -681,7 +758,9 @@ export default function DatabaseViewerPage() {
             <div className="space-y-4">
               {analysis.resources.map((resource) => {
                 const hasCreatorIssue = resource.issues.some(
-                  (issue) => issue.type === "missing_access" && issue.severity === "error"
+                  (issue) =>
+                    issue.type === "missing_access" &&
+                    issue.severity === "error"
                 );
 
                 return (
@@ -689,29 +768,36 @@ export default function DatabaseViewerPage() {
                     key={resource.resource.id}
                     className={`border rounded-lg overflow-hidden ${
                       resource.issues.length > 0
-                        ? "bg-chart-5/10 border-chart-5"
-                        : "bg-card border-border"
+                        ? "bg-primary border-border"
+                        : "bg-primary border-border"
                     }`}
                   >
                     <div
                       className={`px-6 py-4 ${
-                        resource.issues.length > 0 ? "bg-chart-5/20" : "bg-secondary"
+                        resource.issues.length > 0
+                          ? "bg-primary"
+                          : "bg-secondary"
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                            {resource.resourceType === "project" ? "📊" : "📁"} {resource.resource.name}
-                            <span className="text-sm font-normal text-muted-foreground">
+                          <h3 className="text-medium font-bold text-text-primary flex items-center gap-2">
+                            {resource.resourceType === "project" ? "📊" : "📁"}{" "}
+                            {resource.resource.name}
+                            <span className="text-small font-normal text-text-secondary">
                               ({resource.resourceType})
                             </span>
                           </h3>
-                          <div className="text-sm text-muted-foreground mt-1">
-                            Creator: {resource.resource.creator_id} • Created: {new Date(resource.resource.created_at).toLocaleDateString()}
+                          <div className="text-small text-text-secondary mt-1">
+                            Creator: {resource.resource.creator_id} • Created:{" "}
+                            {new Date(
+                              resource.resource.created_at
+                            ).toLocaleDateString()}
                           </div>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                          {resource.accessEntries.length} user{resource.accessEntries.length !== 1 ? 's' : ''}
+                        <div className="text-small text-text-secondary">
+                          {resource.accessEntries.length} user
+                          {resource.accessEntries.length !== 1 ? "s" : ""}
                         </div>
                       </div>
 
@@ -721,31 +807,33 @@ export default function DatabaseViewerPage() {
                           {resource.issues.map((issue, idx) => (
                             <div
                               key={idx}
-                              className={`text-sm px-3 py-2 rounded flex justify-between items-center ${
+                              className={`text-small px-3 py-2 rounded flex justify-between items-center ${
                                 issue.severity === "error"
                                   ? "bg-destructive/20 text-destructive"
-                                  : "bg-chart-5/20 text-chart-5"
+                                  : "bg-primary text-text-primary"
                               }`}
                             >
                               <span>
-                                {issue.severity === "error" ? "❌" : "⚠️"} {issue.message}
+                                {issue.severity === "error" ? "❌" : "⚠️"}{" "}
+                                {issue.message}
                               </span>
-                              {hasCreatorIssue && issue.severity === "error" && (
-                                <button
-                                  onClick={() =>
-                                    fixResourceAccess(
-                                      resource.resource.id,
-                                      resource.resourceType,
-                                      resource.resource.creator_id,
-                                      resource.resource.name
-                                    )
-                                  }
-                                  disabled={fixing}
-                                  className="ml-3 px-3 py-1 bg-chart-2 hover:bg-chart-2/80 disabled:bg-muted disabled:cursor-not-allowed rounded text-xs font-medium transition-colors"
-                                >
-                                  {fixing ? "⏳" : "Fix"}
-                                </button>
-                              )}
+                              {hasCreatorIssue &&
+                                issue.severity === "error" && (
+                                  <button
+                                    onClick={() =>
+                                      fixResourceAccess(
+                                        resource.resource.id,
+                                        resource.resourceType,
+                                        resource.resource.creator_id,
+                                        resource.resource.name
+                                      )
+                                    }
+                                    disabled={fixing}
+                                    className="ml-3 px-3 py-1 bg-primary disabled:bg-secondary disabled:cursor-not-allowed rounded text-medium transition-colors"
+                                  >
+                                    {fixing ? "⏳" : "Fix"}
+                                  </button>
+                                )}
                             </div>
                           ))}
                         </div>
@@ -762,9 +850,14 @@ export default function DatabaseViewerPage() {
                               className="bg-background border border-border rounded-lg p-4 flex justify-between items-center gap-4"
                             >
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium text-foreground truncate">{entry.user_email}</div>
-                                <div className="text-sm text-muted-foreground mt-1">
-                                  Granted by: {entry.granted_by} • {new Date(entry.created_at).toLocaleDateString()}
+                                <div className="text-medium text-text-primary truncate">
+                                  {entry.user_email}
+                                </div>
+                                <div className="text-small text-text-secondary mt-1">
+                                  Granted by: {entry.granted_by} •{" "}
+                                  {new Date(
+                                    entry.created_at
+                                  ).toLocaleDateString()}
                                 </div>
                               </div>
                               <div className="flex items-center gap-2">
@@ -773,18 +866,21 @@ export default function DatabaseViewerPage() {
                                   onChange={(e) => {
                                     updateAccessLevel(
                                       entry.id,
-                                      e.target.value as "owner" | "editor" | "viewer",
+                                      e.target.value as
+                                        | "owner"
+                                        | "editor"
+                                        | "viewer",
                                       entry.user_email,
                                       resource.resource.name
                                     );
                                   }}
                                   disabled={fixing}
-                                  className={`px-3 py-1 text-sm font-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
+                                  className={`px-3 py-1 text-medium rounded border-2 focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed ${
                                     entry.access_level === "owner"
-                                      ? "bg-chart-2/20 text-chart-2 border-chart-2"
+                                      ? "bg-primary text-text-primary border-border"
                                       : entry.access_level === "editor"
-                                      ? "bg-chart-1/20 text-chart-1 border-chart-1"
-                                      : "bg-muted text-muted-foreground border-border"
+                                        ? "bg-primary text-text-primary border-border"
+                                        : "bg-secondary text-text-secondary border-border"
                                   }`}
                                 >
                                   <option value="viewer">viewer</option>
@@ -792,9 +888,15 @@ export default function DatabaseViewerPage() {
                                   <option value="owner">owner</option>
                                 </select>
                                 <button
-                                  onClick={() => removeUserAccess(entry.id, entry.user_email, resource.resource.name)}
+                                  onClick={() =>
+                                    removeUserAccess(
+                                      entry.id,
+                                      entry.user_email,
+                                      resource.resource.name
+                                    )
+                                  }
                                   disabled={fixing}
-                                  className="px-3 py-1 bg-destructive hover:bg-destructive/80 disabled:bg-muted disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                                  className="px-3 py-1 bg-destructive hover:bg-destructive/80 disabled:bg-secondary disabled:cursor-not-allowed rounded text-medium transition-colors"
                                   title="Remove user"
                                 >
                                   🗑️
@@ -807,13 +909,18 @@ export default function DatabaseViewerPage() {
 
                       {/* Add User Form */}
                       <div className="bg-background border border-border rounded-lg p-4">
-                        <h4 className="text-sm font-bold text-foreground mb-3">➕ Add User</h4>
+                        <h4 className="text-small font-bold text-text-primary mb-3">
+                          ➕ Add User
+                        </h4>
                         <form
                           onSubmit={(e) => {
                             e.preventDefault();
                             const formData = new FormData(e.currentTarget);
                             const email = formData.get("email") as string;
-                            const accessLevel = formData.get("accessLevel") as "owner" | "editor" | "viewer";
+                            const accessLevel = formData.get("accessLevel") as
+                              | "owner"
+                              | "editor"
+                              | "viewer";
                             if (email) {
                               addUserToResource(
                                 resource.resource.id,
@@ -831,12 +938,12 @@ export default function DatabaseViewerPage() {
                             type="text"
                             name="email"
                             placeholder="user.name or email@shopify.com"
-                            className="flex-1 px-3 py-2 bg-input border border-border rounded text-sm text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="flex-1 px-3 py-2 bg-secondary border border-border rounded text-small text-text-primary placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-border"
                             disabled={fixing}
                           />
                           <select
                             name="accessLevel"
-                            className="px-3 py-2 bg-input border border-border rounded text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                            className="px-3 py-2 bg-secondary border border-border rounded text-small text-text-primary focus:outline-none focus:ring-2 focus:ring-border"
                             disabled={fixing}
                           >
                             <option value="viewer">Viewer</option>
@@ -846,7 +953,7 @@ export default function DatabaseViewerPage() {
                           <button
                             type="submit"
                             disabled={fixing}
-                            className="px-4 py-2 bg-chart-1 hover:bg-chart-1/80 disabled:bg-muted disabled:cursor-not-allowed rounded text-sm font-medium transition-colors"
+                            className="px-4 py-2 bg-primary disabled:bg-secondary disabled:cursor-not-allowed rounded text-medium transition-colors"
                           >
                             {fixing ? "⏳" : "Add"}
                           </button>
@@ -868,7 +975,7 @@ export default function DatabaseViewerPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search all collections..."
-                className="w-full px-4 py-3 bg-input border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full px-4 py-3 bg-secondary border border-border rounded-lg text-text-primary placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-border"
               />
             </div>
 
@@ -876,12 +983,12 @@ export default function DatabaseViewerPage() {
               {COLLECTIONS.map((name) => (
                 <div
                   key={name}
-                  className="bg-card border border-border rounded-lg p-4"
+                  className="bg-primary border border-border rounded-lg p-4"
                 >
-                  <div className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
+                  <div className="text-small text-text-secondary uppercase tracking-wider mb-2">
                     {name}
                   </div>
-                  <div className="text-3xl font-bold text-primary">
+                  <div className="text-3xl font-bold text-text-primary">
                     {data[name]?.length || 0}
                   </div>
                 </div>
@@ -897,13 +1004,13 @@ export default function DatabaseViewerPage() {
                 return (
                   <div
                     key={collectionName}
-                    className="bg-card border border-border rounded-lg overflow-hidden"
+                    className="bg-primary border border-border rounded-lg overflow-hidden"
                   >
                     <div className="bg-secondary px-6 py-4 flex justify-between items-center">
-                      <h2 className="text-xl font-bold text-primary">
+                      <h2 className="text-medium font-bold text-text-primary">
                         {collectionName}
                       </h2>
-                      <div className="text-sm text-muted-foreground">
+                      <div className="text-small text-text-secondary">
                         {filteredCount === totalCount
                           ? `${totalCount} documents`
                           : `${filteredCount} / ${totalCount} documents`}
@@ -911,7 +1018,7 @@ export default function DatabaseViewerPage() {
                     </div>
                     <div className="p-6 max-h-[600px] overflow-y-auto">
                       {collectionData.length === 0 ? (
-                        <div className="text-center py-12 text-muted-foreground italic">
+                        <div className="text-center py-12 text-text-secondary italic">
                           {totalCount === 0
                             ? "No documents"
                             : "No documents match search"}
@@ -923,10 +1030,10 @@ export default function DatabaseViewerPage() {
                               key={doc.id}
                               className="bg-background border border-border rounded-lg p-4"
                             >
-                              <div className="font-bold text-chart-5 text-sm mb-2">
+                              <div className="font-bold text-text-primary text-small mb-2">
                                 ID: {doc.id}
                               </div>
-                              <pre className="text-xs text-foreground overflow-x-auto whitespace-pre-wrap">
+                              <pre className="text-small text-text-primary overflow-x-auto whitespace-pre-wrap">
                                 {JSON.stringify(doc, null, 2)}
                               </pre>
                             </div>
@@ -944,4 +1051,3 @@ export default function DatabaseViewerPage() {
     </div>
   );
 }
-

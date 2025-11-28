@@ -111,7 +111,7 @@ export default function ArtifactAdder({
         setCurrentFileIndex(i + 1);
         setUploadProgress(0);
 
-        // Upload file to Quick.fs
+        // Upload file to Quick.fs (dimensions are extracted after processing)
         const upResult = await uploadFile(file, (progress) => {
           setUploadProgress(progress.percentage);
         });
@@ -119,9 +119,21 @@ export default function ArtifactAdder({
         // Determine file type from MIME type
         const type = getArtifactTypeFromMimeType(upResult.mimeType);
 
-        // Set default metadata for videos (muted, loop, hide controls)
-        const defaultMetadata =
-          type === "video" ? { hideUI: true, loop: true, muted: true } : {};
+        // Build metadata with dimensions and type-specific defaults
+        const metadata: Record<string, unknown> = {};
+
+        // Add dimensions if available (from upload result)
+        if (upResult.width && upResult.height) {
+          metadata.width = upResult.width;
+          metadata.height = upResult.height;
+        }
+
+        // Add video-specific defaults
+        if (type === "video") {
+          metadata.hideUI = true;
+          metadata.loop = true;
+          metadata.muted = true;
+        }
 
         // Create artifact using the hook with generated name
         const artifactName = generateArtifactName(type, upResult.fullUrl, file);
@@ -130,7 +142,7 @@ export default function ArtifactAdder({
           source_url: upResult.fullUrl, // Use fullUrl for display
           file_path: upResult.url, // Store relative url
           name: artifactName,
-          metadata: defaultMetadata,
+          metadata,
         });
 
         // Generate thumbnail asynchronously for videos (don't await)
@@ -285,12 +297,13 @@ export default function ArtifactAdder({
         }}
       >
         <DialogContent
-          className="w-full max-w-2xl text-white border-white/10"
-          style={{ backgroundColor: "var(--color-background-secondary)" }}
+          className="w-full max-w-2xl"
           showCloseButton={!uploading}
         >
           <DialogHeader>
-            <DialogTitle className="text-white">Embed via URL</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Embed via URL
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -299,25 +312,20 @@ export default function ArtifactAdder({
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com/artifact"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
                 disabled={uploading}
               />
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm text-white/70">Viewport</p>
-              <div className="flex flex-wrap gap-2 text-xs">
+              <p className="text-small text-text-primary/70">Viewport</p>
+              <div className="flex flex-wrap gap-2 text-small">
                 {Object.entries(VIEWPORTS).map(([key, vp]) => (
                   <button
                     key={key}
                     type="button"
                     onClick={() => setViewport(key as ViewportKey)}
                     disabled={uploading}
-                    className={`rounded-full px-3 py-1 border transition cursor-pointer ${
-                      viewport === key
-                        ? "border-white/40 bg-white/20 text-white"
-                        : "border-white/15 bg-white/5 text-white/70 hover:border-white/30"
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    className={`rounded-full px-3 py-1 border transition cursor-pointer border-border bg-secondary text-text-primary disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {vp.label}
                   </button>
@@ -325,7 +333,9 @@ export default function ArtifactAdder({
               </div>
             </div>
 
-            {error && <div className="text-sm text-destructive">{error}</div>}
+            {error && (
+              <div className="text-small text-destructive">{error}</div>
+            )}
           </div>
 
           <DialogFooter>
@@ -336,14 +346,13 @@ export default function ArtifactAdder({
                 resetUrlState();
               }}
               disabled={uploading}
-              className="text-white hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button
               onClick={handleUrlSubmit}
               disabled={uploading || !url}
-              className="bg-white text-black hover:bg-white/90"
+              variant="primary"
             >
               {uploading ? "Adding…" : "Add"}
             </Button>
@@ -362,38 +371,43 @@ export default function ArtifactAdder({
         }}
       >
         <DialogContent
-          className="w-full max-w-2xl text-white border-white/10"
-          style={{ backgroundColor: "var(--color-background-secondary)" }}
+          className="w-full max-w-2xl"
           showCloseButton={!uploading}
         >
           <DialogHeader>
-            <DialogTitle className="text-white">Create Title Card</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Create Title Card
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm text-white/70">Headline</label>
+              <label className="text-small text-text-primary/70">
+                Headline
+              </label>
               <Input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="Enter headline"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
                 disabled={uploading}
               />
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm text-white/70">Subheadline</label>
+              <label className="text-small text-text-primary/70">
+                Subheadline
+              </label>
               <Input
                 value={subheadline}
                 onChange={(e) => setSubheadline(e.target.value)}
                 placeholder="Enter subheadline"
-                className="w-full bg-white/5 border-white/15 text-white placeholder:text-white/60 focus:border-white/30 focus:ring-white/20"
                 disabled={uploading}
               />
             </div>
 
-            {error && <div className="text-sm text-destructive">{error}</div>}
+            {error && (
+              <div className="text-small text-destructive">{error}</div>
+            )}
           </div>
 
           <DialogFooter>
@@ -404,14 +418,13 @@ export default function ArtifactAdder({
                 resetTitleCardState();
               }}
               disabled={uploading}
-              className="text-white hover:bg-white/10"
             >
               Cancel
             </Button>
             <Button
+              variant="primary"
               onClick={handleTitleCardSubmit}
               disabled={uploading || (!headline && !subheadline)}
-              className="bg-white text-black hover:bg-white/90"
             >
               {uploading ? "Creating…" : "Create"}
             </Button>
@@ -421,40 +434,38 @@ export default function ArtifactAdder({
 
       {/* Upload Progress Dialog */}
       <Dialog open={uploading} onOpenChange={() => {}}>
-        <DialogContent
-          className="w-full max-w-md text-white border-white/10"
-          style={{ backgroundColor: "var(--color-background-secondary)" }}
-          showCloseButton={false}
-        >
+        <DialogContent className="w-full max-w-md" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle className="text-white">Uploading Files</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Uploading Files
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             {totalFiles > 1 && (
-              <div className="text-sm text-white/70">
+              <div className="text-small text-text-primary/70">
                 File {currentFileIndex} of {totalFiles}
               </div>
             )}
 
             {currentFileName && (
-              <div className="text-sm text-white/90 truncate">
+              <div className="text-small text-text-primary/90 truncate">
                 {currentFileName}
               </div>
             )}
 
             <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-white/70">Progress</span>
-                <span className="text-white/90">
+              <div className="flex justify-between text-small">
+                <span className="text-text-primary/70">Progress</span>
+                <span className="text-text-primary/90">
                   {Math.round(uploadProgress)}%
                 </span>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-text-primary/10 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-white transition-all duration-300 ease-out"
+                  className="h-full bg-text-primary transition-all duration-300 ease-out"
                   style={{ width: `${uploadProgress}%` }}
                 />
               </div>

@@ -22,17 +22,27 @@ export default function DarkModeToggle() {
     );
   }
 
+  const handleToggleTheme = () => {
+    if(document.startViewTransition) {
+      document.startViewTransition(() => {
+        setTheme(theme === "dark" ? "light" : "dark");
+      });
+    } else {
+      setTheme(theme === "dark" ? "light" : "dark");
+    }
+  };
+
   return (
     <Button
       variant="default"
       size="icon"
-      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+      onClick={handleToggleTheme}
       aria-label="Toggle theme"
     >
       {theme === "dark" ? (
-        <Sun className="h-4 w-4" />
-      ) : (
         <Moon className="h-4 w-4" />
+      ) : (
+        <Sun className="h-4 w-4" />
       )}
     </Button>
   );

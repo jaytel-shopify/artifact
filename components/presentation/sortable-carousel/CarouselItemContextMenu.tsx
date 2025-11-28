@@ -8,6 +8,7 @@ import {
   Edit,
   Eye,
   EyeOff,
+  Globe,
 } from "lucide-react";
 import {
   ContextMenu,
@@ -33,6 +34,7 @@ interface CarouselItemContextMenuProps {
   onReplaceMedia?: (file: File) => Promise<void>;
   onEdit?: () => void;
   onDelete?: () => void;
+  onPublish?: () => Promise<void>;
   isReadOnly?: boolean;
 }
 
@@ -44,6 +46,7 @@ export function CarouselItemContextMenu({
   onReplaceMedia,
   onEdit,
   onDelete,
+  onPublish,
   isReadOnly = false,
 }: CarouselItemContextMenuProps) {
   const isVideo = contentType === "video";
@@ -52,7 +55,7 @@ export function CarouselItemContextMenu({
   // If read-only or no handlers, just return children without context menu
   if (
     isReadOnly ||
-    (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit)
+    (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit && !onPublish)
   ) {
     return <>{children}</>;
   }
@@ -203,10 +206,23 @@ export function CarouselItemContextMenu({
           </ContextMenuItem>
         )}
 
+        {/* Publish Option */}
+        {onPublish && (
+          <ContextMenuItem
+            onClick={onPublish}
+            className="flex items-center gap-2"
+          >
+            <Globe className="w-4 h-4" />
+            Publish
+          </ContextMenuItem>
+        )}
+
         {/* Divider before delete */}
         {showDivider(
           !!(
-            ((onReplaceMedia && !isTitleCard) || (isTitleCard && onEdit)) &&
+            ((onReplaceMedia && !isTitleCard) ||
+              (isTitleCard && onEdit) ||
+              onPublish) &&
             onDelete
           )
         )}

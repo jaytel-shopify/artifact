@@ -1,9 +1,8 @@
 "use client";
 
-import type { Artifact, ArtifactType } from "@/types";
-import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
-import { Card } from "@/components/ui/card";
-import Link from "next/link";
+import { useState, useEffect } from "react";
+import type { ArtifactType } from "@/types";
+import FeedCard from "@/components/presentation/FeedCard";
 import { Button } from "@/components/ui/button";
 import { createArtifact as createArtifactDB } from "@/lib/quick-db";
 import { useSetHeader } from "@/components/layout/HeaderContext";
@@ -12,7 +11,10 @@ import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
-import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
+import {
+  usePublicArtifacts,
+  type ArtifactWithCreator,
+} from "@/hooks/usePublicArtifacts";
 import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function Home() {
@@ -31,14 +33,15 @@ export default function Home() {
     { height: 0, artifacts: [] },
     { height: 0, artifacts: [] },
     { height: 0, artifacts: [] },
+    { height: 0, artifacts: [] },
   ] as {
     height: number;
     artifacts: {
-      artifact: Artifact;
+      artifact: ArtifactWithCreator;
       tabindex: number;
     }[];
   }[];
-  artifacts.forEach((artifact, i) => {
+  artifacts?.forEach((artifact, i) => {
     const index = masonryGrid.reduce(
       (minIdx, row, idx, arr) =>
         row.height < arr[minIdx].height ? idx : minIdx,
@@ -47,6 +50,29 @@ export default function Home() {
     masonryGrid[index].artifacts.push({ artifact, tabindex: i + 1 });
     masonryGrid[index].height += artifact.metadata.height ?? 0;
   });
+
+  const [gridMode, setGridMode] = useState<"masonry" | "grid">("grid");
+
+  // Toggle grid mode with 'g' key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't toggle if user is typing in an input
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.key === "g") {
+        setGridMode((prev) => (prev === "grid" ? "masonry" : "grid"));
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const createArtifact = async (artifactData: {
     type: ArtifactType;
@@ -88,7 +114,7 @@ export default function Home() {
         <ViewToggle />
       </>
     ),
-    center: <SearchBar />,
+    center: <SearchBar mode="public" />,
     right: (
       <>
         <ArtifactAdder createArtifact={createArtifact} />
@@ -99,55 +125,44 @@ export default function Home() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-foreground">Loading...</p>
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <p className="text-text-primary">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
+    <div className="mx-auto p-6">
       {error && (
         <p className="text-destructive">Failed to load public artifacts</p>
       )}
 
       {artifacts.length > 0 ? (
         <>
-          <div className="grid grid-cols-3 gap-2 lg:gap-6">
-            {masonryGrid.map((row, index) => (
-              <div key={index} className="flex flex-col gap-2 lg:gap-6">
-                {row.artifacts.map(({ artifact, tabindex }) => (
-                  <Card
-                    key={artifact.id}
-                    className="grid relative cursor-pointer overflow-hidden h-fit rounded-card focus-within:border-ring focus-within:ring-ring/50 focus-within:ring-[3px]"
-                  >
-                    <ArtifactThumbnail
+          {gridMode === "masonry" ? (
+            <div className="grid grid-cols-4 gap-2 lg:gap-6">
+              {masonryGrid.map((row, index) => (
+                <div key={index} className="flex flex-col gap-2 lg:gap-6">
+                  {row.artifacts.map(({ artifact, tabindex }) => (
+                    <FeedCard
+                      key={artifact.id}
                       artifact={artifact}
-                      className="w-full row-start-1 row-span-2 col-start-1 col-span-1"
+                      tabIndex={tabindex}
                     />
-
-                    <div className="row-start-2 col-start-1 col-span-1 bg-gradient-to-t from-background/80 to-transparent p-2 md:p-4 opacity-0 hover:opacity-100 transition-opacity duration-300">
-                      <Link
-                        href={`/a/?id=${artifact.id}`}
-                        className="after:content-[''] after:absolute after:inset-0"
-                        tabIndex={tabindex}
-                      >
-                        <h3 className="text-medium text-foreground line-clamp-1 overflow-ellipsis">
-                          {artifact.name}
-                        </h3>
-                        <p className="text-small text-muted-foreground overflow-ellipsis">
-                          {artifact.type}
-                        </p>
-                      </Link>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ))}
-          </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-4 gap-2 lg:gap-6">
+              {artifacts.map((artifact) => (
+                <FeedCard key={artifact.id} artifact={artifact} />
+              ))}
+            </div>
+          )}
 
           {hasMore && (
-            <div className="flex justify-center mt-8">
+            <div className="mt-8 flex justify-center">
               <Button
                 onClick={loadMore}
                 disabled={isLoadingMore}
@@ -160,8 +175,8 @@ export default function Home() {
           )}
         </>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-muted-foreground">No public artifacts yet</p>
+        <div className="py-12 text-center">
+          <p className="text-text-secondary">No public artifacts yet</p>
         </div>
       )}
     </div>

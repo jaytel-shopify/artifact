@@ -122,15 +122,15 @@ export function SaveToProjectDialog({
 
         <div className="space-y-4 py-4">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground">Loading projects...</p>
+            <p className="text-small text-text-secondary">Loading projects...</p>
           ) : projects.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-small text-text-secondary">
               No projects found. Create a project first to save artifacts.
             </p>
           ) : (
             <>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Project</label>
+                <label className="text-medium">Project</label>
                 <Select
                   value={selectedProjectId}
                   onValueChange={setSelectedProjectId}
@@ -150,7 +150,7 @@ export function SaveToProjectDialog({
 
               {pages.length > 0 && (
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Page</label>
+                  <label className="text-medium">Page</label>
                   <Select
                     value={selectedPageId}
                     onValueChange={setSelectedPageId}
@@ -187,4 +187,3 @@ export function SaveToProjectDialog({
     </Dialog>
   );
 }
-

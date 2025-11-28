@@ -30,7 +30,7 @@ function DemoContent() {
         {/* Header */}
         <div className="text-center space-y-4">
           <h1 className="text-5xl font-bold">Quick Follow Feature Demo</h1>
-          <p className="text-xl text-muted-foreground">
+          <p className="text-medium text-text-secondary">
             Test the real-time follow functionality with multiple users
           </p>
         </div>
@@ -38,7 +38,7 @@ function DemoContent() {
         {/* Instructions */}
         <Card className="p-6 border-2 border-border shadow-[8px_8px_0px_0px_rgba(0,0,0,0.1)]">
           <h2 className="text-2xl font-bold mb-4">How to Use</h2>
-          <ol className="list-decimal list-inside space-y-2 text-foreground">
+          <ol className="list-decimal list-inside space-y-2 text-text-primary">
             <li>
               Open this page in multiple browser tabs or share with colleagues
             </li>
@@ -54,11 +54,11 @@ function DemoContent() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Scroll Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Scroll Test</h3>
-            <p className="mb-4 text-muted-foreground">
+            <h3 className="text-medium font-bold mb-4">Scroll Test</h3>
+            <p className="mb-4 text-text-secondary">
               Scroll this page to see scroll synchronization in action.
             </p>
-            <div className="h-64 overflow-y-auto border-2 border-border p-4 bg-card">
+            <div className="h-64 overflow-y-auto border-2 border-border p-4 bg-primary">
               <p className="mb-4">Scroll me!</p>
               {Array.from({ length: 20 }).map((_, i) => (
                 <p key={i} className="mb-2">
@@ -70,8 +70,8 @@ function DemoContent() {
 
           {/* Click Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Click Test</h3>
-            <p className="mb-4 text-muted-foreground">
+            <h3 className="text-medium font-bold mb-4">Click Test</h3>
+            <p className="mb-4 text-text-secondary">
               Click buttons to see click synchronization and highlighting.
             </p>
             <div className="space-y-3">
@@ -101,8 +101,8 @@ function DemoContent() {
 
           {/* Input Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Input Test</h3>
-            <p className="mb-4 text-muted-foreground">
+            <h3 className="text-medium font-bold mb-4">Input Test</h3>
+            <p className="mb-4 text-text-secondary">
               Type in the fields to see input synchronization.
             </p>
             <div className="space-y-3">
@@ -121,8 +121,8 @@ function DemoContent() {
 
           {/* Navigation Demo */}
           <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-            <h3 className="text-xl font-bold mb-4">Navigation Test</h3>
-            <p className="mb-4 text-muted-foreground">
+            <h3 className="text-medium font-bold mb-4">Navigation Test</h3>
+            <p className="mb-4 text-text-secondary">
               Navigation events will be synchronized when following a leader.
             </p>
             <div className="space-y-3">
@@ -149,44 +149,10 @@ function DemoContent() {
           </Card>
         </div>
 
-        {/* Color Grid for Click Testing */}
-        <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)]">
-          <h3 className="text-xl font-bold mb-4">Color Grid Click Test</h3>
-          <p className="mb-4 text-muted-foreground">
-            Click on colors to test element selection and click highlighting.
-          </p>
-          <div className="grid grid-cols-8 gap-2">
-            {[
-              "bg-destructive",
-              "bg-chart-5",
-              "bg-chart-5",
-              "bg-chart-2",
-              "bg-chart-1",
-              "bg-chart-3",
-              "bg-chart-4",
-              "bg-primary",
-              "bg-destructive/70",
-              "bg-chart-5/70",
-              "bg-chart-5/70",
-              "bg-chart-2/70",
-              "bg-chart-1/70",
-              "bg-chart-3/70",
-              "bg-chart-4/70",
-              "bg-primary/70",
-            ].map((color, i) => (
-              <button
-                key={i}
-                className={`${color} h-16 border-2 border-border hover:scale-110 transition-transform`}
-                onClick={() => console.log(`Clicked ${color}`)}
-              />
-            ))}
-          </div>
-        </Card>
-
         {/* Status Info */}
-        <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] bg-muted">
-          <h3 className="text-xl font-bold mb-4">Technical Details</h3>
-          <div className="space-y-2 text-sm text-foreground">
+        <Card className="p-6 border-2 border-border shadow-[6px_6px_0px_0px_rgba(0,0,0,0.1)] bg-secondary">
+          <h3 className="text-medium font-bold mb-4">Technical Details</h3>
+          <div className="space-y-2 text-small text-text-primary">
             <p>
               <strong>Room:</strong> follow
             </p>

@@ -2,54 +2,71 @@
 
 import { useState } from "react";
 import useSWR from "swr";
-import { Artifact } from "@/types";
+import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
-import { useSearchParams } from "next/navigation";
-import { getArtifactById, updateArtifact } from "@/lib/quick-db";
-import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
+import { useSearchParams, useRouter } from "next/navigation";
+import { getArtifactById } from "@/lib/quick-db";
+import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
-import Link from "next/link";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
+import { useReactions } from "@/hooks/useReactions";
+import { UserAvatar } from "@/components/auth/UserAvatar";
 
-async function fetchArtifact(artifactId: string): Promise<Artifact | null> {
+async function fetchArtifact(
+  artifactId: string
+): Promise<ArtifactWithCreator | null> {
   const artifact = await getArtifactById(artifactId);
   return artifact;
 }
 
 export default function Page() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const artifactId = searchParams?.get("id") || "";
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
 
-  const { data: artifact, mutate } = useSWR<Artifact | null>(
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      router.back();
+    } else {
+      router.push("/");
+    }
+  };
+
+  const { data: artifact, mutate } = useSWR<ArtifactWithCreator | null>(
     artifactId ? `artifact-${artifactId}` : null,
     () => (artifactId ? fetchArtifact(artifactId) : null),
     { revalidateOnFocus: false }
   );
 
   const { user } = useAuth();
+  const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
+    artifact,
+    mutate,
+  });
 
   // Set header content
   useSetHeader({
     left: (
-      <Link href="/">
-        <Button variant="outline" size="icon" aria-label="Back">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-      </Link>
+      <Button
+        variant="default"
+        size="icon"
+        onClick={handleBack}
+        aria-label="Back"
+      >
+        <ArrowLeft className="h-4 w-4" />
+      </Button>
     ),
     right: (
       <>
         <Button
-          variant="outline"
-          className="gap-2"
+          variant="default"
           onClick={() => setIsSaveDialogOpen(true)}
           disabled={!user}
         >
-          <Save className="h-4 w-4" />
           Save to Project
         </Button>
         <DarkModeToggle />
@@ -61,100 +78,51 @@ export default function Page() {
     return <div>Artifact not found</div>;
   }
 
-  const handleLike = async () => {
-    if (!user?.id || !artifact) return;
-
-    const currentReactions = artifact.reactions || { like: [], dislike: [] };
-    const likeArray = currentReactions.like || [];
-    const hasLiked = likeArray.includes(user.id);
-
-    // Optimistic update
-    const optimisticArtifact: Artifact = {
-      ...artifact,
-      reactions: {
-        ...currentReactions,
-        like: hasLiked
-          ? likeArray.filter((id) => id !== user.id)
-          : [...likeArray, user.id],
-      },
-    };
-
-    mutate(optimisticArtifact, { revalidate: false });
-
-    try {
-      await updateArtifact(artifact.id, {
-        reactions: optimisticArtifact.reactions,
-      });
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
-      mutate(); // Revert on error
-    }
-  };
-
-  const handleDislike = async () => {
-    if (!user?.id || !artifact) return;
-
-    const currentReactions = artifact.reactions || { like: [], dislike: [] };
-    const dislikeArray = currentReactions.dislike || [];
-    const hasDisliked = dislikeArray.includes(user.id);
-
-    // Optimistic update
-    const optimisticArtifact: Artifact = {
-      ...artifact,
-      reactions: {
-        ...currentReactions,
-        dislike: hasDisliked
-          ? dislikeArray.filter((id) => id !== user.id)
-          : [...dislikeArray, user.id],
-      },
-    };
-
-    mutate(optimisticArtifact, { revalidate: false });
-
-    try {
-      await updateArtifact(artifact.id, {
-        reactions: optimisticArtifact.reactions,
-      });
-    } catch (error) {
-      console.error("Failed to toggle dislike:", error);
-      mutate(); // Revert on error
-    }
-  };
-
-  const userLiked = user?.id
-    ? artifact.reactions?.like?.includes(user.id)
-    : false;
-  const userDisliked = user?.id
-    ? artifact.reactions?.dislike?.includes(user.id)
-    : false;
-
   return (
     <div className="flex min-h-full items-center justify-center p-8">
       <div className="flex gap-4">
-        <ArtifactThumbnail
+        <ArtifactComponent
           artifact={artifact}
-          className="w-full max-w-[680px] max-h-full"
+          className="w-full max-w-[800px] max-h-[80vh] rounded-card overflow-hidden"
         />
-        <div>
-          <h1 className="text-4xl font-bold mb-4">Artifact {artifact.name}</h1>
+        <div className="flex flex-col gap-4">
+          <h1 className="text-large">{artifact.name}</h1>
           {artifact.description && (
-            <p className="text-sm text-muted-foreground capitalize">
+            <p className="text-medium text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}
-          <div className="flex gap-2 mt-4">
+
+          <div className="flex gap-2">
             <Button
               onClick={handleLike}
-              variant={userLiked ? "default" : "outline"}
+              variant={userLiked ? "default" : "secondary"}
+              className="w-18"
             >
-              😍 {artifact.reactions?.like?.length || 0}
+              <span className="text-medium">😍</span>{" "}
+              <span>{artifact.reactions?.like?.length || 0}</span>
             </Button>
             <Button
               onClick={handleDislike}
-              variant={userDisliked ? "default" : "outline"}
+              variant={userDisliked ? "default" : "secondary"}
+              className="w-18"
             >
-              🤔 {artifact.reactions?.dislike?.length || 0}
+              <span className="text-medium">🤔</span>{" "}
+              <span>{artifact.reactions?.dislike?.length || 0}</span>
             </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <UserAvatar
+              id={artifact.creator?.id}
+              email={artifact.creator?.email}
+              name={artifact.creator?.name}
+              imageUrl={artifact.creator?.slack_image_url}
+              size="sm"
+            />
+            <p className="text-small text-text-secondary capitalize">
+              {artifact.creator?.name}
+            </p>
           </div>
         </div>
       </div>

@@ -1,45 +1,72 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import useSWR from "swr";
 import { waitForQuick } from "@/lib/quick";
-import type { Artifact } from "@/types";
+import { getUsersByIds } from "@/lib/quick-users";
+import type { Artifact, ArtifactWithCreator } from "@/types";
 
 const PAGE_SIZE = 25;
 
+// Re-export the type for consumers
+export type { ArtifactWithCreator } from "@/types";
+
 /**
- * Fetcher function for SWR - gets public artifacts with pagination
+ * Fetcher function for SWR - gets public artifacts with pagination and creator info
  */
 async function fetchPublicArtifacts(
   offset: number = 0,
   limit: number = PAGE_SIZE
-): Promise<Artifact[]> {
+): Promise<ArtifactWithCreator[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
   // Query public artifacts with pagination
-  const publicArtifacts = await collection
+  const publicArtifacts: Artifact[] = await collection
     .where({ published: true })
     .orderBy("created_at", "desc")
     .limit(limit)
     .offset(offset)
     .find();
 
-  return publicArtifacts;
+  // Collect unique creator IDs
+  const creatorIds = [
+    ...new Set(publicArtifacts.map((a) => a.creator_id).filter(Boolean)),
+  ];
+
+  // Batch fetch users
+  const usersMap = await getUsersByIds(creatorIds);
+
+  // Attach creator to each artifact
+  const artifactsWithCreators: ArtifactWithCreator[] = publicArtifacts.map(
+    (artifact) => ({
+      ...artifact,
+      creator: usersMap.get(artifact.creator_id),
+    })
+  );
+
+  return artifactsWithCreators;
 }
 
 export function usePublicArtifacts() {
-  const [offset, setOffset] = useState(0);
-  const [allArtifacts, setAllArtifacts] = useState<Artifact[]>([]);
+  const offsetRef = useRef(PAGE_SIZE);
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const { isLoading, error, mutate } = useSWR<Artifact[]>(
+  const {
+    data: artifacts = [],
+    isLoading,
+    error,
+    mutate,
+  } = useSWR<ArtifactWithCreator[]>(
     "public-artifacts",
     () => fetchPublicArtifacts(0, PAGE_SIZE),
     {
       revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+      dedupingInterval: 60000, // 1 minute deduplication window
+      keepPreviousData: true,
       onSuccess: (data) => {
-        setAllArtifacts(data);
-        setOffset(PAGE_SIZE);
+        offsetRef.current = PAGE_SIZE;
         setHasMore(data.length === PAGE_SIZE);
       },
     }
@@ -50,20 +77,17 @@ export function usePublicArtifacts() {
 
     setIsLoadingMore(true);
     try {
-      const newArtifacts = await fetchPublicArtifacts(offset, PAGE_SIZE);
+      const newArtifacts = await fetchPublicArtifacts(
+        offsetRef.current,
+        PAGE_SIZE
+      );
 
       if (newArtifacts.length > 0) {
-        // Append to existing artifacts using functional update
-        setAllArtifacts((current) => {
-          const updatedArtifacts = [...current, ...newArtifacts];
-
-          // Update SWR cache with all artifacts
-          mutate(updatedArtifacts, false);
-
-          return updatedArtifacts;
+        // Append to SWR cache
+        await mutate((current = []) => [...current, ...newArtifacts], {
+          revalidate: false,
         });
-
-        setOffset(offset + PAGE_SIZE);
+        offsetRef.current += PAGE_SIZE;
         setHasMore(newArtifacts.length === PAGE_SIZE);
       } else {
         setHasMore(false);
@@ -75,28 +99,38 @@ export function usePublicArtifacts() {
     }
   };
 
-  const refresh = () => {
-    // Reset pagination and refetch
-    setOffset(0);
-    setAllArtifacts([]);
-    mutate();
+  const refresh = async () => {
+    offsetRef.current = PAGE_SIZE;
+    setHasMore(true);
+    await mutate();
   };
 
-  const addArtifact = (artifact: Artifact) => {
-    // Optimistically add artifact to the beginning
-    // Use functional update to get the latest state
-    setAllArtifacts((current) => {
-      const updatedArtifacts = [artifact, ...current];
+  const addArtifact = (artifact: ArtifactWithCreator) => {
+    // Optimistically add artifact to the beginning of SWR cache
+    mutate((current = []) => [artifact, ...current], { revalidate: false });
+  };
 
-      // Update SWR cache
-      mutate(updatedArtifacts, false);
-
-      return updatedArtifacts;
+  const removeArtifact = (artifactId: string) => {
+    // Optimistically remove artifact from SWR cache
+    mutate((current = []) => current.filter((a) => a.id !== artifactId), {
+      revalidate: false,
     });
   };
 
+  const updateArtifact = (
+    artifactId: string,
+    updates: Partial<ArtifactWithCreator>
+  ) => {
+    // Optimistically update artifact in SWR cache
+    mutate(
+      (current = []) =>
+        current.map((a) => (a.id === artifactId ? { ...a, ...updates } : a)),
+      { revalidate: false }
+    );
+  };
+
   return {
-    artifacts: allArtifacts,
+    artifacts,
     isLoading,
     isLoadingMore,
     error,
@@ -104,5 +138,7 @@ export function usePublicArtifacts() {
     loadMore,
     refresh,
     addArtifact,
+    removeArtifact,
+    updateArtifact,
   };
 }

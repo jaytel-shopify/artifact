@@ -1,7 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Folder, MoreVertical } from "lucide-react";
+import { MoreVertical } from "lucide-react";
+import { mutate as globalMutate } from "swr";
+import { toast } from "sonner";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -15,6 +18,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { SharePanel } from "@/components/access/SharePanel";
+import FolderDialog from "./FolderDialog";
+import DeleteFolderDialog from "./DeleteFolderDialog";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { updateFolder, deleteFolder } from "@/lib/quick-folders";
+import { cacheKeys } from "@/lib/cache-keys";
 
 interface FolderCardProps {
   folder: {
@@ -23,38 +33,55 @@ interface FolderCardProps {
     creator_id: string;
   };
   projectCount: number;
-  onRename: (folder: any) => void;
-  onManageAccess: (folder: any) => void;
-  onDelete: (folder: any) => void;
 }
 
 /**
  * FolderCard
  *
- * Displays a folder card that navigates to the folder view when clicked.
- * Includes context menu for folder actions.
+ * Self-contained folder card with all actions and dialogs built-in.
+ * Uses globalMutate to refresh page data after mutations.
  */
-export default function FolderCard({
-  folder,
-  projectCount,
-  onRename,
-  onManageAccess,
-  onDelete,
-}: FolderCardProps) {
-  function handleMenuAction(e: React.MouseEvent, action: () => void) {
-    e.stopPropagation();
-    action();
-  }
+export default function FolderCard({ folder, projectCount }: FolderCardProps) {
+  const { user } = useAuth();
+
+  // Dialog states
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+
+  const refreshData = () => {
+    globalMutate(cacheKeys.projectsData(user?.email));
+  };
+
+  const handleRename = async (name: string) => {
+    try {
+      await updateFolder(folder.id, { name });
+      refreshData();
+      toast.success("Folder renamed");
+    } catch (error) {
+      console.error("Failed to rename folder:", error);
+      toast.error("Failed to rename folder");
+      throw error;
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteFolder(folder.id);
+      refreshData();
+      toast.success(`Folder "${folder.name}" deleted`);
+    } catch (error) {
+      console.error("Failed to delete folder:", error);
+      toast.error("Failed to delete folder");
+      throw error;
+    }
+  };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>
-        <Link
-          href={`/folder/?id=${folder.id}`}
-          prefetch={false}
-          className="block"
-        >
-          <div className="group relative bg-card border-[0.5px] border-border hover:bg-accent/50 rounded-card p-4 cursor-pointer transition-all">
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <Card className="group relative p-4">
             {/* Actions Menu (visible on hover) */}
             <div className="flex items-start justify-end">
               <DropdownMenu>
@@ -65,27 +92,21 @@ export default function FolderCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="hover:bg-background text-text-primary absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={(e) => handleMenuAction(e, () => onRename(folder))}
-                  >
+                  <DropdownMenuItem onClick={() => setRenameOpen(true)}>
                     Rename Folder
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onClick={(e) =>
-                      handleMenuAction(e, () => onManageAccess(folder))
-                    }
-                  >
+                  <DropdownMenuItem onClick={() => setShareOpen(true)}>
                     Manage Access
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     variant="destructive"
-                    onClick={(e) => handleMenuAction(e, () => onDelete(folder))}
+                    onClick={() => setDeleteOpen(true)}
                   >
                     Delete Folder
                   </DropdownMenuItem>
@@ -93,29 +114,72 @@ export default function FolderCard({
               </DropdownMenu>
             </div>
 
-            {/* Folder Info */}
-            <div className="space-y-1">
-              <h3 className="font-semibold text-sm truncate">{folder.name}</h3>
-              <p className="text-xs text-muted-foreground">
+            <Link
+              href={`/folder/?id=${folder.id}`}
+              prefetch={false}
+              className="block space-y-1 after:content-[''] after:absolute after:inset-0"
+              aria-label={
+                folder.name +
+                " - " +
+                projectCount +
+                " " +
+                (projectCount === 1 ? "project" : "projects")
+              }
+            >
+              <h3 className="truncate text-medium">{folder.name}</h3>
+              <p className="text-text-secondary text-small">
                 {projectCount} {projectCount === 1 ? "project" : "projects"}
               </p>
-            </div>
-          </div>
-        </Link>
-      </ContextMenuTrigger>
+            </Link>
+          </Card>
+        </ContextMenuTrigger>
 
-      {/* Context Menu (right-click) */}
-      <ContextMenuContent>
-        <ContextMenuItem onClick={() => onRename(folder)}>
-          Rename Folder
-        </ContextMenuItem>
-        <ContextMenuItem onClick={() => onManageAccess(folder)}>
-          Manage Access
-        </ContextMenuItem>
-        <ContextMenuItem variant="destructive" onClick={() => onDelete(folder)}>
-          Delete Folder
-        </ContextMenuItem>
-      </ContextMenuContent>
-    </ContextMenu>
+        {/* Context Menu (right-click) */}
+        <ContextMenuContent>
+          <ContextMenuItem onClick={() => setRenameOpen(true)}>
+            Rename Folder
+          </ContextMenuItem>
+          <ContextMenuItem onClick={() => setShareOpen(true)}>
+            Manage Access
+          </ContextMenuItem>
+          <ContextMenuItem
+            variant="destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete Folder
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      {/* Rename Dialog */}
+      <FolderDialog
+        isOpen={renameOpen}
+        onClose={() => setRenameOpen(false)}
+        onSubmit={handleRename}
+        mode="rename"
+        initialName={folder.name}
+      />
+
+      {/* Delete Dialog */}
+      <DeleteFolderDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        folderName={folder.name}
+        projectCount={projectCount}
+      />
+
+      {/* Share Panel */}
+      {user && (
+        <SharePanel
+          isOpen={shareOpen}
+          onClose={() => setShareOpen(false)}
+          resourceId={folder.id}
+          resourceType="folder"
+          resourceName={folder.name}
+          currentUserEmail={user.email}
+        />
+      )}
+    </>
   );
 }

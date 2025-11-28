@@ -19,9 +19,10 @@ interface DevDebugPanelProps {
   projectInfo?: {
     id: string;
     name: string;
-    creator_id: string;
+    creator_id: string; // User.id (UUID)
   };
   userEmail?: string;
+  userId?: string; // User.id (UUID) for comparison with creator_id
 }
 
 /**
@@ -41,6 +42,7 @@ export default function DevDebugPanel({
   onToggleReadOnly,
   projectInfo,
   userEmail,
+  userId,
 }: DevDebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -75,12 +77,12 @@ export default function DevDebugPanel({
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bug className="h-5 w-5 text-chart-4" />
+              <Bug className="h-5 w-5 text-text-primary" />
               Dev Debug Panel
             </DialogTitle>
             <DialogDescription>
               Press{" "}
-              <kbd className="px-1.5 py-0.5 bg-muted rounded text-xs font-mono">
+              <kbd className="px-1.5 py-0.5 bg-secondary rounded text-small font-mono">
                 /
               </kbd>{" "}
               to toggle this panel
@@ -90,14 +92,14 @@ export default function DevDebugPanel({
           <div className="space-y-6 pt-4">
             {/* Permission Testing */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold">Permission Testing</h3>
+              <h3 className="text-small ">Permission Testing</h3>
 
-              <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-secondary rounded-lg">
                 <div className="space-y-1">
-                  <div className="text-sm font-medium">
+                  <div className="text-medium">
                     Simulate Read-Only Mode
                   </div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-small text-text-secondary">
                     Test the viewer experience without logging into a different
                     account
                   </div>
@@ -109,7 +111,7 @@ export default function DevDebugPanel({
               </div>
 
               {isReadOnly && (
-                <div className="bg-primary/10 border border-primary/20 p-3 rounded text-sm text-primary">
+                <div className="bg-primary/10 border border-primary/20 p-3 rounded text-small text-text-text-primary">
                   🔒 Read-only mode active: All edit controls are hidden
                 </div>
               )}
@@ -117,12 +119,12 @@ export default function DevDebugPanel({
 
             {/* Current User Info */}
             <div className="space-y-3">
-              <h3 className="text-sm font-semibold">Current User</h3>
-              <div className="bg-muted p-3 rounded-lg space-y-1">
-                <div className="text-xs font-mono text-muted-foreground">
+              <h3 className="text-small ">Current User</h3>
+              <div className="bg-secondary p-3 rounded-lg space-y-1">
+                <div className="text-small font-mono text-text-secondary">
                   Email:
                 </div>
-                <div className="text-sm font-medium">
+                <div className="text-medium">
                   {userEmail || "Not loaded"}
                 </div>
               </div>
@@ -131,32 +133,32 @@ export default function DevDebugPanel({
             {/* Project Info */}
             {projectInfo && (
               <div className="space-y-3">
-                <h3 className="text-sm font-semibold">Project Info</h3>
-                <div className="bg-muted p-3 rounded-lg space-y-2 text-xs">
+                <h3 className="text-small ">Project Info</h3>
+                <div className="bg-secondary p-3 rounded-lg space-y-2 text-small">
                   <div>
-                    <span className="text-muted-foreground">ID:</span>{" "}
+                    <span className="text-text-secondary">ID:</span>{" "}
                     <span className="font-mono">{projectInfo.id}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Name:</span>{" "}
-                    <span className="font-medium">{projectInfo.name}</span>
+                    <span className="text-text-secondary">Name:</span>{" "}
+                    <span className="text-medium">{projectInfo.name}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Owner:</span>{" "}
-                    <span className="font-medium">
+                    <span className="text-text-secondary">Owner (User ID):</span>{" "}
+                    <span className="font-mono text-small">
                       {projectInfo.creator_id}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">Is Creator:</span>{" "}
+                    <span className="text-text-secondary">Is Creator:</span>{" "}
                     <span
                       className={
-                        projectInfo.creator_id === userEmail
-                          ? "text-chart-2 font-medium"
-                          : "text-chart-5"
+                        projectInfo.creator_id === userId
+                          ? "text-text-primary text-medium"
+                          : "text-text-primary"
                       }
                     >
-                      {projectInfo.creator_id === userEmail ? "Yes ✓" : "No"}
+                      {projectInfo.creator_id === userId ? "Yes ✓" : "No"}
                     </span>
                   </div>
                 </div>
@@ -164,17 +166,17 @@ export default function DevDebugPanel({
             )}
 
             {/* Instructions */}
-            <div className="text-xs text-muted-foreground border-t pt-4 space-y-2">
-              <p className="font-medium">Keyboard Shortcuts:</p>
+            <div className="text-small text-text-secondary border-t pt-4 space-y-2">
+              <p className="text-medium">Keyboard Shortcuts:</p>
               <ul className="space-y-1 ml-2">
                 <li>
-                  <kbd className="px-1 py-0.5 bg-muted rounded font-mono">
+                  <kbd className="px-1 py-0.5 bg-secondary rounded font-mono">
                     /
                   </kbd>{" "}
                   - Toggle this debug panel
                 </li>
                 <li>
-                  <kbd className="px-1 py-0.5 bg-muted rounded font-mono">
+                  <kbd className="px-1 py-0.5 bg-secondary rounded font-mono">
                     ESC
                   </kbd>{" "}
                   - Close this panel

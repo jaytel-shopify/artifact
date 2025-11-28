@@ -254,7 +254,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--foreground);
   cursor: grab;
   opacity: 0;
   transition: opacity 200ms ease;
@@ -263,8 +263,7 @@
 }
 
 .carousel-item-drag-handle:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background-color: rgba(255, 255, 255, 0.1);
+  color: var(--foreground);
 }
 
 .carousel-item-drag-handle:active {

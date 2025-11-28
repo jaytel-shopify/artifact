@@ -3,7 +3,16 @@
 import { waitForQuick } from "./quick";
 import { getProjects } from "./quick-db";
 import { getUserAccessibleResources } from "./access-control";
+import { getUserByEmail } from "./quick-users";
 import type { Artifact, Project, Folder, ProjectArtifact } from "@/types";
+
+/**
+ * Search mode determines which resources to search
+ * - "public": Only published artifacts (for homepage)
+ * - "dashboard": Only user's folders, projects, and personal artifacts
+ * - "all": Search everything (default)
+ */
+export type SearchMode = "public" | "dashboard" | "all";
 
 /**
  * Search Results
@@ -20,19 +29,20 @@ export type SearchResults = {
 /**
  * Search through all resources accessible to a user
  *
- * Searches:
- * 1. Public artifacts (published: true)
- * 2. User's accessible folders (created by user OR granted access via access control)
- * 3. User's accessible projects (created by user OR granted access via access control)
- * 4. User's personal artifacts (linked to accessible projects via junction table, published: false)
+ * Searches based on mode:
+ * - "public": Only published artifacts
+ * - "dashboard": User's folders, projects, and personal artifacts
+ * - "all": Everything (default)
  *
  * @param query - Search term (case-insensitive)
  * @param userEmail - Email of the user performing the search
+ * @param mode - Search mode ("public" | "dashboard" | "all")
  * @returns SearchResults grouped by resource type
  */
 export async function searchResources(
   query: string,
-  userEmail: string
+  userEmail: string,
+  mode: SearchMode = "all"
 ): Promise<SearchResults> {
   // Normalize query
   const normalizedQuery = query.toLowerCase().trim();
@@ -54,7 +64,42 @@ export async function searchResources(
 
   const quick = await waitForQuick();
 
-  // Execute all searches in parallel for performance
+  // Search based on mode
+  if (mode === "public") {
+    // Only search published artifacts
+    const publicArtifacts = await searchPublicArtifacts(normalizedQuery, quick);
+    return {
+      publicArtifacts,
+      folders: [],
+      projects: [],
+      personalArtifacts: [],
+    };
+  }
+
+  if (mode === "dashboard") {
+    // Only search user's dashboard content (folders, projects, personal artifacts)
+    const [folders, projects] = await Promise.all([
+      searchFolders(normalizedQuery, userEmail),
+      searchProjects(normalizedQuery, userEmail),
+    ]);
+
+    // Get personal artifacts linked to user's accessible projects
+    const accessibleProjectIds = projects.map((p) => p.id);
+    const personalArtifacts = await getPersonalArtifactsViaJunction(
+      normalizedQuery,
+      accessibleProjectIds,
+      quick
+    );
+
+    return {
+      publicArtifacts: [],
+      folders,
+      projects,
+      personalArtifacts,
+    };
+  }
+
+  // Default: search everything
   const [publicArtifacts, folders, projects] = await Promise.all([
     searchPublicArtifacts(normalizedQuery, quick),
     searchFolders(normalizedQuery, userEmail),
@@ -110,6 +155,10 @@ async function searchFolders(
   // Get all folders
   const allFolders = await collection.find();
 
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(userEmail);
+  const userId = user?.id;
+
   // Get folders user has access to via access control system
   const accessibleFolders = await getUserAccessibleResources(
     userEmail,
@@ -119,9 +168,9 @@ async function searchFolders(
     accessibleFolders.map((a) => a.resource_id)
   );
 
-  // Filter folders: user is creator OR user has access via access control
+  // Filter folders: user is creator (by User.id) OR user has access via access control
   const userFolders = allFolders.filter(
-    (f: Folder) => f.creator_id === userEmail || accessibleFolderIds.has(f.id)
+    (f: Folder) => (userId && f.creator_id === userId) || accessibleFolderIds.has(f.id)
   );
 
   // Client-side filtering for name substring match (case-insensitive)

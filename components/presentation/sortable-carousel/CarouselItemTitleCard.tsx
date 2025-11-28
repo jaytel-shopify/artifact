@@ -13,10 +13,12 @@ export function CarouselItemTitleCard({
     <div className="@container w-full h-full aspect-video bg-secondary">
       <div className="w-full h-full flex flex-col items-center justify-center p-2 @[400px]:p-4 @[600px]:p-4 @[800px]:p-6 text-center">
         {headline && (
-          <h1 className="text-[4cqw] font-bold text-foreground mb-2">{headline}</h1>
+          <h1 className="text-medium text-text-primary mb-2">
+            {headline}
+          </h1>
         )}
         {subheadline && (
-          <p className="text-[2.5cqw] font-bold text-muted-foreground leading-relaxed">
+          <p className="text-small text-text-secondary leading-relaxed">
             {subheadline}
           </p>
         )}

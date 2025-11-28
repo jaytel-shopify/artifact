@@ -13,7 +13,6 @@ export default function ArtifactThumbnail({
   className = "",
 }: ArtifactThumbnailProps) {
   const baseClasses = `
-    rounded-card-inner 
     shadow-sm
     overflow-hidden
     ${className}
@@ -23,15 +22,21 @@ export default function ArtifactThumbnail({
     case "image":
       return (
         <div className={baseClasses}>
-          <img src={artifact.source_url} alt={artifact.name} loading="lazy" />
+          <img
+            src={artifact.source_url}
+            alt={artifact.name}
+            loading="lazy"
+            width={artifact.metadata.width}
+            height={artifact.metadata.height}
+          />
         </div>
       );
 
     case "url":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-muted/20 flex items-center justify-center aspect-[16/11]">
-            <Globe className="w-8 h-8 text-muted-foreground" />
+          <div className="w-full h-full bg-secondary/20 flex items-center justify-center aspect-[16/11]">
+            <Globe className="w-8 h-8 text-text-secondary" />
           </div>
         </div>
       );
@@ -45,8 +50,10 @@ export default function ArtifactThumbnail({
             <img
               src={thumbnailUrl}
               alt={artifact.name}
-              className="w-full h-full object-cover aspect-[16/9]"
+              className="w-full h-full object-cover"
               loading="lazy"
+              width={artifact.metadata.width}
+              height={artifact.metadata.height}
             />
           </div>
         );
@@ -63,8 +70,8 @@ export default function ArtifactThumbnail({
     case "figma":
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-chart-4/20 flex items-center justify-center aspect-[16/9]">
-            <div className="w-8 h-8 bg-chart-4 text-primary-foreground font-bold rounded-card-inner flex items-center justify-center text-lg">
+          <div className="w-full h-full bg-primary flex items-center justify-center aspect-[16/9]">
+            <div className="w-8 h-8 bg-primary text-text-primary font-bold rounded-card-inner flex items-center justify-center text-medium">
               F
             </div>
           </div>
@@ -75,7 +82,7 @@ export default function ArtifactThumbnail({
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-gradient-to-br from-secondary to-card flex items-center justify-center aspect-[16/9]">
-            <Type className="w-8 h-8 text-primary-foreground" />
+            <Type className="w-8 h-8 text-text-primary" />
           </div>
         </div>
       );
@@ -83,8 +90,8 @@ export default function ArtifactThumbnail({
     default:
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-muted/20 flex items-center justify-center">
-            <div className="w-8 h-8 bg-muted-foreground rounded-card-inner" />
+          <div className="w-full h-full bg-secondary/20 flex items-center justify-center">
+            <div className="w-8 h-8 bg-secondary-foreground rounded-card-inner" />
           </div>
         </div>
       );

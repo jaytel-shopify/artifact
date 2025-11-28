@@ -158,8 +158,8 @@ export function UserSearchAutocomplete({
               key={user.email}
               onClick={() => handleSelect(user)}
               className={`
-                w-full px-3 py-2 flex items-center gap-3 hover:bg-accent transition-colors
-                ${index === selectedIndex ? "bg-accent" : ""}
+                w-full px-3 py-2 flex items-center gap-3 hover:bg-secondary transition-colors
+                ${index === selectedIndex ? "bg-secondary" : ""}
               `}
             >
               {/* Avatar */}
@@ -172,7 +172,7 @@ export function UserSearchAutocomplete({
 
               {/* User Name */}
               <div className="flex-1 text-left min-w-0">
-                <div className="text-sm font-medium truncate">
+                <div className="text-medium truncate">
                   {user.fullName}
                 </div>
               </div>

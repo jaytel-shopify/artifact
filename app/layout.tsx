@@ -5,8 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { HeaderProvider } from "@/components/layout/HeaderContext";
 import GlobalLayout from "@/components/layout/GlobalLayout";
-import LocalDevWarning from "@/components/LocalDevWarning";
-import { SchemaMigrationDialog } from "@/components/migration/SchemaMigrationDialog";
+// import { SchemaMigrationDialog } from "@/components/migration/SchemaMigrationDialog";
 import "./globals.css";
 
 const inter = Inter({
@@ -27,13 +26,13 @@ export const metadata: Metadata = {
     telephone: false,
   },
   manifest: "/manifest.json",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: "cover",
-  },
+  // viewport: {
+  //   width: "device-width",
+  //   initialScale: 1,
+  //   maximumScale: 1,
+  //   userScalable: false,
+  //   viewportFit: "cover",
+  // },
   icons: {
     icon: "/favicons/icon-32.png", // This overrides the default favicon.ico
     shortcut: "/favicons/icon-32.png",
@@ -67,9 +66,6 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#000000" />
 
-        {/* Service Worker Registration */}
-        {/* <script src="/register-sw.js" defer /> */}
-
         {/* Quick Platform SDK - only works on deployed Quick sites */}
         <script src="/client/quick.js" async />
         {/* Quicklytics Analytics - only works on deployed Quick sites */}
@@ -79,9 +75,6 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        {/* Show warning when running on localhost */}
-        <LocalDevWarning />
-
         <AuthProvider>
           <ThemeProvider
             attribute="class"
@@ -93,8 +86,7 @@ export default function RootLayout({
               <GlobalLayout>{children}</GlobalLayout>
             </HeaderProvider>
             <Toaster />
-            {/* Schema migration check - shows dialog if data needs updating */}
-            <SchemaMigrationDialog />
+            {/* <SchemaMigrationDialog /> */}
           </ThemeProvider>
         </AuthProvider>
       </body>

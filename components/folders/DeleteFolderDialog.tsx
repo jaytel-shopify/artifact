@@ -23,7 +23,7 @@ interface DeleteFolderDialogProps {
 
 /**
  * DeleteFolderDialog
- * 
+ *
  * Confirmation dialog for deleting folders.
  * Requires typing "DELETE" to confirm deletion when folder contains projects.
  * Shows warning about cascade deletion of all projects.
@@ -69,31 +69,35 @@ export default function DeleteFolderDialog({
           <AlertDialogDescription className="space-y-3 pt-2">
             {projectCount > 0 ? (
               <>
-                <p className="font-semibold text-destructive">
-                  This folder contains {projectCount} {projectCount === 1 ? "project" : "projects"}.
+                <p className=" text-destructive">
+                  This folder contains {projectCount}{" "}
+                  {projectCount === 1 ? "project" : "projects"}.
                 </p>
                 <p>
-                  All projects inside will be <strong>permanently deleted</strong>, including:
+                  All projects inside will be{" "}
+                  <strong>permanently deleted</strong>, including:
                 </p>
-                <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                <ul className="list-disc list-inside text-small space-y-1 ml-2">
                   <li>All pages and artifacts</li>
                   <li>All uploaded files</li>
                   <li>All project data</li>
                 </ul>
-                <p className="font-semibold">This action cannot be undone.</p>
+                <p className="">This action cannot be undone.</p>
               </>
             ) : (
-              <p>
-                This folder is empty. Are you sure you want to delete it?
-              </p>
+              <p>This folder is empty. Are you sure you want to delete it?</p>
             )}
           </AlertDialogDescription>
         </AlertDialogHeader>
 
         {projectCount > 0 && (
           <div className="py-4 space-y-2">
-            <label className="text-sm font-medium">
-              Type <span className="font-mono bg-muted px-1 rounded">DELETE</span> to confirm:
+            <label className="text-medium">
+              Type{" "}
+              <span className="font-mono bg-secondary px-1 rounded">
+                DELETE
+              </span>{" "}
+              to confirm:
             </label>
             <Input
               value={confirmText}
@@ -115,11 +119,12 @@ export default function DeleteFolderDialog({
             onClick={handleDelete}
             disabled={(projectCount > 0 && !isConfirmed) || deleting}
           >
-            {deleting ? "Deleting..." : `Delete Folder${projectCount > 0 ? ` and ${projectCount} Project${projectCount !== 1 ? "s" : ""}` : ""}`}
+            {deleting
+              ? "Deleting..."
+              : `Delete Folder${projectCount > 0 ? ` and ${projectCount} Project${projectCount !== 1 ? "s" : ""}` : ""}`}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
   );
 }
-

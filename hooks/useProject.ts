@@ -3,6 +3,7 @@
 import useSWR from "swr";
 import { useCallback } from "react";
 import { getProjectById, updateProject, deleteProject } from "@/lib/quick-db";
+import { cacheKeys } from "@/lib/cache-keys";
 import type { Project } from "@/types";
 
 /**
@@ -17,7 +18,7 @@ async function fetcher(id: string): Promise<Project | null> {
  */
 export function useProject(projectId: string | undefined) {
   const { data: project, error, isLoading, mutate } = useSWR<Project | null>(
-    projectId ? `project-${projectId}` : null,
+    cacheKeys.projectData(projectId),
     () => (projectId ? fetcher(projectId) : null),
     {
       revalidateOnFocus: false,

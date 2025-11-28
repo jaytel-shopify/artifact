@@ -12,6 +12,10 @@ const db: Record<string, any[]> = {};
 const id = () =>
   `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
+// Mock user ID for local development (matches AuthProvider mock user)
+const MOCK_USER_ID = "local-dev-user-uuid";
+const MOCK_USER_EMAIL = "dev@shopify.com";
+
 // Initialize with sample data
 function init() {
   // Force clear and reinitialize
@@ -21,6 +25,7 @@ function init() {
   db.project_artifacts = []; // Junction table for many-to-many
   db.folders = [];
   db.access_control = [];
+  db.users = []; // User records
 
   const now = new Date().toISOString();
   const projectId = "sample-1";
@@ -33,25 +38,39 @@ function init() {
   const folder2Id = "folder-2";
   const folder3Id = "folder-3";
 
+  // Create mock user record
+  db.users = [
+    {
+      id: MOCK_USER_ID,
+      email: MOCK_USER_EMAIL,
+      name: "Local Developer",
+      slack_handle: "local-dev",
+      slack_image_url: "https://i.pravatar.cc/150?u=dev@shopify.com",
+      title: "Developer",
+      created_at: now,
+      updated_at: now,
+    },
+  ];
+
   db.folders = [
     {
       id: folder1Id,
       name: "Design Work",
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       created_at: now,
       updated_at: now,
     },
     {
       id: folder2Id,
       name: "Client Projects",
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       created_at: now,
       updated_at: now,
     },
     {
       id: folder3Id,
       name: "Archive",
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       created_at: now,
       updated_at: now,
     },
@@ -61,7 +80,7 @@ function init() {
     {
       id: projectId,
       name: "Sample Project",
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       folder_id: null,
       created_at: now,
       updated_at: now,
@@ -69,7 +88,7 @@ function init() {
     {
       id: project2Id,
       name: "Mobile App Designs",
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       folder_id: null,
       created_at: now,
       updated_at: now,
@@ -77,7 +96,7 @@ function init() {
     {
       id: project3Id,
       name: "E-commerce Landing Page",
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       folder_id: null,
       created_at: now,
       updated_at: now,
@@ -121,7 +140,7 @@ function init() {
       name: "Sample Image 8",
       description: "A sample image with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1000 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -135,7 +154,7 @@ function init() {
       name: "Sample Image 9",
       description: "A sample image with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 482 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -148,7 +167,7 @@ function init() {
       file_path: null,
       name: "Sample Image 10",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1376 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -161,7 +180,7 @@ function init() {
       file_path: null,
       name: "Sample Image 1",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1000 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -174,7 +193,7 @@ function init() {
       file_path: null,
       name: "Placeholder Image - Dog",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 698 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -189,7 +208,7 @@ function init() {
       name: "Sample Video - Big Buck Bunny",
       description: "A sample video with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: {
         duration: 634,
         loop: true,
@@ -210,7 +229,7 @@ function init() {
       name: "Placeholder Image - Nature",
       description: "A sample image with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 858 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -225,7 +244,7 @@ function init() {
       name: "Sample Video - For Bigger Blazes",
       description: "A sample video with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: {
         duration: 15,
         loop: true,
@@ -246,7 +265,7 @@ function init() {
       name: "Shopify Website",
       description: "A sample website with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: {
         viewport: "laptop",
         width: 1512,
@@ -264,7 +283,7 @@ function init() {
       name: "Sample Title Card",
       description: "A sample title card with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: {
         headline: "Welcome to the Project",
         subheadline:
@@ -285,7 +304,7 @@ function init() {
       name: "Mobile Home Screen",
       description: "A sample image with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 800, height: 1600 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -299,7 +318,7 @@ function init() {
       name: "Product Detail",
       description: "A sample image with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 800, height: 1600 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -313,7 +332,7 @@ function init() {
       name: "App Features",
       description: "A sample title card with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: {
         headline: "Mobile First Design",
         subheadline: "Optimized for iOS and Android",
@@ -333,7 +352,7 @@ function init() {
       name: "Hero Banner",
       description: "A sample image with a clean and modern look",
       published: false,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1920, height: 1080 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -348,7 +367,7 @@ function init() {
       name: "Beautiful Sunset",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1000 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -362,7 +381,7 @@ function init() {
       name: "Urban Architecture",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 482 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -376,7 +395,7 @@ function init() {
       name: "Nature Landscape",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1376 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -389,7 +408,7 @@ function init() {
       file_path: null,
       name: "Creative Composition",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1000 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -403,7 +422,7 @@ function init() {
       name: "Minimalist Design",
       description: "A minimalist design with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 698 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -417,7 +436,7 @@ function init() {
       name: "Abstract Pattern",
       description: "An abstract pattern with a modern and stylish look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 858 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -431,7 +450,7 @@ function init() {
       name: "Modern Aesthetic",
       description: "A modern aesthetic with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1878 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -445,7 +464,7 @@ function init() {
       name: "E-commerce Landing Page",
       description: "A modern aesthetic with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 816 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -459,7 +478,7 @@ function init() {
       name: "Mobile App Designs",
       description: "A modern aesthetic with a clean and modern look",
       published: true,
-      creator_id: "dev@shopify.com",
+      creator_id: MOCK_USER_ID,
       metadata: { width: 1000, height: 1114 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -659,15 +678,6 @@ function init() {
       granted_at: now,
     },
   ];
-
-  console.log("[Mock] Initialized with:", {
-    projects: db.projects.length,
-    folders: db.folders.length,
-    pages: db.pages.length,
-    artifacts: db.artifacts.length,
-    project_artifacts: db.project_artifacts.length,
-    published: db.artifacts.filter((a: any) => a.published).length,
-  });
 }
 
 // Mock collection
@@ -693,13 +703,6 @@ class Collection {
 
   async find() {
     const result = [...db[this.name]];
-    if (this.name === "projects") {
-      console.log(
-        "[Mock] Returning projects:",
-        result.length,
-        result.map((p) => p.name)
-      );
-    }
     return result;
   }
 
@@ -829,6 +832,7 @@ export function getMockQuickSites() {
     {
       id: "my-portfolio",
       subdomain: "my-portfolio",
+      description: "My portfolio site",
       url: "https://my-portfolio.quick.shopify.io",
       owner: "dev@shopify.com",
       lastModified: new Date(
@@ -839,6 +843,7 @@ export function getMockQuickSites() {
     {
       id: "team-dashboard",
       subdomain: "team-dashboard",
+      description: "Team dashboard site",
       url: "https://team-dashboard.quick.shopify.io",
       owner: "dev@shopify.com",
       lastModified: new Date(
@@ -849,6 +854,7 @@ export function getMockQuickSites() {
     {
       id: "project-showcase",
       subdomain: "project-showcase",
+      description: "Project showcase site",
       url: "https://project-showcase.quick.shopify.io",
       owner: "dev@shopify.com",
       lastModified: new Date(

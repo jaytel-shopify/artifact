@@ -14,6 +14,30 @@ const MAX_VIDEO_SIZE = 2500;
 let currentConversion: Conversion | null = null;
 let currentIntervalId = -1;
 
+/**
+ * Get video dimensions using a video element
+ */
+const getVideoDimensions = (
+  file: File
+): Promise<{ width: number; height: number } | null> => {
+  return new Promise((resolve) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+
+    video.onloadedmetadata = () => {
+      URL.revokeObjectURL(video.src);
+      resolve({ width: video.videoWidth, height: video.videoHeight });
+    };
+
+    video.onerror = () => {
+      URL.revokeObjectURL(video.src);
+      resolve(null);
+    };
+
+    video.src = URL.createObjectURL(file);
+  });
+};
+
 export const compressFile = async (
   resource: File,
   { onProgress }: { onProgress: (progress: UploadProgress) => void }
@@ -23,6 +47,24 @@ export const compressFile = async (
     await currentConversion?.cancel();
 
     try {
+      const isMov = resource.name.toLowerCase().endsWith(".mov");
+
+      // Check video dimensions before converting
+      // Always compress .mov files to mp4
+      const dimensions = await getVideoDimensions(resource);
+      if (dimensions && dimensions.width <= MAX_VIDEO_SIZE && !isMov) {
+        console.log(
+          `Video resolution (${dimensions.width}x${dimensions.height}) is already within limit, skipping compression`
+        );
+        onProgress({ percentage: 100 });
+        resolve(resource);
+        return;
+      }
+
+      if (isMov) {
+        console.log(`Converting .mov file to mp4: ${resource.name}`);
+      }
+
       // Create a new input from the resource
       const source = new BlobSource(resource);
       const input = new Input({

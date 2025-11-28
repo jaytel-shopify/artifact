@@ -14,20 +14,20 @@ export default function GlobalHeader({
   right,
 }: GlobalHeaderProps) {
   return (
-    <header className="sticky top-0 z-10 h-header-height before:content-[''] before:absolute before:inset-0 before:h-[200%] overflow-hidden before:bg-[linear-gradient(180deg,#f2f2f2aa_49%,#f2f2f220_49%)] dark:before:bg-[linear-gradient(180deg,#111111aa_49%,#11111120_49%)] before:backdrop-blur-md">
-      <div className="flex items-center justify-between h-full px-6">
+    <header className="h-header-height sticky top-0 z-10 overflow-hidden before:absolute before:inset-0 before:h-[200%] before:bg-[linear-gradient(180deg,#e4e9ebaa_49%,#e4e9eb20_49%)] before:backdrop-blur-md before:content-[''] dark:before:bg-[linear-gradient(180deg,#010b0faa_49%,#010b0f20_49%)]">
+      <div className="flex h-full items-center justify-between px-6">
         {/* Left Section */}
-        <div className="relative flex items-center gap-3 size-full max-w-section-width">
+        <div className="max-w-section-width relative flex size-full items-center gap-3">
           {left}
         </div>
 
         {/* Center Section */}
-        <div className="relative flex items-center gap-3 justify-center size-full max-w-section-width">
+        <div className="max-w-section-width relative flex size-full items-center justify-center gap-3">
           {center}
         </div>
 
         {/* Right Section */}
-        <div className="relative flex items-center justify-end gap-3 size-full max-w-section-width">
+        <div className="max-w-section-width relative flex size-full items-center justify-end gap-3">
           {right}
         </div>
       </div>

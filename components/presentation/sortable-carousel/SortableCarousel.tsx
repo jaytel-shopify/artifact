@@ -332,7 +332,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
     if (items.length === 0) {
       return (
-        <div className="h-full flex items-center justify-center text-white/60">
+        <div className="h-full flex items-center justify-center text-text-primary">
           No artifacts yet. Add one to get started.
         </div>
       );

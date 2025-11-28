@@ -23,13 +23,13 @@ export default function ColumnControl({
   }, [localColumns]);
 
   return (
-    <div className="flex items-center gap-3 bg-primary rounded-button border-[0.5px] border-border">
+    <div className="flex items-center gap-3 bg-primary rounded-button border border-border">
       <div className="relative h-10 w-64">
         <div className="absolute top-0 left-0 size-full flex items-center justify-between pointer-events-none px-4">
           {[...Array(8)].map((_, i) => (
             <div
               key={i}
-              className="dot-indicator w-2 h-2 bg-foreground/20 rounded-full"
+              className="dot-indicator w-2 h-2 bg-secondary/20 rounded-full"
             ></div>
           ))}
         </div>
@@ -44,7 +44,7 @@ export default function ColumnControl({
           className="relative w-full appearance-none"
         />
         <span
-          className="absolute pointer-events-none top-1/2 left-1 w-8 z-10 text-xs text-white font-medium min-w-[12px] text-center translate-y-[-50%]"
+          className="absolute pointer-events-none top-1/2 left-1 w-8 z-10 text-small text-white text-medium min-w-[12px] text-center translate-y-[-50%]"
           style={{
             transform: `translateX(${(localColumns - 1) * 96.5}%)`,
           }}
@@ -54,12 +54,12 @@ export default function ColumnControl({
       </div>
 
       {/* Fit toggle (only when columns === 1) */}
-      {columns === 1 && onFitModeChange && (
+      {/* {columns === 1 && onFitModeChange && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground font-medium">Fit</span>
+          <span className="text-small text-text-secondary text-medium">Fit</span>
           <Switch checked={fitMode} onCheckedChange={onFitModeChange} />
         </div>
-      )}
+      )} */}
     </div>
   );
 }

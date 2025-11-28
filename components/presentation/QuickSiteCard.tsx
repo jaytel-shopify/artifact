@@ -1,6 +1,9 @@
 "use client";
 
+import { Clock } from "lucide-react";
 import { QuickSiteRecord } from "@/lib/quick-sites";
+import { formatTimeAgo } from "@/lib/utils";
+import { Card } from "../ui/card";
 
 interface QuickSiteCardProps {
   site: QuickSiteRecord;
@@ -8,32 +11,24 @@ interface QuickSiteCardProps {
 
 export default function QuickSiteCard({ site }: QuickSiteCardProps) {
   return (
-    <a
-      href={site.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex flex-col gap-2 group"
-    >
-      <div className="relative aspect-[16/11] bg-card rounded-card-inner overflow-hidden">
-        <div className="w-full h-full flex items-center justify-center text-foreground">
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
-            />
-          </svg>
-        </div>
-      </div>
-      <h3 className="text-xs font-medium text-foreground line-clamp-1">
-        {site.subdomain}
-      </h3>
-    </a>
+    <Card className="p-4 relative">
+      <a
+        href={site.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex flex-col gap-2 group after:content-[''] after:absolute after:inset-0"
+        aria-label={site.subdomain + " - " + site.description}
+      >
+        <h3 className="text-medium text-text-primary line-clamp-1">
+          {site.subdomain}
+        </h3>
+        <p className="text-small text-text-secondary line-clamp-1">
+          {site.description}
+        </p>
+        <p className="text-small text-text-secondary line-clamp-1 flex items-center gap-1 mt-4">
+          <Clock className="w-3 h-3" /> {formatTimeAgo(site.lastModified)}
+        </p>
+      </a>
+    </Card>
   );
 }

@@ -61,9 +61,9 @@ function NewProjectContent() {
   }, [router, user, folderId]);
 
   return (
-    <main className="h-screen flex items-center justify-center bg-background text-foreground">
+    <main className="h-screen flex items-center justify-center bg-background text-text-primary">
       <div className="text-center space-y-4">
-        <div className="text-lg font-medium">Creating your project...</div>
+        <div className="text-medium text-medium">Creating your project...</div>
         <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin mx-auto" />
       </div>
     </main>

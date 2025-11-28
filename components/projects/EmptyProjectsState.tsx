@@ -11,7 +11,7 @@ export function EmptyProjectsState({
 }: EmptyProjectsStateProps) {
   return (
     <div className="text-center py-12">
-      <p className="text-muted-foreground mb-4">No projects or folders yet</p>
+      <p className="text-text-secondary mb-4">No projects or folders yet</p>
       <div className="flex gap-2 justify-center">
         <Button variant="outline" onClick={onCreateFolder}>
           Create Folder
