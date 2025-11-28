@@ -11,14 +11,14 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-text-primary text-small hover:shadow-md active:shadow-none",
+          "bg-primary text-text-primary hover:shadow-md active:shadow-none",
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20",
         outline: "bg-background hover:bg-secondary hover:text-text-primary",
         primary: "button-primary",
-        secondary: "bg-secondary text-text-secondary hover:bg-secondary/80",
+        secondary: "bg-primary/50 text-text-primary hover:bg-primary/80",
         ghost:
-          "hover:bg-primary text-text-primary text-small border-transparent hover:text-text-primary hover:shadow-md active:shadow-none",
+          "hover:bg-primary text-text-primary border-transparent hover:text-text-primary hover:shadow-md active:shadow-none",
         link: "text-text-primary underline-offset-4 hover:underline",
       },
       size: {
@@ -51,7 +51,10 @@ function Button({
   href,
   ...props
 }: ButtonProps) {
-  const classes = cn(buttonVariants({ variant, size, className }));
+  const classes = cn(
+    buttonVariants({ variant, size, className }),
+    "text-small"
+  );
 
   if (href) {
     return (

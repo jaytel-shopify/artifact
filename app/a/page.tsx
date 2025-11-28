@@ -85,26 +85,30 @@ export default function Page() {
           artifact={artifact}
           className="w-full max-w-[800px] max-h-[80vh] rounded-card overflow-hidden"
         />
-        <div>
-          <h1 className="text-medium mb-4">{artifact.name}</h1>
+        <div className="flex flex-col gap-4">
+          <h1 className="text-large">{artifact.name}</h1>
           {artifact.description && (
-            <p className="text-small text-text-secondary capitalize">
+            <p className="text-medium text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}
 
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2">
             <Button
               onClick={handleLike}
-              variant={userLiked ? "default" : "outline"}
+              variant={userLiked ? "default" : "secondary"}
+              className="w-18"
             >
-              😍 {artifact.reactions?.like?.length || 0}
+              <span className="text-medium">😍</span>{" "}
+              <span>{artifact.reactions?.like?.length || 0}</span>
             </Button>
             <Button
               onClick={handleDislike}
-              variant={userDisliked ? "default" : "outline"}
+              variant={userDisliked ? "default" : "secondary"}
+              className="w-18"
             >
-              🤔 {artifact.reactions?.dislike?.length || 0}
+              <span className="text-medium">🤔</span>{" "}
+              <span>{artifact.reactions?.dislike?.length || 0}</span>
             </Button>
           </div>
 
