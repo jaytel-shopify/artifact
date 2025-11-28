@@ -122,22 +122,31 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const folders = data?.folders || [];
   const availableFolders = folders.filter((f) => f.id !== project.folder_id);
 
-  const refreshData = (folderId?: string | null) => {
-    globalMutate(cacheKeys.projectsData(user?.email));
-    // Also refresh folder view if project is/was in a folder
-    if (folderId) {
-      globalMutate(cacheKeys.folderData(folderId));
+  // Helper to refresh all relevant caches after a mutation
+  // Using { revalidate: true } to force a fresh fetch, bypassing any deduping
+  const refreshCaches = async (folderIds: (string | null | undefined)[]) => {
+    const projectsKey = cacheKeys.projectsData(user?.email);
+    if (projectsKey) {
+      await globalMutate(projectsKey, undefined, { revalidate: true });
     }
-    if (project.folder_id && project.folder_id !== folderId) {
-      globalMutate(cacheKeys.folderData(project.folder_id));
+    // Refresh any folder caches
+    for (const folderId of folderIds) {
+      if (folderId) {
+        const folderKey = cacheKeys.folderData(folderId);
+        if (folderKey) {
+          await globalMutate(folderKey, undefined, { revalidate: true });
+        }
+      }
     }
   };
 
   const handleDelete = async () => {
+    // Capture current folder before async operations
+    const currentFolderId = project.folder_id;
     setIsDeleting(true);
     try {
       await deleteProject(project.id);
-      refreshData(project.folder_id);
+      await refreshCaches([currentFolderId]);
       toast.success(`Project "${project.name}" deleted`);
       setDeleteOpen(false);
     } catch (error) {
@@ -150,10 +159,12 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
   const handleRename = async () => {
     if (!newName.trim()) return;
+    // Capture current folder before async operations
+    const currentFolderId = project.folder_id;
     setIsRenaming(true);
     try {
       await updateProject(project.id, { name: newName.trim() });
-      refreshData(project.folder_id);
+      await refreshCaches([currentFolderId]);
       toast.success(`Project renamed to "${newName.trim()}"`);
       setRenameOpen(false);
     } catch (error) {
@@ -165,11 +176,15 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   };
 
   const handleMoveToFolder = async (folderId: string) => {
+    // Capture all state before async operations (dropdown closes immediately)
+    const folder = folders.find((f) => f.id === folderId);
+    const folderName = folder?.name || "folder";
+    const oldFolderId = project.folder_id;
+    
     try {
       await moveProjectToFolder(project.id, folderId);
-      refreshData(folderId); // Refreshes both source folder (project.folder_id) and target folder
-      const folder = folders.find((f) => f.id === folderId);
-      toast.success(`Moved to ${folder?.name || "folder"}`);
+      await refreshCaches([folderId, oldFolderId]);
+      toast.success(`Moved to ${folderName}`);
     } catch (error) {
       console.error("Failed to move project:", error);
       toast.error("Failed to move project");
@@ -177,10 +192,11 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   };
 
   const handleRemoveFromFolder = async () => {
+    // Capture current folder before async operations
     const oldFolderId = project.folder_id;
     try {
       await removeProjectFromFolder(project.id);
-      refreshData(oldFolderId);
+      await refreshCaches([oldFolderId]);
       toast.success("Removed from folder");
     } catch (error) {
       console.error("Failed to remove from folder:", error);

@@ -82,7 +82,7 @@ export function useProjectsData(userEmail?: string) {
         : { projects: [], folders: [], publishedArtifacts: [] },
     {
       revalidateOnFocus: false,
-      dedupingInterval: 30000,
+      dedupingInterval: 2000, // Reduced to allow rapid mutations
       refreshInterval: 60000,
     }
   );
