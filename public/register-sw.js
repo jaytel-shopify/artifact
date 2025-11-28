@@ -37,8 +37,10 @@ if ("serviceWorker" in navigator) {
       });
 
     // Handle controller change (new SW activated)
+    // Note: We don't auto-reload on controller change as it can interfere with SPA navigation
+    // The user will get the new SW on next full page load
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      window.location.reload();
+      console.log("Service Worker controller changed - new version active");
     });
   });
 }

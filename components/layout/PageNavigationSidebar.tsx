@@ -78,7 +78,7 @@ function SortablePageItem({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
+    transition: `${transition}, background-color 100ms ease`,
     opacity: isDragging ? 0.5 : 1,
   };
 
@@ -140,12 +140,12 @@ function SortablePageItem({
           ref={setNodeRef}
           style={style}
           {...(isEditing ? {} : { ...attributes, ...listeners })}
-          className={`bg-primary border border-border flex items-center p-4 rounded-button transition-colors ${
+          className={`border border-none flex items-center p-4 rounded-button transition-colors ${
             isEditing
               ? "border-secondary"
               : isActive
-                ? "cursor-grab active:cursor-grabbing"
-                : "hover:bg-primary opacity-50 hover:opacity-100 cursor-grab active:cursor-grabbing"
+                ? "bg-primary border-border cursor-grab active:cursor-grabbing"
+                : "hover:bg-primary/70 cursor-grab active:cursor-grabbing"
           }`}
           onClick={isEditing ? undefined : onSelect}
         >
@@ -256,7 +256,7 @@ export default function PageNavigationSidebar({
     >
       <div className="flex flex-col h-full p-4">
         {/* Pages List */}
-        <div className="flex-1 space-y-0 overflow-y-auto">
+        <div className="flex flex-col gap-1 flex-1 space-y-0 overflow-y-auto">
           {pages.length === 0 ? (
             <div className="text-text-secondary text-center py-4 text-small">
               No pages yet

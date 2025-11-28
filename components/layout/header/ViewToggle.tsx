@@ -15,6 +15,7 @@ export default function ViewToggle() {
       ></div>
       <Link
         href="/"
+        prefetch={true}
         className={`explore relative flex items-center justify-center px-3 rounded-button-inner text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-1 ${
           isExplore ? "text-white" : "text-text-primary"
         }`}
@@ -22,7 +23,8 @@ export default function ViewToggle() {
         Explore
       </Link>
       <Link
-        href="/projects"
+        href="/projects/"
+        prefetch={true}
         className={`projects relative flex items-center justify-center px-3 rounded-button-inner text-small transition-colors duration-200 h-full row-start-1 row-span-1 col-start-2 ${
           isProjects ? "text-white" : "text-text-primary"
         }`}

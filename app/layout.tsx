@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { HeaderProvider } from "@/components/layout/HeaderContext";
 import GlobalLayout from "@/components/layout/GlobalLayout";
-import { SchemaMigrationDialog } from "@/components/migration/SchemaMigrationDialog";
+// import { SchemaMigrationDialog } from "@/components/migration/SchemaMigrationDialog";
 import "./globals.css";
 
 const inter = Inter({
@@ -86,8 +86,7 @@ export default function RootLayout({
               <GlobalLayout>{children}</GlobalLayout>
             </HeaderProvider>
             <Toaster />
-            {/* Schema migration check - shows dialog if data needs updating */}
-            <SchemaMigrationDialog />
+            {/* <SchemaMigrationDialog /> */}
           </ThemeProvider>
         </AuthProvider>
       </body>
