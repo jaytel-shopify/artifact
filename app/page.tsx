@@ -33,6 +33,7 @@ export default function Home() {
     { height: 0, artifacts: [] },
     { height: 0, artifacts: [] },
     { height: 0, artifacts: [] },
+    { height: 0, artifacts: [] },
   ] as {
     height: number;
     artifacts: {
@@ -139,7 +140,7 @@ export default function Home() {
       {artifacts.length > 0 ? (
         <>
           {gridMode === "masonry" ? (
-            <div className="grid grid-cols-3 gap-2 lg:gap-6">
+            <div className="grid grid-cols-4 gap-2 lg:gap-6">
               {masonryGrid.map((row, index) => (
                 <div key={index} className="flex flex-col gap-2 lg:gap-6">
                   {row.artifacts.map(({ artifact, tabindex }) => (
@@ -153,7 +154,7 @@ export default function Home() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2 lg:gap-6">
+            <div className="grid grid-cols-4 gap-2 lg:gap-6">
               {artifacts.map((artifact) => (
                 <FeedCard key={artifact.id} artifact={artifact} />
               ))}

@@ -16,7 +16,7 @@ export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
     useReactions({ artifact });
 
   return (
-    <div className="rounded-card relative grid h-fit cursor-pointer overflow-hidden border border-border">
+    <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border">
       <ArtifactThumbnail
         artifact={artifact}
         className="col-span-1 col-start-1 row-span-2 row-start-1 w-full rounded-card"
