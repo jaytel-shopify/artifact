@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "exportDate": "2025-11-26T15:37:53.034Z",
+    "source": "Cloud_SQL_Export_2025-11-26 (09_50_04).sql",
+    "stats": {
+      "totalUsers": 0,
+      "totalPosts": 0,
+      "totalMedia": 0,
+      "postsWithMedia": 0,
+      "postsWithoutMedia": 0,
+      "postsWithMultipleMedia": 0
+    }
+  },
+  "users": {},
+  "posts": [],
+  "media": [],
+  "mediaByPost": {}
+}

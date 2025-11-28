@@ -62,6 +62,7 @@ export type Artifact = {
   file_path: string | null;
   name: string;
   description?: string;
+  tags?: string[]; // Optional: tags for categorization/filtering
   metadata: Record<string, unknown> &
     Partial<
       UrlViewportMetadata &

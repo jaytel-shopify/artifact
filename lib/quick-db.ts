@@ -513,21 +513,34 @@ export async function createArtifact(data: {
   metadata?: Record<string, unknown>;
   published?: boolean;
   description?: string;
+  tags?: string[]; // Optional: tags for categorization/filtering
+  reactions?: { like: string[]; dislike: string[] }; // Optional: for migration/import purposes
+  created_at?: string; // Optional: for migration/import purposes
+  updated_at?: string; // Optional: for migration/import purposes
 }): Promise<Artifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  const artifactData = {
+  const artifactData: any = {
     type: data.type,
     source_url: data.source_url,
     file_path: data.file_path || null,
     name: data.name,
     creator_id: data.creator_id,
     metadata: data.metadata || {},
-    reactions: { like: [], dislike: [] },
+    reactions: data.reactions || { like: [], dislike: [] },
     published: data.published ?? false,
     description: data.description || "",
+    tags: data.tags || [],
   };
+
+  // If timestamps are provided (e.g., during migration), use them
+  if (data.created_at) {
+    artifactData.created_at = data.created_at;
+  }
+  if (data.updated_at) {
+    artifactData.updated_at = data.updated_at;
+  }
 
   return await collection.create(artifactData);
 }
@@ -547,6 +560,10 @@ export async function createArtifactInProject(data: {
   metadata?: Record<string, unknown>;
   published?: boolean;
   description?: string;
+  tags?: string[]; // Optional: tags for categorization/filtering
+  reactions?: { like: string[]; dislike: string[] }; // Optional: for migration/import purposes
+  created_at?: string; // Optional: for migration/import purposes
+  updated_at?: string; // Optional: for migration/import purposes
 }): Promise<{ artifact: Artifact; projectArtifact: ProjectArtifact }> {
   // Create the artifact (unpublished by default when in a project)
   const artifact = await createArtifact({
@@ -558,6 +575,10 @@ export async function createArtifactInProject(data: {
     metadata: data.metadata,
     published: data.published ?? false,
     description: data.description,
+    tags: data.tags,
+    reactions: data.reactions,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
   });
 
   // Get next position and create junction entry

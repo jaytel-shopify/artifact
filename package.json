@@ -12,6 +12,7 @@
     "deploy": "pnpm build && quick deploy dist artifact",
     "deploy:jesper": "pnpm build && quick deploy dist artifact-pr-jesper --force",
     "deploy:staging": "pnpm build && quick deploy dist staging-artifact --force",
+    "deploy:migration": "pnpm build && quick deploy dist migration-artifact --force",
     "preview": "pnpm build && npx serve dist"
   },
   "dependencies": {
