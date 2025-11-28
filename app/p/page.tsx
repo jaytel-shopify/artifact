@@ -4,19 +4,14 @@ import useSWR from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, PanelLeft, PanelLeftClose, Share } from "lucide-react";
+import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
-import type { Project, Artifact } from "@/types";
-import {
-  getProjectById,
-  updateArtifact as updateArtifactDB,
-  reorderArtifacts as reorderArtifactsDB,
-} from "@/lib/quick-db";
+import type { Project, Page } from "@/types";
+import { getProjectById } from "@/lib/quick-db";
 import { useArtifactCommands } from "@/hooks/useArtifactCommands";
 import {
   ReorderArtifactsCommand,
@@ -41,7 +36,6 @@ import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import { useTitleCardEditor } from "@/hooks/useTitleCardEditor";
 import { useMediaReplacement } from "@/hooks/useMediaReplacement";
 import { usePageHandlers } from "@/hooks/usePageHandlers";
-import { useFolderActions } from "@/hooks/useFolderActions";
 import {
   Dialog,
   DialogContent,
@@ -55,7 +49,6 @@ import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import ColumnControl from "@/components/layout/header/ColumnControl";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
-import EditableTitle from "@/components/presentation/EditableTitle";
 import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
 import { SharePanel } from "@/components/access/SharePanel";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
@@ -76,9 +69,26 @@ async function fetchProject(projectId: string): Promise<Project | null> {
 function PresentationPageInner({
   onBroadcastReady,
   syncedArtifacts,
+  pages,
+  currentPageId,
+  selectPage: selectPageProp,
+  createPage,
+  updatePage,
+  deletePage,
+  reorderPages,
 }: {
   onBroadcastReady?: (callback: () => void) => void;
   syncedArtifacts: ReturnType<typeof useSyncedArtifacts>;
+  pages: Page[];
+  currentPageId: string | null;
+  selectPage: (pageId: string) => void;
+  createPage: (name: string) => Promise<Page | null>;
+  updatePage: (
+    pageId: string,
+    updates: Partial<Pick<Page, "name" | "position">>
+  ) => Promise<Page | null>;
+  deletePage: (pageId: string) => Promise<void>;
+  reorderPages: (reorderedPages: Page[]) => Promise<void>;
 }) {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get("id") || "";
@@ -125,9 +135,6 @@ function PresentationPageInner({
 
   // Sidebar state (extracted from old AppLayout)
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // Load user's folders for folder dropdown
-  const userFolders = useUserFolders(user?.email);
 
   // Load sidebar state from localStorage
   useEffect(() => {
@@ -219,15 +226,11 @@ function PresentationPageInner({
   // Allow debug override of read-only mode
   const isReadOnly = debugReadOnly || permissions.isReadOnly;
   const canEdit = !debugReadOnly && permissions.canEdit;
-  const isOwner = permissions.isOwner;
   const accessLevel = permissions.accessLevel;
   const isCollaborator = accessLevel === "editor";
 
-  // Fetch and manage pages
-  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
-    project?.id
-  );
-  const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
+  // Use page state from props (managed by parent to keep artifacts in sync)
+  const selectPage = selectPageProp;
 
   // Disable browser scroll restoration to prevent carousel scroll memory
   useEffect(() => {
@@ -318,13 +321,6 @@ function PresentationPageInner({
   // Page management handlers
   const { handlePageCreate, handlePageDelete, handlePageRename } =
     usePageHandlers(pages, createPage, updatePage, deletePage, selectPage);
-
-  // Folder actions
-  const {
-    handleProjectNameUpdate,
-    handleMoveToFolder,
-    handleRemoveFromFolder,
-  } = useFolderActions(project, userFolders);
 
   // Title card editor
   const {
@@ -775,8 +771,11 @@ function PresentationPageInnerWithProvider() {
     { revalidateOnFocus: false }
   );
 
-  const { pages } = usePages(project?.id);
-  const { currentPageId } = useCurrentPage(pages, project?.id);
+  // Page state managed here so artifacts stay in sync with selected page
+  const { pages, createPage, updatePage, deletePage, reorderPages } = usePages(
+    project?.id
+  );
+  const { currentPageId, selectPage } = useCurrentPage(pages, project?.id);
 
   // Single call to useSyncedArtifacts - get everything needed
   const syncedArtifacts = useSyncedArtifacts(
@@ -800,6 +799,13 @@ function PresentationPageInnerWithProvider() {
       <PresentationPageInner
         onBroadcastReady={wrappedSetBroadcastCallback}
         syncedArtifacts={syncedArtifacts}
+        pages={pages}
+        currentPageId={currentPageId}
+        selectPage={selectPage}
+        createPage={createPage}
+        updatePage={updatePage}
+        deletePage={deletePage}
+        reorderPages={reorderPages}
       />
     </QuickFollowProvider>
   );
