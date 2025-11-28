@@ -25,6 +25,7 @@ import {
   UpdateArtifactCommand,
   DeleteArtifactCommand,
 } from "@/lib/artifact-commands";
+import { cacheKeys } from "@/lib/cache-keys";
 import { useResourcePermissions } from "@/hooks/useResourcePermissions";
 import { useAuth } from "@/components/auth/AuthProvider";
 import DevDebugPanel from "@/components/DevDebugPanel";
@@ -207,7 +208,7 @@ function PresentationPageInner({
 
   // Fetch project data
   const { data: project } = useSWR<Project | null>(
-    projectId ? `project-${projectId}` : null,
+    cacheKeys.projectData(projectId),
     () => (projectId ? fetchProject(projectId) : null),
     { revalidateOnFocus: false }
   );
@@ -769,7 +770,7 @@ function PresentationPageInnerWithProvider() {
 
   // Fetch project
   const { data: project } = useSWR<Project | null>(
-    projectId ? `project-${projectId}` : null,
+    cacheKeys.projectData(projectId),
     () => (projectId ? fetchProject(projectId) : null),
     { revalidateOnFocus: false }
   );

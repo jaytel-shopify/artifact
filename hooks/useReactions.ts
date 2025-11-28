@@ -1,6 +1,7 @@
 import { mutate as globalMutate, KeyedMutator } from "swr";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { updateArtifact } from "@/lib/quick-db";
+import { cacheKeys } from "@/lib/cache-keys";
 import type { Artifact } from "@/types";
 
 interface UseReactionsOptions {
@@ -12,12 +13,12 @@ interface UseReactionsOptions {
 export function useReactions({ artifact, mutate }: UseReactionsOptions) {
   const { user } = useAuth();
 
-  const userLiked = user?.id && artifact
-    ? artifact.reactions?.like?.includes(user.id)
-    : false;
-  const userDisliked = user?.id && artifact
-    ? artifact.reactions?.dislike?.includes(user.id)
-    : false;
+  const userLiked =
+    user?.id && artifact ? artifact.reactions?.like?.includes(user.id) : false;
+  const userDisliked =
+    user?.id && artifact
+      ? artifact.reactions?.dislike?.includes(user.id)
+      : false;
 
   const toggleReaction = async (type: "like" | "dislike") => {
     if (!user?.id || !artifact) return;
@@ -45,7 +46,7 @@ export function useReactions({ artifact, mutate }: UseReactionsOptions) {
 
     // Optimistic update for public-artifacts cache
     globalMutate(
-      "public-artifacts",
+      cacheKeys.publicArtifacts,
       (current: Artifact[] = []) =>
         current.map((a) =>
           a.id === artifact.id ? { ...a, reactions: newReactions } : a
@@ -59,7 +60,7 @@ export function useReactions({ artifact, mutate }: UseReactionsOptions) {
       console.error(`Failed to toggle ${type}:`, error);
       // Revert on error
       if (mutate) mutate();
-      globalMutate("public-artifacts");
+      globalMutate(cacheKeys.publicArtifacts);
     }
   };
 
@@ -83,4 +84,3 @@ export function useReactions({ artifact, mutate }: UseReactionsOptions) {
     canReact: !!user,
   };
 }
-

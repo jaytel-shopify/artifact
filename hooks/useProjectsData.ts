@@ -8,6 +8,7 @@ import {
 } from "@/lib/quick-db";
 import { getProjectCountInFolder } from "@/lib/quick-folders";
 import { getUserAccessibleResources } from "@/lib/access-control";
+import { cacheKeys } from "@/lib/cache-keys";
 
 export type ProjectWithCover = Project & {
   coverArtifacts: Artifact[];
@@ -74,7 +75,7 @@ async function fetcher(userEmail?: string): Promise<ProjectsData> {
  */
 export function useProjectsData(userEmail?: string) {
   const { data, isLoading, error, mutate } = useSWR<ProjectsData>(
-    userEmail ? `projects-folders-${userEmail}` : null,
+    cacheKeys.projectsData(userEmail),
     () =>
       userEmail
         ? fetcher(userEmail)

@@ -1,42 +1,17 @@
 "use client";
 
-import { Suspense, use, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Share, Plus, MoreVertical } from "lucide-react";
+import useSWR, { mutate as globalMutate } from "swr";
+import { ArrowLeft, MoreVertical } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
-import {
-  ContextMenu,
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuTrigger,
-} from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import ProjectCard from "@/components/presentation/ProjectCard";
 import FolderDialog from "@/components/folders/FolderDialog";
 import { SharePanel } from "@/components/access/SharePanel";
@@ -54,11 +29,64 @@ import {
 } from "@/lib/quick-folders";
 import { canUserEdit } from "@/lib/access-control";
 import {
-  updateProject,
-  deleteProject as deleteProjectDB,
   getProjectCoverArtifacts,
   getProjectArtifactsByProject,
 } from "@/lib/quick-db";
+import { cacheKeys } from "@/lib/cache-keys";
+
+type ProjectWithCover = Project & {
+  coverArtifacts: Artifact[];
+  artifactCount: number;
+};
+
+interface FolderData {
+  folder: Folder;
+  projects: ProjectWithCover[];
+  canEdit: boolean;
+}
+
+async function fetchFolderData(
+  folderId: string,
+  userEmail: string
+): Promise<FolderData | null> {
+  const [folderData, hasEditAccess, folderProjects] = await Promise.all([
+    getFolderById(folderId),
+    canUserEdit(folderId, "folder", userEmail),
+    getProjectsInFolder(folderId, userEmail),
+  ]);
+
+  if (!folderData) {
+    return null;
+  }
+
+  // Track folder access (async, don't wait)
+  if (hasEditAccess) {
+    updateFolder(folderId, {
+      last_accessed_at: new Date().toISOString(),
+    }).catch(console.error);
+  }
+
+  // Load cover artifacts and artifact count for projects (in parallel)
+  const projectsWithCovers = await Promise.all(
+    folderProjects.map(async (project) => {
+      const [coverArtifacts, allArtifacts] = await Promise.all([
+        getProjectCoverArtifacts(project.id),
+        getProjectArtifactsByProject(project.id),
+      ]);
+      return {
+        ...project,
+        coverArtifacts,
+        artifactCount: allArtifacts.length,
+      };
+    })
+  );
+
+  return {
+    folder: folderData,
+    projects: projectsWithCovers,
+    canEdit: hasEditAccess,
+  };
+}
 
 function FolderPageContent() {
   const searchParams = useSearchParams();
@@ -66,93 +94,42 @@ function FolderPageContent() {
   const router = useRouter();
   const { user } = useAuth();
 
-  const [folder, setFolder] = useState<Folder | null>(null);
-  const [projects, setProjects] = useState<
-    Array<Project & { coverArtifacts: Artifact[]; artifactCount: number }>
-  >([]);
-  const [canEdit, setCanEdit] = useState(false);
-  const [loading, setLoading] = useState(true);
+  // Use SWR for folder data - ProjectCard will call globalMutate(cacheKeys.folderData(folderId))
+  const { data, isLoading, mutate } = useSWR<FolderData | null>(
+    cacheKeys.folderData(folderId) && user?.email
+      ? cacheKeys.folderData(folderId)
+      : null,
+    () => fetchFolderData(folderId, user!.email),
+    {
+      revalidateOnFocus: false,
+      onSuccess: (data) => {
+        if (data) {
+          document.title = `${data.folder.name} | Artifact`;
+        }
+      },
+      onError: () => {
+        toast.error("Failed to load folder");
+        router.push("/projects");
+      },
+    }
+  );
+
+  const folder = data?.folder ?? null;
+  const projects = data?.projects ?? [];
+  const canEdit = data?.canEdit ?? false;
 
   // Dialogs
   const [renameDialogOpen, setRenameDialogOpen] = useState(false);
   const [accessDialogOpen, setAccessDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
-  // Project actions
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<
-    (Project & { coverArtifacts: Artifact[]; artifactCount: number }) | null
-  >(null);
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [projectToRename, setProjectToRename] = useState<
-    (Project & { coverArtifacts: Artifact[]; artifactCount: number }) | null
-  >(null);
-  const [newProjectName, setNewProjectName] = useState("");
-
-  // Load folder and projects
-  useEffect(() => {
-    async function loadData() {
-      if (!user?.email || !folderId) return;
-
-      try {
-        // Parallel loading - fetch folder, permissions, and projects simultaneously
-        const [folderData, hasEditAccess, folderProjects] = await Promise.all([
-          getFolderById(folderId),
-          canUserEdit(folderId, "folder", user.email),
-          getProjectsInFolder(folderId, user.email),
-        ]);
-
-        if (!folderData) {
-          toast.error("Folder not found");
-          router.push("/projects");
-          return;
-        }
-
-        setFolder(folderData);
-        setCanEdit(hasEditAccess);
-
-        // Set document title
-        document.title = `${folderData.name} | Artifact`;
-
-        // Track folder access (async, don't wait)
-        if (hasEditAccess) {
-          updateFolder(folderId, {
-            last_accessed_at: new Date().toISOString(),
-          }).catch(console.error);
-        }
-
-        // Load cover artifacts and artifact count for projects (in parallel)
-        const projectsWithCovers = await Promise.all(
-          folderProjects.map(async (project) => {
-            const [coverArtifacts, allArtifacts] = await Promise.all([
-              getProjectCoverArtifacts(project.id),
-              getProjectArtifactsByProject(project.id),
-            ]);
-            return {
-              ...project,
-              coverArtifacts,
-              artifactCount: allArtifacts.length,
-            };
-          })
-        );
-        setProjects(projectsWithCovers);
-      } catch (error) {
-        console.error("Failed to load folder:", error);
-        toast.error("Failed to load folder");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadData();
-  }, [folderId, user, router]);
-
   async function handleRenameFolder(name: string) {
     if (!folder) return;
 
     try {
       await updateFolder(folder.id, { name });
-      setFolder({ ...folder, name });
+      mutate(); // Refresh folder data
+      globalMutate(cacheKeys.projectsData(user?.email)); // Refresh projects page
       toast.success("Folder renamed");
     } catch (error) {
       console.error("Failed to rename folder:", error);
@@ -166,6 +143,7 @@ function FolderPageContent() {
 
     try {
       await deleteFolder(folder.id);
+      globalMutate(cacheKeys.projectsData(user?.email)); // Refresh projects page
       toast.success(`Folder "${folder.name}" and all its projects deleted`);
       router.push("/projects");
     } catch (error) {
@@ -181,67 +159,13 @@ function FolderPageContent() {
 
   const backUrl = "/projects/";
 
-  function handleDeleteProject(
-    project: Project & { coverArtifacts: Artifact[]; artifactCount: number }
-  ) {
-    setProjectToDelete(project);
-  }
-
-  function handleRenameProject(
-    project: Project & { coverArtifacts: Artifact[]; artifactCount: number }
-  ) {
-    setProjectToRename(project);
-    setNewProjectName(project.name);
-  }
-
-  async function confirmDeleteProject() {
-    if (!projectToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      await deleteProjectDB(projectToDelete.id);
-      setProjects((prev) => prev.filter((p) => p.id !== projectToDelete.id));
-      toast.success(`Project "${projectToDelete.name}" deleted successfully`);
-      setProjectToDelete(null);
-    } catch (error) {
-      toast.error("Failed to delete project. Please try again.");
-      console.error("Error deleting project:", error);
-    } finally {
-      setIsDeleting(false);
-    }
-  }
-
-  async function confirmRenameProject() {
-    if (!projectToRename || !newProjectName.trim()) return;
-
-    setIsRenaming(true);
-    try {
-      await updateProject(projectToRename.id, { name: newProjectName.trim() });
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === projectToRename.id
-            ? { ...p, name: newProjectName.trim() }
-            : p
-        )
-      );
-      toast.success(`Project renamed to "${newProjectName.trim()}"`);
-      setProjectToRename(null);
-      setNewProjectName("");
-    } catch (error) {
-      toast.error("Failed to rename project. Please try again.");
-      console.error("Error renaming project:", error);
-    } finally {
-      setIsRenaming(false);
-    }
-  }
-
   async function handleFolderRename(name: string) {
     // Just update local state - EditableTitle already saved to database
     if (!folder) return;
-    setFolder({ ...folder, name });
+    mutate({ ...data!, folder: { ...folder, name } }, false);
   }
 
-  // Set header content - must be called before any return statements
+  // Set header content
   useSetHeader({
     left: (
       <>
@@ -301,7 +225,7 @@ function FolderPageContent() {
   });
 
   // Don't render if still loading or folder not found
-  if (loading || !folder) {
+  if (isLoading || !folder) {
     return null;
   }
 
@@ -319,76 +243,7 @@ function FolderPageContent() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((p) => (
-            <ContextMenu key={p.id}>
-              <ContextMenuTrigger asChild>
-                <div>
-                  <ProjectCard
-                    project={p}
-                    onDelete={() => handleDeleteProject(p)}
-                    menuItems={
-                      <>
-                        <DropdownMenuItem
-                          onClick={() => handleRenameProject(p)}
-                        >
-                          Rename Project
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={async () => {
-                            try {
-                              const { removeProjectFromFolder } =
-                                await import("@/lib/quick-folders");
-                              await removeProjectFromFolder(p.id);
-                              setProjects((prev) =>
-                                prev.filter((proj) => proj.id !== p.id)
-                              );
-                              toast.success("Project moved to main Projects");
-                            } catch (error) {
-                              toast.error("Failed to move project");
-                            }
-                          }}
-                        >
-                          Remove from Folder
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          variant="destructive"
-                          onClick={() => handleDeleteProject(p)}
-                        >
-                          Delete Project
-                        </DropdownMenuItem>
-                      </>
-                    }
-                  />
-                </div>
-              </ContextMenuTrigger>
-              <ContextMenuContent>
-                <ContextMenuItem onClick={() => handleRenameProject(p)}>
-                  Rename Project
-                </ContextMenuItem>
-                <ContextMenuItem
-                  onClick={async () => {
-                    try {
-                      const { removeProjectFromFolder } =
-                        await import("@/lib/quick-folders");
-                      await removeProjectFromFolder(p.id);
-                      setProjects((prev) =>
-                        prev.filter((proj) => proj.id !== p.id)
-                      );
-                      toast.success("Project moved to main Projects");
-                    } catch (error) {
-                      toast.error("Failed to move project");
-                    }
-                  }}
-                >
-                  Remove from Folder
-                </ContextMenuItem>
-                <ContextMenuItem
-                  variant="destructive"
-                  onClick={() => handleDeleteProject(p)}
-                >
-                  Delete Project
-                </ContextMenuItem>
-              </ContextMenuContent>
-            </ContextMenu>
+            <ProjectCard key={p.id} project={p} />
           ))}
         </div>
       )}
@@ -421,72 +276,6 @@ function FolderPageContent() {
         folderName={folder.name}
         projectCount={projects.length}
       />
-
-      {/* Project Delete Dialog */}
-      <AlertDialog
-        open={!!projectToDelete}
-        onOpenChange={(open) => !open && setProjectToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{projectToDelete?.name}
-              &rdquo;? This will permanently delete the project and all its
-              pages and artifacts. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className={buttonVariants({ variant: "destructive" })}
-              onClick={confirmDeleteProject}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Project Rename Dialog */}
-      <Dialog
-        open={!!projectToRename}
-        onOpenChange={(open) => !open && setProjectToRename(null)}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Project</DialogTitle>
-            <DialogDescription>
-              Enter a new name for &ldquo;{projectToRename?.name}&rdquo;
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Project name"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newProjectName.trim()) {
-                  confirmRenameProject();
-                }
-              }}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setProjectToRename(null)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmRenameProject}
-              disabled={isRenaming || !newProjectName.trim()}
-            >
-              {isRenaming ? "Renaming..." : "Rename"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

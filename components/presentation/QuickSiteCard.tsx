@@ -10,12 +10,13 @@ interface QuickSiteCardProps {
 
 export default function QuickSiteCard({ site }: QuickSiteCardProps) {
   return (
-    <Card className="p-4">
+    <Card className="p-4 relative">
       <a
         href={site.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex flex-col gap-2 group"
+        className="flex flex-col gap-2 group after:content-[''] after:absolute after:inset-0"
+        aria-label={site.subdomain + " - " + site.description}
       >
         <h3 className="text-medium text-text-primary line-clamp-1">
           {site.subdomain}

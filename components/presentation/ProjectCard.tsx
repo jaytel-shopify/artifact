@@ -1,20 +1,64 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import useSWR, { mutate as globalMutate } from "swr";
+import { toast } from "sonner";
+import { MoreVertical, Folder as FolderIcon, X } from "lucide-react";
 import { Card, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreVertical } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ArtifactThumbnail from "./ArtifactThumbnail";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { updateProject, deleteProject } from "@/lib/quick-db";
+import {
+  moveProjectToFolder,
+  removeProjectFromFolder,
+} from "@/lib/quick-folders";
+import { cacheKeys } from "@/lib/cache-keys";
 import type { Artifact } from "@/types";
+import type { ProjectsData } from "@/hooks/useProjectsData";
 
 interface ProjectCoverData {
   id: string;
   name: string;
+  folder_id?: string | null;
   created_at: string;
   updated_at: string;
   coverArtifacts: Artifact[];
@@ -23,10 +67,6 @@ interface ProjectCoverData {
 
 interface ProjectCardProps {
   project: ProjectCoverData;
-  onClick?: () => void;
-  onDelete?: () => void;
-  menuItems?: React.ReactNode; // Pass the menu items from parent
-  onHover?: () => void; // Prefetch handler
 }
 
 function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
@@ -60,75 +100,316 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
   );
 }
 
-export default function ProjectCard({ project, menuItems }: ProjectCardProps) {
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+/**
+ * ProjectCard
+ *
+ * Self-contained project card with all actions and dialogs built-in.
+ * Uses globalMutate to refresh page data after mutations.
+ * Reads folders from SWR cache for "Move to Folder" functionality.
+ */
+export default function ProjectCard({ project }: ProjectCardProps) {
+  const { user } = useAuth();
 
-    if (diffDays === 1) return "Yesterday";
-    if (diffDays < 7) return `${diffDays} days ago`;
-    if (diffDays < 30) return `${Math.ceil(diffDays / 7)} weeks ago`;
-    return date.toLocaleDateString();
+  // Dialog states
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [newName, setNewName] = useState(project.name);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+
+  // Get folders from SWR cache for "Move to Folder" menu
+  const { data } = useSWR<ProjectsData>(cacheKeys.projectsData(user?.email));
+  const folders = data?.folders || [];
+  const availableFolders = folders.filter((f) => f.id !== project.folder_id);
+
+  const refreshData = (folderId?: string | null) => {
+    globalMutate(cacheKeys.projectsData(user?.email));
+    // Also refresh folder view if project is/was in a folder
+    if (folderId) {
+      globalMutate(cacheKeys.folderData(folderId));
+    }
+    if (project.folder_id && project.folder_id !== folderId) {
+      globalMutate(cacheKeys.folderData(project.folder_id));
+    }
   };
 
-  const cardContent = (
-    <Card
-      className="group border-border hover:bg-secondary/10 relative flex gap-0 cursor-pointer flex-col overflow-hidden border outline-none aspect-[300/250]"
-      style={{
-        transition: "all 500ms var(--spring-elegant-easing-light)",
-      }}
-    >
-      {/* Three dots menu button */}
-      {menuItems && (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="bg-background hover:bg-secondary text-text-primary absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-            >
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
-          >
-            {menuItems}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      )}
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await deleteProject(project.id);
+      refreshData(project.folder_id);
+      toast.success(`Project "${project.name}" deleted`);
+      setDeleteOpen(false);
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+      toast.error("Failed to delete project");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
-      {/* Project Info */}
-      <CardFooter className="mt-auto space-y-2 p-4">
-        <div className="space-y-1">
-          <h3 className="text-text-primary line-clamp-1 text-medium">
-            {project.name}
-          </h3>
-          <p className="text-text-secondary text-small">
-            {project.artifactCount}{" "}
-            {project.artifactCount === 1 ? "artifact" : "artifacts"}
-          </p>
-        </div>
-      </CardFooter>
+  const handleRename = async () => {
+    if (!newName.trim()) return;
+    setIsRenaming(true);
+    try {
+      await updateProject(project.id, { name: newName.trim() });
+      refreshData(project.folder_id);
+      toast.success(`Project renamed to "${newName.trim()}"`);
+      setRenameOpen(false);
+    } catch (error) {
+      console.error("Failed to rename project:", error);
+      toast.error("Failed to rename project");
+    } finally {
+      setIsRenaming(false);
+    }
+  };
 
-      {/* Dynamic Cover */}
-      <ProjectCover artifacts={project.coverArtifacts} />
-    </Card>
-  );
+  const handleMoveToFolder = async (folderId: string) => {
+    try {
+      await moveProjectToFolder(project.id, folderId);
+      refreshData(folderId); // Refreshes both source folder (project.folder_id) and target folder
+      const folder = folders.find((f) => f.id === folderId);
+      toast.success(`Moved to ${folder?.name || "folder"}`);
+    } catch (error) {
+      console.error("Failed to move project:", error);
+      toast.error("Failed to move project");
+    }
+  };
+
+  const handleRemoveFromFolder = async () => {
+    const oldFolderId = project.folder_id;
+    try {
+      await removeProjectFromFolder(project.id);
+      refreshData(oldFolderId);
+      toast.success("Removed from folder");
+    } catch (error) {
+      console.error("Failed to remove from folder:", error);
+      toast.error("Failed to remove from folder");
+    }
+  };
+
+  const openRename = () => {
+    setNewName(project.name);
+    setRenameOpen(true);
+  };
 
   return (
-    <Link href={`/p/?id=${project.id}`} prefetch={false}>
-      {cardContent}
-    </Link>
+    <>
+      <ContextMenu>
+        <ContextMenuTrigger asChild>
+          <Card className="group relative gap-0 overflow-hidden aspect-[300/250]">
+            {/* Three dots menu button */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-background text-text-primary absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <DropdownMenuItem onClick={openRename}>
+                  Rename Project
+                </DropdownMenuItem>
+
+                {/* Move to Folder submenu */}
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="flex items-center gap-2">
+                    <FolderIcon className="h-4 w-4" />
+                    Move to Folder
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    {availableFolders.length > 0 ? (
+                      availableFolders.map((folder) => (
+                        <DropdownMenuItem
+                          key={folder.id}
+                          onClick={() => handleMoveToFolder(folder.id)}
+                        >
+                          {folder.name}
+                        </DropdownMenuItem>
+                      ))
+                    ) : (
+                      <DropdownMenuItem disabled>
+                        {project.folder_id
+                          ? "No other folders"
+                          : "No folders yet"}
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+
+                {/* Remove from Folder option */}
+                {project.folder_id && (
+                  <DropdownMenuItem
+                    onClick={handleRemoveFromFolder}
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Remove from Folder
+                  </DropdownMenuItem>
+                )}
+
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setDeleteOpen(true)}
+                >
+                  Delete Project
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Project Info */}
+            <CardFooter className="mt-auto space-y-2 p-4">
+              <Link
+                href={`/p/?id=${project.id}`}
+                prefetch={false}
+                className="space-y-1 after:content-[''] after:absolute after:inset-0"
+                aria-label={
+                  project.name +
+                  " - " +
+                  project.artifactCount +
+                  " " +
+                  (project.artifactCount === 1 ? "artifact" : "artifacts")
+                }
+              >
+                <h3 className="text-text-primary line-clamp-1 text-medium">
+                  {project.name}
+                </h3>
+                <p className="text-text-secondary text-small">
+                  {project.artifactCount}{" "}
+                  {project.artifactCount === 1 ? "artifact" : "artifacts"}
+                </p>
+              </Link>
+            </CardFooter>
+
+            {/* Dynamic Cover */}
+            <ProjectCover artifacts={project.coverArtifacts} />
+          </Card>
+        </ContextMenuTrigger>
+
+        {/* Context Menu (right-click) */}
+        <ContextMenuContent>
+          <ContextMenuItem onClick={openRename}>Rename Project</ContextMenuItem>
+
+          {/* Move to Folder submenu */}
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className="flex items-center gap-2">
+              <FolderIcon className="h-4 w-4" />
+              Move to Folder
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {availableFolders.length > 0 ? (
+                availableFolders.map((folder) => (
+                  <ContextMenuItem
+                    key={folder.id}
+                    onClick={() => handleMoveToFolder(folder.id)}
+                  >
+                    {folder.name}
+                  </ContextMenuItem>
+                ))
+              ) : (
+                <ContextMenuItem disabled>
+                  {project.folder_id ? "No other folders" : "No folders yet"}
+                </ContextMenuItem>
+              )}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+
+          {/* Remove from Folder option */}
+          {project.folder_id && (
+            <ContextMenuItem
+              onClick={handleRemoveFromFolder}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Remove from Folder
+            </ContextMenuItem>
+          )}
+
+          <ContextMenuItem
+            variant="destructive"
+            onClick={() => setDeleteOpen(true)}
+          >
+            Delete Project
+          </ContextMenuItem>
+        </ContextMenuContent>
+      </ContextMenu>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Project</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete &ldquo;{project.name}&rdquo;? This
+              will permanently delete the project and all its pages and
+              artifacts. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className={buttonVariants({ variant: "destructive" })}
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+            <DialogDescription>
+              Enter a new name for &ldquo;{project.name}&rdquo;
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="Project name"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && newName.trim()) {
+                  handleRename();
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRenameOpen(false)}
+              disabled={isRenaming}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleRename}
+              disabled={isRenaming || !newName.trim()}
+            >
+              {isRenaming ? "Renaming..." : "Rename"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
