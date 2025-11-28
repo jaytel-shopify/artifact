@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock } from "lucide-react";
 import { QuickSiteRecord } from "@/lib/quick-sites";
 import { formatTimeAgo } from "@/lib/utils";
 import { Card } from "../ui/card";
@@ -24,8 +25,8 @@ export default function QuickSiteCard({ site }: QuickSiteCardProps) {
         <p className="text-small text-text-secondary line-clamp-1">
           {site.description}
         </p>
-        <p className="text-small text-text-secondary line-clamp-1">
-          {formatTimeAgo(site.lastModified)}
+        <p className="text-small text-text-secondary line-clamp-1 flex items-center gap-1 mt-4">
+          <Clock className="w-3 h-3" /> {formatTimeAgo(site.lastModified)}
         </p>
       </a>
     </Card>

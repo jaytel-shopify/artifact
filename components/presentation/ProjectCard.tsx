@@ -275,7 +275,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
               <Link
                 href={`/p/?id=${project.id}`}
                 prefetch={false}
-                className="space-y-1 after:content-[''] after:absolute after:inset-0 z-10"
+                className="space-y-1 after:content-[''] after:absolute after:inset-0 z-1"
                 aria-label={
                   project.name +
                   " - " +
