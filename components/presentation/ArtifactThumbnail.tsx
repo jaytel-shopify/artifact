@@ -22,7 +22,13 @@ export default function ArtifactThumbnail({
     case "image":
       return (
         <div className={baseClasses}>
-          <img src={artifact.source_url} alt={artifact.name} loading="lazy" />
+          <img
+            src={artifact.source_url}
+            alt={artifact.name}
+            loading="lazy"
+            width={artifact.metadata.width}
+            height={artifact.metadata.height}
+          />
         </div>
       );
 
@@ -46,6 +52,8 @@ export default function ArtifactThumbnail({
               alt={artifact.name}
               className="w-full h-full object-cover"
               loading="lazy"
+              width={artifact.metadata.width}
+              height={artifact.metadata.height}
             />
           </div>
         );

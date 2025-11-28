@@ -44,10 +44,10 @@ async function resizeImage(file: File): Promise<File> {
       const canvas = new OffscreenCanvas(newWidth, newHeight);
       canvas.getContext("bitmaprenderer")?.transferFromImageBitmap(resized);
       const blob = await canvas.convertToBlob({
-        type: file.type,
+        type: "image/webp",
         quality: 0.9,
       });
-      const resizedFile = new File([blob], file.name, { type: file.type });
+      const resizedFile = new File([blob], file.name, { type: "image/webp" });
       resolve(resizedFile);
     });
     image.src = URL.createObjectURL(file);

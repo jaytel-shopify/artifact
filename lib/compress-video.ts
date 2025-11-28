@@ -47,15 +47,22 @@ export const compressFile = async (
     await currentConversion?.cancel();
 
     try {
+      const isMov = resource.name.toLowerCase().endsWith(".mov");
+
       // Check video dimensions before converting
+      // Always compress .mov files to mp4
       const dimensions = await getVideoDimensions(resource);
-      if (dimensions && dimensions.width <= MAX_VIDEO_SIZE) {
+      if (dimensions && dimensions.width <= MAX_VIDEO_SIZE && !isMov) {
         console.log(
           `Video resolution (${dimensions.width}x${dimensions.height}) is already within limit, skipping compression`
         );
         onProgress({ percentage: 100 });
         resolve(resource);
         return;
+      }
+
+      if (isMov) {
+        console.log(`Converting .mov file to mp4: ${resource.name}`);
       }
 
       // Create a new input from the resource
