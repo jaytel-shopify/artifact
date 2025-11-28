@@ -47,12 +47,19 @@ export type UrlViewportMetadata = {
   height?: number;
 };
 
-export type VideoMetadata = {
+export type MediaDimensionsMetadata = {
+  width?: number;
+  height?: number;
+};
+
+export type VideoMetadata = MediaDimensionsMetadata & {
   thumbnail_url?: string;
   hideUI?: boolean;
   loop?: boolean;
   muted?: boolean;
 };
+
+export type ImageMetadata = MediaDimensionsMetadata;
 
 export type TitleCardMetadata = {
   headline?: string;
@@ -89,6 +96,7 @@ export type Artifact = {
   metadata: Record<string, unknown> &
     Partial<
       UrlViewportMetadata &
+        ImageMetadata &
         VideoMetadata &
         TitleCardMetadata &
         CollectionMetadata

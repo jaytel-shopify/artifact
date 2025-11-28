@@ -85,6 +85,7 @@ export async function getUsersByIds(ids: string[]): Promise<Map<string, User>> {
  * Email is normalized to lowercase for consistency
  */
 export async function createUser(data: {
+  id: string;
   email: string;
   name: string;
   slack_image_url?: string;
@@ -100,6 +101,7 @@ export async function createUser(data: {
   const collection = quick.db.collection(USERS_COLLECTION);
 
   const userData = {
+    id: data.id,
     email: data.email.toLowerCase().trim(),
     name: data.name,
     slack_image_url: data.slack_image_url,
@@ -126,6 +128,7 @@ export async function createUser(data: {
  * @returns The user record (existing or newly created)
  */
 export async function getOrCreateUser(quickIdentity: {
+  id: string;
   email: string;
   fullName: string;
   firstName?: string;
@@ -136,7 +139,7 @@ export async function getOrCreateUser(quickIdentity: {
   github?: string;
 }): Promise<User> {
   // Check if user already exists
-  const existingUser = await getUserByEmail(quickIdentity.email);
+  const existingUser = await getUserById(quickIdentity.id);
 
   if (existingUser) {
     // Optionally update user data if it has changed
@@ -169,6 +172,7 @@ export async function getOrCreateUser(quickIdentity: {
 
   // Create new user
   return await createUser({
+    id: quickIdentity.id,
     email: quickIdentity.email,
     name: quickIdentity.fullName,
     slack_image_url: quickIdentity.slackImageUrl,
@@ -234,4 +238,3 @@ export async function createUserFromEmail(email: string): Promise<User> {
     name,
   });
 }
-

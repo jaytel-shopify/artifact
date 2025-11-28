@@ -111,7 +111,7 @@ export default function ArtifactAdder({
         setCurrentFileIndex(i + 1);
         setUploadProgress(0);
 
-        // Upload file to Quick.fs
+        // Upload file to Quick.fs (dimensions are extracted after processing)
         const upResult = await uploadFile(file, (progress) => {
           setUploadProgress(progress.percentage);
         });
@@ -119,9 +119,21 @@ export default function ArtifactAdder({
         // Determine file type from MIME type
         const type = getArtifactTypeFromMimeType(upResult.mimeType);
 
-        // Set default metadata for videos (muted, loop, hide controls)
-        const defaultMetadata =
-          type === "video" ? { hideUI: true, loop: true, muted: true } : {};
+        // Build metadata with dimensions and type-specific defaults
+        const metadata: Record<string, unknown> = {};
+
+        // Add dimensions if available (from upload result)
+        if (upResult.width && upResult.height) {
+          metadata.width = upResult.width;
+          metadata.height = upResult.height;
+        }
+
+        // Add video-specific defaults
+        if (type === "video") {
+          metadata.hideUI = true;
+          metadata.loop = true;
+          metadata.muted = true;
+        }
 
         // Create artifact using the hook with generated name
         const artifactName = generateArtifactName(type, upResult.fullUrl, file);
@@ -130,7 +142,7 @@ export default function ArtifactAdder({
           source_url: upResult.fullUrl, // Use fullUrl for display
           file_path: upResult.url, // Store relative url
           name: artifactName,
-          metadata: defaultMetadata,
+          metadata,
         });
 
         // Generate thumbnail asynchronously for videos (don't await)
@@ -289,7 +301,9 @@ export default function ArtifactAdder({
           showCloseButton={!uploading}
         >
           <DialogHeader>
-            <DialogTitle className="text-text-primary">Embed via URL</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Embed via URL
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -319,7 +333,9 @@ export default function ArtifactAdder({
               </div>
             </div>
 
-            {error && <div className="text-small text-destructive">{error}</div>}
+            {error && (
+              <div className="text-small text-destructive">{error}</div>
+            )}
           </div>
 
           <DialogFooter>
@@ -359,12 +375,16 @@ export default function ArtifactAdder({
           showCloseButton={!uploading}
         >
           <DialogHeader>
-            <DialogTitle className="text-text-primary">Create Title Card</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Create Title Card
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-small text-text-primary/70">Headline</label>
+              <label className="text-small text-text-primary/70">
+                Headline
+              </label>
               <Input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
@@ -374,7 +394,9 @@ export default function ArtifactAdder({
             </div>
 
             <div className="space-y-2">
-              <label className="text-small text-text-primary/70">Subheadline</label>
+              <label className="text-small text-text-primary/70">
+                Subheadline
+              </label>
               <Input
                 value={subheadline}
                 onChange={(e) => setSubheadline(e.target.value)}
@@ -383,7 +405,9 @@ export default function ArtifactAdder({
               />
             </div>
 
-            {error && <div className="text-small text-destructive">{error}</div>}
+            {error && (
+              <div className="text-small text-destructive">{error}</div>
+            )}
           </div>
 
           <DialogFooter>
@@ -410,12 +434,11 @@ export default function ArtifactAdder({
 
       {/* Upload Progress Dialog */}
       <Dialog open={uploading} onOpenChange={() => {}}>
-        <DialogContent
-          className="w-full max-w-md"
-          showCloseButton={false}
-        >
+        <DialogContent className="w-full max-w-md" showCloseButton={false}>
           <DialogHeader>
-            <DialogTitle className="text-text-primary">Uploading Files</DialogTitle>
+            <DialogTitle className="text-text-primary">
+              Uploading Files
+            </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">

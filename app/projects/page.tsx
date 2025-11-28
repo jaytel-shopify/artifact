@@ -9,11 +9,11 @@ import ProjectCard from "@/components/presentation/ProjectCard";
 import FolderCard from "@/components/folders/FolderCard";
 import FolderDialog from "@/components/folders/FolderDialog";
 import ArtifactCard from "@/components/presentation/ArtifactCard";
-import QuickSiteCard from "@/components/presentation/QuickSiteCard";
+// import QuickSiteCard from "@/components/presentation/QuickSiteCard";
 import { EmptyProjectsState } from "@/components/projects/EmptyProjectsState";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { useProjectsData } from "@/hooks/useProjectsData";
-import { useQuickSites } from "@/hooks/useQuickSites";
+// import { useQuickSites } from "@/hooks/useQuickSites";
 import { createFolder } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
 import { Button } from "@/components/ui/button";
@@ -32,7 +32,7 @@ export default function ProjectsPage() {
     useProjectsData(user?.email);
 
   // Fetch Quick sites
-  const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
+  // const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
 
   // Create folder dialog state
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
@@ -120,7 +120,7 @@ export default function ProjectsPage() {
       )}
 
       {/* Quick Sites Section */}
-      {!sitesLoading && quickSites.length > 0 && (
+      {/* {!sitesLoading && quickSites.length > 0 && (
         <div className="space-y-4">
           <img src="/quick.png" alt="quick logo" className="w-[50px]" />
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
@@ -129,7 +129,7 @@ export default function ProjectsPage() {
             ))}
           </div>
         </div>
-      )}
+      )} */}
 
       <hr />
 

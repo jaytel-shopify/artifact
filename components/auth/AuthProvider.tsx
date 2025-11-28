@@ -77,9 +77,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initUser() {
       try {
-        console.log("[AuthProvider] Loading Quick SDK...");
+        console.time("[AuthProvider] Quick SDK loaded");
         const quick = await waitForQuick();
-        console.log("[AuthProvider] Quick SDK loaded");
+        console.timeEnd("[AuthProvider] Quick SDK loaded");
 
         // Get user identity from Quick
         console.log("[AuthProvider] Fetching user identity...");
@@ -95,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Sync user to database and get/create DB record
         console.log("[AuthProvider] Syncing user to database...");
         const dbUser = await getOrCreateUser({
+          id: userData.id,
           email: userData.email,
           fullName: userData.fullName,
           firstName: userData.firstName,
