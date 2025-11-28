@@ -61,6 +61,7 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   onEdit?: () => void;
   onFocus?: () => void;
   onToggleCollection?: (collectionId: string) => Promise<void>;
+  onPublish?: () => Promise<void>;
   isFocused?: boolean;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
@@ -99,6 +100,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onEdit,
       onFocus,
       onToggleCollection,
+      onPublish,
       isFocused = false,
       isReadOnly = false,
       isAnyDragging = false,
@@ -284,6 +286,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         onReplaceMedia={onReplaceMedia}
         onEdit={onEdit}
         onDelete={onDelete}
+        onPublish={onPublish}
         isReadOnly={isReadOnly}
       >
         {contentElement}
