@@ -182,7 +182,7 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
             url={artifact.source_url}
             width={urlMeta?.width}
             height={urlMeta?.height}
-            fitMode={true}
+            fitMode={false}
           />
         </div>
       );
@@ -211,4 +211,3 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
       );
   }
 }
-

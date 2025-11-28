@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import type { ArtifactType } from "@/types";
 import FeedCard from "@/components/presentation/FeedCard";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,27 @@ export default function Home() {
     masonryGrid[index].artifacts.push({ artifact, tabindex: i + 1 });
     masonryGrid[index].height += artifact.metadata.height ?? 0;
   });
+
+  const [gridMode, setGridMode] = useState<"masonry" | "grid">("grid");
+
+  // Toggle grid mode with 'g' key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't toggle if user is typing in an input
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+      if (e.key === "g") {
+        setGridMode((prev) => (prev === "grid" ? "masonry" : "grid"));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const createArtifact = async (artifactData: {
     type: ArtifactType;
@@ -114,19 +136,27 @@ export default function Home() {
 
       {artifacts.length > 0 ? (
         <>
-          <div className="grid grid-cols-3 gap-2 lg:gap-6">
-            {masonryGrid.map((row, index) => (
-              <div key={index} className="flex flex-col gap-2 lg:gap-6">
-                {row.artifacts.map(({ artifact, tabindex }) => (
-                  <FeedCard
-                    key={artifact.id}
-                    artifact={artifact}
-                    tabIndex={tabindex}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+          {gridMode === "masonry" ? (
+            <div className="grid grid-cols-3 gap-2 lg:gap-6">
+              {masonryGrid.map((row, index) => (
+                <div key={index} className="flex flex-col gap-2 lg:gap-6">
+                  {row.artifacts.map(({ artifact, tabindex }) => (
+                    <FeedCard
+                      key={artifact.id}
+                      artifact={artifact}
+                      tabIndex={tabindex}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-3 gap-2 lg:gap-6">
+              {artifacts.map((artifact) => (
+                <FeedCard key={artifact.id} artifact={artifact} />
+              ))}
+            </div>
+          )}
 
           {hasMore && (
             <div className="mt-8 flex justify-center">
