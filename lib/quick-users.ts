@@ -234,6 +234,7 @@ export async function createUserFromEmail(email: string): Promise<User> {
     .join(" ");
 
   return await createUser({
+    id: normalizedEmail,
     email: normalizedEmail,
     name,
   });

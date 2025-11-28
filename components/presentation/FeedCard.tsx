@@ -12,7 +12,6 @@ interface FeedCardProps {
 }
 
 export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
-  console.log(artifact);
   const { userLiked, userDisliked, handleLike, handleDislike, canReact } =
     useReactions({ artifact });
 
