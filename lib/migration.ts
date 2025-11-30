@@ -11,6 +11,7 @@ import { createArtifact } from "./quick-db";
 import { getUploadedUrl, cacheUploadedUrl } from "./migration-state";
 import { waitForQuick } from "./quick";
 import { generateThumbnailFromVideo } from "./generate-thumbnails";
+import { getUserByEmail, createUserFromEmail } from "./quick-users";
 import type { ArtifactType } from "@/types";
 
 export interface MigrationProgress {
@@ -173,6 +174,16 @@ async function uploadWithCache(
   await cacheUploadedUrl(mediaId, filename, result.fullUrl, file.size);
 
   return { url: result.fullUrl, wasSkipped: false };
+}
+
+/**
+ * Ensure a user exists in the database (create if necessary)
+ */
+async function ensureUserExists(email: string): Promise<void> {
+  const existingUser = await getUserByEmail(email);
+  if (!existingUser) {
+    await createUserFromEmail(email);
+  }
 }
 
 /**
@@ -468,6 +479,40 @@ export async function runMigration(
       timestamp: new Date().toISOString(),
       type: "success",
       message: `Parsed ${stats.totalPosts} posts, ${stats.totalMedia} media files`,
+    });
+
+    // Create all users upfront to avoid concurrent creation issues
+    addLog({
+      timestamp: new Date().toISOString(),
+      type: "info",
+      message: "Creating user records...",
+    });
+
+    const uniqueEmails = new Set(
+      migrationData.posts
+        .map((post) => {
+          const user = migrationData.userMap.get(post.authorId);
+          return user?.email;
+        })
+        .filter(Boolean) as string[]
+    );
+
+    for (const email of uniqueEmails) {
+      try {
+        await ensureUserExists(email);
+      } catch (error: any) {
+        addLog({
+          timestamp: new Date().toISOString(),
+          type: "warning",
+          message: `Failed to create user ${email}: ${error.message}`,
+        });
+      }
+    }
+
+    addLog({
+      timestamp: new Date().toISOString(),
+      type: "success",
+      message: `✓ Created ${uniqueEmails.size} user records`,
     });
 
     onProgress({
