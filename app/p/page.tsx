@@ -389,8 +389,6 @@ function PresentationPageInner({
           <ColumnControl
             columns={columns}
             onColumnsChange={handleSetColumns}
-            fitMode={fitMode}
-            onFitModeChange={handleSetFitMode}
             onOverscroll={handleOverscroll}
           />
           {project?.id && currentPageId && canEdit && (
