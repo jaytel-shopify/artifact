@@ -4,6 +4,7 @@
 import type { ArtifactWithPosition } from "@/types";
 import {
   updateArtifact as updateArtifactDB,
+  updateProjectArtifact,
   removeArtifactFromProject,
   reorderProjectArtifacts,
 } from "@/lib/quick-db";
@@ -257,6 +258,7 @@ export class RemoveFromCollectionCommand extends BaseCommand {
 
 export class UpdateArtifactCommand extends BaseCommand {
   private optimisticState: ArtifactWithPosition[];
+  private projectArtifactId: string;
 
   constructor(
     private artifactId: string,
@@ -264,6 +266,10 @@ export class UpdateArtifactCommand extends BaseCommand {
     currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
+
+    // Get the project_artifact_id for updating the junction entry's name
+    const artifact = currentArtifacts.find((a) => a.id === artifactId);
+    this.projectArtifactId = artifact?.project_artifact_id || "";
 
     this.optimisticState = currentArtifacts.map((a) =>
       a.id === artifactId
@@ -283,7 +289,18 @@ export class UpdateArtifactCommand extends BaseCommand {
   }
 
   async execute(): Promise<void> {
-    await updateArtifactDB(this.artifactId, this.updates);
+    // Update name on the junction entry (ProjectArtifact), not the artifact itself
+    // This allows per-project/page naming of the same artifact
+    if (this.updates.name && this.projectArtifactId) {
+      await updateProjectArtifact(this.projectArtifactId, {
+        name: this.updates.name,
+      });
+    }
+
+    // Update metadata on the artifact (metadata is artifact-level, not per-project)
+    if (this.updates.metadata) {
+      await updateArtifactDB(this.artifactId, { metadata: this.updates.metadata });
+    }
   }
 }
 

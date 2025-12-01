@@ -311,6 +311,7 @@ export async function createProjectArtifact(data: {
   page_id: string;
   artifact_id: string;
   position: number;
+  name: string;
 }): Promise<ProjectArtifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("project_artifacts");
@@ -319,11 +320,11 @@ export async function createProjectArtifact(data: {
 }
 
 /**
- * Update a junction entry (e.g., change position)
+ * Update a junction entry (e.g., change position or name)
  */
 export async function updateProjectArtifact(
   id: string,
-  updates: Partial<Pick<ProjectArtifact, "position" | "page_id">>
+  updates: Partial<Pick<ProjectArtifact, "position" | "page_id" | "name">>
 ): Promise<ProjectArtifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("project_artifacts");
@@ -423,12 +424,14 @@ export async function getArtifactsByProject(
   const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
 
   // Combine artifacts with position from junction table
+  // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
   const result: ArtifactWithPosition[] = [];
   for (const entry of junctionEntries) {
     const artifact = artifactsMap.get(entry.artifact_id);
     if (artifact) {
       result.push({
         ...artifact,
+        name: entry.name || artifact.name, // Prefer junction entry name
         position: entry.position,
         project_artifact_id: entry.id,
       });
@@ -492,12 +495,14 @@ export async function getArtifactsByPage(
   const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
 
   // Combine artifacts with position from junction table
+  // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
   const result: ArtifactWithPosition[] = [];
   for (const entry of junctionEntries) {
     const artifact = artifactsMap.get(entry.artifact_id);
     if (artifact) {
       result.push({
         ...artifact,
+        name: entry.name || artifact.name, // Prefer junction entry name
         position: entry.position,
         project_artifact_id: entry.id,
       });
@@ -621,6 +626,7 @@ export async function createArtifactInProject(data: {
     page_id: data.page_id,
     artifact_id: artifact.id,
     position,
+    name: data.name,
   });
 
   return { artifact, projectArtifact };
@@ -634,6 +640,7 @@ export async function addArtifactToProject(data: {
   project_id: string;
   page_id: string;
   artifact_id: string;
+  name: string;
 }): Promise<ProjectArtifact> {
   const position = await getNextArtifactPosition(data.page_id);
 
@@ -642,6 +649,7 @@ export async function addArtifactToProject(data: {
     page_id: data.page_id,
     artifact_id: data.artifact_id,
     position,
+    name: data.name,
   });
 }
 

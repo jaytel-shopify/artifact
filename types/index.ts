@@ -123,6 +123,7 @@ export type ProjectArtifact = {
   position: number; // Position within this page context
   created_at: string;
   updated_at: string;
+  name: string;
 };
 
 /**
