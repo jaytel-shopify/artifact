@@ -59,7 +59,7 @@ export default function ColumnControl({
   // DOM update helpers
   const updateHandlePosition = useCallback((pos: number) => {
     if (handleRef.current) {
-      handleRef.current.style.left = `${pos}px`;
+      handleRef.current.style.transform = `translate(calc(${pos}px - 50%), -50%)`;
     }
   }, []);
 
@@ -256,7 +256,7 @@ export default function ColumnControl({
         </div>
         <span
           ref={handleRef}
-          className="button-primary rounded-full cursor-grab active:cursor-grabbing absolute pointer-events-auto select-none top-1/2 z-10 text-small flex items-center justify-center text-white w-8 h-8 text-center -translate-x-1/2 -translate-y-1/2"
+          className="button-primary rounded-full cursor-grab active:cursor-grabbing! absolute left-0 pointer-events-auto select-none top-1/2 z-10 text-small flex items-center justify-center text-white w-8 h-8 text-center"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
