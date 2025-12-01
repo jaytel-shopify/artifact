@@ -42,13 +42,14 @@ export default function Home() {
     }[];
   }[];
   artifacts?.forEach((artifact, i) => {
-    const index = masonryGrid.reduce(
-      (minIdx, row, idx, arr) =>
-        row.height < arr[minIdx].height ? idx : minIdx,
-      0
-    );
+    const index = masonryGrid.reduce((minIdx, row, idx, arr) => {
+      return row.height < arr[minIdx].height ? idx : minIdx;
+    }, 0);
     masonryGrid[index].artifacts.push({ artifact, tabindex: i + 1 });
-    masonryGrid[index].height += artifact.metadata.height ?? 0;
+    // Normalize height by aspect ratio since all columns have equal width
+    const width = (artifact.metadata.width as number) || 1;
+    const height = (artifact.metadata.height as number) || 0;
+    masonryGrid[index].height += height / width;
   });
 
   const [gridMode, setGridMode] = useState<"masonry" | "grid">("grid");
