@@ -8,13 +8,25 @@ interface ArtifactProps {
   className?: string;
 }
 
-function ArtifactImage({ url, alt }: { url: string; alt: string }) {
+function ArtifactImage({
+  url,
+  alt,
+  width,
+  height,
+}: {
+  url: string;
+  alt: string;
+  width: number;
+  height: number;
+}) {
   return (
     <img
       src={url}
       alt={alt}
       className="max-w-full max-h-full object-contain"
       draggable={false}
+      width={width}
+      height={height}
     />
   );
 }
@@ -24,11 +36,15 @@ function ArtifactVideo({
   muted = true,
   loop = false,
   showControls = true,
+  width,
+  height,
 }: {
   url: string;
   muted?: boolean;
   loop?: boolean;
   showControls?: boolean;
+  width?: number;
+  height?: number;
 }) {
   return (
     <video
@@ -39,6 +55,8 @@ function ArtifactVideo({
       loop={loop}
       controls={showControls}
       playsInline
+      width={width}
+      height={height}
     />
   );
 }
@@ -150,7 +168,12 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
     case "figma":
       return (
         <div className={baseClasses}>
-          <ArtifactImage url={artifact.source_url} alt={artifact.name} />
+          <ArtifactImage
+            url={artifact.source_url}
+            alt={artifact.name}
+            width={artifact.metadata.width as number}
+            height={artifact.metadata.height as number}
+          />
         </div>
       );
 
@@ -167,6 +190,8 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
             muted={videoMeta?.muted !== false}
             loop={videoMeta?.loop || false}
             showControls={!videoMeta?.hideUI}
+            width={artifact.metadata.width as number}
+            height={artifact.metadata.height as number}
           />
         </div>
       );

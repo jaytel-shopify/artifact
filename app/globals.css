@@ -28,7 +28,7 @@
   border-radius: 0.875rem;
   background:
     linear-gradient(180deg, var(--c-dark) 0%, #0f1315 80%, #2a3133 96%)
-      content-box,
+      border-box,
     conic-gradient(
         from 180deg at 50% 50%,
         #58595a 0deg,

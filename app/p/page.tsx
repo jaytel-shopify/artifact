@@ -97,7 +97,8 @@ function PresentationPageInner({
   const [fitMode, setFitMode] = useState<boolean>(false);
   const [dragging, setDragging] = useState(false);
   const [hydrated, setHydrated] = useState(false);
-
+  const [columnControlsOverscrollAmount, setColumnControlsOverscrollAmount] =
+    useState(0);
   // Track expanded collections locally (not in DB)
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
     new Set()
@@ -269,6 +270,10 @@ function PresentationPageInner({
     stopFollowing,
   });
 
+  const handleOverscroll = (overscroll: number) => {
+    setColumnControlsOverscrollAmount(Math.max(0, overscroll));
+  };
+
   // Pass broadcast function to parent
   useEffect(() => {
     if (broadcastCurrentState && onBroadcastReady) {
@@ -384,16 +389,22 @@ function PresentationPageInner({
           <ColumnControl
             columns={columns}
             onColumnsChange={handleSetColumns}
-            fitMode={fitMode}
-            onFitModeChange={handleSetFitMode}
+            onOverscroll={handleOverscroll}
           />
           {project?.id && currentPageId && canEdit && (
-            <ArtifactAdder
-              projectId={project.id}
-              pageId={currentPageId}
-              onAdded={refetchArtifacts}
-              createArtifact={createArtifact}
-            />
+            <div
+              style={{
+                transform: `translateX(${columnControlsOverscrollAmount}px)`,
+              }}
+            >
+              <ArtifactAdder
+                variant="icon"
+                projectId={project.id}
+                pageId={currentPageId}
+                onAdded={refetchArtifacts}
+                createArtifact={createArtifact}
+              />
+            </div>
           )}
         </>
       ),
@@ -432,6 +443,7 @@ function PresentationPageInner({
       followedUser,
       user,
       currentPageId,
+      columnControlsOverscrollAmount,
     ]
   );
 

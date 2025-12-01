@@ -50,11 +50,13 @@ type CreateArtifactFn = (artifactData: {
 export default function ArtifactAdder({
   projectId,
   pageId,
+  variant = "default",
   onAdded,
   createArtifact,
 }: {
   projectId?: string;
   pageId?: string;
+  variant?: "default" | "icon";
   onAdded?: () => void;
   createArtifact: CreateArtifactFn;
 }) {
@@ -257,8 +259,12 @@ export default function ArtifactAdder({
       {/* Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="primary" size="icon" aria-label="Add artifact">
-            <Plus className="h-4 w-4" />
+          <Button
+            variant="primary"
+            size={variant === "icon" ? "icon" : "default"}
+            aria-label="Add artifact"
+          >
+            {variant === "icon" ? <Plus className="h-4 w-4" /> : "Upload"}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
@@ -276,13 +282,15 @@ export default function ArtifactAdder({
             <Link className="h-4 w-4 mr-2" />
             URL
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => setOpenDialog("titleCard")}
-            className="cursor-pointer"
-          >
-            <Type className="h-4 w-4 mr-2" />
-            Title Card
-          </DropdownMenuItem>
+          {projectId && pageId && (
+            <DropdownMenuItem
+              onClick={() => setOpenDialog("titleCard")}
+              className="cursor-pointer"
+            >
+              <Type className="h-4 w-4 mr-2" />
+              Title Card
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

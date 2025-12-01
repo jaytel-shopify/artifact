@@ -440,18 +440,27 @@ export async function getArtifactsByProject(
 }
 
 /**
- * Get published artifacts
- * Returns only artifacts where published=true
+ * Get published artifacts created by the current user
+ * Returns only artifacts where published=true and creator_id matches the user
  * Sorted by most recently created first
+ * @param userEmail - User's email (will be looked up to get User.id)
  */
 export async function getPublishedArtifacts(
   userEmail?: string
 ): Promise<Artifact[]> {
+  if (!userEmail) return [];
+
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(userEmail);
+  if (!user) return [];
+
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  // Query for published artifacts directly
-  const publishedArtifacts = await collection.where({ published: true }).find();
+  // Query for published artifacts created by the current user (by User.id)
+  const publishedArtifacts = await collection
+    .where({ published: true, creator_id: user.id })
+    .find();
 
   // If no user email provided, return all published artifacts
   if (!userEmail) {
