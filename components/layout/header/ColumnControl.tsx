@@ -228,17 +228,13 @@ export default function ColumnControl({
     [localColumns]
   );
 
-  const handlePointerUp = useCallback(
-    (e: React.PointerEvent) => {
-      (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-      // Snap to current column on release and reset scale/translate
-      targetPosRef.current = columnToPosition(localColumns);
-      targetScaleRef.current = 1;
-      targetTranslateRef.current = 0;
-      setIsDragging(false);
-    },
-    [localColumns]
-  );
+  const handleLostPointerCapture = useCallback(() => {
+    // Snap to current column on release and reset scale/translate
+    targetPosRef.current = columnToPosition(localColumns);
+    targetScaleRef.current = 1;
+    targetTranslateRef.current = 0;
+    setIsDragging(false);
+  }, [localColumns]);
 
   return (
     <div className="flex items-center gap-3">
@@ -259,8 +255,7 @@ export default function ColumnControl({
           className="button-primary rounded-full cursor-grab active:cursor-grabbing! absolute left-0 pointer-events-auto select-none top-1/2 z-10 text-small flex items-center justify-center text-white w-8 h-8 text-center"
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerUp}
-          onPointerCancel={handlePointerUp}
+          onLostPointerCapture={handleLostPointerCapture}
         >
           {localColumns}
         </span>
