@@ -19,6 +19,13 @@ const columnToPosition = (col: number) => 20 + ((col - 1) / 7) * 216;
 const DOT_SPACING = 216 / 7;
 const MIN_POS = 20;
 const MAX_POS = 236;
+const EASE = 0.5;
+
+// Check if animation has settled
+const isSettled = (posDiff: number, scaleDiff: number, translateDiff: number) =>
+  Math.abs(posDiff) < 0.5 &&
+  Math.abs(scaleDiff) < 0.001 &&
+  Math.abs(translateDiff) < 0.5;
 
 // Rubberband function - diminishing returns past the limit
 const rubberband = (overscroll: number, maxOverscroll = 40) => {
@@ -49,70 +56,76 @@ export default function ColumnControl({
   const onOverscrollRef = useRef(onOverscroll);
   onOverscrollRef.current = onOverscroll;
 
+  // DOM update helpers
+  const updateHandlePosition = useCallback((pos: number) => {
+    if (handleRef.current) {
+      handleRef.current.style.left = `${pos}px`;
+    }
+  }, []);
+
+  const updateDotsTransform = useCallback(
+    (translate: number, scale: number) => {
+      if (dotsRef.current) {
+        dotsRef.current.style.transform = `translateX(${translate}px) scaleX(${scale})`;
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     onColumnsChange(localColumns);
   }, [localColumns, onColumnsChange]);
 
   // Set initial position on mount
   useLayoutEffect(() => {
-    if (handleRef.current) {
-      handleRef.current.style.left = `${currentPosRef.current}px`;
-    }
-  }, []);
+    updateHandlePosition(currentPosRef.current);
+  }, [updateHandlePosition]);
 
-  // Animation loop - runs continuously while dragging, or until settled
+  // Unified animation effect - handles both dragging and column changes
   useEffect(() => {
-    const ease = 0.5;
+    // When not dragging, snap targets to current column
+    if (!isDragging) {
+      targetPosRef.current = columnToPosition(localColumns);
+      targetScaleRef.current = 1;
+      targetTranslateRef.current = 0;
+    }
 
     const animate = () => {
-      const current = currentPosRef.current;
       const target = targetPosRef.current;
-      const diff = target - current;
-
-      const currentScale = currentScaleRef.current;
       const targetScale = targetScaleRef.current;
-      const scaleDiff = targetScale - currentScale;
-
-      const currentTranslate = currentTranslateRef.current;
       const targetTranslate = targetTranslateRef.current;
-      const translateDiff = targetTranslate - currentTranslate;
-      if (Math.abs(currentTranslate) > 0.001)
-        onOverscrollRef.current(currentTranslate);
+
+      const posDiff = target - currentPosRef.current;
+      const scaleDiff = targetScale - currentScaleRef.current;
+      const translateDiff = targetTranslate - currentTranslateRef.current;
+
+      // Report overscroll
+      if (Math.abs(currentTranslateRef.current) > 0.001) {
+        onOverscrollRef.current(currentTranslateRef.current);
+      }
 
       // Stop when settled and not dragging
-      if (
-        Math.abs(diff) < 0.5 &&
-        Math.abs(scaleDiff) < 0.001 &&
-        Math.abs(translateDiff) < 0.5 &&
-        !isDragging
-      ) {
+      if (isSettled(posDiff, scaleDiff, translateDiff) && !isDragging) {
         currentPosRef.current = target;
         currentScaleRef.current = targetScale;
         currentTranslateRef.current = targetTranslate;
-        if (handleRef.current) {
-          handleRef.current.style.left = `${target}px`;
-        }
-        if (dotsRef.current) {
-          dotsRef.current.style.transform = `translateX(${targetTranslate}px) scaleX(${targetScale})`;
-        }
+        updateHandlePosition(target);
+        updateDotsTransform(targetTranslate, targetScale);
         rafRef.current = null;
         return;
       }
 
-      currentPosRef.current = current + diff * ease;
-      currentScaleRef.current = currentScale + scaleDiff * ease;
-      currentTranslateRef.current = currentTranslate + translateDiff * ease;
-      if (handleRef.current) {
-        handleRef.current.style.left = `${currentPosRef.current}px`;
-      }
-      if (dotsRef.current) {
-        dotsRef.current.style.transform = `translateX(${currentTranslateRef.current}px) scaleX(${currentScaleRef.current})`;
-      }
+      // Apply easing
+      currentPosRef.current += posDiff * EASE;
+      currentScaleRef.current += scaleDiff * EASE;
+      currentTranslateRef.current += translateDiff * EASE;
+      updateHandlePosition(currentPosRef.current);
+      updateDotsTransform(currentTranslateRef.current, currentScaleRef.current);
 
       rafRef.current = requestAnimationFrame(animate);
     };
 
-    // Start animation loop
+    // Start animation loop if not already running
     if (!rafRef.current) {
       rafRef.current = requestAnimationFrame(animate);
     }
@@ -123,60 +136,7 @@ export default function ColumnControl({
         rafRef.current = null;
       }
     };
-  }, [isDragging]);
-
-  // When column changes and not dragging, snap target to dot
-  useEffect(() => {
-    if (!isDragging) {
-      targetPosRef.current = columnToPosition(localColumns);
-      targetScaleRef.current = 1;
-      targetTranslateRef.current = 0;
-      // Restart animation if needed
-      if (!rafRef.current) {
-        const ease = 0.5;
-        const animate = () => {
-          const current = currentPosRef.current;
-          const target = targetPosRef.current;
-          const diff = target - current;
-          const currentScale = currentScaleRef.current;
-          const targetScale = targetScaleRef.current;
-          const scaleDiff = targetScale - currentScale;
-          const currentTranslate = currentTranslateRef.current;
-          const targetTranslate = targetTranslateRef.current;
-          const translateDiff = targetTranslate - currentTranslate;
-
-          if (
-            Math.abs(diff) < 0.5 &&
-            Math.abs(scaleDiff) < 0.001 &&
-            Math.abs(translateDiff) < 0.5
-          ) {
-            currentPosRef.current = target;
-            currentScaleRef.current = targetScale;
-            currentTranslateRef.current = targetTranslate;
-            if (handleRef.current) {
-              handleRef.current.style.left = `${target}px`;
-            }
-            if (dotsRef.current) {
-              dotsRef.current.style.transform = `translateX(${targetTranslate}px) scaleX(${targetScale})`;
-            }
-            rafRef.current = null;
-            return;
-          }
-          currentPosRef.current = current + diff * ease;
-          currentScaleRef.current = currentScale + scaleDiff * ease;
-          currentTranslateRef.current = currentTranslate + translateDiff * ease;
-          if (handleRef.current) {
-            handleRef.current.style.left = `${currentPosRef.current}px`;
-          }
-          if (dotsRef.current) {
-            dotsRef.current.style.transform = `translateX(${currentTranslateRef.current}px) scaleX(${currentScaleRef.current})`;
-          }
-          rafRef.current = requestAnimationFrame(animate);
-        };
-        rafRef.current = requestAnimationFrame(animate);
-      }
-    }
-  }, [localColumns, isDragging]);
+  }, [isDragging, localColumns, updateHandlePosition, updateDotsTransform]);
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
