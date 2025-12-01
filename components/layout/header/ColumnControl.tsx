@@ -22,10 +22,16 @@ const MAX_POS = 236;
 const EASE = 0.5;
 
 // Check if animation has settled
-const isSettled = (posDiff: number, scaleDiff: number, translateDiff: number) =>
+const isSettled = (
+  posDiff: number,
+  scaleDiff: number,
+  translateDiff: number,
+  handleScaleYDiff: number
+) =>
   Math.abs(posDiff) < 0.5 &&
   Math.abs(scaleDiff) < 0.001 &&
-  Math.abs(translateDiff) < 0.5;
+  Math.abs(translateDiff) < 0.5 &&
+  Math.abs(handleScaleYDiff) < 0.001;
 
 // Rubberband function - diminishing returns past the limit
 const rubberband = (overscroll: number, maxOverscroll = 40) => {
@@ -56,12 +62,22 @@ export default function ColumnControl({
   const onOverscrollRef = useRef(onOverscroll);
   onOverscrollRef.current = onOverscroll;
 
+  // Handle scaleY based on movement delta
+  const prevPosRef = useRef(columnToPosition(columns));
+  const currentHandleScaleYRef = useRef(1);
+  const targetHandleScaleYRef = useRef(1);
+
   // DOM update helpers
-  const updateHandlePosition = useCallback((pos: number) => {
-    if (handleRef.current) {
-      handleRef.current.style.transform = `translate(calc(${pos}px - 50%), -50%)`;
-    }
-  }, []);
+  const updateHandlePosition = useCallback(
+    (pos: number, scaleY: number = 1) => {
+      if (handleRef.current) {
+        // Preserve volume: when scaleY shrinks, scaleX grows
+        const scaleX = 1 / scaleY;
+        handleRef.current.style.transform = `translate(calc(${pos}px - 50%), -50%) scale(${scaleX}, ${scaleY})`;
+      }
+    },
+    []
+  );
 
   const updateDotsTransform = useCallback(
     (translate: number, scale: number) => {
@@ -88,16 +104,30 @@ export default function ColumnControl({
       targetPosRef.current = columnToPosition(localColumns);
       targetScaleRef.current = 1;
       targetTranslateRef.current = 0;
+      targetHandleScaleYRef.current = 1;
     }
 
     const animate = () => {
       const target = targetPosRef.current;
       const targetScale = targetScaleRef.current;
       const targetTranslate = targetTranslateRef.current;
+      const targetHandleScaleY = targetHandleScaleYRef.current;
 
       const posDiff = target - currentPosRef.current;
       const scaleDiff = targetScale - currentScaleRef.current;
       const translateDiff = targetTranslate - currentTranslateRef.current;
+      const handleScaleYDiff =
+        targetHandleScaleY - currentHandleScaleYRef.current;
+
+      // Calculate movement delta for handle scaleY effect
+      const movementDelta = currentPosRef.current - prevPosRef.current;
+      prevPosRef.current = currentPosRef.current;
+
+      // Apply scaleY based on movement delta (squish when moving fast)
+      const maxDelta = 15; // Max delta for full squish effect
+      const squishAmount =
+        Math.min(Math.abs(movementDelta) / maxDelta, 1) * 0.2;
+      targetHandleScaleYRef.current = 1 - squishAmount;
 
       // Report overscroll
       if (Math.abs(currentTranslateRef.current) > 0.001) {
@@ -105,11 +135,15 @@ export default function ColumnControl({
       }
 
       // Stop when settled and not dragging
-      if (isSettled(posDiff, scaleDiff, translateDiff) && !isDragging) {
+      if (
+        isSettled(posDiff, scaleDiff, translateDiff, handleScaleYDiff) &&
+        !isDragging
+      ) {
         currentPosRef.current = target;
         currentScaleRef.current = targetScale;
         currentTranslateRef.current = targetTranslate;
-        updateHandlePosition(target);
+        currentHandleScaleYRef.current = targetHandleScaleY;
+        updateHandlePosition(target, targetHandleScaleY);
         updateDotsTransform(targetTranslate, targetScale);
         rafRef.current = null;
         return;
@@ -119,7 +153,11 @@ export default function ColumnControl({
       currentPosRef.current += posDiff * EASE;
       currentScaleRef.current += scaleDiff * EASE;
       currentTranslateRef.current += translateDiff * EASE;
-      updateHandlePosition(currentPosRef.current);
+      currentHandleScaleYRef.current += handleScaleYDiff * EASE;
+      updateHandlePosition(
+        currentPosRef.current,
+        currentHandleScaleYRef.current
+      );
       updateDotsTransform(currentTranslateRef.current, currentScaleRef.current);
 
       rafRef.current = requestAnimationFrame(animate);
@@ -236,18 +274,23 @@ export default function ColumnControl({
     setIsDragging(false);
   }, [localColumns]);
 
+  const handleDotClick = useCallback((columnIndex: number) => {
+    setLocalColumns(columnIndex);
+  }, []);
+
   return (
     <div className="flex items-center gap-3">
       <div ref={trackRef} className="relative h-10 w-64">
         <div
           ref={dotsRef}
-          className="absolute top-0 left-0 size-full flex items-center justify-between pointer-events-none px-4 bg-primary rounded-button border border-border"
+          className="absolute top-0 left-0 size-full flex items-center justify-between px-4 bg-primary rounded-button border border-border"
         >
           {[...Array(8)].map((_, i) => (
-            <div
+            <button
               key={i}
-              className="dot-indicator w-2 h-2 bg-secondary/20 rounded-full"
-            ></div>
+              onClick={() => handleDotClick(i + 1)}
+              className="dot-indicator w-2 h-2 bg-secondary/20 rounded-full cursor-pointer hover:bg-secondary/40 transition-colors"
+            />
           ))}
         </div>
         <span
