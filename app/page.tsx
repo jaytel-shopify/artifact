@@ -51,7 +51,7 @@ export default function Home() {
     masonryGrid[index].height += height / width;
   });
 
-  const [gridMode, setGridMode] = useState<"masonry" | "grid">("grid");
+  const [gridMode, setGridMode] = useState<"masonry" | "grid">("masonry");
 
   // Infinite scroll sentinel ref
   const sentinelRef = useRef<HTMLDivElement>(null);
