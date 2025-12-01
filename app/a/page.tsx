@@ -14,6 +14,7 @@ import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
 import { useReactions } from "@/hooks/useReactions";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import { formatTimeAgo } from "@/lib/utils";
 
 async function fetchArtifact(
   artifactId: string
@@ -122,6 +123,9 @@ export default function Page() {
             />
             <p className="text-small text-text-secondary capitalize">
               {artifact.creator?.name}
+            </p>
+            <p className="text-small text-text-secondary capitalize">
+              {formatTimeAgo(artifact.created_at, { short: true })}
             </p>
           </div>
         </div>
