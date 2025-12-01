@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useReactions } from "@/hooks/useReactions";
 import { ArtifactWithCreator } from "@/hooks/usePublicArtifacts";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import { updateArtifact } from "@/lib/quick-db";
 
 interface FeedCardProps {
   artifact: ArtifactWithCreator;
@@ -15,11 +16,28 @@ export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
   const { userLiked, userDisliked, handleLike, handleDislike, canReact } =
     useReactions({ artifact });
 
+  function handleOnLoad({ width, height }: { width: number; height: number }) {
+    console.log("updating artifact resolution", width, height);
+    if (
+      artifact.metadata.width !== width ||
+      artifact.metadata.height !== height
+    ) {
+      updateArtifact(artifact.id, {
+        metadata: {
+          ...artifact.metadata,
+          width,
+          height,
+        },
+      });
+    }
+  }
+
   return (
     <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border">
       <ArtifactThumbnail
         artifact={artifact}
         className="col-span-1 col-start-1 row-span-2 row-start-1 w-full rounded-card"
+        onLoad={handleOnLoad}
       />
 
       <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4 flex justify-between items-center">

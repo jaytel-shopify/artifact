@@ -6,17 +6,26 @@ import type { Artifact } from "@/types";
 interface ArtifactThumbnailProps {
   artifact: Artifact;
   className?: string;
+  onLoad?: ({ width, height }: { width: number; height: number }) => void;
 }
 
 export default function ArtifactThumbnail({
   artifact,
   className = "",
+  onLoad,
 }: ArtifactThumbnailProps) {
   const baseClasses = `
     shadow-sm
     overflow-hidden
     ${className}
   `;
+
+  function handleOnLoad(e: React.SyntheticEvent<EventTarget>) {
+    onLoad?.({
+      width: (e.target as HTMLImageElement).naturalWidth,
+      height: (e.target as HTMLImageElement).naturalHeight,
+    });
+  }
 
   switch (artifact.type) {
     case "image":
@@ -26,6 +35,7 @@ export default function ArtifactThumbnail({
             src={artifact.source_url}
             alt={artifact.name}
             loading="lazy"
+            onLoad={handleOnLoad}
             width={artifact.metadata.width}
             height={artifact.metadata.height}
           />
@@ -52,6 +62,7 @@ export default function ArtifactThumbnail({
               alt={artifact.name}
               className="w-full h-full object-cover"
               loading="lazy"
+              onLoad={handleOnLoad}
               width={artifact.metadata.width}
               height={artifact.metadata.height}
             />
