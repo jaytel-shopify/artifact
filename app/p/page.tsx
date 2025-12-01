@@ -389,6 +389,7 @@ function PresentationPageInner({
           />
           {project?.id && currentPageId && canEdit && (
             <ArtifactAdder
+              variant="icon"
               projectId={project.id}
               pageId={currentPageId}
               onAdded={refetchArtifacts}

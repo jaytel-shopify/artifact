@@ -73,7 +73,7 @@ export default function ProjectsPage() {
         <Button variant="ghost" onClick={() => setCreateFolderOpen(true)}>
           New Folder
         </Button>
-        <Button variant="default" onClick={handleNewProject}>
+        <Button variant="primary" onClick={handleNewProject}>
           New Project
         </Button>
         <PWAInstallPrompt />
