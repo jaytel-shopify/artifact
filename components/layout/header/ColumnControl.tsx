@@ -19,7 +19,7 @@ const columnToPosition = (col: number) => 20 + ((col - 1) / 7) * 216;
 const DOT_SPACING = 216 / 7;
 const MIN_POS = 20;
 const MAX_POS = 236;
-const EASE = 0.5;
+const EASE = 0.25;
 
 // Check if animation has settled
 const isSettled = (
@@ -35,7 +35,7 @@ const isSettled = (
 
 // Rubberband function - diminishing returns past the limit
 const rubberband = (overscroll: number, maxOverscroll = 40) => {
-  const factor = 0.4;
+  const factor = 0.8;
   return (
     (overscroll * factor * maxOverscroll) /
     (maxOverscroll + overscroll * factor)
