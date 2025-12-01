@@ -19,7 +19,7 @@ export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
     <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border">
       <ArtifactThumbnail
         artifact={artifact}
-        className="col-span-1 col-start-1 row-span-2 row-start-1 w-full rounded-card"
+        className="col-span-1 col-start-1 row-span-2 row-start-1 w-full"
       />
 
       <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4 flex justify-between items-center">

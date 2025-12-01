@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { ArtifactType } from "@/types";
 import FeedCard from "@/components/presentation/FeedCard";
-import { Button } from "@/components/ui/button";
 import { createArtifact as createArtifactDB } from "@/lib/quick-db";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import Logo from "@/components/layout/header/Logo";
@@ -54,6 +53,9 @@ export default function Home() {
 
   const [gridMode, setGridMode] = useState<"masonry" | "grid">("grid");
 
+  // Infinite scroll sentinel ref
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
   // Toggle grid mode with 'g' key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -74,6 +76,30 @@ export default function Home() {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !isLoadingMore) {
+          loadMore();
+        }
+      },
+      {
+        rootMargin: "200px", // Start loading before user reaches the bottom
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasMore, isLoadingMore, loadMore]);
 
   const createArtifact = async (artifactData: {
     type: ArtifactType;
@@ -162,16 +188,12 @@ export default function Home() {
             </div>
           )}
 
-          {hasMore && (
+          {/* Infinite scroll sentinel */}
+          <div ref={sentinelRef} className="h-px" />
+
+          {isLoadingMore && (
             <div className="mt-8 flex justify-center">
-              <Button
-                onClick={loadMore}
-                disabled={isLoadingMore}
-                variant="outline"
-                className="min-w-[200px]"
-              >
-                {isLoadingMore ? "Loading..." : "Load More"}
-              </Button>
+              <p className="text-text-secondary">Loading more...</p>
             </div>
           )}
         </>
