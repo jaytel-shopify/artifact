@@ -61,7 +61,8 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
 
   // Filter projects: user is creator (by User.id) OR user has access via access control
   const userProjects = allProjects.filter(
-    (p: Project) => (userId && p.creator_id === userId) || accessibleProjectIds.has(p.id)
+    (p: Project) =>
+      (userId && p.creator_id === userId) || accessibleProjectIds.has(p.id)
   );
 
   // Sort by last_accessed_at (most recent first), fallback to created_at
@@ -351,7 +352,9 @@ export async function deleteProjectArtifactsByPage(
   const collection = quick.db.collection("project_artifacts");
 
   const entries = await collection.where({ page_id: pageId }).find();
-  await Promise.all(entries.map((e: ProjectArtifact) => collection.delete(e.id)));
+  await Promise.all(
+    entries.map((e: ProjectArtifact) => collection.delete(e.id))
+  );
 }
 
 /**
@@ -364,7 +367,9 @@ export async function deleteProjectArtifactsByProject(
   const collection = quick.db.collection("project_artifacts");
 
   const entries = await collection.where({ project_id: projectId }).find();
-  await Promise.all(entries.map((e: ProjectArtifact) => collection.delete(e.id)));
+  await Promise.all(
+    entries.map((e: ProjectArtifact) => collection.delete(e.id))
+  );
 }
 
 /**
@@ -415,9 +420,7 @@ export async function getArtifactsByProject(
   // Fetch all artifacts
   const artifactsCollection = quick.db.collection("artifacts");
   const allArtifacts = await artifactsCollection.find();
-  const artifactsMap = new Map(
-    allArtifacts.map((a: Artifact) => [a.id, a])
-  );
+  const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
 
   // Combine artifacts with position from junction table
   const result: ArtifactWithPosition[] = [];
@@ -437,18 +440,27 @@ export async function getArtifactsByProject(
 }
 
 /**
- * Get published artifacts
- * Returns only artifacts where published=true
+ * Get published artifacts created by the current user
+ * Returns only artifacts where published=true and creator_id matches the user
  * Sorted by most recently created first
+ * @param userEmail - User's email (will be looked up to get User.id)
  */
 export async function getPublishedArtifacts(
   userEmail?: string
 ): Promise<Artifact[]> {
+  if (!userEmail) return [];
+
+  // Look up user by email to get their User.id
+  const user = await getUserByEmail(userEmail);
+  if (!user) return [];
+
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  // Query for published artifacts directly
-  const publishedArtifacts = await collection.where({ published: true }).find();
+  // Query for published artifacts created by the current user (by User.id)
+  const publishedArtifacts = await collection
+    .where({ published: true, creator_id: user.id })
+    .find();
 
   // Sort by created_at descending (most recent first)
   return publishedArtifacts.sort(
@@ -477,9 +489,7 @@ export async function getArtifactsByPage(
   // Fetch all artifacts
   const artifactsCollection = quick.db.collection("artifacts");
   const allArtifacts = await artifactsCollection.find();
-  const artifactsMap = new Map(
-    allArtifacts.map((a: Artifact) => [a.id, a])
-  );
+  const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
 
   // Combine artifacts with position from junction table
   const result: ArtifactWithPosition[] = [];

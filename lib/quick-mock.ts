@@ -50,6 +50,16 @@ function init() {
       created_at: now,
       updated_at: now,
     },
+    {
+      id: "public-user-uuid",
+      email: "public@shopify.com",
+      name: "Public User",
+      slack_handle: "public-user",
+      slack_image_url: "https://i.pravatar.cc/150?u=public@shopify.com",
+      title: "Public User",
+      created_at: now,
+      updated_at: now,
+    },
   ];
 
   db.folders = [
@@ -381,7 +391,7 @@ function init() {
       name: "Urban Architecture",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: MOCK_USER_ID,
+      creator_id: "public-user-uuid",
       metadata: { width: 1000, height: 482 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -395,7 +405,7 @@ function init() {
       name: "Nature Landscape",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: MOCK_USER_ID,
+      creator_id: "public-user-uuid",
       metadata: { width: 1000, height: 1376 },
       reactions: { like: [], dislike: [] },
       created_at: now,
