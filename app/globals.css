@@ -451,6 +451,12 @@
 
 @theme {
   --spacing-header-height: 4rem;
+  --spacing-footer-height: 4rem;
+  --size-detail-sidebar-width: 20rem;
+  --size-detail-artifact-max-width: 40rem;
+  --position-detail-sidebar-right: calc(
+    var(--size-detail-sidebar-width) * -1 - var(--spacing-2xl)
+  );
 }
 
 @utility rounded-button {

@@ -23,7 +23,7 @@ function ArtifactImage({
     <img
       src={url}
       alt={alt}
-      className="max-w-full max-h-full object-contain"
+      className="w-auto h-auto rounded-card overflow-hidden max-h-full max-w-[var(--size-detail-artifact-max-width)]"
       draggable={false}
       width={width}
       height={height}
@@ -160,14 +160,14 @@ function ArtifactTitleCard({
 }
 
 export default function Artifact({ artifact, className = "" }: ArtifactProps) {
-  const baseClasses = `flex items-center justify-center ${className}`;
+  const baseClasses = `${className}`;
 
   switch (artifact.type) {
     case "image":
     case "pdf":
     case "figma":
       return (
-        <div className={baseClasses}>
+        <div className={`${baseClasses}`}>
           <ArtifactImage
             url={artifact.source_url}
             alt={artifact.name}

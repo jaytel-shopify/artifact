@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import useSWR from "swr";
 import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -8,13 +8,15 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { getArtifactById } from "@/lib/quick-db";
 import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
 import { useReactions } from "@/hooks/useReactions";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
+import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
+import { getCurrentPath } from "@/lib/navigation";
 
 async function fetchArtifact(
   artifactId: string
@@ -28,10 +30,20 @@ export default function Page() {
   const router = useRouter();
   const artifactId = searchParams?.get("id") || "";
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [previousPath, setPreviousPath] = useState<string | null>(null);
+
+  // Capture the path we came from when this page mounts
+  useEffect(() => {
+    const path = getCurrentPath();
+    // Only store if it's not another detail page
+    if (path && !path.startsWith("/a")) {
+      setPreviousPath(path);
+    }
+  }, []); // Empty deps - only run on mount
 
   const handleBack = () => {
-    if (window.history.length > 1) {
-      router.back();
+    if (previousPath) {
+      router.push(previousPath);
     } else {
       router.push("/");
     }
@@ -42,6 +54,31 @@ export default function Page() {
     () => (artifactId ? fetchArtifact(artifactId) : null),
     { revalidateOnFocus: false }
   );
+
+  // Fetch published artifacts for navigation
+  const { artifacts: publishedArtifacts } = usePublicArtifacts();
+
+  // Find current artifact index and get next/previous
+  const currentIndex = publishedArtifacts.findIndex((a) => a.id === artifactId);
+  const hasNext = currentIndex > 0; // Going backwards in time (newer)
+  const hasPrevious =
+    currentIndex >= 0 && currentIndex < publishedArtifacts.length - 1; // Going forwards in time (older)
+  const nextArtifact = hasNext ? publishedArtifacts[currentIndex - 1] : null;
+  const previousArtifact = hasPrevious
+    ? publishedArtifacts[currentIndex + 1]
+    : null;
+
+  const handleNext = () => {
+    if (nextArtifact) {
+      router.push(`/a?id=${nextArtifact.id}`);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (previousArtifact) {
+      router.push(`/a?id=${previousArtifact.id}`);
+    }
+  };
 
   const { user } = useAuth();
   const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
@@ -80,20 +117,19 @@ export default function Page() {
   }
 
   return (
-    <div className="flex min-h-full items-center justify-center p-8">
-      <div className="flex gap-4">
+    <div className="flex flex-col items-center w-full p-6 h-[calc(100vh-var(--spacing-header-height)-var(--spacing-footer-height))]">
+      <div className="h-full w-full flex">
         <ArtifactComponent
           artifact={artifact}
-          className="w-full max-w-[800px] max-h-[80vh] rounded-card overflow-hidden"
+          className="h-full flex-1 flex justify-center items-center"
         />
-        <div className="flex flex-col gap-4">
-          <h1 className="text-large">{artifact.name}</h1>
+        <div className="flex flex-col gap-4 ml-8 w-[var(--size-detail-sidebar-width)]">
+          <h1 className="text-medium">{artifact.name}</h1>
           {artifact.description && (
             <p className="text-medium text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}
-
           <div className="flex gap-2">
             <Button
               onClick={handleLike}
@@ -127,6 +163,26 @@ export default function Page() {
             <p className="text-small text-text-secondary capitalize">
               {formatTimeAgo(artifact.created_at, { short: true })}
             </p>
+          </div>
+          <div className="flex gap-2 flex-1 items-end">
+            <Button
+              variant="default"
+              size="icon"
+              onClick={handlePrevious}
+              disabled={!hasPrevious}
+              aria-label="Previous"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="default"
+              size="icon"
+              onClick={handleNext}
+              disabled={!hasNext}
+              aria-label="Next"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>
