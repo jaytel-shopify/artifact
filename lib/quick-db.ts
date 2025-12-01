@@ -549,6 +549,8 @@ export async function createArtifact(data: {
   metadata?: Record<string, unknown>;
   published?: boolean;
   description?: string;
+  tags?: string[]; // Optional: tags for categorization/filtering
+  reactions?: { like: string[]; dislike: string[] }; // Optional: for migration/import purposes
 }): Promise<Artifact> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
@@ -566,10 +568,14 @@ export async function createArtifact(data: {
     name: data.name,
     creator_id: user.id, // Store User.id, not email
     metadata: data.metadata || {},
-    reactions: { like: [], dislike: [] },
+    reactions: data.reactions || { like: [], dislike: [] },
     published: data.published ?? false,
     description: data.description || "",
+    tags: data.tags || [],
   };
+
+  // NOTE: Quick.db auto-generates created_at/updated_at - we can't override them
+  // Original timestamps are stored in metadata.original_created_at instead
 
   return await collection.create(artifactData);
 }
@@ -590,6 +596,8 @@ export async function createArtifactInProject(data: {
   metadata?: Record<string, unknown>;
   published?: boolean;
   description?: string;
+  tags?: string[]; // Optional: tags for categorization/filtering
+  reactions?: { like: string[]; dislike: string[] }; // Optional: for migration/import purposes
 }): Promise<{ artifact: Artifact; projectArtifact: ProjectArtifact }> {
   // Create the artifact (unpublished by default when in a project)
   // Note: createArtifact will handle the email -> User.id lookup
@@ -602,6 +610,8 @@ export async function createArtifactInProject(data: {
     metadata: data.metadata,
     published: data.published ?? false,
     description: data.description,
+    tags: data.tags,
+    reactions: data.reactions,
   });
 
   // Get next position and create junction entry
