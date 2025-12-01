@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
 import { HeaderProvider } from "@/components/layout/HeaderContext";
 import GlobalLayout from "@/components/layout/GlobalLayout";
+import { SWRProvider } from "@/components/SWRProvider";
 // import { SchemaMigrationDialog } from "@/components/migration/SchemaMigrationDialog";
 import "./globals.css";
 
@@ -75,20 +76,22 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <HeaderProvider>
-              <GlobalLayout>{children}</GlobalLayout>
-            </HeaderProvider>
-            <Toaster />
-            {/* <SchemaMigrationDialog /> */}
-          </ThemeProvider>
-        </AuthProvider>
+        <SWRProvider>
+          <AuthProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <HeaderProvider>
+                <GlobalLayout>{children}</GlobalLayout>
+              </HeaderProvider>
+              <Toaster />
+              {/* <SchemaMigrationDialog /> */}
+            </ThemeProvider>
+          </AuthProvider>
+        </SWRProvider>
       </body>
     </html>
   );

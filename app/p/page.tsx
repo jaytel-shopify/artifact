@@ -5,6 +5,7 @@ import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
+import { CanvasSkeleton } from "@/components/ui/skeleton";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
@@ -448,7 +449,7 @@ function PresentationPageInner({
   );
 
   if (isPageLoading) {
-    return null; // AnimatePresence will handle the fade
+    return <CanvasSkeleton />;
   }
 
   return (
@@ -799,7 +800,7 @@ function PresentationPageInnerWithProvider() {
 
   // Wait for room to be ready before wrapping with provider
   if (!room || !syncedArtifacts.isPresenceReady) {
-    return null; // Loading state
+    return <CanvasSkeleton />;
   }
 
   return (

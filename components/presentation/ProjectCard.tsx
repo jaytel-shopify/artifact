@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
-import useSWR, { mutate as globalMutate } from "swr";
+import useSWR, { mutate as globalMutate, preload } from "swr";
 import { toast } from "sonner";
 import { MoreVertical, Folder as FolderIcon, X } from "lucide-react";
 import { Card, CardFooter } from "@/components/ui/card";
@@ -46,12 +46,13 @@ import {
 } from "@/components/ui/dialog";
 import ArtifactThumbnail from "./ArtifactThumbnail";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { updateProject, deleteProject } from "@/lib/quick-db";
+import { updateProject, deleteProject, getProjectById } from "@/lib/quick-db";
 import {
   moveProjectToFolder,
   removeProjectFromFolder,
 } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
+import type { Project } from "@/types";
 import type { Artifact } from "@/types";
 import type { ProjectsData } from "@/hooks/useProjectsData";
 
@@ -121,6 +122,14 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const { data } = useSWR<ProjectsData>(cacheKeys.projectsData(user?.email));
   const folders = data?.folders || [];
   const availableFolders = folders.filter((f) => f.id !== project.folder_id);
+
+  // Preload project data on hover for faster navigation
+  const handleMouseEnter = useCallback(() => {
+    const cacheKey = cacheKeys.projectData(project.id);
+    if (cacheKey) {
+      preload(cacheKey, () => getProjectById(project.id));
+    }
+  }, [project.id]);
 
   // Helper to refresh all relevant caches after a mutation
   // Using { revalidate: true } to force a fresh fetch, bypassing any deduping
@@ -213,7 +222,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     <>
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <Card className="group relative gap-0 overflow-hidden aspect-[300/250]">
+          <Card
+            className="group relative gap-0 overflow-hidden aspect-[300/250]"
+            onMouseEnter={handleMouseEnter}
+          >
             {/* Three dots menu button */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -290,7 +302,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <CardFooter className="mt-auto space-y-2 p-4">
               <Link
                 href={`/p/?id=${project.id}`}
-                prefetch={false}
                 className="space-y-1 after:content-[''] after:absolute after:inset-0 z-1"
                 aria-label={
                   project.name +

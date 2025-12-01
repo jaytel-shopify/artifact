@@ -15,6 +15,7 @@ import {
   type ArtifactWithCreator,
 } from "@/hooks/usePublicArtifacts";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { HomeFeedSkeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
   const { user } = useAuth();
@@ -151,11 +152,7 @@ export default function Home() {
   });
 
   if (isLoading) {
-    return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <p className="text-text-primary">Loading...</p>
-      </div>
-    );
+    return <HomeFeedSkeleton />;
   }
 
   return (

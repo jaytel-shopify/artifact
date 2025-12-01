@@ -22,6 +22,7 @@ import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import { ProjectsPageSkeleton } from "@/components/ui/skeleton";
 
 export default function ProjectsPage() {
   const router = useRouter();
@@ -82,9 +83,9 @@ export default function ProjectsPage() {
     ),
   });
 
-  // Don't render until data is loaded
+  // Show skeleton while loading
   if (isLoading) {
-    return null;
+    return <ProjectsPageSkeleton />;
   }
 
   return (

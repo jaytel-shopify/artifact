@@ -19,6 +19,7 @@ import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
 import EditableTitle from "@/components/presentation/EditableTitle";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import { FolderPageSkeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { Project, Artifact, Folder } from "@/types";
 import {
@@ -224,8 +225,12 @@ function FolderPageContent() {
     ),
   });
 
-  // Don't render if still loading or folder not found
-  if (isLoading || !folder) {
+  // Show skeleton while loading, null if folder not found after loading
+  if (isLoading) {
+    return <FolderPageSkeleton />;
+  }
+
+  if (!folder) {
     return null;
   }
 

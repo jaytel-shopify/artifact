@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { MoreVertical } from "lucide-react";
-import { mutate as globalMutate } from "swr";
+import { mutate as globalMutate, preload } from "swr";
 import { toast } from "sonner";
 import {
   ContextMenu,
@@ -23,7 +23,7 @@ import { SharePanel } from "@/components/access/SharePanel";
 import FolderDialog from "./FolderDialog";
 import DeleteFolderDialog from "./DeleteFolderDialog";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { updateFolder, deleteFolder } from "@/lib/quick-folders";
+import { updateFolder, deleteFolder, getFolderById } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
 
 interface FolderCardProps {
@@ -53,6 +53,14 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
     globalMutate(cacheKeys.projectsData(user?.email));
   };
 
+  // Preload folder data on hover for faster navigation
+  const handleMouseEnter = useCallback(() => {
+    const cacheKey = cacheKeys.folderData(folder.id);
+    if (cacheKey) {
+      preload(cacheKey, () => getFolderById(folder.id));
+    }
+  }, [folder.id]);
+
   const handleRename = async (name: string) => {
     try {
       await updateFolder(folder.id, { name });
@@ -81,7 +89,7 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
     <>
       <ContextMenu>
         <ContextMenuTrigger asChild>
-          <Card className="group relative p-4">
+          <Card className="group relative p-4" onMouseEnter={handleMouseEnter}>
             {/* Actions Menu (visible on hover) */}
             <div className="flex items-start justify-end">
               <DropdownMenu>
@@ -116,7 +124,6 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
 
             <Link
               href={`/folder/?id=${folder.id}`}
-              prefetch={false}
               className="block space-y-1 after:content-[''] after:absolute after:inset-0"
               aria-label={
                 folder.name +
