@@ -462,25 +462,8 @@ export async function getPublishedArtifacts(
     .where({ published: true, creator_id: user.id })
     .find();
 
-  // If no user email provided, return all published artifacts
-  if (!userEmail) {
-    return publishedArtifacts.sort(
-      (a: Artifact, b: Artifact) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }
-
-  // Look up user by email to get their User.id
-  const user = await getUserByEmail(userEmail);
-  const userId = user?.id;
-
-  // Filter to only show artifacts created by this user
-  const userArtifacts = publishedArtifacts.filter(
-    (a: Artifact) => userId && a.creator_id === userId
-  );
-
   // Sort by created_at descending (most recent first)
-  return userArtifacts.sort(
+  return publishedArtifacts.sort(
     (a: Artifact, b: Artifact) =>
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
   );
