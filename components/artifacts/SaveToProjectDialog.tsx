@@ -24,6 +24,7 @@ interface SaveToProjectDialogProps {
   isOpen: boolean;
   onClose: () => void;
   artifactId: string;
+  artifactName: string;
   userEmail: string;
 }
 
@@ -31,6 +32,7 @@ export function SaveToProjectDialog({
   isOpen,
   onClose,
   artifactId,
+  artifactName,
   userEmail,
 }: SaveToProjectDialogProps) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -95,6 +97,7 @@ export function SaveToProjectDialog({
         project_id: selectedProjectId,
         page_id: selectedPageId,
         artifact_id: artifactId,
+        name: artifactName,
       });
 
       toast.success("Artifact saved to project");

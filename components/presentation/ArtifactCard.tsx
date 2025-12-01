@@ -163,6 +163,7 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
           isOpen={saveToProjectOpen}
           onClose={() => setSaveToProjectOpen(false)}
           artifactId={artifact.id}
+          artifactName={artifact.name}
           userEmail={user.email}
         />
       )}

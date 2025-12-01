@@ -137,6 +137,7 @@ export default function Page() {
           isOpen={isSaveDialogOpen}
           onClose={() => setIsSaveDialogOpen(false)}
           artifactId={artifactId}
+          artifactName={artifact.name}
           userEmail={user.email}
         />
       )}
