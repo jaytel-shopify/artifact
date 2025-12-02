@@ -3,18 +3,6 @@
 import { waitForQuick } from "./quick";
 import type { User } from "@/types";
 
-/**
- * Quick.db Users Service Layer
- *
- * This module provides CRUD operations for the users collection.
- * Users are created/synced automatically when they authenticate via Quick.id.
- *
- * Note: Quick.db automatically adds these fields to all documents:
- * - id (string): Unique identifier (UUID)
- * - created_at (string): ISO timestamp
- * - updated_at (string): ISO timestamp
- */
-
 const USERS_COLLECTION = "users";
 
 // ==================== USER QUERIES ====================
@@ -190,7 +178,7 @@ export async function getOrCreateUser(quickIdentity: {
  */
 export async function updateUser(
   id: string,
-  updates: Partial<Omit<User, "id" | "email" | "created_at" | "updated_at">>
+  updates: Partial<Omit<User, "id" | "email">>
 ): Promise<User> {
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);

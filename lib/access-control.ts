@@ -7,6 +7,7 @@
 
 import { waitForQuick } from "./quick";
 import { getResourceUrl } from "./urls";
+import type { User } from "@/types";
 
 export type AccessLevel = "owner" | "editor" | "viewer";
 export type ResourceType = "project" | "folder";
@@ -15,6 +16,7 @@ export interface AccessEntry {
   id: string;
   resource_id: string; // project_id or folder_id
   resource_type: ResourceType;
+  user_id: string;
   user_email: string;
   user_name?: string;
   user_avatar?: string;
@@ -24,16 +26,6 @@ export interface AccessEntry {
   updated_at: string;
 }
 
-export interface ShopifyUser {
-  email: string;
-  fullName: string;
-  firstName: string;
-  slackImageUrl?: string;
-  slackHandle?: string;
-  slackId?: string;
-  title?: string;
-}
-
 const ACCESS_COLLECTION = "access_control";
 
 // ==================== USER SEARCH ====================
@@ -41,9 +33,7 @@ const ACCESS_COLLECTION = "access_control";
 /**
  * Fetch all Shopify users for autocomplete
  */
-export async function searchShopifyUsers(
-  query: string
-): Promise<ShopifyUser[]> {
+export async function searchUsers(query: string): Promise<User[]> {
   try {
     const response = await fetch("/users.json");
 
@@ -57,7 +47,7 @@ export async function searchShopifyUsers(
     const lines = text.split("\n").filter((line) => line.trim().length > 0);
 
     // Parse and deduplicate users by email (case-insensitive)
-    const userMap = new Map<string, ShopifyUser>();
+    const userMap = new Map<string, User>();
 
     for (const line of lines) {
       try {
@@ -65,14 +55,13 @@ export async function searchShopifyUsers(
         const emailKey = data.email?.toLowerCase();
 
         if (emailKey && !userMap.has(emailKey)) {
-          const fullName = data.name || "";
           userMap.set(emailKey, {
+            id: data.id,
             email: data.email,
-            fullName: fullName,
-            firstName: fullName.split(" ")[0] || fullName,
-            slackHandle: data.slack_handle,
-            slackImageUrl: data.slack_image_url,
-            slackId: data.slack_id,
+            name: data.name || "",
+            slack_handle: data.slack_handle,
+            slack_image_url: data.slack_image_url,
+            slack_id: data.slack_id,
             title: data.title,
           });
         }
@@ -93,10 +82,10 @@ export async function searchShopifyUsers(
     return users
       .filter(
         (user) =>
-          user.fullName.toLowerCase().includes(lowerQuery) ||
+          user.name.toLowerCase().includes(lowerQuery) ||
           user.email.toLowerCase().includes(lowerQuery) ||
-          (user.slackHandle &&
-            user.slackHandle.toLowerCase().includes(lowerQuery))
+          (user.slack_handle &&
+            user.slack_handle.toLowerCase().includes(lowerQuery))
       )
       .slice(0, 50); // Limit to 50 results
   } catch (error) {

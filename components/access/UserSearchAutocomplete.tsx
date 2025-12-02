@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { searchShopifyUsers, type ShopifyUser } from "@/lib/access-control";
+import { searchUsers, type DirectoryUser } from "@/lib/access-control";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 
 interface UserSearchAutocompleteProps {
-  onSelect: (user: ShopifyUser | null) => void;
-  selectedUser: ShopifyUser | null; // Track if a user is already selected
+  onSelect: (user: DirectoryUser | null) => void;
+  selectedUser: DirectoryUser | null; // Track if a user is already selected
   placeholder?: string;
   excludeEmails?: string[];
 }
@@ -25,7 +25,7 @@ export function UserSearchAutocomplete({
   excludeEmails = [],
 }: UserSearchAutocompleteProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ShopifyUser[]>([]);
+  const [results, setResults] = useState<DirectoryUser[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -51,7 +51,7 @@ export function UserSearchAutocomplete({
 
       setLoading(true);
       try {
-        const users = await searchShopifyUsers(query);
+        const users = await searchUsers(query);
 
         // Filter out excluded emails
         const filtered = users.filter(
@@ -116,7 +116,7 @@ export function UserSearchAutocomplete({
     }
   };
 
-  const handleSelect = (user: ShopifyUser) => {
+  const handleSelect = (user: DirectoryUser) => {
     setQuery(""); // Clear input for next search
     setResults([]);
     setIsOpen(false);
@@ -165,16 +165,14 @@ export function UserSearchAutocomplete({
               {/* Avatar */}
               <UserAvatar
                 email={user.email}
-                name={user.fullName}
-                imageUrl={user.slackImageUrl}
+                name={user.name}
+                imageUrl={user.slack_image_url}
                 size="sm"
               />
 
               {/* User Name */}
               <div className="flex-1 text-left min-w-0">
-                <div className="text-medium truncate">
-                  {user.fullName}
-                </div>
+                <div className="text-medium truncate">{user.name}</div>
               </div>
             </button>
           ))}

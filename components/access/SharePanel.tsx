@@ -28,7 +28,7 @@ import {
   type AccessEntry,
   type AccessLevel,
   type ResourceType,
-  type ShopifyUser,
+  type DirectoryUser,
 } from "@/lib/access-control";
 import { getResourceUrl } from "@/lib/urls";
 
@@ -62,7 +62,7 @@ export function SharePanel({
     useState<AccessLevel | null>(null);
   const [selectedAccessLevel, setSelectedAccessLevel] =
     useState<AccessLevel>("editor");
-  const [selectedUsers, setSelectedUsers] = useState<ShopifyUser[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<DirectoryUser[]>([]);
 
   // Generate the shareable link
   const shareUrl = getResourceUrl(resourceType, resourceId);
@@ -96,7 +96,7 @@ export function SharePanel({
   const isOwner = currentUserAccess === "owner";
 
   // Handle adding a user to the invite list
-  const handleAddUser = (user: ShopifyUser | null) => {
+  const handleAddUser = (user: DirectoryUser | null) => {
     if (!user) return;
 
     // Check if already in selected list
@@ -110,7 +110,7 @@ export function SharePanel({
     );
 
     if (existing) {
-      toast.error(`${user.fullName} already has access`);
+      toast.error(`${user.name} already has access`);
       return;
     }
 
@@ -141,10 +141,10 @@ export function SharePanel({
           user.email,
           selectedAccessLevel,
           currentUserEmail,
-          user.fullName,
-          user.slackImageUrl,
+          user.name,
+          user.slack_image_url,
           resourceName,
-          user.slackId,
+          user.slack_id,
           currentUserName
         )
       );
@@ -285,8 +285,8 @@ export function SharePanel({
                     <UserChip
                       key={user.email}
                       email={user.email}
-                      name={user.fullName}
-                      imageUrl={user.slackImageUrl}
+                      name={user.name}
+                      imageUrl={user.slack_image_url}
                       onRemove={() => handleRemoveUser(user.email)}
                     />
                   ))}
