@@ -66,7 +66,7 @@ export default function SyncStatusIndicator({
               return (
                 <div
                   key={user.socketId}
-                  className="relative group"
+                  className="relative group cursor-pointer"
                   style={{ zIndex: 5 - index }}
                   onClick={() => onFollowUser?.(user.socketId)}
                 >
