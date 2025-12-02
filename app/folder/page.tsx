@@ -28,7 +28,7 @@ import {
   updateFolder,
   deleteFolder,
 } from "@/lib/quick-folders";
-import { canUserEdit } from "@/lib/access-control";
+import { canUserEdit, canUserView } from "@/lib/access-control";
 import { cacheKeys } from "@/lib/cache-keys";
 import { waitForQuick } from "@/lib/quick";
 
@@ -47,13 +47,15 @@ async function fetchFolderData(
   folderId: string,
   userId: string
 ): Promise<FolderData | null> {
-  const [folderData, hasEditAccess, folderProjects] = await Promise.all([
+  const [folderData, hasEditAccess, hasViewAccess, folderProjects] = await Promise.all([
     getFolderById(folderId),
     canUserEdit(folderId, "folder", userId),
+    canUserView(folderId, "folder", userId),
     getProjectsInFolder(folderId, userId),
   ]);
 
-  if (!folderData) {
+  // Folder doesn't exist or user has no access
+  if (!folderData || !hasViewAccess) {
     return null;
   }
 

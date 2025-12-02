@@ -3,7 +3,7 @@
 import useSWR from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
 import { CanvasSkeleton } from "@/components/ui/skeleton";
 import { usePages } from "@/hooks/usePages";
@@ -199,7 +199,7 @@ function PresentationPageInner({
     onTogglePresentationMode: () => setPresentationMode((prev) => !prev),
   });
 
-  // Check permissions
+  // Check permissions (access already verified in parent, this is for edit permissions)
   const permissions = useResourcePermissions(project?.id || null, "project");
 
   // Allow debug override of read-only mode
@@ -684,7 +684,7 @@ function PresentationPageInner({
   );
 }
 
-// Component that gets room and provides QuickFollowProvider
+// Component that checks access before loading project data
 function PresentationPageInnerWithProvider() {
   const searchParams = useSearchParams();
   const projectId = searchParams?.get("id") || "";
@@ -700,7 +700,50 @@ function PresentationPageInnerWithProvider() {
     []
   );
 
-  // Fetch project
+  // Check access FIRST before loading any project data
+  const permissions = useResourcePermissions(projectId || null, "project");
+
+  // Show loading while checking access
+  if (permissions.loading) {
+    return <CanvasSkeleton />;
+  }
+
+  // Show access denied if user doesn't have permission
+  if (!permissions.canView) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-var(--header-height))] gap-4">
+        <h1 className="text-xlarge">Access Denied</h1>
+        <p className="text-text-secondary">
+          You don&apos;t have permission to view this project.
+        </p>
+        <Button href="/projects/" variant="primary">
+          Go to Projects
+        </Button>
+      </div>
+    );
+  }
+
+  // Only render the actual project content if user has access
+  return (
+    <PresentationPageContent
+      projectId={projectId}
+      broadcastCallback={broadcastCallback}
+      setBroadcastCallback={wrappedSetBroadcastCallback}
+    />
+  );
+}
+
+// Separate component that loads project data - only rendered after access is confirmed
+function PresentationPageContent({
+  projectId,
+  broadcastCallback,
+  setBroadcastCallback,
+}: {
+  projectId: string;
+  broadcastCallback: (() => void) | null;
+  setBroadcastCallback: (callback: (() => void) | null) => void;
+}) {
+  // Fetch project - only happens after access is confirmed
   const { data: project } = useSWR<Project | null>(
     cacheKeys.projectData(projectId),
     () => (projectId ? fetchProject(projectId) : null),
@@ -733,7 +776,7 @@ function PresentationPageInnerWithProvider() {
       onBroadcastInitialState={broadcastCallback || undefined}
     >
       <PresentationPageInner
-        onBroadcastReady={wrappedSetBroadcastCallback}
+        onBroadcastReady={setBroadcastCallback}
         syncedArtifacts={syncedArtifacts}
         project={project}
         pages={pages}
