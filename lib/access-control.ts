@@ -9,6 +9,7 @@
 
 import { waitForQuick } from "./quick";
 import { getResourceUrl } from "./urls";
+import type { User } from "@/types";
 
 export type AccessLevel = "owner" | "editor" | "viewer";
 export type ResourceType = "project" | "folder";
@@ -27,20 +28,6 @@ export interface AccessEntry {
   updated_at: string;
 }
 
-/**
- * User from the directory (users.json)
- * Used for user search/autocomplete
- */
-export interface DirectoryUser {
-  id: string;
-  email: string;
-  name: string;
-  slack_handle?: string;
-  slack_image_url?: string;
-  slack_id?: string;
-  title?: string;
-}
-
 const ACCESS_COLLECTION = "access_control";
 
 // ==================== USER SEARCH ====================
@@ -48,7 +35,7 @@ const ACCESS_COLLECTION = "access_control";
 /**
  * Fetch all Shopify users for autocomplete
  */
-export async function searchUsers(query: string): Promise<DirectoryUser[]> {
+export async function searchUsers(query: string): Promise<User[]> {
   try {
     const response = await fetch("/users.json");
 
@@ -62,7 +49,7 @@ export async function searchUsers(query: string): Promise<DirectoryUser[]> {
     const lines = text.split("\n").filter((line) => line.trim().length > 0);
 
     // Parse and deduplicate users by email (case-insensitive)
-    const userMap = new Map<string, DirectoryUser>();
+    const userMap = new Map<string, User>();
 
     for (const line of lines) {
       try {
@@ -77,7 +64,6 @@ export async function searchUsers(query: string): Promise<DirectoryUser[]> {
             slack_handle: data.slack_handle,
             slack_image_url: data.slack_image_url,
             slack_id: data.slack_id,
-            title: data.title,
           });
         }
       } catch {

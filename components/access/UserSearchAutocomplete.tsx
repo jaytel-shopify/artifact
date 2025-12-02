@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { searchUsers, type DirectoryUser } from "@/lib/access-control";
+import { searchUsers } from "@/lib/access-control";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import type { User } from "@/types";
 
 interface UserSearchAutocompleteProps {
-  onSelect: (user: DirectoryUser | null) => void;
-  selectedUser: DirectoryUser | null; // Track if a user is already selected
+  onSelect: (user: User | null) => void;
+  selectedUser: User | null; // Track if a user is already selected
   placeholder?: string;
   excludeUserIds?: string[];
 }
@@ -25,7 +26,7 @@ export function UserSearchAutocomplete({
   excludeUserIds = [],
 }: UserSearchAutocompleteProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<DirectoryUser[]>([]);
+  const [results, setResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -116,7 +117,7 @@ export function UserSearchAutocomplete({
     }
   };
 
-  const handleSelect = (user: DirectoryUser) => {
+  const handleSelect = (user: User) => {
     setQuery(""); // Clear input for next search
     setResults([]);
     setIsOpen(false);

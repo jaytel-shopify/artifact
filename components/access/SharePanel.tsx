@@ -28,8 +28,8 @@ import {
   type AccessEntry,
   type AccessLevel,
   type ResourceType,
-  type DirectoryUser,
 } from "@/lib/access-control";
+import type { User } from "@/types";
 import { getResourceUrl } from "@/lib/urls";
 
 interface SharePanelProps {
@@ -64,7 +64,7 @@ export function SharePanel({
     useState<AccessLevel | null>(null);
   const [selectedAccessLevel, setSelectedAccessLevel] =
     useState<AccessLevel>("editor");
-  const [selectedUsers, setSelectedUsers] = useState<DirectoryUser[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
 
   // Generate the shareable link
   const shareUrl = getResourceUrl(resourceType, resourceId);
@@ -96,7 +96,7 @@ export function SharePanel({
   const isOwner = currentUserAccess === "owner";
 
   // Handle adding a user to the invite list
-  const handleAddUser = (user: DirectoryUser | null) => {
+  const handleAddUser = (user: User | null) => {
     if (!user) return;
 
     // Check if already in selected list

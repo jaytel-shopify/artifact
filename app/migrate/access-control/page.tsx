@@ -11,15 +11,7 @@ import {
 } from "@/components/ui/card";
 import { waitForQuick } from "@/lib/quick";
 
-interface DirectoryUser {
-  id: string;
-  email: string;
-  name: string;
-  slack_handle?: string;
-  slack_image_url?: string;
-  slack_id?: string;
-  title?: string;
-}
+import type { User } from "@/types";
 
 interface MigrationLog {
   timestamp: string;
@@ -55,7 +47,7 @@ interface MigrationProgress {
 }
 
 export default function AccessControlMigrationPage() {
-  const [directoryUsers, setDirectoryUsers] = useState<Map<string, DirectoryUser>>(new Map());
+  const [directoryUsers, setDirectoryUsers] = useState<Map<string, User>>(new Map());
   const [progress, setProgress] = useState<MigrationProgress>({
     phase: "idle",
     current: 0,
@@ -95,7 +87,7 @@ export default function AccessControlMigrationPage() {
   );
 
   // Load directory users from users.json
-  const loadDirectoryUsers = useCallback(async (): Promise<Map<string, DirectoryUser>> => {
+  const loadDirectoryUsers = useCallback(async (): Promise<Map<string, User>> => {
     setProgress((prev) => ({
       ...prev,
       phase: "loading-users",
@@ -113,7 +105,7 @@ export default function AccessControlMigrationPage() {
       const lines = text.split("\n").filter((line) => line.trim().length > 0);
 
       // Parse NDJSON and build lookup map by email (case-insensitive)
-      const userMap = new Map<string, DirectoryUser>();
+      const userMap = new Map<string, User>();
       let parsed = 0;
       let skipped = 0;
 
@@ -130,7 +122,6 @@ export default function AccessControlMigrationPage() {
               slack_handle: data.slack_handle,
               slack_image_url: data.slack_image_url,
               slack_id: data.slack_id,
-              title: data.title,
             });
             parsed++;
           } else {
@@ -155,7 +146,7 @@ export default function AccessControlMigrationPage() {
 
   // Migrate access_control collection
   const migrateAccessControl = useCallback(
-    async (userMap: Map<string, DirectoryUser>) => {
+    async (userMap: Map<string, User>) => {
       setProgress((prev) => ({
         ...prev,
         phase: "migrating-access",
@@ -254,7 +245,7 @@ export default function AccessControlMigrationPage() {
 
   // Migrate users collection (fix email-based IDs)
   const migrateUsers = useCallback(
-    async (userMap: Map<string, DirectoryUser>) => {
+    async (userMap: Map<string, User>) => {
       setProgress((prev) => ({
         ...prev,
         phase: "migrating-users",

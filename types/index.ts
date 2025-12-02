@@ -6,16 +6,11 @@
  */
 export type User = {
   id: string;
-  email: string;
   name: string;
-  slack_image_url?: string;
-  slack_id?: string;
+  email: string;
   slack_handle?: string;
-  discipline_name?: string;
-  team_name?: string;
-  group?: string;
-  github?: string;
-  title?: string;
+  slack_id?: string;
+  slack_image_url?: string;
 };
 
 // ==================== PROJECTS ====================

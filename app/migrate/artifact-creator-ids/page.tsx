@@ -11,15 +11,7 @@ import {
 } from "@/components/ui/card";
 import { waitForQuick } from "@/lib/quick";
 
-interface DirectoryUser {
-  id: string;
-  email: string;
-  name: string;
-  slack_handle?: string;
-  slack_image_url?: string;
-  slack_id?: string;
-  title?: string;
-}
+import type { User } from "@/types";
 
 interface MigrationLog {
   timestamp: string;
@@ -102,7 +94,7 @@ export default function ArtifactCreatorIdsMigrationPage() {
   );
 
   // Load directory users from users.json
-  const loadDirectoryUsers = useCallback(async (): Promise<Map<string, DirectoryUser>> => {
+  const loadDirectoryUsers = useCallback(async (): Promise<Map<string, User>> => {
     setProgress((prev) => ({
       ...prev,
       phase: "loading-users",
@@ -120,7 +112,7 @@ export default function ArtifactCreatorIdsMigrationPage() {
       const lines = text.split("\n").filter((line) => line.trim().length > 0);
 
       // Parse NDJSON and build lookup map by email (case-insensitive)
-      const userMap = new Map<string, DirectoryUser>();
+      const userMap = new Map<string, User>();
       let parsed = 0;
       let skipped = 0;
 
@@ -137,7 +129,6 @@ export default function ArtifactCreatorIdsMigrationPage() {
               slack_handle: data.slack_handle,
               slack_image_url: data.slack_image_url,
               slack_id: data.slack_id,
-              title: data.title,
             });
             parsed++;
           } else {
@@ -237,7 +228,7 @@ export default function ArtifactCreatorIdsMigrationPage() {
   const getOrCreateUserByEmail = useCallback(
     async (
       email: string,
-      userMap: Map<string, DirectoryUser>,
+      userMap: Map<string, User>,
       usersCollection: any,
       statsRef: { usersCreated: number; usersFoundInDirectory: number; usersFoundInCollection: number }
     ): Promise<{ userId: string; source: "directory" | "collection" | "created" } | null> => {
@@ -324,7 +315,7 @@ export default function ArtifactCreatorIdsMigrationPage() {
   const migrateArtifacts = useCallback(
     async (
       needsMigration: any[],
-      userMap: Map<string, DirectoryUser>,
+      userMap: Map<string, User>,
       usersCollection: any
     ) => {
       setProgress((prev) => ({
@@ -410,7 +401,7 @@ export default function ArtifactCreatorIdsMigrationPage() {
   const migrateProjects = useCallback(
     async (
       needsMigration: any[],
-      userMap: Map<string, DirectoryUser>,
+      userMap: Map<string, User>,
       usersCollection: any,
       initialStatsRef: { usersCreated: number; usersFoundInDirectory: number; usersFoundInCollection: number }
     ) => {
