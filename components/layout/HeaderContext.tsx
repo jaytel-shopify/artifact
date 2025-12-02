@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode, useEffect, useLayoutEffect, useRef } from "react";
+import { createContext, useContext, useState, ReactNode, useLayoutEffect, useRef } from "react";
 
 interface HeaderContent {
   left?: ReactNode;
@@ -47,14 +47,12 @@ export function useSetHeader(content: HeaderContent, deps?: React.DependencyList
   const hasCenter = !!content.center;
   const hasRight = !!content.right;
 
-  useEffect(() => {
+  // Use useLayoutEffect so header updates synchronously before browser paint
+  // This prevents the header from flashing during page transitions
+  useLayoutEffect(() => {
     // Use the ref to get the latest content
     setHeaderContent(contentRef.current);
-    
-    return () => {
-      setHeaderContent({});
-    };
-    // If deps provided, use those; otherwise use the structure booleans
+    // Don't clear header on unmount - let the next page overwrite it
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps || [hasLeft, hasCenter, hasRight, setHeaderContent]);
 }

@@ -4,8 +4,7 @@ import useSWR from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
-import { CanvasSkeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, PanelLeft, PanelLeftClose, Plus } from "lucide-react";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
@@ -57,6 +56,80 @@ import PageNavigationSidebar from "@/components/layout/PageNavigationSidebar";
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
 });
+
+/**
+ * Builds header configuration for the presentation page.
+ * Used by both the initial header (with defaults) and the full header (with real state).
+ */
+function buildPresentationHeader({
+  backUrl = "/projects/",
+  sidebarOpen = false,
+  onSidebarToggle,
+  columns = 3,
+  onColumnsChange = () => {},
+  onOverscroll = () => {},
+  presentationMode = false,
+  centerExtra,
+  rightExtra,
+}: {
+  backUrl?: string;
+  sidebarOpen?: boolean;
+  onSidebarToggle?: () => void;
+  columns?: number;
+  onColumnsChange?: (n: number) => void;
+  onOverscroll?: (amount: number) => void;
+  presentationMode?: boolean;
+  centerExtra?: React.ReactNode;
+  rightExtra?: React.ReactNode;
+}) {
+  return {
+    left: !presentationMode ? (
+      <>
+        <Button href={backUrl} variant="default" size="icon" aria-label="Back">
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onSidebarToggle}
+          aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+        >
+          {sidebarOpen ? (
+            <PanelLeftClose className="h-4 w-4" />
+          ) : (
+            <PanelLeft className="h-4 w-4" />
+          )}
+        </Button>
+      </>
+    ) : undefined,
+    center: (
+      <>
+        <ColumnControl
+          columns={columns}
+          onColumnsChange={onColumnsChange}
+          onOverscroll={onOverscroll}
+        />
+        {/* Always reserve space for plus button to prevent layout shift */}
+        {centerExtra || (
+          <Button
+            variant="primary"
+            size="icon"
+            style={{ visibility: "hidden" }}
+            aria-hidden
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        )}
+      </>
+    ),
+    right: !presentationMode ? (
+      <>
+        {rightExtra}
+        <DarkModeToggle />
+      </>
+    ) : undefined,
+  };
+}
 
 /**
  * Fetcher function for SWR - gets project by ID
@@ -334,59 +407,32 @@ function PresentationPageInner({
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
 
-  // Show loading state - but we still need to render header even when loading
-  // Set header content - must be called before any return statements
+  // Set header content using shared helper - must be called before any return statements
   useSetHeader(
-    {
-      left: !presentationMode ? (
-        <>
-          <Button
-            href={backUrl}
-            variant="default"
-            size="icon"
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen((prev) => !prev)}
-            aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
-          >
-            {sidebarOpen ? (
-              <PanelLeftClose className="h-4 w-4" />
-            ) : (
-              <PanelLeft className="h-4 w-4" />
-            )}
-          </Button>
-        </>
-      ) : undefined,
-      center: (
-        <>
-          <ColumnControl
-            columns={columns}
-            onColumnsChange={handleSetColumns}
-            onOverscroll={handleOverscroll}
+    buildPresentationHeader({
+      backUrl,
+      sidebarOpen,
+      onSidebarToggle: () => setSidebarOpen((prev) => !prev),
+      columns,
+      onColumnsChange: handleSetColumns,
+      onOverscroll: handleOverscroll,
+      presentationMode,
+      centerExtra: project?.id && currentPageId && canEdit && (
+        <div
+          style={{
+            transform: `translateX(${columnControlsOverscrollAmount}px)`,
+          }}
+        >
+          <ArtifactAdder
+            variant="icon"
+            projectId={project.id}
+            pageId={currentPageId}
+            onAdded={refetchArtifacts}
+            createArtifact={createArtifact}
           />
-          {project?.id && currentPageId && canEdit && (
-            <div
-              style={{
-                transform: `translateX(${columnControlsOverscrollAmount}px)`,
-              }}
-            >
-              <ArtifactAdder
-                variant="icon"
-                projectId={project.id}
-                pageId={currentPageId}
-                onAdded={refetchArtifacts}
-                createArtifact={createArtifact}
-              />
-            </div>
-          )}
-        </>
+        </div>
       ),
-      right: !presentationMode ? (
+      rightExtra: project ? (
         <>
           {isReadOnly && !isCollaborator && <ReadOnlyBadge />}
           <SyncStatusIndicator
@@ -395,7 +441,7 @@ function PresentationPageInner({
             onFollowUser={handleFollowUser}
             followingUserId={followedUser?.socketId || null}
           />
-          {project && user && (
+          {user && (
             <Button
               variant="default"
               className="gap-2"
@@ -404,11 +450,9 @@ function PresentationPageInner({
               Share
             </Button>
           )}
-
-          <DarkModeToggle />
         </>
       ) : undefined,
-    },
+    }),
     // Add dependencies that affect header content
     [
       presentationMode,
@@ -426,7 +470,7 @@ function PresentationPageInner({
   );
 
   if (isPageLoading) {
-    return <CanvasSkeleton />;
+    return null;
   }
 
   return (
@@ -705,7 +749,7 @@ function PresentationPageInnerWithProvider() {
 
   // Show loading while checking access
   if (permissions.loading) {
-    return <CanvasSkeleton />;
+    return null;
   }
 
   // Show access denied if user doesn't have permission
@@ -766,7 +810,7 @@ function PresentationPageContent({
 
   // Wait for room to be ready before wrapping with provider
   if (!room || !syncedArtifacts.isPresenceReady) {
-    return <CanvasSkeleton />;
+    return null;
   }
 
   return (
@@ -792,6 +836,9 @@ function PresentationPageContent({
 }
 
 export default function PresentationPage() {
+  // Set header immediately with defaults - PresentationPageInner will override with real state
+  useSetHeader(buildPresentationHeader({}));
+
   return (
     <Suspense fallback={null}>
       <PresentationPageInnerWithProvider />

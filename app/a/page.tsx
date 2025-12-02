@@ -151,7 +151,7 @@ export default function Page() {
       <div className="h-full w-full flex flex-col md:flex-row gap-5">
         <ArtifactComponent
           artifact={artifact}
-          className="h-full flex-1 flex md:justify-center items-center"
+          className="h-full flex-1 flex md:justify-center items-center min-h-0 overflow-hidden"
         />
         <div className="flex flex-col gap-4 w-[var(--size-detail-sidebar-width)]">
           <h1 className="text-xlarge">{artifact.name}</h1>

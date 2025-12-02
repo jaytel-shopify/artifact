@@ -494,6 +494,24 @@ function init() {
       created_at: now,
       updated_at: now,
     },
+    {
+      id: "pub-10",
+      type: "url",
+      source_url: "https://example.com",
+      file_path: null,
+      name: "Example Website",
+      description: "A test website to verify iframe layout",
+      published: true,
+      creator_id: MOCK_USER_ID,
+      metadata: {
+        viewport: "desktop",
+        width: 1920,
+        height: 1080,
+      },
+      reactions: { like: [], dislike: [] },
+      created_at: now,
+      updated_at: now,
+    },
   ];
 
   // Junction table: project_artifacts (links artifacts to projects/pages with position)

@@ -115,8 +115,13 @@ function ArtifactWebsite({
   return (
     <div
       ref={containerRef}
-      className="w-full h-full overflow-hidden relative"
-      style={{ aspectRatio: `${width} / ${height}` }}
+      className="overflow-hidden relative max-w-full max-h-full"
+      style={{
+        aspectRatio: `${width} / ${height}`,
+        width: "100%",
+        height: "auto",
+        maxHeight: "100%",
+      }}
     >
       <iframe
         src={url}
@@ -203,7 +208,7 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
         height?: number;
       };
       return (
-        <div className={baseClasses}>
+        <div className={`${baseClasses} w-full h-full`}>
           <ArtifactWebsite
             url={artifact.source_url}
             width={urlMeta?.width}

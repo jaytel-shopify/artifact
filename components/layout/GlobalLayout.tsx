@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, Suspense } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import GlobalHeader from "./GlobalHeader";
 import { useHeader } from "./HeaderContext";
@@ -11,18 +11,25 @@ interface GlobalLayoutProps {
   children: ReactNode;
 }
 
-export default function GlobalLayout({ children }: GlobalLayoutProps) {
-  const { headerContent } = useHeader();
+// Separate component for path tracking that uses useSearchParams
+// This prevents the header from suspending during navigation
+function PathTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Track current path globally
   useEffect(() => {
     const fullPath =
       pathname +
       (searchParams?.toString() ? `?${searchParams.toString()}` : "");
     setCurrentPath(fullPath);
   }, [pathname, searchParams]);
+
+  return null;
+}
+
+export default function GlobalLayout({ children }: GlobalLayoutProps) {
+  const { headerContent } = useHeader();
+  const pathname = usePathname();
 
   function handleFileUpload(files: File[]) {
     console.log(files);
@@ -69,6 +76,11 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
       className="min-h-screen flex flex-col bg-background text-text-primary"
       style={{ fontFamily: "var(--font-family-primary)" }}
     >
+      {/* Path tracker wrapped in Suspense so it doesn't block the header */}
+      <Suspense fallback={null}>
+        <PathTracker />
+      </Suspense>
+      
       <GlobalHeader
         left={headerContent.left}
         center={headerContent.center}
