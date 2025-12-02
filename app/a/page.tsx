@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import useSWR from "swr";
 import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -41,13 +41,13 @@ export default function Page() {
     }
   }, []); // Empty deps - only run on mount
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (previousPath) {
       router.push(previousPath);
     } else {
       router.push("/");
     }
-  };
+  }, [previousPath, router]);
 
   const { data: artifact, mutate } = useSWR<ArtifactWithCreator | null>(
     artifactId ? `artifact-${artifactId}` : null,
@@ -68,23 +68,39 @@ export default function Page() {
     ? publishedArtifacts[currentIndex + 1]
     : null;
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     if (nextArtifact) {
       router.push(`/a?id=${nextArtifact.id}`);
     }
-  };
+  }, [nextArtifact, router]);
 
-  const handlePrevious = () => {
+  const handlePrevious = useCallback(() => {
     if (previousArtifact) {
       router.push(`/a?id=${previousArtifact.id}`);
     }
-  };
+  }, [previousArtifact, router]);
 
   const { user } = useAuth();
   const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
     artifact,
     mutate,
   });
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight" && hasNext) {
+        handleNext();
+      } else if (e.key === "ArrowLeft" && hasPrevious) {
+        handlePrevious();
+      } else if (e.key === "Escape") {
+        handleBack();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [hasNext, hasPrevious, handleNext, handlePrevious, handleBack]);
 
   // Set header content
   useSetHeader({
