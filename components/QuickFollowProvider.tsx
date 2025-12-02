@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, createContext, useContext, useRef } from "react";
+import { useEffect, useState, createContext, useContext, useRef, useMemo, useCallback } from "react";
 import { QuickFollowManager } from "@/lib/followManager";
 
 interface User {
@@ -172,7 +172,30 @@ export default function QuickFollowProvider({
     };
   }, [roomName, room, autoInit]);
 
-  const contextValue: FollowContextType = {
+  const followUserCallback = useCallback(async (userId: string) => {
+    if (!followManager) return false;
+    const result = await followManager.followUser(userId);
+    return result;
+  }, [followManager]);
+
+  const stopFollowingCallback = useCallback(() => {
+    followManager?.stopFollowing();
+  }, [followManager]);
+
+  const startLeadingCallback = useCallback(() => {
+    if (!followManager) return false;
+    return followManager.startLeading();
+  }, [followManager]);
+
+  const stopLeadingCallback = useCallback(() => {
+    followManager?.stopLeading();
+  }, [followManager]);
+
+  const broadcastCustomEventCallback = useCallback((eventName: string, data: any) => {
+    followManager?.broadcastCustomEvent(eventName, data);
+  }, [followManager]);
+
+  const contextValue: FollowContextType = useMemo(() => ({
     followManager,
     isInitialized,
     isFollowing,
@@ -180,25 +203,25 @@ export default function QuickFollowProvider({
     followedUser,
     followers,
     availableUsers,
-    followUser: async (userId: string) => {
-      if (!followManager) return false;
-      const result = await followManager.followUser(userId);
-      return result;
-    },
-    stopFollowing: () => {
-      followManager?.stopFollowing();
-    },
-    startLeading: () => {
-      if (!followManager) return false;
-      return followManager.startLeading();
-    },
-    stopLeading: () => {
-      followManager?.stopLeading();
-    },
-    broadcastCustomEvent: (eventName: string, data: any) => {
-      followManager?.broadcastCustomEvent(eventName, data);
-    },
-  };
+    followUser: followUserCallback,
+    stopFollowing: stopFollowingCallback,
+    startLeading: startLeadingCallback,
+    stopLeading: stopLeadingCallback,
+    broadcastCustomEvent: broadcastCustomEventCallback,
+  }), [
+    followManager,
+    isInitialized,
+    isFollowing,
+    isLeading,
+    followedUser,
+    followers,
+    availableUsers,
+    followUserCallback,
+    stopFollowingCallback,
+    startLeadingCallback,
+    stopLeadingCallback,
+    broadcastCustomEventCallback,
+  ]);
 
   return (
     <FollowContext.Provider value={contextValue}>
