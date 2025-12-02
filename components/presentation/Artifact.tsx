@@ -23,7 +23,7 @@ function ArtifactImage({
     <img
       src={url}
       alt={alt}
-      className="w-auto h-auto rounded-card overflow-hidden max-h-full max-w-[var(--size-detail-artifact-max-width)]"
+      className="class=max-w-full max-h-full w-auto h-auto object-contain rounded-card overflow-hidden max-h-full"
       draggable={false}
       width={width}
       height={height}

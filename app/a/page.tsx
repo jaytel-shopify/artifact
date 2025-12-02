@@ -124,30 +124,12 @@ export default function Page() {
           className="h-full flex-1 flex justify-center items-center"
         />
         <div className="flex flex-col gap-4 ml-8 w-[var(--size-detail-sidebar-width)]">
-          <h1 className="text-medium">{artifact.name}</h1>
+          <h1 className="text-xlarge">{artifact.name}</h1>
           {artifact.description && (
             <p className="text-medium text-text-secondary capitalize">
               {artifact.description}
             </p>
           )}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleLike}
-              variant={userLiked ? "default" : "secondary"}
-              className="w-18"
-            >
-              <span className="text-medium">😍</span>{" "}
-              <span>{artifact.reactions?.like?.length || 0}</span>
-            </Button>
-            <Button
-              onClick={handleDislike}
-              variant={userDisliked ? "default" : "secondary"}
-              className="w-18"
-            >
-              <span className="text-medium">🤔</span>{" "}
-              <span>{artifact.reactions?.dislike?.length || 0}</span>
-            </Button>
-          </div>
 
           <div className="flex items-center gap-2">
             <UserAvatar
@@ -157,13 +139,36 @@ export default function Page() {
               imageUrl={artifact.creator?.slack_image_url}
               size="sm"
             />
-            <p className="text-small text-text-secondary capitalize">
+            <p className="text-medium text-text-secondary capitalize">
               {artifact.creator?.name}
             </p>
-            <p className="text-small text-text-secondary capitalize">
+            <p
+              className="text-medium text-text-secondary capitalize"
+              style={{ color: "var(--color-disabled)" }}
+            >
               {formatTimeAgo(artifact.created_at, { short: true })}
             </p>
           </div>
+
+          <div className="flex gap-2">
+            <Button
+              onClick={handleLike}
+              variant={userLiked ? "default" : "secondary"}
+              className="w-[140px]"
+            >
+              <span>{artifact.reactions?.like?.length || 0}</span>
+              <span className="text-xlarge">😍</span>{" "}
+            </Button>
+            <Button
+              onClick={handleDislike}
+              variant={userDisliked ? "default" : "secondary"}
+              className="w-[140px]"
+            >
+              <span>{artifact.reactions?.dislike?.length || 0}</span>
+              <span className="text-xlarge">🤔</span>{" "}
+            </Button>
+          </div>
+
           <div className="flex gap-2 flex-1 items-end">
             <Button
               variant="default"
