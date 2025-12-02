@@ -97,13 +97,7 @@ export default function ArtifactFeed({
   }, [hasMore, isLoadingMore, onLoadMore]);
 
   if (isLoading) {
-    return (
-      <div className="mx-auto p-6">
-        <div className="flex justify-center py-12">
-          <p className="text-text-secondary">Loading...</p>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

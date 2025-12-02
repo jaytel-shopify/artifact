@@ -5,6 +5,7 @@ import useSWR from "swr";
 import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import { getArtifactById } from "@/lib/quick-db";
 import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -49,7 +50,11 @@ export default function Page() {
     }
   }, [previousPath, router]);
 
-  const { data: artifact, mutate } = useSWR<ArtifactWithCreator | null>(
+  const {
+    data: artifact,
+    isLoading,
+    mutate,
+  } = useSWR<ArtifactWithCreator | null>(
     artifactId ? `artifact-${artifactId}` : null,
     () => (artifactId ? fetchArtifact(artifactId) : null),
     { revalidateOnFocus: false }
@@ -123,10 +128,19 @@ export default function Page() {
         >
           Save to Project
         </Button>
+        {user && (
+          <Link href={`/user?id=${user.id}`}>
+            <UserAvatar size="lg" />
+          </Link>
+        )}
         <DarkModeToggle />
       </>
     ),
   });
+
+  if (isLoading) {
+    return null;
+  }
 
   if (!artifact) {
     return <div>Artifact not found</div>;

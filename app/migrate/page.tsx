@@ -2,8 +2,18 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { runMigration, type MigrationProgress, type MigrationLog } from "@/lib/migration";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  runMigration,
+  type MigrationProgress,
+  type MigrationLog,
+} from "@/lib/migration";
 import { clearMigrationData, getMigrationStats } from "@/lib/migration-state";
 import { useRouter } from "next/navigation";
 
@@ -23,7 +33,7 @@ export default function MigratePage() {
       const data = await getMigrationStats();
       setStats(data);
     } catch (error) {
-      console.error('Failed to load stats:', error);
+      console.error("Failed to load stats:", error);
     } finally {
       setLoading(false);
     }
@@ -31,23 +41,25 @@ export default function MigratePage() {
 
   const handleStartMigration = async () => {
     setIsRunning(true);
-    
+
     try {
       await runMigration((progressUpdate) => {
         setProgress(progressUpdate);
       });
     } catch (error: any) {
-      console.error('Migration failed:', error);
+      console.error("Migration failed:", error);
       setProgress({
-        phase: 'error',
+        phase: "error",
         current: 0,
         total: 0,
         currentItem: error.message,
-        logs: progress?.logs || [{
-          timestamp: new Date().toISOString(),
-          type: 'error',
-          message: error.message
-        }],
+        logs: progress?.logs || [
+          {
+            timestamp: new Date().toISOString(),
+            type: "error",
+            message: error.message,
+          },
+        ],
         stats: progress?.stats || {
           totalPosts: 0,
           totalMedia: 0,
@@ -57,7 +69,7 @@ export default function MigratePage() {
           uploadsSkipped: 0,
           duplicatesSkipped: 0,
           errors: 1,
-        }
+        },
       });
     } finally {
       setIsRunning(false);
@@ -65,46 +77,67 @@ export default function MigratePage() {
   };
 
   const handleClearData = async () => {
-    if (!confirm('This will delete all migrated artifacts and clear the upload cache. Continue?')) {
+    if (
+      !confirm(
+        "This will delete all migrated artifacts and clear the upload cache. Continue?"
+      )
+    ) {
       return;
     }
 
     try {
       const result = await clearMigrationData();
-      alert(`Cleared ${result.artifactsDeleted} artifacts and ${result.cacheCleared} cached uploads`);
+      alert(
+        `Cleared ${result.artifactsDeleted} artifacts and ${result.cacheCleared} cached uploads`
+      );
       await loadStats();
     } catch (error: any) {
       alert(`Failed to clear data: ${error.message}`);
     }
   };
 
-  const getPhaseLabel = (phase: MigrationProgress['phase']) => {
+  const getPhaseLabel = (phase: MigrationProgress["phase"]) => {
     switch (phase) {
-      case 'loading': return 'Loading...';
-      case 'parsing': return 'Parsing SQL Dump';
-      case 'uploading': return 'Uploading Files';
-      case 'creating': return 'Creating Artifacts';
-      case 'complete': return 'Complete';
-      case 'error': return 'Error';
-      default: return 'Processing';
+      case "loading":
+        return "Loading...";
+      case "parsing":
+        return "Parsing SQL Dump";
+      case "uploading":
+        return "Uploading Files";
+      case "creating":
+        return "Creating Artifacts";
+      case "complete":
+        return "Complete";
+      case "error":
+        return "Error";
+      default:
+        return "Processing";
     }
   };
 
-  const getLogIcon = (type: MigrationLog['type']) => {
+  const getLogIcon = (type: MigrationLog["type"]) => {
     switch (type) {
-      case 'success': return '✓';
-      case 'error': return '✗';
-      case 'warning': return '⚠';
-      default: return 'ℹ';
+      case "success":
+        return "✓";
+      case "error":
+        return "✗";
+      case "warning":
+        return "⚠";
+      default:
+        return "ℹ";
     }
   };
 
-  const getLogColor = (type: MigrationLog['type']) => {
+  const getLogColor = (type: MigrationLog["type"]) => {
     switch (type) {
-      case 'success': return 'text-green-400';
-      case 'error': return 'text-red-400';
-      case 'warning': return 'text-yellow-400';
-      default: return 'text-blue-400';
+      case "success":
+        return "text-green-400";
+      case "error":
+        return "text-red-400";
+      case "warning":
+        return "text-yellow-400";
+      default:
+        return "text-blue-400";
     }
   };
 
@@ -133,7 +166,9 @@ export default function MigratePage() {
           <CardContent>
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div>
-                <div className="text-2xl font-bold">{stats.migratedArtifacts}</div>
+                <div className="text-2xl font-bold">
+                  {stats.migratedArtifacts}
+                </div>
                 <div className="text-sm text-gray-600">Migrated Artifacts</div>
               </div>
               <div>
@@ -147,19 +182,16 @@ export default function MigratePage() {
                 <div className="text-sm text-gray-600">Total Cached</div>
               </div>
             </div>
-            
+
             {stats.migratedArtifacts > 0 && (
               <div className="flex gap-2">
-                <Button 
-                  onClick={() => router.push('/migrate/results')}
+                <Button
+                  onClick={() => router.push("/migrate/results")}
                   variant="outline"
                 >
                   View Results
                 </Button>
-                <Button 
-                  onClick={handleClearData}
-                  variant="destructive"
-                >
+                <Button onClick={handleClearData} variant="destructive">
                   Clear All Migration Data
                 </Button>
               </div>
@@ -177,13 +209,13 @@ export default function MigratePage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={handleStartMigration} 
+            <Button
+              onClick={handleStartMigration}
               disabled={isRunning}
               size="lg"
               className="w-full"
             >
-              {isRunning ? 'Migration in Progress...' : 'Start Migration'}
+              {isRunning ? "Migration in Progress..." : "Start Migration"}
             </Button>
           </CardContent>
         </Card>
@@ -199,17 +231,31 @@ export default function MigratePage() {
             <CardContent>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>{progress.current} / {progress.total}</span>
-                  <span>{progress.total > 0 ? Math.round((progress.current / progress.total) * 100) : 0}%</span>
+                  <span>
+                    {progress.current} / {progress.total}
+                  </span>
+                  <span>
+                    {progress.total > 0
+                      ? Math.round((progress.current / progress.total) * 100)
+                      : 0}
+                    %
+                  </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-3">
-                  <div 
+                  <div
                     className={`h-full transition-all duration-300 ${
-                      progress.phase === 'complete' ? 'bg-green-500' : 
-                      progress.phase === 'error' ? 'bg-red-500' : 
-                      'bg-blue-500'
+                      progress.phase === "complete"
+                        ? "bg-green-500"
+                        : progress.phase === "error"
+                          ? "bg-red-500"
+                          : "bg-blue-500"
                     }`}
-                    style={{ width: progress.total > 0 ? `${(progress.current / progress.total) * 100}%` : '0%' }}
+                    style={{
+                      width:
+                        progress.total > 0
+                          ? `${(progress.current / progress.total) * 100}%`
+                          : "0%",
+                    }}
                   />
                 </div>
               </div>
@@ -217,38 +263,57 @@ export default function MigratePage() {
               {progress.stats && (
                 <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mt-6">
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-green-600">{progress.stats.artifactsCreated}</div>
+                    <div className="text-2xl font-bold text-green-600">
+                      {progress.stats.artifactsCreated}
+                    </div>
                     <div className="text-xs text-gray-600">Created</div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-blue-600">{progress.stats.postsProcessed}</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {progress.stats.postsProcessed}
+                    </div>
                     <div className="text-xs text-gray-600">Processed</div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-purple-600">{progress.stats.uploadsSkipped}</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {progress.stats.uploadsSkipped}
+                    </div>
                     <div className="text-xs text-gray-600">Cached</div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-yellow-600">{progress.stats.postsSkipped}</div>
+                    <div className="text-2xl font-bold text-yellow-600">
+                      {progress.stats.postsSkipped}
+                    </div>
                     <div className="text-xs text-gray-600">No Media</div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-blue-600">{progress.stats.duplicatesSkipped}</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      {progress.stats.duplicatesSkipped}
+                    </div>
                     <div className="text-xs text-gray-600">Duplicates</div>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3">
-                    <div className="text-2xl font-bold text-red-600">{progress.stats.errors}</div>
+                    <div className="text-2xl font-bold text-red-600">
+                      {progress.stats.errors}
+                    </div>
                     <div className="text-xs text-gray-600">Errors</div>
                   </div>
                 </div>
               )}
 
-              {progress.phase === 'complete' && (
+              {progress.phase === "complete" && (
                 <div className="mt-6 flex gap-3">
-                  <Button onClick={() => router.push('/migrate/results')} className="flex-1">
+                  <Button
+                    onClick={() => router.push("/migrate/results")}
+                    className="flex-1"
+                  >
                     View Results
                   </Button>
-                  <Button onClick={() => router.push('/')} variant="outline" className="flex-1">
+                  <Button
+                    onClick={() => router.push("/")}
+                    variant="outline"
+                    className="flex-1"
+                  >
                     Go to Home
                   </Button>
                 </div>
@@ -266,8 +331,10 @@ export default function MigratePage() {
                   <div key={i} className="mb-1">
                     <span className="text-gray-500">
                       [{new Date(log.timestamp).toLocaleTimeString()}]
-                    </span>{' '}
-                    <span className={getLogColor(log.type)}>{getLogIcon(log.type)}</span>{' '}
+                    </span>{" "}
+                    <span className={getLogColor(log.type)}>
+                      {getLogIcon(log.type)}
+                    </span>{" "}
                     <span className="text-gray-300">{log.message}</span>
                   </div>
                 ))}
@@ -279,4 +346,3 @@ export default function MigratePage() {
     </div>
   );
 }
-

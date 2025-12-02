@@ -10,7 +10,9 @@ import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { UserAvatar } from "@/components/auth/UserAvatar";
 import ArtifactFeed from "@/components/presentation/ArtifactFeed";
+import Link from "next/link";
 
 export default function Home() {
   const { user } = useAuth();
@@ -68,6 +70,11 @@ export default function Home() {
     right: (
       <>
         <ArtifactAdder createArtifact={createArtifact} />
+        {user && (
+          <Link href={`/user?id=${user.id}`}>
+            <UserAvatar size="lg" />
+          </Link>
+        )}
         <DarkModeToggle />
       </>
     ),
