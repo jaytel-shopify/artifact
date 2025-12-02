@@ -188,15 +188,15 @@ function FolderPageContent() {
           </Button>
         </>
       ),
-      center: (
+      center: folder ? (
         <EditableTitle
-          initialValue={folder?.name || "Untitled Folder"}
-          projectId={folder?.id || ""}
+          initialValue={folder.name}
+          projectId={folder.id}
           onUpdated={canEdit ? handleFolderRename : undefined}
           isReadOnly={!canEdit}
           isFolder={true}
         />
-      ),
+      ) : null,
       right: (
         <>
           {/* Share Button */}
