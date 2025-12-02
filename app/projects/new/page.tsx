@@ -48,12 +48,12 @@ function NewProjectContent() {
         toast.success(`Created "${project.name}"`);
 
         // Navigate to new ID-based route
-        router.push(`/p?id=${project.id}`);
+        router.push(`/p/?id=${project.id}`);
       } catch (err) {
         toast.error("Failed to create project. Please try again.");
         console.error("Failed to create project:", err);
         // Redirect back to projects page on error
-        router.push("/projects");
+        router.push("/projects/");
       }
     }
 

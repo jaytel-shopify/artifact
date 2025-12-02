@@ -43,20 +43,21 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 /**
  * Get multiple users by their IDs
  * Useful for batch lookups (e.g., resolving creator_ids)
+ * Uses $in query for efficient batch fetching
  */
 export async function getUsersByIds(ids: string[]): Promise<Map<string, User>> {
+  if (ids.length === 0) return new Map();
+
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);
 
   try {
-    const allUsers = await collection.find();
+    // Use $in query to fetch only the users we need
+    const users = await collection.where({ id: { $in: ids } }).find();
     const userMap = new Map<string, User>();
 
-    const idSet = new Set(ids);
-    for (const user of allUsers) {
-      if (idSet.has(user.id)) {
-        userMap.set(user.id, user);
-      }
+    for (const user of users) {
+      userMap.set(user.id, user);
     }
 
     return userMap;

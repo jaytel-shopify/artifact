@@ -106,7 +106,7 @@ export function SaveToProjectDialog({
         action: {
           label: "View",
           onClick: () =>
-            router.push(`/p?id=${selectedProjectId}&page=${selectedPageId}`),
+            router.push(`/p/?id=${selectedProjectId}&page=${selectedPageId}`),
         },
       });
       onClose();

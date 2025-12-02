@@ -28,6 +28,7 @@ export default function ArtifactThumbnail({
             loading="lazy"
             width={artifact.metadata.width}
             height={artifact.metadata.height}
+            className="w-full"
           />
         </div>
       );

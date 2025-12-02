@@ -229,20 +229,31 @@ export function useQuick() {
   return window.quick;
 }
 
+// Module-level cache for waitForQuick promise to avoid repeated initialization
+let quickPromise: Promise<typeof window.quick> | null = null;
+
 /**
  * Wait for Quick SDK to be loaded and ready
  * Useful for ensuring Quick is available before making API calls
  *
  * In local development, this returns a mock implementation with placeholder data
+ *
+ * Note: This function caches the resolved Quick instance at module level
+ * to avoid repeated initialization overhead on subsequent calls.
  */
 export async function waitForQuick(): Promise<typeof window.quick> {
   if (typeof window === "undefined") {
     throw new Error("Quick is only available in the browser");
   }
 
-  // Production: wait for real Quick SDK
+  // Return immediately if Quick is already on window
   if (window.quick) {
     return window.quick;
+  }
+
+  // Return cached promise if initialization is already in progress
+  if (quickPromise) {
+    return quickPromise;
   }
 
   // Check if running in local development
@@ -254,18 +265,19 @@ export async function waitForQuick(): Promise<typeof window.quick> {
 
   if (isLocal) {
     // Use mock implementation for local development
-    const { createMockQuick } = await import("./quick-mock");
-    const mockQuick = createMockQuick();
-
-    // Store it on window for consistency
-    if (!window.quick) {
-      (window as any).quick = mockQuick;
-    }
-
-    return mockQuick as unknown as typeof window.quick;
+    quickPromise = import("./quick-mock").then(({ createMockQuick }) => {
+      const mockQuick = createMockQuick();
+      // Store it on window for consistency
+      if (!window.quick) {
+        (window as any).quick = mockQuick;
+      }
+      return mockQuick as unknown as typeof window.quick;
+    });
+    return quickPromise;
   }
 
-  return new Promise((resolve) => {
+  // Production: wait for real Quick SDK
+  quickPromise = new Promise((resolve) => {
     const checkQuick = () => {
       if (window.quick) {
         resolve(window.quick);
@@ -275,6 +287,8 @@ export async function waitForQuick(): Promise<typeof window.quick> {
     };
     checkQuick();
   });
+
+  return quickPromise;
 }
 
 /**

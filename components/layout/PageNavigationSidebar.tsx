@@ -251,7 +251,7 @@ export default function PageNavigationSidebar({
 
   return (
     <aside
-      className="bg-background h-full flex-shrink-0"
+      className="bg-background h-full flex-shrink-0 relative after:content-[''] after:absolute after:bottom-0 after:right-0 after:w-[1px] after:h-[200%] after:bg-text-primary/10"
       style={{ width: "var(--sidebar-width)" }}
     >
       <div className="flex flex-col h-full p-4">

@@ -7,7 +7,6 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { HeaderProvider } from "@/components/layout/HeaderContext";
 import GlobalLayout from "@/components/layout/GlobalLayout";
 import { SWRProvider } from "@/components/SWRProvider";
-// import { SchemaMigrationDialog } from "@/components/migration/SchemaMigrationDialog";
 import "./globals.css";
 
 const inter = Inter({
@@ -28,13 +27,6 @@ export const metadata: Metadata = {
     telephone: false,
   },
   manifest: "/manifest.json",
-  // viewport: {
-  //   width: "device-width",
-  //   initialScale: 1,
-  //   maximumScale: 1,
-  //   userScalable: false,
-  //   viewportFit: "cover",
-  // },
   icons: {
     icon: "/favicons/icon-32.png", // This overrides the default favicon.ico
     shortcut: "/favicons/icon-32.png",
@@ -69,7 +61,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
 
         {/* Quick Platform SDK - only works on deployed Quick sites */}
-        <Script src="/client/quick.js" strategy="lazyOnload" />
+        <Script src="/client/quick.js" async fetchPriority="high" />
         {/* Quicklytics Analytics - only works on deployed Quick sites */}
         <Script
           src="https://quicklytics.quick.shopify.io/quicklytics.min.js"

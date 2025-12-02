@@ -21,7 +21,7 @@ import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { FolderPageSkeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import type { Project, Artifact, Folder } from "@/types";
+import type { Project, Artifact, Folder, ProjectArtifact, Page } from "@/types";
 import {
   getFolderById,
   getProjectsInFolder,
@@ -29,11 +29,8 @@ import {
   deleteFolder,
 } from "@/lib/quick-folders";
 import { canUserEdit } from "@/lib/access-control";
-import {
-  getProjectCoverArtifacts,
-  getProjectArtifactsByProject,
-} from "@/lib/quick-db";
 import { cacheKeys } from "@/lib/cache-keys";
+import { waitForQuick } from "@/lib/quick";
 
 type ProjectWithCover = Project & {
   coverArtifacts: Artifact[];
@@ -67,20 +64,95 @@ async function fetchFolderData(
     }).catch(console.error);
   }
 
-  // Load cover artifacts and artifact count for projects (in parallel)
-  const projectsWithCovers = await Promise.all(
-    folderProjects.map(async (project) => {
-      const [coverArtifacts, allArtifacts] = await Promise.all([
-        getProjectCoverArtifacts(project.id),
-        getProjectArtifactsByProject(project.id),
-      ]);
-      return {
-        ...project,
-        coverArtifacts,
-        artifactCount: allArtifacts.length,
-      };
-    })
-  );
+  // If no projects, return early
+  if (folderProjects.length === 0) {
+    return {
+      folder: folderData,
+      projects: [],
+      canEdit: hasEditAccess,
+    };
+  }
+
+  // Batch fetch all data needed for project covers (optimized)
+  const quick = await waitForQuick();
+  const projectIds = folderProjects.map((p) => p.id);
+
+  const [allPages, allJunctionEntries] = await Promise.all([
+    quick.db
+      .collection("pages")
+      .where({ project_id: { $in: projectIds } })
+      .find(),
+    quick.db
+      .collection("project_artifacts")
+      .where({ project_id: { $in: projectIds } })
+      .find(),
+  ]);
+
+  // Group pages by project_id
+  const pagesByProject = new Map<string, Page[]>();
+  for (const page of allPages) {
+    const pages = pagesByProject.get(page.project_id) || [];
+    pages.push(page);
+    pagesByProject.set(page.project_id, pages);
+  }
+
+  // Group junction entries by project_id and collect all artifact IDs
+  const junctionByProject = new Map<string, ProjectArtifact[]>();
+  const allArtifactIds = new Set<string>();
+  for (const entry of allJunctionEntries) {
+    const entries = junctionByProject.get(entry.project_id) || [];
+    entries.push(entry);
+    junctionByProject.set(entry.project_id, entries);
+    allArtifactIds.add(entry.artifact_id);
+  }
+
+  // Batch fetch all artifacts referenced by junction entries
+  const allArtifacts =
+    allArtifactIds.size > 0
+      ? await quick.db
+          .collection("artifacts")
+          .where({ id: { $in: Array.from(allArtifactIds) } })
+          .find()
+      : [];
+
+  // Create artifact lookup map
+  const artifactById = new Map<string, Artifact>();
+  for (const artifact of allArtifacts) {
+    artifactById.set(artifact.id, artifact);
+  }
+
+  // Build projects with covers using the pre-fetched data
+  const projectsWithCovers: ProjectWithCover[] = folderProjects.map((project) => {
+    const projectJunctions = junctionByProject.get(project.id) || [];
+    const projectPages = pagesByProject.get(project.id) || [];
+
+    // Find first page (position 0 or first in list)
+    const sortedPages = projectPages.sort((a, b) => a.position - b.position);
+    const firstPage = sortedPages.find((p) => p.position === 0) || sortedPages[0];
+
+    // Get cover artifacts (first 3 from first page)
+    let coverArtifacts: Artifact[] = [];
+    if (firstPage) {
+      const firstPageJunctions = projectJunctions
+        .filter((j) => j.page_id === firstPage.id)
+        .sort((a, b) => a.position - b.position);
+
+      coverArtifacts = firstPageJunctions
+        .slice(0, 3)
+        .map((j) => {
+          const artifact = artifactById.get(j.artifact_id);
+          if (!artifact) return null;
+          return { ...artifact, name: j.name || artifact.name };
+        })
+        .filter((a): a is Artifact => a !== null);
+    }
+
+    return {
+      ...project,
+      coverArtifacts,
+      artifactCount: projectJunctions.length,
+    };
+  });
 
   return {
     folder: folderData,
@@ -117,7 +189,7 @@ function FolderPageContent() {
       },
       onError: () => {
         toast.error("Failed to load folder");
-        router.push("/projects");
+        router.push("/projects/");
       },
     }
   );
@@ -153,7 +225,7 @@ function FolderPageContent() {
       await deleteFolder(folder.id);
       globalMutate(cacheKeys.projectsData(user?.id)); // Refresh projects page
       toast.success(`Folder "${folder.name}" and all its projects deleted`);
-      router.push("/projects");
+      router.push("/projects/");
     } catch (error) {
       console.error("Failed to delete folder:", error);
       toast.error("Failed to delete folder");
@@ -162,7 +234,7 @@ function FolderPageContent() {
   }
 
   async function handleNewProject() {
-    router.push(`/projects/new?folder=${folderId}`);
+    router.push(`/projects/new/?folder=${folderId}`);
   }
 
   const backUrl = "/projects/";
