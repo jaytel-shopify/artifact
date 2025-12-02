@@ -609,11 +609,17 @@ export async function updateArtifact(
  * Delete an artifact (only the artifact, not junction entries)
  * Use removeArtifactFromProject for proper deletion with cascade logic
  */
-export async function deleteArtifact(id: string): Promise<void> {
-  const quick = await waitForQuick();
-  const collection = quick.db.collection("artifacts");
-
-  await collection.delete(id);
+export async function deleteArtifact(
+  id: string,
+  cascade: boolean = false
+): Promise<void> {
+  if (cascade) {
+    await removeArtifactFromProject(id);
+  } else {
+    const quick = await waitForQuick();
+    const collection = quick.db.collection("artifacts");
+    await collection.delete(id);
+  }
 }
 
 /**
@@ -625,8 +631,7 @@ export async function deleteArtifact(id: string): Promise<void> {
  * @returns Object indicating what was deleted
  */
 export async function removeArtifactFromProject(
-  projectArtifactId: string,
-  currentUserEmail: string
+  projectArtifactId: string
 ): Promise<{ junctionDeleted: boolean; artifactDeleted: boolean }> {
   const quick = await waitForQuick();
   const junctionCollection = quick.db.collection("project_artifacts");
@@ -651,11 +656,7 @@ export async function removeArtifactFromProject(
     // Artifact is orphaned - check if user is the creator
     const artifact = await getArtifactById(artifactId);
 
-    // Look up user by email to get their User.id
-    const user = await getUserByEmail(currentUserEmail);
-    const userId = user?.id;
-
-    if (artifact && userId && artifact.creator_id === userId) {
+    if (artifact && !artifact.published) {
       // User is creator and artifact is orphaned - delete it
       await deleteArtifact(artifactId);
       return { junctionDeleted: true, artifactDeleted: true };

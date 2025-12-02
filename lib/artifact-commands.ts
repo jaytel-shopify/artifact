@@ -66,7 +66,9 @@ export class ReorderArtifactsCommand extends BaseCommand {
   }
 
   async execute(): Promise<void> {
-    await reorderProjectArtifacts(buildPositionUpdates(this.reorderedArtifacts));
+    await reorderProjectArtifacts(
+      buildPositionUpdates(this.reorderedArtifacts)
+    );
   }
 }
 
@@ -299,7 +301,9 @@ export class UpdateArtifactCommand extends BaseCommand {
 
     // Update metadata on the artifact (metadata is artifact-level, not per-project)
     if (this.updates.metadata) {
-      await updateArtifactDB(this.artifactId, { metadata: this.updates.metadata });
+      await updateArtifactDB(this.artifactId, {
+        metadata: this.updates.metadata,
+      });
     }
   }
 }
@@ -314,7 +318,6 @@ export class DeleteArtifactCommand extends BaseCommand {
 
   constructor(
     private artifactId: string,
-    private currentUserEmail: string,
     currentArtifacts: ArtifactWithPosition[]
   ) {
     super(currentArtifacts);
@@ -325,7 +328,10 @@ export class DeleteArtifactCommand extends BaseCommand {
     }
 
     this.projectArtifactId = artifactToDelete.project_artifact_id;
-    this.cleanup = getCollectionCleanupIfNeeded(artifactToDelete, currentArtifacts);
+    this.cleanup = getCollectionCleanupIfNeeded(
+      artifactToDelete,
+      currentArtifacts
+    );
 
     this.optimisticState = currentArtifacts
       .filter((a) => a.id !== artifactId)
@@ -347,7 +353,7 @@ export class DeleteArtifactCommand extends BaseCommand {
       });
     }
     // Use removeArtifactFromProject which handles cascade logic
-    await removeArtifactFromProject(this.projectArtifactId, this.currentUserEmail);
+    await removeArtifactFromProject(this.projectArtifactId);
   }
 }
 
