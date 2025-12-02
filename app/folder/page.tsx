@@ -117,7 +117,7 @@ function FolderPageContent() {
       },
       onError: () => {
         toast.error("Failed to load folder");
-        router.push("/projects");
+        router.push("/projects/");
       },
     }
   );
@@ -153,7 +153,7 @@ function FolderPageContent() {
       await deleteFolder(folder.id);
       globalMutate(cacheKeys.projectsData(user?.id)); // Refresh projects page
       toast.success(`Folder "${folder.name}" and all its projects deleted`);
-      router.push("/projects");
+      router.push("/projects/");
     } catch (error) {
       console.error("Failed to delete folder:", error);
       toast.error("Failed to delete folder");
@@ -162,7 +162,7 @@ function FolderPageContent() {
   }
 
   async function handleNewProject() {
-    router.push(`/projects/new?folder=${folderId}`);
+    router.push(`/projects/new/?folder=${folderId}`);
   }
 
   const backUrl = "/projects/";

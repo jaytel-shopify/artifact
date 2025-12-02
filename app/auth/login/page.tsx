@@ -17,7 +17,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (isAuthenticated && user && !loading) {
-      router.push("/projects");
+      router.push("/projects/");
     }
   }, [user, loading, isAuthenticated, router]);
 

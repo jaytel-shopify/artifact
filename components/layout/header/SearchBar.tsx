@@ -26,7 +26,7 @@ export default function SearchBar({ mode = "all" }: SearchBarProps) {
     const trimmedQuery = query.trim();
     if (trimmedQuery) {
       const modeParam = mode !== "all" ? `&mode=${mode}` : "";
-      router.push(`/search?q=${encodeURIComponent(trimmedQuery)}${modeParam}`);
+      router.push(`/search/?q=${encodeURIComponent(trimmedQuery)}${modeParam}`);
     }
   };
 
