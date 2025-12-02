@@ -278,6 +278,28 @@ export default function ColumnControl({
     setLocalColumns(columnIndex);
   }, []);
 
+  // Keyboard controls: keys 1-8 set column count
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input or textarea
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable)
+      ) {
+        return;
+      }
+
+      const key = parseInt(e.key, 10);
+      if (key >= 1 && key <= 8) {
+        setLocalColumns(key);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   return (
     <div className="flex items-center gap-3">
       <div ref={trackRef} className="relative h-10 w-64">
