@@ -5,7 +5,6 @@ import type { Folder, Project } from "@/types";
 import { deleteProject } from "./quick-db";
 import { deleteAllAccessForResource, grantAccess } from "./access-control";
 import { getUserById } from "./quick-users";
-import { checkUserAccess } from "./access-control";
 
 /**
  * Quick.db Folders Service Layer
@@ -153,26 +152,21 @@ export async function getProjectsInFolder(
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
-  //TODO: check access control
-
   // Use .where() to filter by folder_id at the database level
   const folderProjects = await collection.where({ folder_id: folderId }).find();
 
-  // If userId provided, filter by explicit project access
+  // If userId provided, filter by explicit project access using batch query
   let accessibleProjects = folderProjects;
   if (userId) {
-    // Check access for each project in parallel
-    const accessChecks = await Promise.all(
-      folderProjects.map(async (project) => {
-        const access = await checkUserAccess(project.id, "project", userId);
-        return { project, hasAccess: access !== null };
-      })
-    );
+    // Batch fetch all user's project access entries in a single query
+    const { getUserAccessibleResources } = await import("./access-control");
+    const userProjectAccess = await getUserAccessibleResources(userId, "project");
+    const accessibleProjectIds = new Set(userProjectAccess.map(a => a.resource_id));
 
-    // Only include projects where user has explicit access
-    accessibleProjects = accessChecks
-      .filter(({ hasAccess }) => hasAccess)
-      .map(({ project }) => project);
+    // Filter to only projects user has access to
+    accessibleProjects = folderProjects.filter((project: Project) =>
+      accessibleProjectIds.has(project.id)
+    );
   }
 
   // Sort by last accessed

@@ -142,7 +142,7 @@ async function searchPublicArtifacts(
 
 /**
  * Search for user's accessible folders by name
- * Includes folders the user created OR has been granted access to via access control
+ * Uses batch query to fetch only folders user has access to
  * @param userId - User.id to check access for
  */
 async function searchFolders(
@@ -150,24 +150,21 @@ async function searchFolders(
   userId: string
 ): Promise<Folder[]> {
   const quick = await waitForQuick();
-  const collection = quick.db.collection("folders");
 
-  // Get all folders
-  const allFolders = await collection.find();
+  // Get folders user has access to via access control system
+  const accessibleFolders = await getUserAccessibleResources(userId, "folder");
 
-  // Get folders user has access to via access control system (now uses user_id)
-  const accessibleFolders = await getUserAccessibleResources(
-    userId,
-    "folder"
-  );
-  const accessibleFolderIds = new Set(
-    accessibleFolders.map((a) => a.resource_id)
-  );
+  if (accessibleFolders.length === 0) {
+    return [];
+  }
 
-  // Filter folders: user is creator (by User.id) OR user has access via access control
-  const userFolders = allFolders.filter(
-    (f: Folder) => f.creator_id === userId || accessibleFolderIds.has(f.id)
-  );
+  const accessibleFolderIds = accessibleFolders.map((a) => a.resource_id);
+
+  // Batch fetch only the folders user has access to
+  const userFolders = await quick.db
+    .collection("folders")
+    .where({ id: { $in: accessibleFolderIds } })
+    .find();
 
   // Client-side filtering for name substring match (case-insensitive)
   return userFolders.filter((folder: Folder) =>
@@ -195,6 +192,7 @@ async function searchProjects(
 /**
  * Get personal artifacts linked to accessible projects via junction table
  * Only returns unpublished artifacts that match the search query
+ * Uses batch queries to avoid full table scans
  */
 async function getPersonalArtifactsViaJunction(
   normalizedQuery: string,
@@ -205,36 +203,32 @@ async function getPersonalArtifactsViaJunction(
     return [];
   }
 
-  // Get junction entries for accessible projects
+  // Batch fetch junction entries only for accessible projects
   const junctionCollection = quick.db.collection("project_artifacts");
-  const allJunctionEntries: ProjectArtifact[] = await junctionCollection.find();
-
-  // Filter junction entries to only those in accessible projects
-  const accessibleProjectIdSet = new Set(accessibleProjectIds);
-  const relevantJunctionEntries = allJunctionEntries.filter(
-    (entry: ProjectArtifact) => accessibleProjectIdSet.has(entry.project_id)
-  );
+  const relevantJunctionEntries: ProjectArtifact[] = await junctionCollection
+    .where({ project_id: { $in: accessibleProjectIds } })
+    .find();
 
   if (relevantJunctionEntries.length === 0) {
     return [];
   }
 
   // Get unique artifact IDs from junction entries
-  const artifactIds = new Set(
-    relevantJunctionEntries.map((entry: ProjectArtifact) => entry.artifact_id)
-  );
+  const artifactIds = [
+    ...new Set(relevantJunctionEntries.map((entry: ProjectArtifact) => entry.artifact_id)),
+  ];
 
-  // Fetch all artifacts
+  // Batch fetch only the artifacts we need
   const artifactsCollection = quick.db.collection("artifacts");
-  const allArtifacts: Artifact[] = await artifactsCollection.find();
+  const linkedArtifacts: Artifact[] = await artifactsCollection
+    .where({ id: { $in: artifactIds } })
+    .find();
 
   // Filter to:
-  // 1. Only artifacts linked to accessible projects
-  // 2. Only unpublished artifacts
-  // 3. Only artifacts matching the search query
-  return allArtifacts.filter(
+  // 1. Only unpublished artifacts
+  // 2. Only artifacts matching the search query
+  return linkedArtifacts.filter(
     (artifact: Artifact) =>
-      artifactIds.has(artifact.id) &&
       !artifact.published &&
       artifact.name.toLowerCase().includes(normalizedQuery)
   );

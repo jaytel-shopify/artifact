@@ -137,21 +137,6 @@ function PresentationPageInner({
   // Sidebar state (extracted from old AppLayout)
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Load sidebar state from localStorage
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const stored = window.localStorage.getItem("sidebar_open");
-    if (stored !== null) {
-      setSidebarOpen(JSON.parse(stored));
-    }
-  }, []);
-
-  // Persist sidebar state
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("sidebar_open", JSON.stringify(sidebarOpen));
-  }, [sidebarOpen]);
-
   // Load column and fit mode preferences
   useEffect(() => {
     if (typeof window === "undefined") return;
