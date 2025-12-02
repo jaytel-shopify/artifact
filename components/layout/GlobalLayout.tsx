@@ -25,6 +25,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
   }, [pathname, searchParams]);
 
   function handleFileUpload(files: File[]) {
+    console.log(files);
     switch (pathname) {
       case "/projects/":
         // upload to currentproject
@@ -45,6 +46,23 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
   function handleUrlAdd(url: string) {
     console.log(url);
   }
+
+  function handlePaste(e: ClipboardEvent) {
+    const text = e.clipboardData?.getData("text/plain");
+    if (text) {
+      handleUrlAdd(text);
+    } else {
+      const files = e.clipboardData?.files;
+      if (files) {
+        handleFileUpload(Array.from(files));
+      }
+    }
+  }
+
+  useEffect(() => {
+    window.removeEventListener("paste", handlePaste);
+    window.addEventListener("paste", handlePaste);
+  }, []);
 
   return (
     <div

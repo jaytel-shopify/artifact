@@ -24,6 +24,7 @@ function ArtifactImage({
       src={url}
       alt={alt}
       className="class=max-w-full max-h-full w-auto h-auto object-contain rounded-card overflow-hidden max-h-full"
+      loading="lazy"
       draggable={false}
       width={width}
       height={height}

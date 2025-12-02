@@ -405,42 +405,39 @@ export async function reorderProjectArtifacts(
  * Get all artifacts for a project (via junction table)
  * Returns artifacts with their position context
  */
-export async function getArtifactsByProject(
-  projectId: string
-): Promise<ArtifactWithPosition[]> {
-  const quick = await waitForQuick();
+// export async function getArtifactsByProject(
+//   projectId: string
+// ): Promise<ArtifactWithPosition[]> {
+//   const quick = await waitForQuick();
 
-  // Get junction entries for this project
-  const junctionEntries = await getProjectArtifactsByProject(projectId);
+//   // Get junction entries for this project
+//   const junctionEntries = await getProjectArtifactsByProject(projectId);
 
-  if (junctionEntries.length === 0) return [];
+//   if (junctionEntries.length === 0) return [];
 
-  // Get all artifact IDs
-  const artifactIds = junctionEntries.map((e) => e.artifact_id);
+//   // Fetch all artifacts
+//   const artifactsCollection = quick.db.collection("artifacts");
+//   const allArtifacts = await artifactsCollection.find();
+//   const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
 
-  // Fetch all artifacts
-  const artifactsCollection = quick.db.collection("artifacts");
-  const allArtifacts = await artifactsCollection.find();
-  const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
+//   // Combine artifacts with position from junction table
+//   // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
+//   const result: ArtifactWithPosition[] = [];
+//   for (const entry of junctionEntries) {
+//     const artifact = artifactsMap.get(entry.artifact_id);
+//     if (artifact) {
+//       result.push({
+//         ...artifact,
+//         name: entry.name || artifact.name, // Prefer junction entry name
+//         position: entry.position,
+//         project_artifact_id: entry.id,
+//       });
+//     }
+//   }
 
-  // Combine artifacts with position from junction table
-  // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
-  const result: ArtifactWithPosition[] = [];
-  for (const entry of junctionEntries) {
-    const artifact = artifactsMap.get(entry.artifact_id);
-    if (artifact) {
-      result.push({
-        ...artifact,
-        name: entry.name || artifact.name, // Prefer junction entry name
-        position: entry.position,
-        project_artifact_id: entry.id,
-      });
-    }
-  }
-
-  // Sort by position
-  return result.sort((a, b) => a.position - b.position);
-}
+//   // Sort by position
+//   return result.sort((a, b) => a.position - b.position);
+// }
 
 /**
  * Get published artifacts created by the current user

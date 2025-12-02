@@ -6,7 +6,6 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft, PanelLeft, PanelLeftClose } from "lucide-react";
 import { CanvasSkeleton } from "@/components/ui/skeleton";
-import DropzoneUploader from "@/components/upload/DropzoneUploader";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
 import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
@@ -81,7 +80,7 @@ function PresentationPageInner({
 }: {
   onBroadcastReady?: (callback: () => void) => void;
   syncedArtifacts: ReturnType<typeof useSyncedArtifacts>;
-  project: Project | null;
+  project: Project | null | undefined;
   pages: Page[];
   currentPageId: string | null;
   selectPage: (pageId: string) => void;
@@ -93,8 +92,6 @@ function PresentationPageInner({
   deletePage: (pageId: string) => Promise<void>;
   reorderPages: (reorderedPages: Page[]) => Promise<void>;
 }) {
-  const searchParams = useSearchParams();
-  const projectId = searchParams?.get("id") || "";
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
@@ -310,14 +307,14 @@ function PresentationPageInner({
   // Track project access and set document title
   useProjectTracking(project);
 
-  // Artifact upload handlers
-  const { uploadState, handleFileUpload, handleUrlAdd, isPending } =
-    useArtifactUpload({
-      projectId: project?.id,
-      currentPageId: currentPageId || undefined,
-      createArtifact,
-      refetchArtifacts,
-    });
+  // // Artifact upload handlers
+  // const { uploadState, handleFileUpload, handleUrlAdd, isPending } =
+  //   useArtifactUpload({
+  //     projectId: project?.id,
+  //     currentPageId: currentPageId || undefined,
+  //     createArtifact,
+  //     refetchArtifacts,
+  //   });
 
   // Page management handlers
   const { handlePageCreate, handlePageDelete, handlePageRename } =
@@ -346,7 +343,7 @@ function PresentationPageInner({
     ? `/folder/?id=${project.folder_id}`
     : "/projects/";
 
-  const isUploading = uploadState.uploading || isPending;
+  // const isUploading = uploadState.uploading || isPending;
   const isPageLoading = !project || pages.length === 0;
 
   // Share dialog state
