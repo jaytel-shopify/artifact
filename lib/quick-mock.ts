@@ -5,16 +5,18 @@
  * Only includes the essentials: database, file storage, and identity
  */
 
+import {
+  MOCK_USER_ID,
+  MOCK_USER_EMAIL,
+  MOCK_PUBLIC_USER_ID,
+} from "./mock-constants";
+
 // In-memory database
 const db: Record<string, any[]> = {};
 
 // Generate unique ID
 const id = () =>
   `mock-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-// Mock user ID for local development (matches AuthProvider mock user)
-const MOCK_USER_ID = "local-dev-user-uuid";
-const MOCK_USER_EMAIL = "dev@shopify.com";
 
 // Initialize with sample data
 function init() {
@@ -50,7 +52,7 @@ function init() {
       updated_at: now,
     },
     {
-      id: "public-user-uuid",
+      id: MOCK_PUBLIC_USER_ID,
       email: "public@shopify.com",
       name: "Public User",
       slack_handle: "public-user",
@@ -389,7 +391,7 @@ function init() {
       name: "Urban Architecture",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: "public-user-uuid",
+      creator_id: MOCK_PUBLIC_USER_ID,
       metadata: { width: 1000, height: 482 },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -403,7 +405,7 @@ function init() {
       name: "Lorem ipsum dolor",
       description: "A sample image with a clean and modern look",
       published: true,
-      creator_id: "public-user-uuid",
+      creator_id: MOCK_PUBLIC_USER_ID,
       metadata: { width: 1000, height: 1376 },
       reactions: { like: [], dislike: [] },
       created_at: now,

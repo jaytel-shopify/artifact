@@ -90,6 +90,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: dbUser.email,
         });
 
+        // Log user profile URL for easy testing
+        console.log(
+          `%c🔗 Your profile URL: /user/${dbUser.id}`,
+          "background: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;"
+        );
+
         if (!isMounted) return;
 
         // dbUser is already the User type from the database

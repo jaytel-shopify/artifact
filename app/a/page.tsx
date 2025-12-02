@@ -148,16 +148,25 @@ export default function Page() {
           )}
 
           <div className="flex items-center gap-2">
-            <UserAvatar
-              id={artifact.creator?.id}
-              email={artifact.creator?.email}
-              name={artifact.creator?.name}
-              imageUrl={artifact.creator?.slack_image_url}
-              size="sm"
-            />
-            <p className="text-medium text-text-secondary capitalize">
-              {artifact.creator?.name}
-            </p>
+            <button
+              onClick={() => {
+                if (artifact.creator?.id) {
+                  router.push(`/user?id=${artifact.creator.id}`);
+                }
+              }}
+              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+            >
+              <UserAvatar
+                id={artifact.creator?.id}
+                email={artifact.creator?.email}
+                name={artifact.creator?.name}
+                imageUrl={artifact.creator?.slack_image_url}
+                size="sm"
+              />
+              <p className="text-medium text-text-secondary capitalize">
+                {artifact.creator?.name}
+              </p>
+            </button>
             <p
               className="text-medium text-text-secondary capitalize"
               style={{ color: "var(--color-disabled)" }}

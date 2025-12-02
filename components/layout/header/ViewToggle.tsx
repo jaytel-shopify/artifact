@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 
 export default function ViewToggle() {
   const pathname = usePathname();
-  const isExplore = pathname === "/";
+  const isExplore = pathname === "/" || pathname === "/user";
   const isProjects = pathname.startsWith("/projects");
 
   return (
