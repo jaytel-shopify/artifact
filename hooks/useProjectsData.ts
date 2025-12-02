@@ -2,11 +2,10 @@ import useSWR from "swr";
 import type { Project, Artifact, Folder } from "@/types";
 import {
   getProjects,
-  getPublishedArtifacts,
   getProjectCoverArtifacts,
   getProjectArtifactsByProject,
 } from "@/lib/quick-db";
-import { getProjectCountInFolder } from "@/lib/quick-folders";
+import { getProjectCountInFolder, getFolderById } from "@/lib/quick-folders";
 import { getUserAccessibleResources } from "@/lib/access-control";
 import { cacheKeys } from "@/lib/cache-keys";
 
@@ -19,7 +18,6 @@ export type FolderWithCount = Folder & { projectCount: number };
 export interface ProjectsData {
   projects: ProjectWithCover[];
   folders: FolderWithCount[];
-  publishedArtifacts: Artifact[];
 }
 
 /**
@@ -29,14 +27,11 @@ export interface ProjectsData {
  */
 async function fetcher(userId?: string): Promise<ProjectsData> {
   // Parallel loading - fetch projects, folders, and published artifacts simultaneously
-  const [projects, userFoldersAccess, publishedArtifacts] = await Promise.all([
+  const [projects, userFoldersAccess] = await Promise.all([
     getProjects(userId),
     getUserAccessibleResources(userId || "", "folder"),
-    userId ? getPublishedArtifacts(userId) : Promise.resolve([]),
   ]);
 
-  // Get full folder details from access entries
-  const { getFolderById } = await import("@/lib/quick-folders");
   const userFolders = await Promise.all(
     userFoldersAccess.map((access) => getFolderById(access.resource_id))
   );
@@ -68,7 +63,6 @@ async function fetcher(userId?: string): Promise<ProjectsData> {
   return {
     projects: projectsWithCovers,
     folders: foldersWithCounts,
-    publishedArtifacts,
   };
 }
 
@@ -79,10 +73,7 @@ async function fetcher(userId?: string): Promise<ProjectsData> {
 export function useProjectsData(userId?: string) {
   const { data, isLoading, error, mutate } = useSWR<ProjectsData>(
     cacheKeys.projectsData(userId),
-    () =>
-      userId
-        ? fetcher(userId)
-        : { projects: [], folders: [], publishedArtifacts: [] },
+    () => (userId ? fetcher(userId) : { projects: [], folders: [] }),
     {
       revalidateOnFocus: false,
       dedupingInterval: 2000, // Reduced to allow rapid mutations
@@ -92,12 +83,10 @@ export function useProjectsData(userId?: string) {
 
   const projects = data?.projects || [];
   const folders = data?.folders || [];
-  const publishedArtifacts = data?.publishedArtifacts || [];
 
   return {
     projects,
     folders,
-    publishedArtifacts,
     isLoading,
     error,
     mutate,

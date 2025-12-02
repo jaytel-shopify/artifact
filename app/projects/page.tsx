@@ -29,8 +29,7 @@ export default function ProjectsPage() {
   const { user } = useAuth();
 
   // Fetch all data
-  const { projects, folders, publishedArtifacts, isLoading, error } =
-    useProjectsData(user?.id);
+  const { projects, folders, isLoading, error } = useProjectsData(user?.id);
 
   // Fetch Quick sites
   // const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
@@ -120,37 +119,10 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Quick Sites Section */}
-      {/* {!sitesLoading && quickSites.length > 0 && (
-        <div className="space-y-4">
-          <img src="/quick.png" alt="quick logo" className="w-[50px]" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-6">
-            {quickSites.map((site) => (
-              <QuickSiteCard key={site.subdomain} site={site} />
-            ))}
-          </div>
-        </div>
-      )} */}
-
-      <hr />
-
-      {/* Published Artifacts Section */}
-      {publishedArtifacts.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-large">Published</h2>
-          <div className="grid grid-cols-2 sm:grid-cols-6 gap-6">
-            {publishedArtifacts.map((a) => (
-              <ArtifactCard key={a.id} artifact={a} />
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Empty State */}
       {!isLoading &&
         folders.length === 0 &&
-        uncategorizedProjects.length === 0 &&
-        publishedArtifacts.length === 0 && (
+        uncategorizedProjects.length === 0 && (
           <EmptyProjectsState
             onCreateFolder={() => setCreateFolderOpen(true)}
             onCreateProject={handleNewProject}

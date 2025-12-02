@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider } from "@/components/auth/AuthProvider";
@@ -68,11 +69,11 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
 
         {/* Quick Platform SDK - only works on deployed Quick sites */}
-        <script src="/client/quick.js" async />
+        <Script src="/client/quick.js" strategy="lazyOnload" />
         {/* Quicklytics Analytics - only works on deployed Quick sites */}
-        <script
+        <Script
           src="https://quicklytics.quick.shopify.io/quicklytics.min.js"
-          async
+          strategy="lazyOnload"
         />
       </head>
       <body className={`${inter.variable} antialiased`}>
