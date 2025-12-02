@@ -134,12 +134,12 @@ export default function Page() {
 
   return (
     <div className="flex flex-col items-center w-full p-6 h-[calc(100vh-var(--spacing-header-height)-var(--spacing-footer-height))]">
-      <div className="h-full w-full flex">
+      <div className="h-full w-full flex flex-col md:flex-row gap-5">
         <ArtifactComponent
           artifact={artifact}
-          className="h-full flex-1 flex justify-center items-center"
+          className="h-full flex-1 flex md:justify-center items-center"
         />
-        <div className="flex flex-col gap-4 ml-8 w-[var(--size-detail-sidebar-width)]">
+        <div className="flex flex-col gap-4 w-[var(--size-detail-sidebar-width)]">
           <h1 className="text-xlarge">{artifact.name}</h1>
           {artifact.description && (
             <p className="text-medium text-text-secondary capitalize">
