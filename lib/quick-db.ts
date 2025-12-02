@@ -480,27 +480,29 @@ export async function getArtifactsByPage(
 
   if (junctionEntries.length === 0) return [];
 
-  // Get all artifact IDs
   const artifactIds = junctionEntries.map((e) => e.artifact_id);
 
   // Fetch all artifacts
   const artifactsCollection = quick.db.collection("artifacts");
-  const allArtifacts = await artifactsCollection.find();
-  const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
+  const allArtifacts = await artifactsCollection
+    .where({ id: { $in: artifactIds } })
+    .find();
 
   // Combine artifacts with position from junction table
   // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
   const result: ArtifactWithPosition[] = [];
   for (const entry of junctionEntries) {
-    const artifact = artifactsMap.get(entry.artifact_id);
-    if (artifact) {
-      result.push({
-        ...artifact,
-        name: entry.name || artifact.name, // Prefer junction entry name
-        position: entry.position,
-        project_artifact_id: entry.id,
-      });
-    }
+    const artifact = allArtifacts.find(
+      (a: Artifact) => a.id === entry.artifact_id
+    );
+    if (!artifact) continue;
+
+    result.push({
+      ...artifact,
+      name: entry.name || artifact.name, // Prefer junction entry name
+      position: entry.position,
+      project_artifact_id: entry.id,
+    });
   }
 
   // Sort by position

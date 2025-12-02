@@ -737,9 +737,27 @@ class Collection {
   }
 
   where(query: any) {
+    const matchesCondition = (itemValue: any, condition: any): boolean => {
+      // Handle query operators like { $in: [...] }
+      if (
+        condition &&
+        typeof condition === "object" &&
+        !Array.isArray(condition)
+      ) {
+        if ("$in" in condition) {
+          return (
+            Array.isArray(condition.$in) && condition.$in.includes(itemValue)
+          );
+        }
+        // Add more operators here as needed (e.g., $gt, $lt, $ne, etc.)
+      }
+      // Simple equality check
+      return itemValue === condition;
+    };
+
     const filter = (items: any[]) =>
       items.filter((item) =>
-        Object.entries(query).every(([k, v]) => item[k] === v)
+        Object.entries(query).every(([k, v]) => matchesCondition(item[k], v))
       );
 
     const createQuery = (
