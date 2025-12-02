@@ -27,15 +27,12 @@ export interface ProjectsData {
  * @param userId - User.id to fetch data for
  * @param userEmail - User email (still needed for some legacy functions)
  */
-async function fetcher(
-  userId?: string,
-  userEmail?: string
-): Promise<ProjectsData> {
+async function fetcher(userId?: string): Promise<ProjectsData> {
   // Parallel loading - fetch projects, folders, and published artifacts simultaneously
   const [projects, userFoldersAccess, publishedArtifacts] = await Promise.all([
     getProjects(userId),
     getUserAccessibleResources(userId || "", "folder"),
-    userEmail ? getPublishedArtifacts(userEmail) : Promise.resolve([]),
+    userId ? getPublishedArtifacts(userId) : Promise.resolve([]),
   ]);
 
   // Get full folder details from access entries
@@ -78,14 +75,13 @@ async function fetcher(
 /**
  * Hook to fetch and manage projects, folders, and published artifacts data
  * @param userId - User.id to fetch data for
- * @param userEmail - User email (still needed for some legacy functions)
  */
-export function useProjectsData(userId?: string, userEmail?: string) {
+export function useProjectsData(userId?: string) {
   const { data, isLoading, error, mutate } = useSWR<ProjectsData>(
     cacheKeys.projectsData(userId),
     () =>
       userId
-        ? fetcher(userId, userEmail)
+        ? fetcher(userId)
         : { projects: [], folders: [], publishedArtifacts: [] },
     {
       revalidateOnFocus: false,

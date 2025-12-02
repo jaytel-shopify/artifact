@@ -30,7 +30,7 @@ export default function ProjectsPage() {
 
   // Fetch all data
   const { projects, folders, publishedArtifacts, isLoading, error } =
-    useProjectsData(user?.id, user?.email);
+    useProjectsData(user?.id);
 
   // Fetch Quick sites
   // const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
