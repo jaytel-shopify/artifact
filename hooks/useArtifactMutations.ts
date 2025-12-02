@@ -99,11 +99,7 @@ export function useArtifactMutations({
       if (!projectId || !user?.email) return;
 
       try {
-        const command = new DeleteArtifactCommand(
-          artifactId,
-          user.email,
-          artifacts
-        );
+        const command = new DeleteArtifactCommand(artifactId, artifacts);
 
         mutate(command.getOptimisticState(), { revalidate: false });
         await command.execute();
