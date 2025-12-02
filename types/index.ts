@@ -11,6 +11,7 @@ export type User = {
   slack_handle?: string;
   slack_id?: string;
   slack_image_url?: string;
+  title?: string;
 };
 
 // ==================== PROJECTS ====================

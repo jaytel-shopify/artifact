@@ -46,27 +46,27 @@ export default function UserProfilePage() {
     <div>
       {/* User Profile Header */}
       <div className="border-b border-border bg-background px-6 py-6">
-        <div className="mx-auto flex flex-col items-center gap-4">
+        <div className="mx-auto flex flex-col items-center gap-3">
           {userInfo?.slack_image_url && (
             <Image
               src={userInfo.slack_image_url}
               alt={displayName}
               width={64}
               height={64}
-              className="h-16 w-16 rounded-full"
+              className="h-24 w-24 rounded-full"
             />
           )}
-          <div className="flex flex-col items-center gap-2">
-            <h1 className="text-2xl">{displayName}</h1>
+          <div className="flex flex-col items-center gap-1">
+            <h1 className="text-2xl font-medium">{displayName}</h1>
             {userInfo?.title && (
-              <p className="text-sm text-center text-text-secondary">
+              <p className="text-sm text-center text-text-secondary font-medium">
                 {userInfo.title}
               </p>
             )}
             {userInfo?.slack_handle && (
-              <Button asChild variant="secondary" size="sm">
+              <Button asChild variant="secondary" size="sm" className="mt-2">
                 <a
-                  href={`slack://user?team=T02AJD7R8&id=${userInfo.slack_id}`}
+                  href={`https://shopify.slack.com/team/${userInfo.slack_id}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -77,7 +77,7 @@ export default function UserProfilePage() {
                     height={20}
                     className="w-4 h-4"
                   />
-                  <span className="text-secondary">Slack</span>
+                  Slack
                 </a>
               </Button>
             )}
