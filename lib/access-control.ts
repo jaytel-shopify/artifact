@@ -4,15 +4,23 @@
  * Unified access control for both projects and folders.
  * Supports three permission levels: owner, editor, viewer
  *
- * All lookups are done by user_id (not email).
+ * All lookups are done by user_id.
  */
 
 import { waitForQuick } from "./quick";
 import { getResourceUrl } from "./urls";
 import type { User } from "@/types";
+import { getProjectsInFolder } from "./quick-folders";
 
-export type AccessLevel = "owner" | "editor" | "viewer";
-export type ResourceType = "project" | "folder";
+export const ACCESS_LEVELS = {
+  OWNER: "owner",
+  EDITOR: "editor",
+  VIEWER: "viewer",
+} as const;
+export type AccessLevel = (typeof ACCESS_LEVELS)[keyof typeof ACCESS_LEVELS];
+
+export const RESOURCE_TYPES = { PROJECT: "project", FOLDER: "folder" } as const;
+export type ResourceType = (typeof RESOURCE_TYPES)[keyof typeof RESOURCE_TYPES];
 
 export interface AccessEntry {
   id: string;
@@ -176,34 +184,22 @@ async function sendInviteNotification(
 /**
  * Get all access entries for a resource (project or folder)
  */
-export async function getAccessList(
+export async function getAccessListForResource(
   resourceId: string,
   resourceType: ResourceType
 ): Promise<AccessEntry[]> {
   try {
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
-
-    // Use .where() to filter at the database level
-    const filtered = await collection
+    const accessEntries = await collection
       .where({
         resource_id: resourceId,
         resource_type: resourceType,
       })
+      .orderBy("access_level", "asc")
+      .orderBy("created_at", "asc")
       .find();
-
-    // Sort by access level (owner first, then editor, then viewer) and creation date
-    return filtered.sort((a: AccessEntry, b: AccessEntry) => {
-      const levelOrder = { owner: 0, editor: 1, viewer: 2 };
-      const levelDiff = levelOrder[a.access_level] - levelOrder[b.access_level];
-
-      if (levelDiff !== 0) return levelDiff;
-
-      // Same level, sort by creation date (oldest first)
-      return (
-        new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      );
-    });
+    return accessEntries as AccessEntry[];
   } catch (error) {
     console.error("[AccessControl] Failed to get access list:", error);
     return [];
@@ -224,22 +220,14 @@ async function cascadeAccessToFolderProjects(
   userAvatar?: string
 ): Promise<void> {
   try {
-    // Import dynamically to avoid circular dependency
-    const { getProjectsInFolder } = await import("./quick-folders");
     const projects = await getProjectsInFolder(folderId);
-
-    console.log(
-      "[AccessControl] Cascading access to",
-      projects.length,
-      "projects in folder"
-    );
 
     // Grant access to each project (in parallel for speed)
     await Promise.all(
       projects.map((project) =>
         grantAccess(
           project.id,
-          "project",
+          RESOURCE_TYPES.PROJECT,
           userId,
           userEmail,
           accessLevel,
@@ -291,7 +279,7 @@ export async function grantAccess(
       });
 
       // If updating folder access, cascade to projects
-      if (resourceType === "folder") {
+      if (resourceType === RESOURCE_TYPES.FOLDER) {
         await cascadeAccessToFolderProjects(
           resourceId,
           userId,
@@ -327,7 +315,7 @@ export async function grantAccess(
     });
 
     // If granting folder access, cascade to all projects in folder
-    if (resourceType === "folder") {
+    if (resourceType === RESOURCE_TYPES.FOLDER) {
       await cascadeAccessToFolderProjects(
         resourceId,
         userId,
@@ -491,7 +479,9 @@ export async function canUserEdit(
   userId: string
 ): Promise<boolean> {
   const accessLevel = await checkUserAccess(resourceId, resourceType, userId);
-  return accessLevel === "owner" || accessLevel === "editor";
+  return (
+    accessLevel === ACCESS_LEVELS.OWNER || accessLevel === ACCESS_LEVELS.EDITOR
+  );
 }
 
 /**
@@ -543,9 +533,11 @@ export async function deleteAllAccessForResource(
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const accessList = await getAccessList(resourceId, resourceType);
+    const accessList = await getAccessListForResource(resourceId, resourceType);
 
-    await Promise.all(accessList.map((entry) => collection.delete(entry.id)));
+    await Promise.all(
+      accessList.map((entry: AccessEntry) => collection.delete(entry.id))
+    );
 
     console.log("[AccessControl] Deleted all access for resource:", {
       resourceType,

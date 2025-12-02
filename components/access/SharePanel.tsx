@@ -21,7 +21,7 @@ import { UserSearchAutocomplete } from "./UserSearchAutocomplete";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { UserChip } from "@/components/ui/user-chip";
 import {
-  getAccessList,
+  getAccessListForResource,
   grantAccess,
   updateAccessLevel,
   revokeAccess,
@@ -73,7 +73,7 @@ export function SharePanel({
   const loadAccessList = useCallback(async () => {
     setLoading(true);
     try {
-      const access = await getAccessList(resourceId, resourceType);
+      const access = await getAccessListForResource(resourceId, resourceType);
       setAccessList(access);
 
       // Find current user's access level (by user_id)
