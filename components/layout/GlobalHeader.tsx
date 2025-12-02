@@ -14,7 +14,7 @@ export default function GlobalHeader({
   right,
 }: GlobalHeaderProps) {
   return (
-    <header className="h-header-height sticky top-0 z-10 overflow-hidden before:absolute before:inset-0 before:h-[200%] before:bg-[linear-gradient(180deg,color-mix(in_srgb,_var(--c-background)_66%,_transparent)_49%,color-mix(in_srgb,_var(--c-background)_12%,_transparent)_49%)] before:backdrop-blur-md before:content-['']">
+    <header className="h-header-height sticky top-0 z-10 before:absolute before:inset-0 before:bg-[linear-gradient(180deg,color-mix(in_srgb,_var(--c-background)_66%,_transparent)_97%,color-mix(in_srgb,_var(--c-background)_12%,_transparent)_97%)] before:backdrop-blur-md before:content-['']">
       <div className="flex h-full items-center justify-between px-6">
         {/* Left Section */}
         <div className="max-w-section-width relative flex size-full items-center gap-3">
