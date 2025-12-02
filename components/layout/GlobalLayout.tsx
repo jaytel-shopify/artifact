@@ -18,9 +18,33 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
 
   // Track current path globally
   useEffect(() => {
-    const fullPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    const fullPath =
+      pathname +
+      (searchParams?.toString() ? `?${searchParams.toString()}` : "");
     setCurrentPath(fullPath);
   }, [pathname, searchParams]);
+
+  function handleFileUpload(files: File[]) {
+    switch (pathname) {
+      case "/projects/":
+        // upload to currentproject
+        // select page
+        break;
+      case "/folder/":
+        // select project
+        // select page
+        break;
+      case "/p/":
+        // upload to current project, current page
+        break;
+      default:
+      // upload public
+    }
+  }
+
+  function handleUrlAdd(url: string) {
+    console.log(url);
+  }
 
   return (
     <div
@@ -36,13 +60,10 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
       <main className="flex-1 min-h-0">{children}</main>
       <DropzoneUploader
         onFiles={(files) => {
-          console.log(files);
+          handleFileUpload(files);
         }}
         onUrl={(url) => {
-          console.log(url);
-        }}
-        onDragStateChange={(dragging) => {
-          console.log(dragging);
+          handleUrlAdd(url);
         }}
       />
     </div>

@@ -19,6 +19,7 @@ import {
 import { getProjects, getPages, addArtifactToProject } from "@/lib/quick-db";
 import type { Project, Page } from "@/types";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface SaveToProjectDialogProps {
   isOpen: boolean;
@@ -35,6 +36,7 @@ export function SaveToProjectDialog({
   artifactName,
   userEmail,
 }: SaveToProjectDialogProps) {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
@@ -100,7 +102,13 @@ export function SaveToProjectDialog({
         name: artifactName,
       });
 
-      toast.success("Artifact saved to project");
+      toast.success("Artifact saved to project", {
+        action: {
+          label: "View",
+          onClick: () =>
+            router.push(`/p?id=${selectedProjectId}&page=${selectedPageId}`),
+        },
+      });
       onClose();
     } catch (error) {
       console.error("Failed to save artifact to project:", error);
@@ -125,7 +133,9 @@ export function SaveToProjectDialog({
 
         <div className="space-y-4 py-4">
           {isLoading ? (
-            <p className="text-small text-text-secondary">Loading projects...</p>
+            <p className="text-small text-text-secondary">
+              Loading projects...
+            </p>
           ) : projects.length === 0 ? (
             <p className="text-small text-text-secondary">
               No projects found. Create a project first to save artifacts.

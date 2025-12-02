@@ -70,6 +70,7 @@ async function fetchProject(projectId: string): Promise<Project | null> {
 function PresentationPageInner({
   onBroadcastReady,
   syncedArtifacts,
+  project,
   pages,
   currentPageId,
   selectPage: selectPageProp,
@@ -80,6 +81,7 @@ function PresentationPageInner({
 }: {
   onBroadcastReady?: (callback: () => void) => void;
   syncedArtifacts: ReturnType<typeof useSyncedArtifacts>;
+  project: Project | null;
   pages: Page[];
   currentPageId: string | null;
   selectPage: (pageId: string) => void;
@@ -96,7 +98,7 @@ function PresentationPageInner({
   const { user } = useAuth();
   const [columns, setColumns] = useState<number>(3);
   const [fitMode, setFitMode] = useState<boolean>(false);
-  const [dragging, setDragging] = useState(false);
+  // const [dragging, setDragging] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const [columnControlsOverscrollAmount, setColumnControlsOverscrollAmount] =
     useState(0);
@@ -214,13 +216,6 @@ function PresentationPageInner({
     canEscape: columns === 1 && fitMode,
     onTogglePresentationMode: () => setPresentationMode((prev) => !prev),
   });
-
-  // Fetch project data
-  const { data: project } = useSWR<Project | null>(
-    cacheKeys.projectData(projectId),
-    () => (projectId ? fetchProject(projectId) : null),
-    { revalidateOnFocus: false }
-  );
 
   // Check permissions
   const permissions = useResourcePermissions(project?.id || null, "project");
@@ -500,56 +495,6 @@ function PresentationPageInner({
           }}
         >
           <div className="h-full relative">
-            {/* Dropzone for file uploads (only for creators/editors) */}
-            {project?.id && currentPageId && canEdit && (
-              <DropzoneUploader
-                onFiles={handleFileUpload}
-                onUrl={handleUrlAdd}
-                onDragStateChange={setDragging}
-              />
-            )}
-
-            {/* Loading/upload overlay */}
-            {(dragging || isUploading) && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center bg-primary/40 backdrop-blur-sm">
-                <div
-                  className="px-[var(--spacing-xl)] py-[var(--spacing-lg)] rounded-2xl bg-white/95 text-black shadow-xl"
-                  style={{ fontSize: "var(--font-size-sm)" }}
-                >
-                  {dragging ? (
-                    <div className="text-center">
-                      <div className="text-medium">Drop to upload</div>
-                    </div>
-                  ) : (
-                    <div className="text-center space-y-3 min-w-[200px]">
-                      <div className="text-medium">
-                        Uploading
-                        {uploadState.totalFiles > 1
-                          ? ` ${uploadState.completedFiles + 1} of ${uploadState.totalFiles}`
-                          : ""}
-                        ...
-                      </div>
-                      {uploadState.uploading && (
-                        <div className="space-y-2">
-                          <div className="w-full bg-secondary rounded-full h-2">
-                            <div
-                              className="bg-primary h-2 rounded-full transition-all duration-300 ease-out"
-                              style={{
-                                width: `${uploadState.currentProgress}%`,
-                              }}
-                            />
-                          </div>
-                          <div className="text-small text-text-secondary">
-                            {uploadState.currentProgress}%
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Canvas */}
             <div className="h-full">
               <Canvas
@@ -756,11 +701,6 @@ function PresentationPageInner({
   );
 }
 
-// Simple wrapper - PresentationPageInner gets the room and wraps itself with provider
-function PresentationPageContent() {
-  return <PresentationPageInnerWithProvider />;
-}
-
 // Component that gets room and provides QuickFollowProvider
 function PresentationPageInnerWithProvider() {
   const searchParams = useSearchParams();
@@ -812,6 +752,7 @@ function PresentationPageInnerWithProvider() {
       <PresentationPageInner
         onBroadcastReady={wrappedSetBroadcastCallback}
         syncedArtifacts={syncedArtifacts}
+        project={project}
         pages={pages}
         currentPageId={currentPageId}
         selectPage={selectPage}
@@ -824,14 +765,10 @@ function PresentationPageInnerWithProvider() {
   );
 }
 
-function PresentationPageWithProvider() {
-  return <PresentationPageContent />;
-}
-
 export default function PresentationPage() {
   return (
     <Suspense fallback={null}>
-      <PresentationPageWithProvider />
+      <PresentationPageInnerWithProvider />
     </Suspense>
   );
 }
