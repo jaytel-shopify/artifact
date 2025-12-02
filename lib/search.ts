@@ -3,7 +3,6 @@
 import { waitForQuick } from "./quick";
 import { getProjects } from "./quick-db";
 import { getUserAccessibleResources } from "./access-control";
-import { getUserByEmail } from "./quick-users";
 import type { Artifact, Project, Folder, ProjectArtifact } from "@/types";
 
 /**
@@ -35,13 +34,13 @@ export type SearchResults = {
  * - "all": Everything (default)
  *
  * @param query - Search term (case-insensitive)
- * @param userEmail - Email of the user performing the search
+ * @param userId - User.id of the user performing the search
  * @param mode - Search mode ("public" | "dashboard" | "all")
  * @returns SearchResults grouped by resource type
  */
 export async function searchResources(
   query: string,
-  userEmail: string,
+  userId: string,
   mode: SearchMode = "all"
 ): Promise<SearchResults> {
   // Normalize query
@@ -57,9 +56,9 @@ export async function searchResources(
     };
   }
 
-  // Validate userEmail
-  if (!userEmail || !userEmail.trim()) {
-    throw new Error("User email is required for search");
+  // Validate userId
+  if (!userId || !userId.trim()) {
+    throw new Error("User ID is required for search");
   }
 
   const quick = await waitForQuick();
@@ -79,8 +78,8 @@ export async function searchResources(
   if (mode === "dashboard") {
     // Only search user's dashboard content (folders, projects, personal artifacts)
     const [folders, projects] = await Promise.all([
-      searchFolders(normalizedQuery, userEmail),
-      searchProjects(normalizedQuery, userEmail),
+      searchFolders(normalizedQuery, userId),
+      searchProjects(normalizedQuery, userId),
     ]);
 
     // Get personal artifacts linked to user's accessible projects
@@ -102,8 +101,8 @@ export async function searchResources(
   // Default: search everything
   const [publicArtifacts, folders, projects] = await Promise.all([
     searchPublicArtifacts(normalizedQuery, quick),
-    searchFolders(normalizedQuery, userEmail),
-    searchProjects(normalizedQuery, userEmail),
+    searchFolders(normalizedQuery, userId),
+    searchProjects(normalizedQuery, userId),
   ]);
 
   // Get personal artifacts linked to user's accessible projects
@@ -144,10 +143,11 @@ async function searchPublicArtifacts(
 /**
  * Search for user's accessible folders by name
  * Includes folders the user created OR has been granted access to via access control
+ * @param userId - User.id to check access for
  */
 async function searchFolders(
   normalizedQuery: string,
-  userEmail: string
+  userId: string
 ): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
@@ -155,13 +155,9 @@ async function searchFolders(
   // Get all folders
   const allFolders = await collection.find();
 
-  // Look up user by email to get their User.id
-  const user = await getUserByEmail(userEmail);
-  const userId = user?.id;
-
-  // Get folders user has access to via access control system
+  // Get folders user has access to via access control system (now uses user_id)
   const accessibleFolders = await getUserAccessibleResources(
-    userEmail,
+    userId,
     "folder"
   );
   const accessibleFolderIds = new Set(
@@ -170,7 +166,7 @@ async function searchFolders(
 
   // Filter folders: user is creator (by User.id) OR user has access via access control
   const userFolders = allFolders.filter(
-    (f: Folder) => (userId && f.creator_id === userId) || accessibleFolderIds.has(f.id)
+    (f: Folder) => f.creator_id === userId || accessibleFolderIds.has(f.id)
   );
 
   // Client-side filtering for name substring match (case-insensitive)
@@ -182,12 +178,13 @@ async function searchFolders(
 /**
  * Search for user's accessible projects by name
  * Uses getProjects() which returns projects the user created OR has been granted access to
+ * @param userId - User.id to check access for
  */
 async function searchProjects(
   normalizedQuery: string,
-  userEmail: string
+  userId: string
 ): Promise<Project[]> {
-  const userProjects = await getProjects(userEmail);
+  const userProjects = await getProjects(userId);
 
   // Client-side filtering for name substring match (case-insensitive)
   return userProjects.filter((project) =>

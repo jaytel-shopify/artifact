@@ -2,14 +2,15 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { searchShopifyUsers, type ShopifyUser } from "@/lib/access-control";
+import { searchUsers } from "@/lib/access-control";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import type { User } from "@/types";
 
 interface UserSearchAutocompleteProps {
-  onSelect: (user: ShopifyUser | null) => void;
-  selectedUser: ShopifyUser | null; // Track if a user is already selected
+  onSelect: (user: User | null) => void;
+  selectedUser: User | null; // Track if a user is already selected
   placeholder?: string;
-  excludeEmails?: string[];
+  excludeUserIds?: string[];
 }
 
 /**
@@ -22,10 +23,10 @@ export function UserSearchAutocomplete({
   onSelect,
   selectedUser,
   placeholder = "Search name",
-  excludeEmails = [],
+  excludeUserIds = [],
 }: UserSearchAutocompleteProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ShopifyUser[]>([]);
+  const [results, setResults] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -51,11 +52,11 @@ export function UserSearchAutocomplete({
 
       setLoading(true);
       try {
-        const users = await searchShopifyUsers(query);
+        const users = await searchUsers(query);
 
-        // Filter out excluded emails
+        // Filter out excluded user IDs
         const filtered = users.filter(
-          (user) => !excludeEmails.includes(user.email.toLowerCase())
+          (user) => !excludeUserIds.includes(user.id)
         );
 
         setResults(filtered);
@@ -70,7 +71,7 @@ export function UserSearchAutocomplete({
 
     const debounce = setTimeout(search, 300);
     return () => clearTimeout(debounce);
-  }, [query, excludeEmails, selectedUser]);
+  }, [query, excludeUserIds, selectedUser]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -116,7 +117,7 @@ export function UserSearchAutocomplete({
     }
   };
 
-  const handleSelect = (user: ShopifyUser) => {
+  const handleSelect = (user: User) => {
     setQuery(""); // Clear input for next search
     setResults([]);
     setIsOpen(false);
@@ -155,7 +156,7 @@ export function UserSearchAutocomplete({
         >
           {results.map((user, index) => (
             <button
-              key={user.email}
+              key={user.id}
               onClick={() => handleSelect(user)}
               className={`
                 w-full px-3 py-2 flex items-center gap-3 hover:bg-secondary transition-colors
@@ -165,16 +166,14 @@ export function UserSearchAutocomplete({
               {/* Avatar */}
               <UserAvatar
                 email={user.email}
-                name={user.fullName}
-                imageUrl={user.slackImageUrl}
+                name={user.name}
+                imageUrl={user.slack_image_url}
                 size="sm"
               />
 
               {/* User Name */}
               <div className="flex-1 text-left min-w-0">
-                <div className="text-medium truncate">
-                  {user.fullName}
-                </div>
+                <div className="text-medium truncate">{user.name}</div>
               </div>
             </button>
           ))}

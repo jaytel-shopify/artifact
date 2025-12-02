@@ -28,8 +28,8 @@ import {
   type AccessEntry,
   type AccessLevel,
   type ResourceType,
-  type ShopifyUser,
 } from "@/lib/access-control";
+import type { User } from "@/types";
 import { getResourceUrl } from "@/lib/urls";
 
 interface SharePanelProps {
@@ -38,6 +38,7 @@ interface SharePanelProps {
   resourceId: string;
   resourceType: ResourceType;
   resourceName: string;
+  currentUserId: string;
   currentUserEmail: string;
 }
 
@@ -53,6 +54,7 @@ export function SharePanel({
   resourceId,
   resourceType,
   resourceName,
+  currentUserId,
   currentUserEmail,
 }: SharePanelProps) {
   const [accessList, setAccessList] = useState<AccessEntry[]>([]);
@@ -62,7 +64,7 @@ export function SharePanel({
     useState<AccessLevel | null>(null);
   const [selectedAccessLevel, setSelectedAccessLevel] =
     useState<AccessLevel>("editor");
-  const [selectedUsers, setSelectedUsers] = useState<ShopifyUser[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
 
   // Generate the shareable link
   const shareUrl = getResourceUrl(resourceType, resourceId);
@@ -74,10 +76,8 @@ export function SharePanel({
       const access = await getAccessList(resourceId, resourceType);
       setAccessList(access);
 
-      // Find current user's access level
-      const userAccess = access.find(
-        (a) => a.user_email.toLowerCase() === currentUserEmail.toLowerCase()
-      );
+      // Find current user's access level (by user_id)
+      const userAccess = access.find((a) => a.user_id === currentUserId);
       setCurrentUserAccess(userAccess?.access_level || null);
     } catch (error) {
       console.error("Failed to load access list:", error);
@@ -85,7 +85,7 @@ export function SharePanel({
     } finally {
       setLoading(false);
     }
-  }, [resourceId, resourceType, currentUserEmail]);
+  }, [resourceId, resourceType, currentUserId]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -96,21 +96,19 @@ export function SharePanel({
   const isOwner = currentUserAccess === "owner";
 
   // Handle adding a user to the invite list
-  const handleAddUser = (user: ShopifyUser | null) => {
+  const handleAddUser = (user: User | null) => {
     if (!user) return;
 
     // Check if already in selected list
-    if (selectedUsers.find((u) => u.email === user.email)) {
+    if (selectedUsers.find((u) => u.id === user.id)) {
       return;
     }
 
-    // Check if user already has access
-    const existing = accessList.find(
-      (a) => a.user_email.toLowerCase() === user.email.toLowerCase()
-    );
+    // Check if user already has access (by user_id)
+    const existing = accessList.find((a) => a.user_id === user.id);
 
     if (existing) {
-      toast.error(`${user.fullName} already has access`);
+      toast.error(`${user.name} already has access`);
       return;
     }
 
@@ -118,8 +116,8 @@ export function SharePanel({
   };
 
   // Handle removing a user from the invite list
-  const handleRemoveUser = (email: string) => {
-    setSelectedUsers((prev) => prev.filter((u) => u.email !== email));
+  const handleRemoveUser = (userId: string) => {
+    setSelectedUsers((prev) => prev.filter((u) => u.id !== userId));
   };
 
   // Handle inviting all selected users
@@ -128,23 +126,22 @@ export function SharePanel({
 
     try {
       // Get current user's name from access list
-      const currentUser = accessList.find(
-        (a) => a.user_email.toLowerCase() === currentUserEmail.toLowerCase()
-      );
+      const currentUser = accessList.find((a) => a.user_id === currentUserId);
       const currentUserName = currentUser?.user_name || currentUserEmail;
 
-      // Invite all selected users
+      // Invite all selected users (grantAccess now takes userId first)
       const promises = selectedUsers.map((user) =>
         grantAccess(
           resourceId,
           resourceType,
-          user.email,
+          user.id, // User.id (primary identifier)
+          user.email, // User's email (for display)
           selectedAccessLevel,
-          currentUserEmail,
-          user.fullName,
-          user.slackImageUrl,
+          currentUserId, // Granted by (User.id)
+          user.name,
+          user.slack_image_url,
           resourceName,
-          user.slackId,
+          user.slack_id,
           currentUserName
         )
       );
@@ -165,11 +162,11 @@ export function SharePanel({
 
   // Handle changing access level
   async function handleChangeAccessLevel(
-    userEmail: string,
+    userId: string,
     newLevel: AccessLevel
   ) {
     try {
-      await updateAccessLevel(resourceId, resourceType, userEmail, newLevel);
+      await updateAccessLevel(resourceId, resourceType, userId, newLevel);
       toast.success("Access level updated");
       await loadAccessList();
     } catch (error) {
@@ -179,13 +176,13 @@ export function SharePanel({
   }
 
   // Handle removing access
-  async function handleRemoveAccess(userEmail: string, userName: string) {
+  async function handleRemoveAccess(userId: string, userName: string) {
     if (!confirm(`Remove ${userName} from this ${resourceType}?`)) {
       return;
     }
 
     try {
-      await revokeAccess(resourceId, resourceType, userEmail);
+      await revokeAccess(resourceId, resourceType, userId);
       toast.success(`Removed ${userName}`);
       await loadAccessList();
     } catch (error) {
@@ -206,8 +203,8 @@ export function SharePanel({
     }
   }
 
-  // Get excluded emails (already has access)
-  const excludeEmails = accessList.map((a) => a.user_email);
+  // Get excluded user IDs (already has access)
+  const excludeUserIds = accessList.map((a) => a.user_id);
 
   // Separate the owner from other users
   const owner = accessList.find((a) => a.access_level === "owner");
@@ -254,9 +251,9 @@ export function SharePanel({
                   <UserSearchAutocomplete
                     onSelect={handleAddUser}
                     selectedUser={null}
-                    excludeEmails={[
-                      ...excludeEmails,
-                      ...selectedUsers.map((u) => u.email),
+                    excludeUserIds={[
+                      ...excludeUserIds,
+                      ...selectedUsers.map((u) => u.id),
                     ]}
                     placeholder="Search and add people..."
                   />
@@ -283,11 +280,11 @@ export function SharePanel({
                 <div className="flex flex-wrap gap-2">
                   {selectedUsers.map((user) => (
                     <UserChip
-                      key={user.email}
+                      key={user.id}
                       email={user.email}
-                      name={user.fullName}
-                      imageUrl={user.slackImageUrl}
-                      onRemove={() => handleRemoveUser(user.email)}
+                      name={user.name}
+                      imageUrl={user.slack_image_url}
+                      onRemove={() => handleRemoveUser(user.id)}
                     />
                   ))}
                 </div>
@@ -338,8 +335,7 @@ export function SharePanel({
                     <div className="flex-1 min-w-0">
                       <div className="text-medium truncate">
                         {owner.user_name || owner.user_email}
-                        {owner.user_email.toLowerCase() ===
-                          currentUserEmail.toLowerCase() && (
+                        {owner.user_id === currentUserId && (
                           <span className="text-text-secondary"> (you)</span>
                         )}
                       </div>
@@ -365,8 +361,7 @@ export function SharePanel({
                     <div className="flex-1 min-w-0">
                       <div className="text-medium truncate">
                         {access.user_name || access.user_email}
-                        {access.user_email.toLowerCase() ===
-                          currentUserEmail.toLowerCase() && (
+                        {access.user_id === currentUserId && (
                           <span className="text-text-secondary"> (you)</span>
                         )}
                       </div>
@@ -379,12 +374,12 @@ export function SharePanel({
                         onValueChange={(value) => {
                           if (value === "remove") {
                             handleRemoveAccess(
-                              access.user_email,
+                              access.user_id,
                               access.user_name || access.user_email
                             );
                           } else {
                             handleChangeAccessLevel(
-                              access.user_email,
+                              access.user_id,
                               value as AccessLevel
                             );
                           }

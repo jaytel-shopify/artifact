@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 import { useAuth } from "./AuthProvider";
+import type { User } from "@/types";
 
 interface UserAvatarProps {
   id?: string;
@@ -26,9 +27,14 @@ export function UserAvatar({
   const { user: currentUser, loading } = useAuth();
 
   // Use provided props or fallback to current user
-  const user =
+  const user: User | null =
     id || email || name || imageUrl
-      ? { id, email, fullName: name, slackImageUrl: imageUrl }
+      ? {
+          id: id || "",
+          email: email || "",
+          name: name || "",
+          slack_image_url: imageUrl,
+        }
       : currentUser;
 
   const sizeClasses = {
@@ -60,7 +66,7 @@ export function UserAvatar({
     );
   }
 
-  const displayName = user.fullName || user.email || name || email || "User";
+  const displayName = user.name || user.email || name || email || "User";
   const initials = displayName
     .split(" ")
     .map((n) => n.charAt(0).toUpperCase())
@@ -68,7 +74,7 @@ export function UserAvatar({
     .slice(0, 2);
 
   // Use provided image or Slack image if available
-  const avatarImage = imageUrl || user.slackImageUrl;
+  const avatarImage = imageUrl || user.slack_image_url;
 
   if (avatarImage) {
     return (

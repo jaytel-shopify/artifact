@@ -184,6 +184,7 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
           resourceId={folder.id}
           resourceType="folder"
           resourceName={folder.name}
+          currentUserId={user.id}
           currentUserEmail={user.email}
         />
       )}

@@ -30,7 +30,7 @@ export default function ProjectsPage() {
 
   // Fetch all data
   const { projects, folders, publishedArtifacts, isLoading, error } =
-    useProjectsData(user?.email);
+    useProjectsData(user?.id);
 
   // Fetch Quick sites
   // const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
@@ -44,10 +44,10 @@ export default function ProjectsPage() {
   }, [projects]);
 
   const handleCreateFolder = async (name: string) => {
-    if (!user?.email) return;
+    if (!user?.email || !user?.id) return;
     try {
       await createFolder({ name, creator_id: user.email });
-      globalMutate(cacheKeys.projectsData(user.email));
+      globalMutate(cacheKeys.projectsData(user.id));
       toast.success(`Folder "${name}" created`);
     } catch (error) {
       console.error("Failed to create folder:", error);

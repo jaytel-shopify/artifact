@@ -10,7 +10,7 @@ import {
 
 /**
  * Hook to determine user permissions for a resource (project or folder)
- * 
+ *
  * Returns:
  * - accessLevel: The user's access level (owner/editor/viewer/null)
  * - isOwner: True if user is the owner
@@ -36,7 +36,7 @@ export function useResourcePermissions(
       }
 
       try {
-        const level = await checkUserAccess(resourceId, resourceType, user.email);
+        const level = await checkUserAccess(resourceId, resourceType, user.id);
         setAccessLevel(level);
       } catch (error) {
         console.error("Failed to check user access:", error);

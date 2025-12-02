@@ -12,6 +12,7 @@ export function CarouselItemImage({ url, alt }: CarouselItemImageProps) {
       alt={alt}
       className="carousel-item-content"
       draggable={false}
+      loading="lazy"
     />
   );
 }

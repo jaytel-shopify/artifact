@@ -3,18 +3,6 @@
 import { waitForQuick } from "./quick";
 import type { User } from "@/types";
 
-/**
- * Quick.db Users Service Layer
- *
- * This module provides CRUD operations for the users collection.
- * Users are created/synced automatically when they authenticate via Quick.id.
- *
- * Note: Quick.db automatically adds these fields to all documents:
- * - id (string): Unique identifier (UUID)
- * - created_at (string): ISO timestamp
- * - updated_at (string): ISO timestamp
- */
-
 const USERS_COLLECTION = "users";
 
 // ==================== USER QUERIES ====================
@@ -91,11 +79,6 @@ export async function createUser(data: {
   slack_image_url?: string;
   slack_id?: string;
   slack_handle?: string;
-  discipline_name?: string;
-  team_name?: string;
-  group?: string;
-  github?: string;
-  title?: string;
 }): Promise<User> {
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);
@@ -107,11 +90,6 @@ export async function createUser(data: {
     slack_image_url: data.slack_image_url,
     slack_id: data.slack_id,
     slack_handle: data.slack_handle,
-    discipline_name: data.discipline_name,
-    team_name: data.team_name,
-    group: data.group,
-    github: data.github,
-    title: data.title,
   };
 
   const user = await collection.create(userData);
@@ -135,8 +113,6 @@ export async function getOrCreateUser(quickIdentity: {
   slackImageUrl?: string;
   slackId?: string;
   slackHandle?: string;
-  title?: string;
-  github?: string;
 }): Promise<User> {
   // Check if user already exists
   const existingUser = await getUserById(quickIdentity.id);
@@ -147,9 +123,7 @@ export async function getOrCreateUser(quickIdentity: {
       existingUser.name !== quickIdentity.fullName ||
       existingUser.slack_image_url !== quickIdentity.slackImageUrl ||
       existingUser.slack_id !== quickIdentity.slackId ||
-      existingUser.slack_handle !== quickIdentity.slackHandle ||
-      existingUser.title !== quickIdentity.title ||
-      existingUser.github !== quickIdentity.github;
+      existingUser.slack_handle !== quickIdentity.slackHandle;
 
     if (needsUpdate) {
       const updated = await updateUser(existingUser.id, {
@@ -157,8 +131,6 @@ export async function getOrCreateUser(quickIdentity: {
         slack_image_url: quickIdentity.slackImageUrl,
         slack_id: quickIdentity.slackId,
         slack_handle: quickIdentity.slackHandle,
-        title: quickIdentity.title,
-        github: quickIdentity.github,
       });
       console.log("[Users] Updated existing user:", {
         id: updated.id,
@@ -178,8 +150,6 @@ export async function getOrCreateUser(quickIdentity: {
     slack_image_url: quickIdentity.slackImageUrl,
     slack_id: quickIdentity.slackId,
     slack_handle: quickIdentity.slackHandle,
-    title: quickIdentity.title,
-    github: quickIdentity.github,
   });
 }
 
@@ -190,7 +160,7 @@ export async function getOrCreateUser(quickIdentity: {
  */
 export async function updateUser(
   id: string,
-  updates: Partial<Omit<User, "id" | "email" | "created_at" | "updated_at">>
+  updates: Partial<Omit<User, "id" | "email">>
 ): Promise<User> {
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);

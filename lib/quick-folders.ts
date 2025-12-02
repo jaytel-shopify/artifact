@@ -4,7 +4,8 @@ import { waitForQuick } from "./quick";
 import type { Folder, Project } from "@/types";
 import { deleteProject } from "./quick-db";
 import { deleteAllAccessForResource, grantAccess } from "./access-control";
-import { getUserByEmail } from "./quick-users";
+import { getUserById } from "./quick-users";
+import { checkUserAccess } from "./access-control";
 
 /**
  * Quick.db Folders Service Layer
@@ -17,33 +18,19 @@ import { getUserByEmail } from "./quick-users";
 
 /**
  * Get all folders owned by a user
- * @param creatorEmail - Email of the user (will be looked up to find User.id)
+ * @param userId - User.id to get folders for
  */
-export async function getFolders(creatorEmail: string): Promise<Folder[]> {
+export async function getFolders(userId: string): Promise<Folder[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
+  const user = await getUserById(userId);
+  if (!user) return [];
 
-  // Look up user by email to get their User.id
-  const user = await getUserByEmail(creatorEmail);
-  if (!user) {
-    // User not found, return empty array
-    return [];
-  }
-
-  // Use .where() to filter by creator_id (User.id) at the database level
-  const userFolders = await collection
+  return await collection
     .where({ creator_id: user.id })
+    .orderBy("created_at", "desc")
     .find();
-
-  // Sort by last_accessed_at (most recent first), fallback to created_at
-  return userFolders.sort((a: Folder, b: Folder) => {
-    const aTime = a.last_accessed_at || a.created_at;
-    const bTime = b.last_accessed_at || b.created_at;
-    return new Date(bTime).getTime() - new Date(aTime).getTime();
-  });
 }
-
-// getUserFolders removed - use getUserAccessibleResources from lib/access-control.ts instead
 
 /**
  * Get a single folder by ID
@@ -73,7 +60,7 @@ export async function createFolder(data: {
   const collection = quick.db.collection("folders");
 
   // Look up user by email to get their User.id
-  const user = await getUserByEmail(data.creator_id);
+  const user = await getUserById(data.creator_id);
   if (!user) {
     throw new Error(`User not found for email: ${data.creator_id}`);
   }
@@ -91,13 +78,14 @@ export async function createFolder(data: {
     position,
   });
 
-  // Grant owner access to creator (access control still uses email)
+  // Grant owner access to creator (access control uses user_id)
   await grantAccess(
     folder.id,
     "folder",
-    data.creator_id, // Use email for access control
+    user.id, // User.id
+    data.creator_id, // User's email (for display)
     "owner",
-    data.creator_id
+    user.id // Granted by self
   );
 
   return folder;
@@ -113,6 +101,8 @@ export async function updateFolder(
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
 
+  //TODO: check access control
+
   await collection.update(id, updates);
   return await collection.findById(id);
 }
@@ -122,6 +112,8 @@ export async function updateFolder(
  */
 export async function deleteFolder(id: string): Promise<void> {
   const quick = await waitForQuick();
+
+  // TODO: check access control
 
   // Get all projects in this folder
   const projectsInFolder = await getProjectsInFolder(id);
@@ -149,27 +141,28 @@ export async function deleteFolder(id: string): Promise<void> {
 
 /**
  * Get all projects in a folder that the user has explicit access to
- * If userEmail is not provided, returns all projects in folder (for backward compatibility)
+ * If userId is not provided, returns all projects in folder (for backward compatibility)
+ * @param userId - User.id to check access for
  */
 export async function getProjectsInFolder(
   folderId: string,
-  userEmail?: string
+  userId?: string
 ): Promise<Project[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
+  //TODO: check access control
+
   // Use .where() to filter by folder_id at the database level
   const folderProjects = await collection.where({ folder_id: folderId }).find();
 
-  // If userEmail provided, filter by explicit project access
+  // If userId provided, filter by explicit project access
   let accessibleProjects = folderProjects;
-  if (userEmail) {
-    const { checkUserAccess } = await import("./access-control");
-
+  if (userId) {
     // Check access for each project in parallel
     const accessChecks = await Promise.all(
       folderProjects.map(async (project) => {
-        const access = await checkUserAccess(project.id, "project", userEmail);
+        const access = await checkUserAccess(project.id, "project", userId);
         return { project, hasAccess: access !== null };
       })
     );

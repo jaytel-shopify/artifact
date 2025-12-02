@@ -88,7 +88,6 @@ export default function RootLayout({
                 <GlobalLayout>{children}</GlobalLayout>
               </HeaderProvider>
               <Toaster />
-              {/* <SchemaMigrationDialog /> */}
             </ThemeProvider>
           </AuthProvider>
         </SWRProvider>

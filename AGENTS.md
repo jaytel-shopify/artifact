@@ -60,6 +60,14 @@ const published = await posts
   .limit(10)
   .find();
 
+// Query by array of ids
+const postIds = ["123", "456", "789"];
+const published = await posts
+  .where({ id: { $in: postIds } })
+  .orderBy("created_at", "desc")
+  .orderBy("position", "asc")
+  .find();
+
 // Real-time
 const unsubscribe = posts.subscribe({
   onCreate: (doc) => console.log("New:", doc),

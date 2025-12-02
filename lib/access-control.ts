@@ -3,10 +3,13 @@
  *
  * Unified access control for both projects and folders.
  * Supports three permission levels: owner, editor, viewer
+ *
+ * All lookups are done by user_id (not email).
  */
 
 import { waitForQuick } from "./quick";
 import { getResourceUrl } from "./urls";
+import type { User } from "@/types";
 
 export type AccessLevel = "owner" | "editor" | "viewer";
 export type ResourceType = "project" | "folder";
@@ -15,23 +18,14 @@ export interface AccessEntry {
   id: string;
   resource_id: string; // project_id or folder_id
   resource_type: ResourceType;
-  user_email: string;
+  user_id: string; // Primary identifier - User.id
+  user_email: string; // Kept for display purposes
   user_name?: string;
   user_avatar?: string;
   access_level: AccessLevel;
-  granted_by: string;
+  granted_by: string; // User.id of who granted access
   created_at: string;
   updated_at: string;
-}
-
-export interface ShopifyUser {
-  email: string;
-  fullName: string;
-  firstName: string;
-  slackImageUrl?: string;
-  slackHandle?: string;
-  slackId?: string;
-  title?: string;
 }
 
 const ACCESS_COLLECTION = "access_control";
@@ -41,9 +35,7 @@ const ACCESS_COLLECTION = "access_control";
 /**
  * Fetch all Shopify users for autocomplete
  */
-export async function searchShopifyUsers(
-  query: string
-): Promise<ShopifyUser[]> {
+export async function searchUsers(query: string): Promise<User[]> {
   try {
     const response = await fetch("/users.json");
 
@@ -57,7 +49,7 @@ export async function searchShopifyUsers(
     const lines = text.split("\n").filter((line) => line.trim().length > 0);
 
     // Parse and deduplicate users by email (case-insensitive)
-    const userMap = new Map<string, ShopifyUser>();
+    const userMap = new Map<string, User>();
 
     for (const line of lines) {
       try {
@@ -65,15 +57,13 @@ export async function searchShopifyUsers(
         const emailKey = data.email?.toLowerCase();
 
         if (emailKey && !userMap.has(emailKey)) {
-          const fullName = data.name || "";
           userMap.set(emailKey, {
+            id: data.id,
             email: data.email,
-            fullName: fullName,
-            firstName: fullName.split(" ")[0] || fullName,
-            slackHandle: data.slack_handle,
-            slackImageUrl: data.slack_image_url,
-            slackId: data.slack_id,
-            title: data.title,
+            name: data.name || "",
+            slack_handle: data.slack_handle,
+            slack_image_url: data.slack_image_url,
+            slack_id: data.slack_id,
           });
         }
       } catch {
@@ -93,10 +83,10 @@ export async function searchShopifyUsers(
     return users
       .filter(
         (user) =>
-          user.fullName.toLowerCase().includes(lowerQuery) ||
+          user.name.toLowerCase().includes(lowerQuery) ||
           user.email.toLowerCase().includes(lowerQuery) ||
-          (user.slackHandle &&
-            user.slackHandle.toLowerCase().includes(lowerQuery))
+          (user.slack_handle &&
+            user.slack_handle.toLowerCase().includes(lowerQuery))
       )
       .slice(0, 50); // Limit to 50 results
   } catch (error) {
@@ -222,9 +212,11 @@ export async function getAccessList(
 
 /**
  * Cascade folder access to all projects in the folder
+ * @param userId - User.id of the user being granted access
  */
 async function cascadeAccessToFolderProjects(
   folderId: string,
+  userId: string,
   userEmail: string,
   accessLevel: AccessLevel,
   grantedBy: string,
@@ -248,6 +240,7 @@ async function cascadeAccessToFolderProjects(
         grantAccess(
           project.id,
           "project",
+          userId,
           userEmail,
           accessLevel,
           grantedBy,
@@ -264,10 +257,14 @@ async function cascadeAccessToFolderProjects(
 
 /**
  * Grant access to a user
+ * @param userId - User.id of the user being granted access
+ * @param userEmail - User's email (kept for display purposes)
+ * @param grantedBy - User.id of the person granting access
  */
 export async function grantAccess(
   resourceId: string,
   resourceType: ResourceType,
+  userId: string,
   userEmail: string,
   accessLevel: AccessLevel,
   grantedBy: string,
@@ -281,8 +278,8 @@ export async function grantAccess(
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    // Check if access already exists
-    const existing = await findAccessEntry(resourceId, resourceType, userEmail);
+    // Check if access already exists (by user_id)
+    const existing = await findAccessEntry(resourceId, resourceType, userId);
 
     if (existing) {
       // Update existing access
@@ -290,12 +287,14 @@ export async function grantAccess(
         access_level: accessLevel,
         user_name: userName,
         user_avatar: userAvatar,
+        user_email: userEmail.toLowerCase().trim(), // Update email in case it changed
       });
 
       // If updating folder access, cascade to projects
       if (resourceType === "folder") {
         await cascadeAccessToFolderProjects(
           resourceId,
+          userId,
           userEmail,
           accessLevel,
           grantedBy,
@@ -311,6 +310,7 @@ export async function grantAccess(
     const newAccess = await collection.create({
       resource_id: resourceId,
       resource_type: resourceType,
+      user_id: userId,
       user_email: userEmail.toLowerCase().trim(),
       user_name: userName || userEmail,
       user_avatar: userAvatar,
@@ -321,6 +321,7 @@ export async function grantAccess(
     console.log("[AccessControl] Granted access:", {
       resourceType,
       resourceId,
+      userId,
       userEmail,
       accessLevel,
     });
@@ -329,6 +330,7 @@ export async function grantAccess(
     if (resourceType === "folder") {
       await cascadeAccessToFolderProjects(
         resourceId,
+        userId,
         userEmail,
         accessLevel,
         grantedBy,
@@ -362,24 +364,22 @@ export async function grantAccess(
 
 /**
  * Update access level for an existing user
+ * @param userId - User.id of the user whose access is being updated
  */
 export async function updateAccessLevel(
   resourceId: string,
   resourceType: ResourceType,
-  userEmail: string,
+  userId: string,
   newAccessLevel: AccessLevel
 ): Promise<boolean> {
   try {
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const existing = await findAccessEntry(resourceId, resourceType, userEmail);
+    const existing = await findAccessEntry(resourceId, resourceType, userId);
 
     if (!existing) {
-      console.error(
-        "[AccessControl] Access entry not found for user:",
-        userEmail
-      );
+      console.error("[AccessControl] Access entry not found for user:", userId);
       return false;
     }
 
@@ -388,7 +388,7 @@ export async function updateAccessLevel(
     console.log("[AccessControl] Updated access level:", {
       resourceType,
       resourceId,
-      userEmail,
+      userId,
       newAccessLevel,
     });
 
@@ -401,23 +401,21 @@ export async function updateAccessLevel(
 
 /**
  * Revoke access from a user
+ * @param userId - User.id of the user whose access is being revoked
  */
 export async function revokeAccess(
   resourceId: string,
   resourceType: ResourceType,
-  userEmail: string
+  userId: string
 ): Promise<boolean> {
   try {
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    const existing = await findAccessEntry(resourceId, resourceType, userEmail);
+    const existing = await findAccessEntry(resourceId, resourceType, userId);
 
     if (!existing) {
-      console.error(
-        "[AccessControl] Access entry not found for user:",
-        userEmail
-      );
+      console.error("[AccessControl] Access entry not found for user:", userId);
       return false;
     }
 
@@ -426,7 +424,7 @@ export async function revokeAccess(
     console.log("[AccessControl] Revoked access:", {
       resourceType,
       resourceId,
-      userEmail,
+      userId,
     });
 
     return true;
@@ -437,25 +435,24 @@ export async function revokeAccess(
 }
 
 /**
- * Find a specific access entry
+ * Find a specific access entry by user_id
+ * @param userId - User.id to look up
  */
 async function findAccessEntry(
   resourceId: string,
   resourceType: ResourceType,
-  userEmail: string
+  userId: string
 ): Promise<AccessEntry | null> {
   try {
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    // Use .where() to filter by resource at the database level
-    // Note: user_email is normalized to lowercase on write, so we can match directly
-    const normalizedEmail = userEmail.toLowerCase().trim();
+    // Query by user_id (the primary identifier)
     const results = await collection
       .where({
         resource_id: resourceId,
         resource_type: resourceType,
-        user_email: normalizedEmail,
+        user_id: userId,
       })
       .find();
 
@@ -468,14 +465,15 @@ async function findAccessEntry(
 
 /**
  * Check if user has access to a resource
+ * @param userId - User.id to check access for
  */
 export async function checkUserAccess(
   resourceId: string,
   resourceType: ResourceType,
-  userEmail: string
+  userId: string
 ): Promise<AccessLevel | null> {
   try {
-    const entry = await findAccessEntry(resourceId, resourceType, userEmail);
+    const entry = await findAccessEntry(resourceId, resourceType, userId);
     return entry ? entry.access_level : null;
   } catch (error) {
     console.error("[AccessControl] Failed to check user access:", error);
@@ -485,53 +483,46 @@ export async function checkUserAccess(
 
 /**
  * Check if user can edit resource (owner or editor)
+ * @param userId - User.id to check
  */
 export async function canUserEdit(
   resourceId: string,
   resourceType: ResourceType,
-  userEmail: string
+  userId: string
 ): Promise<boolean> {
-  const accessLevel = await checkUserAccess(
-    resourceId,
-    resourceType,
-    userEmail
-  );
+  const accessLevel = await checkUserAccess(resourceId, resourceType, userId);
   return accessLevel === "owner" || accessLevel === "editor";
 }
 
 /**
  * Check if user can view resource (any access level)
+ * @param userId - User.id to check
  */
 export async function canUserView(
   resourceId: string,
   resourceType: ResourceType,
-  userEmail: string
+  userId: string
 ): Promise<boolean> {
-  const accessLevel = await checkUserAccess(
-    resourceId,
-    resourceType,
-    userEmail
-  );
+  const accessLevel = await checkUserAccess(resourceId, resourceType, userId);
   return accessLevel !== null;
 }
 
 /**
  * Get all resources a user has access to
+ * @param userId - User.id to get resources for
  */
 export async function getUserAccessibleResources(
-  userEmail: string,
+  userId: string,
   resourceType: ResourceType
 ): Promise<AccessEntry[]> {
   try {
     const quick = await waitForQuick();
     const collection = quick.db.collection(ACCESS_COLLECTION);
 
-    // Use .where() to filter at the database level
-    // Note: user_email is normalized to lowercase on write, so we can match directly
-    const normalizedEmail = userEmail.toLowerCase().trim();
+    // Query by user_id
     return await collection
       .where({
-        user_email: normalizedEmail,
+        user_id: userId,
         resource_type: resourceType,
       })
       .find();

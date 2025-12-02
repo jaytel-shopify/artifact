@@ -7,27 +7,12 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { waitForQuick, type QuickIdentity } from "@/lib/quick";
+import { waitForQuick } from "@/lib/quick";
 import { getOrCreateUser } from "@/lib/quick-users";
-
-/**
- * Quick User type - extends QuickIdentity with our app-specific fields
- * The `id` field is the User UUID from the database (not Quick.id's id)
- */
-export interface QuickUser {
-  id: string; // User.id from Quick.db (UUID)
-  email: string;
-  fullName: string;
-  firstName: string;
-  slackHandle?: string;
-  slackId?: string;
-  slackImageUrl?: string;
-  title?: string;
-  github?: string;
-}
+import type { User } from "@/types";
 
 interface AuthContextValue {
-  user: QuickUser | null;
+  user: User | null;
   loading: boolean;
   isAuthenticated: boolean;
 }
@@ -41,7 +26,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
  * Access control is handled at the resource level (projects/folders).
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<QuickUser | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -56,18 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         window.location.hostname.endsWith(".local"));
 
     if (isLocalhost) {
-      // console.log("[AuthProvider] 🔓 Running on localhost - using mock user");
-
       // Mock user with a consistent UUID for local development
       // Note: Quick.db is not available on localhost, so we use a hardcoded mock ID
-      const localDevUser: QuickUser = {
-        id: "local-dev-user-uuid", // Mock UUID (Quick.db not available locally)
+      const localDevUser: User = {
+        id: "local-dev-user-uuid",
         email: "dev@shopify.com",
-        fullName: "Local Developer",
-        firstName: "Local",
-        slackHandle: "local-dev",
-        slackImageUrl: "https://i.pravatar.cc/150?u=dev@shopify.com",
-        title: "Developer",
+        name: "Local Developer",
+        slack_handle: "local-dev",
+        slack_image_url: "https://i.pravatar.cc/150?u=dev@shopify.com",
       };
 
       setUser(localDevUser);
@@ -87,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         console.log("[AuthProvider] User loaded:", {
           email: userData.email,
-          fullName: userData.fullName,
+          name: userData.fullName,
         });
 
         if (!isMounted) return;
@@ -102,8 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           slackImageUrl: userData.slackImageUrl,
           slackId: userData.slackId,
           slackHandle: userData.slackHandle,
-          title: userData.title,
-          github: userData.github,
         });
 
         console.log("[AuthProvider] User synced to DB:", {
@@ -113,20 +92,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!isMounted) return;
 
-        // Use the DB user's UUID as the canonical ID
-        const user: QuickUser = {
-          id: dbUser.id, // UUID from Quick.db
-          email: dbUser.email,
-          fullName: dbUser.name,
-          firstName: userData.firstName,
-          slackHandle: dbUser.slack_handle,
-          slackId: dbUser.slack_id,
-          slackImageUrl: dbUser.slack_image_url,
-          title: dbUser.title,
-          github: dbUser.github,
-        };
-
-        setUser(user);
+        // dbUser is already the User type from the database
+        setUser(dbUser);
         setLoading(false);
       } catch (err) {
         console.error("[AuthProvider] Failed to load user:", err);

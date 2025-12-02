@@ -48,12 +48,12 @@ interface FolderData {
 
 async function fetchFolderData(
   folderId: string,
-  userEmail: string
+  userId: string
 ): Promise<FolderData | null> {
   const [folderData, hasEditAccess, folderProjects] = await Promise.all([
     getFolderById(folderId),
-    canUserEdit(folderId, "folder", userEmail),
-    getProjectsInFolder(folderId, userEmail),
+    canUserEdit(folderId, "folder", userId),
+    getProjectsInFolder(folderId, userId),
   ]);
 
   if (!folderData) {
@@ -128,7 +128,7 @@ function FolderPageContent() {
     try {
       await updateFolder(folder.id, { name });
       mutate(); // Refresh folder data
-      globalMutate(cacheKeys.projectsData(user?.email)); // Refresh projects page
+      globalMutate(cacheKeys.projectsData(user?.id)); // Refresh projects page
       toast.success("Folder renamed");
     } catch (error) {
       console.error("Failed to rename folder:", error);
@@ -142,7 +142,7 @@ function FolderPageContent() {
 
     try {
       await deleteFolder(folder.id);
-      globalMutate(cacheKeys.projectsData(user?.email)); // Refresh projects page
+      globalMutate(cacheKeys.projectsData(user?.id)); // Refresh projects page
       toast.success(`Folder "${folder.name}" and all its projects deleted`);
       router.push("/projects");
     } catch (error) {
@@ -268,6 +268,7 @@ function FolderPageContent() {
           resourceId={folder.id}
           resourceType="folder"
           resourceName={folder.name}
+          currentUserId={user.id}
           currentUserEmail={user.email}
         />
       )}

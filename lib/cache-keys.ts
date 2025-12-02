@@ -7,7 +7,7 @@
  * import { mutate as globalMutate } from "swr";
  * import { cacheKeys } from "@/lib/cache-keys";
  *
- * globalMutate(cacheKeys.projectsData(user?.email));
+ * globalMutate(cacheKeys.projectsData(user?.id));
  */
 
 export const cacheKeys = {

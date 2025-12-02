@@ -30,47 +30,27 @@ import { getUserByEmail, getUserById } from "./quick-users";
 /**
  * Get all projects visible to a user
  * Returns projects they created OR have been granted access to via access control
+ * @param userId - User.id to get projects for
  */
-export async function getProjects(userEmail?: string): Promise<Project[]> {
+export async function getProjects(userId?: string): Promise<Project[]> {
+  if (!userId) return [];
+
+  // Get projects user has access to via access control system (now uses user_id)
+  const accessibleProjects = await getUserAccessibleResources(
+    userId,
+    "project"
+  );
+  const accessibleProjectIds = accessibleProjects.map((a) => a.resource_id);
+
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
-  const allProjects = await collection.find();
+  const userProjects = await collection
+    .where({ id: { $in: accessibleProjectIds } })
+    .orderBy("created_at", "desc")
+    .find();
 
-  // If no user email, return all projects (for admin/debugging)
-  if (!userEmail) {
-    return allProjects.sort((a: Project, b: Project) => {
-      const aTime = a.last_accessed_at || a.created_at;
-      const bTime = b.last_accessed_at || b.created_at;
-      return new Date(bTime).getTime() - new Date(aTime).getTime();
-    });
-  }
-
-  // Look up user by email to get their User.id
-  const user = await getUserByEmail(userEmail);
-  const userId = user?.id;
-
-  // Get projects user has access to via access control system
-  const accessibleProjects = await getUserAccessibleResources(
-    userEmail,
-    "project"
-  );
-  const accessibleProjectIds = new Set(
-    accessibleProjects.map((a) => a.resource_id)
-  );
-
-  // Filter projects: user is creator (by User.id) OR user has access via access control
-  const userProjects = allProjects.filter(
-    (p: Project) =>
-      (userId && p.creator_id === userId) || accessibleProjectIds.has(p.id)
-  );
-
-  // Sort by last_accessed_at (most recent first), fallback to created_at
-  return userProjects.sort((a: Project, b: Project) => {
-    const aTime = a.last_accessed_at || a.created_at;
-    const bTime = b.last_accessed_at || b.created_at;
-    return new Date(bTime).getTime() - new Date(aTime).getTime();
-  });
+  return userProjects;
 }
 
 /**
@@ -116,13 +96,14 @@ export async function createProject(data: {
 
   const project = await collection.create(projectData);
 
-  // Grant owner access to creator (access control still uses email)
+  // Grant owner access to creator (access control uses user_id)
   await grantAccess(
     project.id,
     "project",
-    data.creator_id, // Use email for access control
+    user.id, // User.id
+    data.creator_id, // User's email (for display)
     "owner",
-    data.creator_id
+    user.id // Granted by self
   );
 
   // Create default page for the project
@@ -179,7 +160,8 @@ export async function getPages(projectId: string): Promise<Page[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
 
-  // Use .where() and .orderBy() at the database level
+  //TODO: check access control
+
   return await collection
     .where({ project_id: projectId })
     .orderBy("position", "asc")
@@ -283,6 +265,8 @@ export async function getProjectArtifactsByPage(
 ): Promise<ProjectArtifact[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("project_artifacts");
+
+  //TODO: check access control
 
   return await collection
     .where({ page_id: pageId })
@@ -402,74 +386,26 @@ export async function reorderProjectArtifacts(
 // ==================== ARTIFACTS ====================
 
 /**
- * Get all artifacts for a project (via junction table)
- * Returns artifacts with their position context
- */
-export async function getArtifactsByProject(
-  projectId: string
-): Promise<ArtifactWithPosition[]> {
-  const quick = await waitForQuick();
-
-  // Get junction entries for this project
-  const junctionEntries = await getProjectArtifactsByProject(projectId);
-
-  if (junctionEntries.length === 0) return [];
-
-  // Get all artifact IDs
-  const artifactIds = junctionEntries.map((e) => e.artifact_id);
-
-  // Fetch all artifacts
-  const artifactsCollection = quick.db.collection("artifacts");
-  const allArtifacts = await artifactsCollection.find();
-  const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
-
-  // Combine artifacts with position from junction table
-  // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
-  const result: ArtifactWithPosition[] = [];
-  for (const entry of junctionEntries) {
-    const artifact = artifactsMap.get(entry.artifact_id);
-    if (artifact) {
-      result.push({
-        ...artifact,
-        name: entry.name || artifact.name, // Prefer junction entry name
-        position: entry.position,
-        project_artifact_id: entry.id,
-      });
-    }
-  }
-
-  // Sort by position
-  return result.sort((a, b) => a.position - b.position);
-}
-
-/**
  * Get published artifacts created by the current user
  * Returns only artifacts where published=true and creator_id matches the user
  * Sorted by most recently created first
  * @param userEmail - User's email (will be looked up to get User.id)
  */
 export async function getPublishedArtifacts(
-  userEmail?: string
+  userId?: string
 ): Promise<Artifact[]> {
-  if (!userEmail) return [];
+  if (!userId) return [];
 
-  // Look up user by email to get their User.id
-  const user = await getUserByEmail(userEmail);
+  const user = await getUserById(userId);
   if (!user) return [];
 
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  // Query for published artifacts created by the current user (by User.id)
-  const publishedArtifacts = await collection
+  return await collection
     .where({ published: true, creator_id: user.id })
+    .orderBy("created_at", "desc")
     .find();
-
-  // Sort by created_at descending (most recent first)
-  return publishedArtifacts.sort(
-    (a: Artifact, b: Artifact) =>
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
 }
 
 /**
@@ -486,27 +422,29 @@ export async function getArtifactsByPage(
 
   if (junctionEntries.length === 0) return [];
 
-  // Get all artifact IDs
   const artifactIds = junctionEntries.map((e) => e.artifact_id);
 
   // Fetch all artifacts
   const artifactsCollection = quick.db.collection("artifacts");
-  const allArtifacts = await artifactsCollection.find();
-  const artifactsMap = new Map(allArtifacts.map((a: Artifact) => [a.id, a]));
+  const allArtifacts = await artifactsCollection
+    .where({ id: { $in: artifactIds } })
+    .find();
 
   // Combine artifacts with position from junction table
   // Use name from junction entry (ProjectArtifact.name) instead of artifact's name
   const result: ArtifactWithPosition[] = [];
   for (const entry of junctionEntries) {
-    const artifact = artifactsMap.get(entry.artifact_id);
-    if (artifact) {
-      result.push({
-        ...artifact,
-        name: entry.name || artifact.name, // Prefer junction entry name
-        position: entry.position,
-        project_artifact_id: entry.id,
-      });
-    }
+    const artifact = allArtifacts.find(
+      (a: Artifact) => a.id === entry.artifact_id
+    );
+    if (!artifact) continue;
+
+    result.push({
+      ...artifact,
+      name: entry.name || artifact.name, // Prefer junction entry name
+      position: entry.position,
+      project_artifact_id: entry.id,
+    });
   }
 
   // Sort by position
