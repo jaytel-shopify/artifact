@@ -51,12 +51,12 @@ export default function SearchPage() {
       setError(null);
 
       try {
-        // Get user email from quick.id
+        // Get user ID from quick.id
         const quick = await waitForQuick();
-        const email = quick.id.email;
+        const userId = quick.id.id;
 
-        // Perform search with mode
-        const searchResults = await searchResources(query, email, mode);
+        // Perform search with mode (uses user ID now)
+        const searchResults = await searchResources(query, userId, mode);
         setResults(searchResults);
       } catch (err) {
         console.error("Search error:", err);

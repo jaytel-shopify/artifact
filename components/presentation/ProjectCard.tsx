@@ -119,7 +119,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const [isRenaming, setIsRenaming] = useState(false);
 
   // Get folders from SWR cache for "Move to Folder" menu
-  const { data } = useSWR<ProjectsData>(cacheKeys.projectsData(user?.email));
+  const { data } = useSWR<ProjectsData>(cacheKeys.projectsData(user?.id));
   const folders = data?.folders || [];
   const availableFolders = folders.filter((f) => f.id !== project.folder_id);
 
@@ -134,7 +134,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   // Helper to refresh all relevant caches after a mutation
   // Using { revalidate: true } to force a fresh fetch, bypassing any deduping
   const refreshCaches = async (folderIds: (string | null | undefined)[]) => {
-    const projectsKey = cacheKeys.projectsData(user?.email);
+    const projectsKey = cacheKeys.projectsData(user?.id);
     if (projectsKey) {
       await globalMutate(projectsKey, undefined, { revalidate: true });
     }

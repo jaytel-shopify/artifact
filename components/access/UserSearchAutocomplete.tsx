@@ -9,7 +9,7 @@ interface UserSearchAutocompleteProps {
   onSelect: (user: DirectoryUser | null) => void;
   selectedUser: DirectoryUser | null; // Track if a user is already selected
   placeholder?: string;
-  excludeEmails?: string[];
+  excludeUserIds?: string[];
 }
 
 /**
@@ -22,7 +22,7 @@ export function UserSearchAutocomplete({
   onSelect,
   selectedUser,
   placeholder = "Search name",
-  excludeEmails = [],
+  excludeUserIds = [],
 }: UserSearchAutocompleteProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<DirectoryUser[]>([]);
@@ -53,9 +53,9 @@ export function UserSearchAutocomplete({
       try {
         const users = await searchUsers(query);
 
-        // Filter out excluded emails
+        // Filter out excluded user IDs
         const filtered = users.filter(
-          (user) => !excludeEmails.includes(user.email.toLowerCase())
+          (user) => !excludeUserIds.includes(user.id)
         );
 
         setResults(filtered);
@@ -70,7 +70,7 @@ export function UserSearchAutocomplete({
 
     const debounce = setTimeout(search, 300);
     return () => clearTimeout(debounce);
-  }, [query, excludeEmails, selectedUser]);
+  }, [query, excludeUserIds, selectedUser]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -155,7 +155,7 @@ export function UserSearchAutocomplete({
         >
           {results.map((user, index) => (
             <button
-              key={user.email}
+              key={user.id}
               onClick={() => handleSelect(user)}
               className={`
                 w-full px-3 py-2 flex items-center gap-3 hover:bg-secondary transition-colors

@@ -30,15 +30,16 @@ import { getUserByEmail, getUserById } from "./quick-users";
 /**
  * Get all projects visible to a user
  * Returns projects they created OR have been granted access to via access control
+ * @param userId - User.id to get projects for
  */
-export async function getProjects(userEmail?: string): Promise<Project[]> {
+export async function getProjects(userId?: string): Promise<Project[]> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
   const allProjects = await collection.find();
 
-  // If no user email, return all projects (for admin/debugging)
-  if (!userEmail) {
+  // If no user ID, return all projects (for admin/debugging)
+  if (!userId) {
     return allProjects.sort((a: Project, b: Project) => {
       const aTime = a.last_accessed_at || a.created_at;
       const bTime = b.last_accessed_at || b.created_at;
@@ -46,13 +47,9 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
     });
   }
 
-  // Look up user by email to get their User.id
-  const user = await getUserByEmail(userEmail);
-  const userId = user?.id;
-
-  // Get projects user has access to via access control system
+  // Get projects user has access to via access control system (now uses user_id)
   const accessibleProjects = await getUserAccessibleResources(
-    userEmail,
+    userId,
     "project"
   );
   const accessibleProjectIds = new Set(
@@ -61,8 +58,7 @@ export async function getProjects(userEmail?: string): Promise<Project[]> {
 
   // Filter projects: user is creator (by User.id) OR user has access via access control
   const userProjects = allProjects.filter(
-    (p: Project) =>
-      (userId && p.creator_id === userId) || accessibleProjectIds.has(p.id)
+    (p: Project) => p.creator_id === userId || accessibleProjectIds.has(p.id)
   );
 
   // Sort by last_accessed_at (most recent first), fallback to created_at
@@ -116,13 +112,14 @@ export async function createProject(data: {
 
   const project = await collection.create(projectData);
 
-  // Grant owner access to creator (access control still uses email)
+  // Grant owner access to creator (access control uses user_id)
   await grantAccess(
     project.id,
     "project",
-    data.creator_id, // Use email for access control
+    user.id, // User.id
+    data.creator_id, // User's email (for display)
     "owner",
-    data.creator_id
+    user.id // Granted by self
   );
 
   // Create default page for the project

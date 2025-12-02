@@ -3,22 +3,23 @@ import type { Folder } from "@/types";
 
 /**
  * Hook to load user's accessible folders using the new access control system
+ * @param userId - User.id to get folders for
  */
-export function useUserFolders(userEmail: string | undefined) {
+export function useUserFolders(userId: string | undefined) {
   const [userFolders, setUserFolders] = useState<Folder[]>([]);
 
   useEffect(() => {
-    if (!userEmail) return;
+    if (!userId) return;
 
     async function loadFolders() {
-      if (!userEmail) return;
+      if (!userId) return;
 
       try {
         // Get folders the user has access to via the new access control system
         const { getUserAccessibleResources } = await import("@/lib/access-control");
         const { getFolderById } = await import("@/lib/quick-folders");
         
-        const folderAccessEntries = await getUserAccessibleResources(userEmail, "folder");
+        const folderAccessEntries = await getUserAccessibleResources(userId, "folder");
         
         // Fetch full folder details for each access entry
         const folders = await Promise.all(
@@ -35,7 +36,7 @@ export function useUserFolders(userEmail: string | undefined) {
     }
 
     loadFolders();
-  }, [userEmail]);
+  }, [userId]);
 
   return userFolders;
 }

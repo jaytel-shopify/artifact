@@ -594,6 +594,7 @@ function PresentationPageInner({
           resourceId={project.id}
           resourceType="project"
           resourceName={project.name || "Untitled Project"}
+          currentUserId={user.id}
           currentUserEmail={user.email}
         />
       )}

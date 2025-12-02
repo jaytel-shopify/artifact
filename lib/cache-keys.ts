@@ -7,13 +7,13 @@
  * import { mutate as globalMutate } from "swr";
  * import { cacheKeys } from "@/lib/cache-keys";
  *
- * globalMutate(cacheKeys.projectsData(user?.email));
+ * globalMutate(cacheKeys.projectsData(user?.id));
  */
 
 export const cacheKeys = {
   /** Projects, folders, and published artifacts for a user */
-  projectsData: (email?: string) =>
-    email ? `projects-folders-${email}` : null,
+  projectsData: (userId?: string) =>
+    userId ? `projects-folders-${userId}` : null,
 
   /** Single folder view data */
   folderData: (folderId?: string) => (folderId ? `folder-${folderId}` : null),
