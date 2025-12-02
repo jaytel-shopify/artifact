@@ -49,26 +49,28 @@ export async function getFolderById(id: string): Promise<Folder | null> {
 
 /**
  * Create a new folder
- * @param data.creator_id - User's email (will be looked up to store User.id)
+ * @param data.creator_id - User.id (not email)
+ * @param data.creator_email - User's email for display purposes
  */
 export async function createFolder(data: {
   name: string;
-  creator_id: string; // User's email
+  creator_id: string; // User.id
+  creator_email: string; // User's email
   position?: number;
 }): Promise<Folder> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("folders");
 
-  // Look up user by email to get their User.id
+  // Look up user by ID
   const user = await getUserById(data.creator_id);
   if (!user) {
-    throw new Error(`User not found for email: ${data.creator_id}`);
+    throw new Error(`User not found for ID: ${data.creator_id}`);
   }
 
   // Get next position if not provided
   let position = data.position;
   if (position === undefined) {
-    const userFolders = await getFolders(data.creator_id);
+    const userFolders = await getFolders(user.id);
     position = userFolders.length;
   }
 
@@ -83,7 +85,7 @@ export async function createFolder(data: {
     folder.id,
     "folder",
     user.id, // User.id
-    data.creator_id, // User's email (for display)
+    data.creator_email, // User's email (for display)
     "owner",
     user.id // Granted by self
   );
@@ -207,11 +209,13 @@ export async function removeProjectFromFolder(
 }
 
 /**
- * Count projects in a folder
+ * Count projects in a folder that the user has access to
+ * @param userId - User.id to check access for
  */
 export async function getProjectCountInFolder(
-  folderId: string
+  folderId: string,
+  userId?: string
 ): Promise<number> {
-  const projects = await getProjectsInFolder(folderId);
+  const projects = await getProjectsInFolder(folderId, userId);
   return projects.length;
 }

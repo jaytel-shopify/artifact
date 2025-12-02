@@ -45,7 +45,7 @@ export default function ProjectsPage() {
   const handleCreateFolder = async (name: string) => {
     if (!user?.email || !user?.id) return;
     try {
-      await createFolder({ name, creator_id: user.email });
+      await createFolder({ name, creator_id: user.id, creator_email: user.email });
       globalMutate(cacheKeys.projectsData(user.id));
       toast.success(`Folder "${name}" created`);
     } catch (error) {

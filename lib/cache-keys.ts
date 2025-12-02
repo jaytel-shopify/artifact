@@ -12,8 +12,8 @@
 
 export const cacheKeys = {
   /** Projects, folders, and published artifacts for a user */
-  projectsData: (userEmail?: string) =>
-    userEmail ? `projects-folders-${userEmail}` : null,
+  projectsData: (userId?: string) =>
+    userId ? `projects-folders-${userId}` : null,
 
   /** Single folder view data */
   folderData: (folderId?: string) => (folderId ? `folder-v2-${folderId}` : null),

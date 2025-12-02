@@ -50,7 +50,7 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
   const [shareOpen, setShareOpen] = useState(false);
 
   const refreshData = () => {
-    globalMutate(cacheKeys.projectsData(user?.email));
+    globalMutate(cacheKeys.projectsData(user?.id));
   };
 
   // Preload folder data on hover for faster navigation
