@@ -49,7 +49,7 @@ function ArtifactVideo({
   return (
     <video
       src={url}
-      className="max-w-full max-h-full object-contain"
+      className="w-auto h-auto max-w-full max-h-full object-contain rounded-card overflow-hidden"
       autoPlay
       muted={muted}
       loop={loop}
