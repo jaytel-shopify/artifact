@@ -70,13 +70,13 @@ export default function Page() {
 
   const handleNext = useCallback(() => {
     if (nextArtifact) {
-      router.push(`/a?id=${nextArtifact.id}`);
+      router.push(`/a/?id=${nextArtifact.id}`);
     }
   }, [nextArtifact, router]);
 
   const handlePrevious = useCallback(() => {
     if (previousArtifact) {
-      router.push(`/a?id=${previousArtifact.id}`);
+      router.push(`/a/?id=${previousArtifact.id}`);
     }
   }, [previousArtifact, router]);
 
