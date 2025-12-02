@@ -25,7 +25,7 @@ function NewProjectContent() {
       try {
         // Generate unique project name
         let projectName = "Untitled Project";
-        const existingProjects = await getProjects(user.email);
+        const existingProjects = await getProjects(user.id);
 
         if (existingProjects.length > 0) {
           // Find highest number

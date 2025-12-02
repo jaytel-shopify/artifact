@@ -57,7 +57,7 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
     setIsDeleting(true);
     try {
       await deleteArtifact(artifact.id);
-      globalMutate(cacheKeys.projectsData(user?.email));
+      globalMutate(cacheKeys.projectsData(user?.id));
       toast.success(`Artifact "${artifact.name}" deleted`);
       setDeleteOpen(false);
     } catch (error) {

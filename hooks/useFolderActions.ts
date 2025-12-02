@@ -15,7 +15,7 @@ interface Folder {
 export function useFolderActions(
   project: Project | null | undefined,
   userFolders: Folder[],
-  userEmail?: string
+  userId?: string
 ) {
   const handleProjectNameUpdate = useCallback(
     (name: string) => {
@@ -38,7 +38,7 @@ export function useFolderActions(
         // Update local project state
         project.folder_id = folderId;
         // Invalidate caches
-        await globalMutate(cacheKeys.projectsData(userEmail));
+        await globalMutate(cacheKeys.projectsData(userId));
         if (oldFolderId) {
           await globalMutate(cacheKeys.folderData(oldFolderId));
         }
@@ -48,7 +48,7 @@ export function useFolderActions(
         console.error(error);
       }
     },
-    [project, userFolders, userEmail]
+    [project, userFolders, userId]
   );
 
   const handleRemoveFromFolder = useCallback(async () => {
@@ -62,7 +62,7 @@ export function useFolderActions(
       // Update local project state
       project.folder_id = null;
       // Invalidate caches
-      await globalMutate(cacheKeys.projectsData(userEmail));
+      await globalMutate(cacheKeys.projectsData(userId));
       if (oldFolderId) {
         await globalMutate(cacheKeys.folderData(oldFolderId));
       }
@@ -70,7 +70,7 @@ export function useFolderActions(
       toast.error("Failed to remove from folder");
       console.error(error);
     }
-  }, [project, userEmail]);
+  }, [project, userId]);
 
   return {
     handleProjectNameUpdate,

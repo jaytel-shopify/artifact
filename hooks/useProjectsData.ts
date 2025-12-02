@@ -60,7 +60,7 @@ async function fetcher(userId?: string): Promise<ProjectsData> {
   // Get project counts for folders (in parallel)
   const foldersWithCounts = await Promise.all(
     validFolders.map(async (folder) => {
-      const count = await getProjectCountInFolder(folder.id);
+      const count = await getProjectCountInFolder(folder.id, userId);
       return { ...folder, projectCount: count };
     })
   );

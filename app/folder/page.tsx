@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR, { mutate as globalMutate } from "swr";
 import { ArrowLeft, MoreVertical } from "lucide-react";
@@ -96,9 +96,18 @@ function FolderPageContent() {
   const { user } = useAuth();
 
   // Use SWR for folder data - ProjectCard will call globalMutate(cacheKeys.folderData(folderId))
+  const swrKey = folderId && user?.id ? cacheKeys.folderData(folderId) : null;
+
+  // Force revalidation when folderId changes
+  useEffect(() => {
+    if (swrKey) {
+      globalMutate(swrKey);
+    }
+  }, [folderId, swrKey]);
+
   const { data, isLoading, mutate } = useSWR<FolderData | null>(
-    folderId && user?.email ? cacheKeys.folderData(folderId) : null,
-    () => fetchFolderData(folderId, user!.email),
+    swrKey,
+    () => fetchFolderData(folderId, user!.id),
     {
       revalidateOnFocus: false,
       onSuccess: (data) => {
@@ -164,64 +173,72 @@ function FolderPageContent() {
     mutate({ ...data!, folder: { ...folder, name } }, false);
   }
 
-  // Set header content
-  useSetHeader({
-    left: (
-      <>
-        <Button variant="default" size="icon" href={backUrl} aria-label="Back">
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-      </>
-    ),
-    center: (
-      <EditableTitle
-        initialValue={folder?.name || "Untitled Folder"}
-        projectId={folder?.id || ""}
-        onUpdated={canEdit ? handleFolderRename : undefined}
-        isReadOnly={!canEdit}
-        isFolder={true}
-      />
-    ),
-    right: (
-      <>
-        {/* Share Button */}
-        <Button variant="default" onClick={() => setAccessDialogOpen(true)}>
-          Share
-        </Button>
-
-        {/* New Project Button */}
-        {canEdit && (
-          <Button variant="default" onClick={handleNewProject}>
-            New Project
+  // Set header content (update when folder data loads)
+  useSetHeader(
+    {
+      left: (
+        <>
+          <Button
+            variant="default"
+            size="icon"
+            href={backUrl}
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-4 w-4" />
           </Button>
-        )}
+        </>
+      ),
+      center: (
+        <EditableTitle
+          initialValue={folder?.name || "Untitled Folder"}
+          projectId={folder?.id || ""}
+          onUpdated={canEdit ? handleFolderRename : undefined}
+          isReadOnly={!canEdit}
+          isFolder={true}
+        />
+      ),
+      right: (
+        <>
+          {/* Share Button */}
+          <Button variant="default" onClick={() => setAccessDialogOpen(true)}>
+            Share
+          </Button>
 
-        {/* Folder Actions Menu */}
-        {canEdit && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}>
-                Rename Folder
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setDeleteDialogOpen(true)}
-              >
-                Delete Folder
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+          {/* New Project Button */}
+          {canEdit && (
+            <Button variant="default" onClick={handleNewProject}>
+              New Project
+            </Button>
+          )}
 
-        <DarkModeToggle />
-      </>
-    ),
-  });
+          {/* Folder Actions Menu */}
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}>
+                  Rename Folder
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setDeleteDialogOpen(true)}
+                >
+                  Delete Folder
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          <DarkModeToggle />
+        </>
+      ),
+    },
+    [folder?.name, folder?.id, canEdit]
+  );
 
   // Show skeleton while loading, null if folder not found after loading
   if (isLoading) {
