@@ -53,10 +53,10 @@ export default function SearchPage() {
       try {
         // Get user ID from quick.id
         const quick = await waitForQuick();
-        const userId = quick.id.id;
+        const user = await quick.id.waitForUser();
 
         // Perform search with mode (uses user ID now)
-        const searchResults = await searchResources(query, userId, mode);
+        const searchResults = await searchResources(query, user.id, mode);
         setResults(searchResults);
       } catch (err) {
         console.error("Search error:", err);
