@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 
 export default function ViewToggle() {
   const pathname = usePathname();
-  const isExplore = pathname === "/" || pathname === "/user";
+  const isExplore =
+    pathname === "/" ||
+    pathname.startsWith("/user") ||
+    pathname.startsWith("/a");
   const isProjects = pathname.startsWith("/projects");
 
   return (
