@@ -23,7 +23,7 @@ function ArtifactImage({
     <img
       src={url}
       alt={alt}
-      className="max-w-full max-h-full object-contain"
+      className="class=max-w-full max-h-full w-auto h-auto object-contain rounded-card overflow-hidden max-h-full"
       draggable={false}
       width={width}
       height={height}
@@ -49,7 +49,7 @@ function ArtifactVideo({
   return (
     <video
       src={url}
-      className="max-w-full max-h-full object-contain"
+      className="w-auto h-auto max-w-full max-h-full object-contain rounded-card overflow-hidden"
       autoPlay
       muted={muted}
       loop={loop}
@@ -160,14 +160,14 @@ function ArtifactTitleCard({
 }
 
 export default function Artifact({ artifact, className = "" }: ArtifactProps) {
-  const baseClasses = `flex items-center justify-center ${className}`;
+  const baseClasses = `${className}`;
 
   switch (artifact.type) {
     case "image":
     case "pdf":
     case "figma":
       return (
-        <div className={baseClasses}>
+        <div className={`${baseClasses}`}>
           <ArtifactImage
             url={artifact.source_url}
             alt={artifact.name}

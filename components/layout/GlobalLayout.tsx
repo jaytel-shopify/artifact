@@ -1,8 +1,10 @@
 "use client";
 
-import { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import GlobalHeader from "./GlobalHeader";
 import { useHeader } from "./HeaderContext";
+import { setCurrentPath } from "@/lib/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
 
 interface GlobalLayoutProps {
@@ -11,6 +13,14 @@ interface GlobalLayoutProps {
 
 export default function GlobalLayout({ children }: GlobalLayoutProps) {
   const { headerContent } = useHeader();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Track current path globally
+  useEffect(() => {
+    const fullPath = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
+    setCurrentPath(fullPath);
+  }, [pathname, searchParams]);
 
   return (
     <div
