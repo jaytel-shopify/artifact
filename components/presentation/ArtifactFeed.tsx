@@ -12,6 +12,8 @@ interface ArtifactFeedProps {
   onLoadMore?: () => void;
   emptyMessage?: string;
   error?: Error | null;
+  /** Pass userId to enable navigation within a user's artifacts */
+  userId?: string;
 }
 
 export default function ArtifactFeed({
@@ -22,6 +24,7 @@ export default function ArtifactFeed({
   onLoadMore,
   emptyMessage = "No artifacts yet",
   error,
+  userId,
 }: ArtifactFeedProps) {
   const [gridMode, setGridMode] = useState<"masonry" | "grid">("masonry");
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -117,6 +120,7 @@ export default function ArtifactFeed({
                       key={artifact.id}
                       artifact={artifact}
                       tabIndex={tabindex}
+                      userId={userId}
                     />
                   ))}
                 </div>
@@ -125,7 +129,7 @@ export default function ArtifactFeed({
           ) : (
             <div className="grid grid-cols-4 gap-2 lg:gap-6">
               {artifacts.map((artifact) => (
-                <FeedCard key={artifact.id} artifact={artifact} />
+                <FeedCard key={artifact.id} artifact={artifact} userId={userId} />
               ))}
             </div>
           )}

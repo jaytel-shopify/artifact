@@ -17,6 +17,7 @@ import { useReactions } from "@/hooks/useReactions";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
+import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { getCurrentPath } from "@/lib/navigation";
 
 async function fetchArtifact(
@@ -30,6 +31,7 @@ export default function Page() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const artifactId = searchParams?.get("id") || "";
+  const userId = searchParams?.get("userId") || null;
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [previousPath, setPreviousPath] = useState<string | null>(null);
 
@@ -60,30 +62,34 @@ export default function Page() {
     { revalidateOnFocus: false }
   );
 
-  // Fetch published artifacts for navigation
+  // Fetch artifacts for navigation - use user artifacts if userId is provided
   const { artifacts: publishedArtifacts } = usePublicArtifacts();
+  const { artifacts: userArtifacts } = useUserArtifacts(userId);
+
+  // Use user artifacts for navigation if coming from user profile, otherwise use public artifacts
+  const navigationArtifacts = userId ? userArtifacts : publishedArtifacts;
 
   // Find current artifact index and get next/previous
-  const currentIndex = publishedArtifacts.findIndex((a) => a.id === artifactId);
+  const currentIndex = navigationArtifacts.findIndex((a) => a.id === artifactId);
   const hasNext = currentIndex > 0; // Going backwards in time (newer)
   const hasPrevious =
-    currentIndex >= 0 && currentIndex < publishedArtifacts.length - 1; // Going forwards in time (older)
-  const nextArtifact = hasNext ? publishedArtifacts[currentIndex - 1] : null;
+    currentIndex >= 0 && currentIndex < navigationArtifacts.length - 1; // Going forwards in time (older)
+  const nextArtifact = hasNext ? navigationArtifacts[currentIndex - 1] : null;
   const previousArtifact = hasPrevious
-    ? publishedArtifacts[currentIndex + 1]
+    ? navigationArtifacts[currentIndex + 1]
     : null;
 
   const handleNext = useCallback(() => {
     if (nextArtifact) {
-      router.push(`/a/?id=${nextArtifact.id}`);
+      router.push(`/a/?id=${nextArtifact.id}${userId ? `&userId=${userId}` : ""}`);
     }
-  }, [nextArtifact, router]);
+  }, [nextArtifact, router, userId]);
 
   const handlePrevious = useCallback(() => {
     if (previousArtifact) {
-      router.push(`/a/?id=${previousArtifact.id}`);
+      router.push(`/a/?id=${previousArtifact.id}${userId ? `&userId=${userId}` : ""}`);
     }
-  }, [previousArtifact, router]);
+  }, [previousArtifact, router, userId]);
 
   const { user } = useAuth();
   const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({

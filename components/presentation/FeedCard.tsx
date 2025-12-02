@@ -9,9 +9,11 @@ import { UserAvatar } from "@/components/auth/UserAvatar";
 interface FeedCardProps {
   artifact: ArtifactWithCreator;
   tabIndex?: number;
+  /** Pass userId to enable navigation within a user's artifacts */
+  userId?: string;
 }
 
-export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
+export default function FeedCard({ artifact, tabIndex, userId }: FeedCardProps) {
   const { userLiked, userDisliked, handleLike, handleDislike, canReact } =
     useReactions({ artifact });
 
@@ -24,7 +26,7 @@ export default function FeedCard({ artifact, tabIndex }: FeedCardProps) {
 
       <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4 flex justify-between items-center">
         <Link
-          href={`/a/?id=${artifact.id}`}
+          href={`/a/?id=${artifact.id}${userId ? `&userId=${userId}` : ""}`}
           className="after:absolute after:inset-0 after:content-['']"
           tabIndex={tabIndex}
         >

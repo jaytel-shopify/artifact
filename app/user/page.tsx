@@ -106,6 +106,7 @@ export default function UserProfilePage() {
             ? "You haven't created any public artifacts yet"
             : `${displayName} hasn't created any public artifacts yet`
         }
+        userId={userId}
       />
     </div>
   );
