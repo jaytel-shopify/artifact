@@ -97,14 +97,12 @@ function FolderPageContent() {
 
   // Use SWR for folder data - ProjectCard will call globalMutate(cacheKeys.folderData(folderId))
   const { data, isLoading, mutate } = useSWR<FolderData | null>(
-    cacheKeys.folderData(folderId) && user?.email
-      ? cacheKeys.folderData(folderId)
-      : null,
+    folderId && user?.email ? cacheKeys.folderData(folderId) : null,
     () => fetchFolderData(folderId, user!.email),
     {
       revalidateOnFocus: false,
       onSuccess: (data) => {
-        if (data) {
+        if (data && data.folder && data.folder.name) {
           document.title = `${data.folder.name} | Artifact`;
         }
       },

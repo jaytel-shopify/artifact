@@ -12,11 +12,11 @@
 
 export const cacheKeys = {
   /** Projects, folders, and published artifacts for a user */
-  projectsData: (email?: string) =>
-    email ? `projects-folders-${email}` : null,
+  projectsData: (userEmail?: string) =>
+    userEmail ? `projects-folders-${userEmail}` : null,
 
   /** Single folder view data */
-  folderData: (folderId?: string) => (folderId ? `folder-${folderId}` : null),
+  folderData: (folderId?: string) => (folderId ? `folder-v2-${folderId}` : null),
 
   /** Single project data (for presentation page) */
   projectData: (projectId?: string) =>
