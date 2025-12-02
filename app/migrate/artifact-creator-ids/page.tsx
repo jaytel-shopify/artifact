@@ -251,7 +251,6 @@ export default function ArtifactCreatorIdsMigrationPage() {
                 slack_image_url: directoryUser.slack_image_url,
                 slack_id: directoryUser.slack_id,
                 slack_handle: directoryUser.slack_handle,
-                title: directoryUser.title,
               });
               addLog("info", `Created user from directory: ${directoryUser.email}`);
               statsRef.usersCreated++;

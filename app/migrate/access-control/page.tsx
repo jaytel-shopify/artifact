@@ -47,7 +47,9 @@ interface MigrationProgress {
 }
 
 export default function AccessControlMigrationPage() {
-  const [directoryUsers, setDirectoryUsers] = useState<Map<string, User>>(new Map());
+  const [directoryUsers, setDirectoryUsers] = useState<Map<string, User>>(
+    new Map()
+  );
   const [progress, setProgress] = useState<MigrationProgress>({
     phase: "idle",
     current: 0,
@@ -69,25 +71,24 @@ export default function AccessControlMigrationPage() {
   const [isRunning, setIsRunning] = useState(false);
   const [isDryRun, setIsDryRun] = useState(true);
 
-  const addLog = useCallback(
-    (type: MigrationLog["type"], message: string) => {
-      setProgress((prev) => ({
-        ...prev,
-        logs: [
-          ...prev.logs,
-          {
-            timestamp: new Date().toISOString(),
-            type,
-            message,
-          },
-        ],
-      }));
-    },
-    []
-  );
+  const addLog = useCallback((type: MigrationLog["type"], message: string) => {
+    setProgress((prev) => ({
+      ...prev,
+      logs: [
+        ...prev.logs,
+        {
+          timestamp: new Date().toISOString(),
+          type,
+          message,
+        },
+      ],
+    }));
+  }, []);
 
   // Load directory users from users.json
-  const loadDirectoryUsers = useCallback(async (): Promise<Map<string, User>> => {
+  const loadDirectoryUsers = useCallback(async (): Promise<
+    Map<string, User>
+  > => {
     setProgress((prev) => ({
       ...prev,
       phase: "loading-users",
@@ -327,10 +328,10 @@ export default function AccessControlMigrationPage() {
               id: directoryUser.id,
               email: directoryUser.email.toLowerCase(),
               name: directoryUser.name || user.name,
-              slack_image_url: directoryUser.slack_image_url || user.slack_image_url,
+              slack_image_url:
+                directoryUser.slack_image_url || user.slack_image_url,
               slack_id: directoryUser.slack_id || user.slack_id,
               slack_handle: directoryUser.slack_handle || user.slack_handle,
-              title: directoryUser.title || user.title,
             });
 
             // Delete old email-based user
@@ -391,7 +392,10 @@ export default function AccessControlMigrationPage() {
     });
 
     try {
-      addLog("info", `Starting migration (${isDryRun ? "DRY RUN" : "LIVE"})...`);
+      addLog(
+        "info",
+        `Starting migration (${isDryRun ? "DRY RUN" : "LIVE"})...`
+      );
 
       // Load directory users
       const userMap = await loadDirectoryUsers();
@@ -629,4 +633,3 @@ export default function AccessControlMigrationPage() {
     </div>
   );
 }
-

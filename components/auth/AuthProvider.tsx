@@ -49,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         name: "Local Developer",
         slack_handle: "local-dev",
         slack_image_url: "https://i.pravatar.cc/150?u=dev@shopify.com",
-        title: "Developer",
       };
 
       setUser(localDevUser);
@@ -84,8 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           slackImageUrl: userData.slackImageUrl,
           slackId: userData.slackId,
           slackHandle: userData.slackHandle,
-          title: userData.title,
-          github: userData.github,
         });
 
         console.log("[AuthProvider] User synced to DB:", {
