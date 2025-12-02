@@ -446,7 +446,7 @@ function PresentationPageInner({
 
   return (
     <>
-      <div className="flex flex-1 h-[calc(100vh-var(--header-height))] relative">
+      <div className="flex flex-1 h-[calc(100vh-var(--header-height))] max-w-screen overflow-x-clip relative">
         {/* Mobile backdrop overlay */}
         {sidebarOpen && !presentationMode && (
           <div
@@ -486,9 +486,11 @@ function PresentationPageInner({
         <div
           className="flex-1 min-w-0"
           style={{
-            marginLeft:
-              sidebarOpen && !presentationMode ? "var(--sidebar-width)" : "0",
-            transition: "margin-left 400ms var(--spring-elegant-easing-light)",
+            transform:
+              sidebarOpen && !presentationMode
+                ? "translateX(var(--sidebar-width))"
+                : "translateX(0)",
+            transition: "transform 400ms var(--spring-elegant-easing-light)",
           }}
         >
           <div className="h-full relative">
