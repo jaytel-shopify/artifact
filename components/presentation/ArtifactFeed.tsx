@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { ArtifactWithCreator } from "@/types";
 import FeedCard from "@/components/presentation/FeedCard";
 
@@ -30,29 +30,33 @@ export default function ArtifactFeed({
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Calculate masonry layout
-  const masonryGrid = [
-    { height: 0, artifacts: [] },
-    { height: 0, artifacts: [] },
-    { height: 0, artifacts: [] },
-    { height: 0, artifacts: [] },
-  ] as {
-    height: number;
-    artifacts: {
-      artifact: ArtifactWithCreator;
-      tabindex: number;
-    }[];
-  }[];
+  const [masonryGrid, setMasonryGrid] = useState<
+    {
+      height: number;
+      artifacts: { artifact: ArtifactWithCreator; tabindex: number }[];
+    }[]
+  >([]);
 
-  artifacts?.forEach((artifact, i) => {
-    const index = masonryGrid.reduce((minIdx, row, idx, arr) => {
-      return row.height < arr[minIdx].height ? idx : minIdx;
-    }, 0);
-    masonryGrid[index].artifacts.push({ artifact, tabindex: i + 1 });
-    // Normalize height by aspect ratio since all columns have equal width
-    const width = (artifact.metadata.width as number) || 1;
-    const height = (artifact.metadata.height as number) || 0;
-    masonryGrid[index].height += height / width;
-  });
+  function computeMasonryGrid(
+    artifacts: ArtifactWithCreator[],
+    columns: number
+  ) {
+    const masonry = Array.from({ length: columns }, () => ({
+      height: 0,
+      artifacts: [] as { artifact: ArtifactWithCreator; tabindex: number }[],
+    }));
+    artifacts?.forEach((artifact, i) => {
+      const index = masonry.reduce((minIdx, row, idx, arr) => {
+        return row.height < arr[minIdx].height ? idx : minIdx;
+      }, 0);
+      masonry[index].artifacts.push({ artifact, tabindex: i + 1 });
+      // Normalize height by aspect ratio since all columns have equal width
+      const width = (artifact.metadata.width as number) || 1;
+      const height = (artifact.metadata.height as number) || 0;
+      masonry[index].height += height / width;
+    });
+    setMasonryGrid(masonry);
+  }
 
   // Toggle grid mode with 'g' key
   useEffect(() => {
@@ -72,8 +76,31 @@ export default function ArtifactFeed({
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
+
+  const [masonryGridElement, setMasonryGridElement] =
+    useState<HTMLDivElement | null>(null);
+  const masonryGridRef = useCallback((node: HTMLDivElement | null) => {
+    setMasonryGridElement(node);
+  }, []);
+  useEffect(() => {
+    if (!masonryGridElement) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const [entry] = entries;
+      const isSmall = entry.contentRect.width < 768;
+      computeMasonryGrid(artifacts, isSmall ? 2 : 4);
+    });
+    resizeObserver.observe(masonryGridElement);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [masonryGridElement, artifacts]);
 
   // Infinite scroll with Intersection Observer
   useEffect(() => {
@@ -105,34 +132,27 @@ export default function ArtifactFeed({
 
   return (
     <div className="mx-auto p-6">
-      {error && (
-        <p className="text-destructive">Failed to load artifacts</p>
-      )}
+      {error && <p className="text-destructive">Failed to load artifacts</p>}
 
       {artifacts.length > 0 ? (
-        <>
-          {gridMode === "masonry" ? (
-            <div className="grid grid-cols-4 gap-2 lg:gap-6">
-              {masonryGrid.map((row, index) => (
-                <div key={index} className="flex flex-col gap-2 lg:gap-6">
-                  {row.artifacts.map(({ artifact, tabindex }) => (
-                    <FeedCard
-                      key={artifact.id}
-                      artifact={artifact}
-                      tabIndex={tabindex}
-                      userId={userId}
-                    />
-                  ))}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-4 gap-2 lg:gap-6">
-              {artifacts.map((artifact) => (
-                <FeedCard key={artifact.id} artifact={artifact} userId={userId} />
-              ))}
-            </div>
-          )}
+        <div className="@container">
+          <div
+            ref={masonryGridRef}
+            className="grid grid-cols-2 gap-2 @3xl:gap-6 @3xl:grid-cols-4"
+          >
+            {masonryGrid.map((row, index) => (
+              <div key={index} className="flex flex-col gap-[inherit]">
+                {row.artifacts.map(({ artifact, tabindex }) => (
+                  <FeedCard
+                    key={artifact.id}
+                    artifact={artifact}
+                    tabIndex={tabindex}
+                    userId={userId}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
 
           {/* Infinite scroll sentinel */}
           {onLoadMore && <div ref={sentinelRef} className="h-px" />}
@@ -142,7 +162,7 @@ export default function ArtifactFeed({
               <p className="text-text-secondary">Loading more...</p>
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="py-12 text-center">
           <p className="text-text-secondary">{emptyMessage}</p>
@@ -151,4 +171,3 @@ export default function ArtifactFeed({
     </div>
   );
 }
-
