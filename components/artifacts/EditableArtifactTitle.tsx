@@ -160,7 +160,7 @@ export default function EditableArtifactTitle({
         className={`${
           readOnly
             ? "px-2 py-1"
-            : "cursor-pointer hover:bg-secondary/10 rounded-md px-2 py-1 transition-colors duration-200"
+            : "cursor-text hover:bg-secondary/10 rounded-md px-2 py-1 transition-colors duration-200"
         } flex-1 min-w-0`}
         onDoubleClick={handleDoubleClick}
         title={readOnly ? undefined : "Double-click to edit"}
