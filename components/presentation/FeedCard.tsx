@@ -6,6 +6,7 @@ import { useReactions } from "@/hooks/useReactions";
 import { ArtifactWithCreator } from "@/hooks/usePublicArtifacts";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { useState } from "react";
+import { cn } from "@/lib/utils";
 
 interface FeedCardProps {
   artifact: ArtifactWithCreator;
@@ -24,6 +25,17 @@ export default function FeedCard({
 
   const [activeViewTransition, setActiveViewTransition] = useState(false);
 
+  const hoverClasses = cn(
+    "transition-all",
+    "duration-500",
+    "ease-bouyant",
+    "opacity-0",
+    "translate-y-full",
+    "group-hover:translate-y-0",
+    "group-hover:rotate-0",
+    "group-hover:opacity-100"
+  );
+
   return (
     <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border group">
       <Link
@@ -41,10 +53,10 @@ export default function FeedCard({
         />
       </Link>
 
-      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 opacity-1 group-hover:opacity-100 transition-opacity duration-300 md:p-4 flex justify-between items-center">
+      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex justify-between items-center will-change-[opacity]">
         <Link
           href={`/user/?id=${artifact.creator?.id}`}
-          className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark transition-colors"
+          className={`pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark rotate-4 ${hoverClasses}`}
         >
           <UserAvatar
             id={artifact.creator?.id}
@@ -61,7 +73,7 @@ export default function FeedCard({
           <button
             onClick={handleLike}
             disabled={!canReact}
-            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light transition-colors ${
+            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light rotate-30 ${hoverClasses} ${
               userLiked
                 ? "bg-dark"
                 : "bg-dark/35 backdrop-blur-md hover:bg-dark"
@@ -75,7 +87,7 @@ export default function FeedCard({
           <button
             onClick={handleDislike}
             disabled={!canReact}
-            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light transition-colors ${
+            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light -rotate-30 ${hoverClasses} ${
               userDisliked
                 ? "bg-dark"
                 : "bg-dark/35 backdrop-blur-md hover:bg-dark"
