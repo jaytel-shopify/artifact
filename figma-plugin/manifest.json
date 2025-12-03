@@ -1,0 +1,19 @@
+{
+  "name": "Artifact",
+  "id": "1578107551373409220",
+  "api": "1.0.0",
+  "main": "code.js",
+  "capabilities": [],
+  "enableProposedApi": false,
+  "documentAccess": "dynamic-page",
+  "editorType": ["figma"],
+  "ui": "ui.html",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://artifact.quick.shopify.io",
+      "https://staging-artifact.quick.shopify.io",
+      "https://accounts.google.com",
+      "https://iap.googleapis.com"
+    ]
+  }
+}

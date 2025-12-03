@@ -33,24 +33,46 @@ import { getUserById } from "./quick-users";
  * @param userId - User.id to get projects for
  */
 export async function getProjects(userId?: string): Promise<Project[]> {
+  console.log("[getProjects] Starting with userId:", userId);
   if (!userId) return [];
 
   // Get projects user has access to via access control system (now uses user_id)
-  const accessibleProjects = await getUserAccessibleResources(
-    userId,
-    "project"
-  );
+  console.log("[getProjects] Getting accessible resources...");
+  let accessibleProjects;
+  try {
+    accessibleProjects = await getUserAccessibleResources(
+      userId,
+      "project"
+    );
+    console.log("[getProjects] Found accessible projects:", accessibleProjects.length);
+  } catch (err) {
+    console.error("[getProjects] Failed to get accessible resources:", err);
+    return [];
+  }
+  
   const accessibleProjectIds = accessibleProjects.map((a) => a.resource_id);
+  
+  // If no accessible projects, return empty array immediately
+  if (accessibleProjectIds.length === 0) {
+    console.log("[getProjects] No accessible projects, returning empty array");
+    return [];
+  }
 
+  console.log("[getProjects] Querying projects collection...");
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
-  const userProjects = await collection
-    .where({ id: { $in: accessibleProjectIds } })
-    .orderBy("created_at", "desc")
-    .find();
-
-  return userProjects;
+  try {
+    const userProjects = await collection
+      .where({ id: { $in: accessibleProjectIds } })
+      .orderBy("created_at", "desc")
+      .find();
+    console.log("[getProjects] Found projects:", userProjects.length);
+    return userProjects;
+  } catch (err) {
+    console.error("[getProjects] Failed to query projects:", err);
+    return [];
+  }
 }
 
 /**
@@ -79,14 +101,18 @@ export async function createProject(data: {
   creator_id: string; // User's ID
   folder_id?: string | null; // Optional folder assignment
 }): Promise<Project> {
+  console.log("[createProject] Starting with data:", data);
+  
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
   // Look up user by ID to get their email for access control display
+  console.log("[createProject] Looking up user:", data.creator_id);
   const user = await getUserById(data.creator_id);
   if (!user) {
     throw new Error(`User not found for id: ${data.creator_id}`);
   }
+  console.log("[createProject] Found user:", user.email);
 
   const projectData = {
     name: data.name,
@@ -94,24 +120,46 @@ export async function createProject(data: {
     folder_id: data.folder_id || null,
   };
 
-  const project = await collection.create(projectData);
+  console.log("[createProject] Creating project in DB...");
+  let project: Project;
+  try {
+    project = await collection.create(projectData);
+    console.log("[createProject] Project created:", project.id);
+  } catch (err) {
+    console.error("[createProject] Failed to create project:", err);
+    throw err;
+  }
 
   // Grant owner access to creator (access control uses user_id)
-  await grantAccess(
-    project.id,
-    "project",
-    user.id,
-    user.email, // User's email (for display)
-    "owner",
-    user.id // Granted by self
-  );
+  console.log("[createProject] Granting access...");
+  try {
+    await grantAccess(
+      project.id,
+      "project",
+      user.id,
+      user.email, // User's email (for display)
+      "owner",
+      user.id // Granted by self
+    );
+    console.log("[createProject] Access granted");
+  } catch (err) {
+    console.error("[createProject] Failed to grant access:", err);
+    // Continue anyway - project was created
+  }
 
   // Create default page for the project
-  await createPage({
-    project_id: project.id,
-    name: "Page 01",
-    position: 0,
-  });
+  console.log("[createProject] Creating default page...");
+  try {
+    await createPage({
+      project_id: project.id,
+      name: "Page 01",
+      position: 0,
+    });
+    console.log("[createProject] Default page created");
+  } catch (err) {
+    console.error("[createProject] Failed to create default page:", err);
+    // Continue anyway - project was created
+  }
 
   return project;
 }
