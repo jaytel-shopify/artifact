@@ -5,6 +5,12 @@
 
 @utility text-small {
   font-size: 0.75rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+@utility text-small-md {
+  font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: -0.01em;
   line-height: 1.1;
@@ -21,7 +27,6 @@
   letter-spacing: -0.01em;
   line-height: 1.1;
 }
-
 @utility text-xlarge {
   font-size: 1.3125rem;
   font-weight: 500;
