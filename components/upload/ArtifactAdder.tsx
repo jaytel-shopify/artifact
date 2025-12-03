@@ -47,6 +47,9 @@ export default function ArtifactAdder({
   const [headline, setHeadline] = useState("");
   const [subheadline, setSubheadline] = useState("");
 
+  // Build context if both projectId and pageId are provided
+  const defaultContext = projectId && pageId ? { projectId, pageId } : undefined;
+
   // Use centralized upload hook - handles artifact creation internally
   const {
     uploadState,
@@ -56,12 +59,18 @@ export default function ArtifactAdder({
     handleTitleCardUpload,
     openFilePicker,
   } = useArtifactUpload({
-    projectId,
-    pageId,
+    defaultContext,
     onArtifactCreated,
   });
 
-  const { uploading, totalFiles, currentFileIndex, currentFileName, currentProgress, error } = uploadState;
+  const {
+    uploading,
+    totalFiles,
+    currentFileIndex,
+    currentFileName,
+    currentProgress,
+    error,
+  } = uploadState;
 
   function resetUrlState() {
     setUrl("");
@@ -120,10 +129,7 @@ export default function ArtifactAdder({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuItem
-            onClick={openFilePicker}
-            className="cursor-pointer"
-          >
+          <DropdownMenuItem onClick={openFilePicker} className="cursor-pointer">
             <Image className="h-4 w-4 mr-2" />
             Media
           </DropdownMenuItem>

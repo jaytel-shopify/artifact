@@ -12,7 +12,10 @@ import {
   getViewportDimensions,
   type ViewportKey,
 } from "@/lib/viewports";
-import { createArtifactInProject, createArtifact as createStandaloneArtifact } from "@/lib/quick-db";
+import {
+  createArtifactInProject,
+  createArtifact as createStandaloneArtifact,
+} from "@/lib/quick-db";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { Artifact, ArtifactType, ArtifactWithPosition } from "@/types";
 
@@ -34,11 +37,15 @@ const initialUploadState: UploadState = {
   error: null,
 };
 
+/** Context for project-linked uploads */
+export interface UploadContext {
+  projectId: string | null;
+  pageId: string | null;
+}
+
 interface UseArtifactUploadOptions {
-  /** Project ID - if not provided, creates standalone published artifacts */
-  projectId?: string;
-  /** Page ID - required if projectId is provided */
-  pageId?: string;
+  /** Default project context - can be overridden per-call */
+  defaultContext?: UploadContext;
   /** Callback when artifact is created */
   onArtifactCreated?: (artifact: Artifact | ArtifactWithPosition) => void;
   /** Max file size in MB (default 250) */
@@ -48,22 +55,21 @@ interface UseArtifactUploadOptions {
 /**
  * Hook to handle all artifact upload operations (files, URLs, title cards)
  *
- * Two modes:
- * 1. Project mode (projectId + pageId provided): Creates artifacts linked to a project/page
- * 2. Standalone mode (no projectId): Creates published standalone artifacts
+ * Supports two modes:
+ * 1. Project mode (context provided): Creates artifacts linked to a project/page
+ * 2. Standalone mode (no context): Creates published standalone artifacts
+ *
+ * Context can be provided as defaultContext or passed to each handler call.
  */
 export function useArtifactUpload({
-  projectId,
-  pageId,
+  defaultContext,
   onArtifactCreated,
   maxFileSizeMB = 250,
-}: UseArtifactUploadOptions) {
+}: UseArtifactUploadOptions = {}) {
   const { user } = useAuth();
-  const [uploadState, setUploadState] = useState<UploadState>(initialUploadState);
+  const [uploadState, setUploadState] =
+    useState<UploadState>(initialUploadState);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Determine mode: project-based or standalone
-  const isProjectMode = Boolean(projectId && pageId);
 
   const resetState = useCallback(() => {
     setUploadState(initialUploadState);
@@ -76,21 +82,24 @@ export function useArtifactUpload({
    * Internal helper to create an artifact
    * Supports both project-linked and standalone artifacts
    */
-  const createArtifact = useCallback(
-    async (artifactData: {
-      type: ArtifactType;
-      source_url: string;
-      file_path?: string | null;
-      name?: string;
-      metadata?: Record<string, unknown>;
-    }): Promise<Artifact | ArtifactWithPosition | null> => {
+  const createArtifactInternal = useCallback(
+    async (
+      artifactData: {
+        type: ArtifactType;
+        source_url: string;
+        file_path?: string | null;
+        name?: string;
+        metadata?: Record<string, unknown>;
+      },
+      context?: UploadContext
+    ): Promise<Artifact | ArtifactWithPosition | null> => {
       if (!user?.id) return null;
 
       // Project mode: create artifact linked to project/page
-      if (isProjectMode && projectId && pageId) {
+      if (context?.projectId && context?.pageId) {
         const { artifact, projectArtifact } = await createArtifactInProject({
-          project_id: projectId,
-          page_id: pageId,
+          project_id: context.projectId,
+          page_id: context.pageId,
           type: artifactData.type,
           source_url: artifactData.source_url,
           file_path: artifactData.file_path || undefined,
@@ -124,23 +133,23 @@ export function useArtifactUpload({
       onArtifactCreated?.(artifact);
       return artifact;
     },
-    [projectId, pageId, isProjectMode, user?.id, onArtifactCreated]
+    [user?.id, onArtifactCreated]
   );
 
   /**
    * Handle media file uploads (images/videos)
+   * @param files - Files to upload
+   * @param context - Optional project context (overrides defaultContext)
    */
   const handleFileUpload = useCallback(
-    async (files: File[]) => {
+    async (files: File[], context?: UploadContext) => {
       if (files.length === 0) return;
-      if (!user?.email && !user?.id) {
+      if (!user?.id) {
         toast.error("Unable to upload: please sign in first");
         return;
       }
-      if (isProjectMode && (!projectId || !pageId)) {
-        toast.error("Unable to upload: missing project context");
-        return;
-      }
+
+      const effectiveContext = context || defaultContext;
 
       setUploadState({
         uploading: true,
@@ -199,14 +208,21 @@ export function useArtifactUpload({
           }
 
           // Create artifact with generated name
-          const artifactName = generateArtifactName(type, upResult.fullUrl, file);
-          const artifact = await createArtifact({
+          const artifactName = generateArtifactName(
             type,
-            source_url: upResult.fullUrl,
-            file_path: upResult.url,
-            name: artifactName,
-            metadata,
-          });
+            upResult.fullUrl,
+            file
+          );
+          const artifact = await createArtifactInternal(
+            {
+              type,
+              source_url: upResult.fullUrl,
+              file_path: upResult.url,
+              name: artifactName,
+              metadata,
+            },
+            effectiveContext
+          );
 
           // Generate thumbnail asynchronously for videos
           if (type === "video" && artifact) {
@@ -227,7 +243,13 @@ export function useArtifactUpload({
         resetState();
       }
     },
-    [projectId, pageId, isProjectMode, user?.email, user?.id, createArtifact, maxFileSizeMB, resetState]
+    [
+      defaultContext,
+      user?.id,
+      createArtifactInternal,
+      maxFileSizeMB,
+      resetState,
+    ]
   );
 
   /**
@@ -250,14 +272,23 @@ export function useArtifactUpload({
 
   /**
    * Handle URL artifact creation
+   * @param url - URL to embed
+   * @param viewport - Viewport size (default: laptop)
+   * @param context - Optional project context (overrides defaultContext)
    */
   const handleUrlUpload = useCallback(
-    async (url: string, viewport: ViewportKey = DEFAULT_VIEWPORT_KEY) => {
+    async (
+      url: string,
+      viewport: ViewportKey = DEFAULT_VIEWPORT_KEY,
+      context?: UploadContext
+    ) => {
       if (!url) return;
-      if (!user?.email && !user?.id) {
+      if (!user?.id) {
         toast.error("Unable to add URL: please sign in first");
         return;
       }
+
+      const effectiveContext = context || defaultContext;
 
       setUploadState({
         uploading: true,
@@ -272,16 +303,19 @@ export function useArtifactUpload({
         const dims = getViewportDimensions(viewport);
         const artifactName = generateArtifactName("url", url);
 
-        await createArtifact({
-          type: "url",
-          source_url: url,
-          name: artifactName,
-          metadata: {
-            viewport,
-            width: dims.width,
-            height: dims.height,
+        await createArtifactInternal(
+          {
+            type: "url",
+            source_url: url,
+            name: artifactName,
+            metadata: {
+              viewport,
+              width: dims.width,
+              height: dims.height,
+            },
           },
-        });
+          effectiveContext
+        );
 
         toast.success("Successfully added URL artifact");
       } catch (e: unknown) {
@@ -293,23 +327,28 @@ export function useArtifactUpload({
         resetState();
       }
     },
-    [user?.email, user?.id, createArtifact, resetState]
+    [defaultContext, user?.id, createArtifactInternal, resetState]
   );
 
   /**
    * Handle title card creation
+   * @param headline - Title card headline
+   * @param subheadline - Title card subheadline
+   * @param context - Optional project context (overrides defaultContext)
    */
   const handleTitleCardUpload = useCallback(
-    async (headline: string, subheadline: string) => {
+    async (headline: string, subheadline: string, context?: UploadContext) => {
       if (!headline && !subheadline) {
         const error = "Please enter at least a headline or subheadline";
         setUploadState((prev) => ({ ...prev, error }));
         return;
       }
-      if (!user?.email && !user?.id) {
+      if (!user?.id) {
         toast.error("Unable to create title card: please sign in first");
         return;
       }
+
+      const effectiveContext = context || defaultContext;
 
       setUploadState({
         uploading: true,
@@ -321,19 +360,23 @@ export function useArtifactUpload({
       });
 
       try {
-        await createArtifact({
-          type: "titleCard",
-          source_url: "",
-          name: headline || "Title Card",
-          metadata: {
-            headline,
-            subheadline,
+        await createArtifactInternal(
+          {
+            type: "titleCard",
+            source_url: "",
+            name: headline || "Title Card",
+            metadata: {
+              headline,
+              subheadline,
+            },
           },
-        });
+          effectiveContext
+        );
 
         toast.success("Successfully added title card");
       } catch (e: unknown) {
-        const message = e instanceof Error ? e.message : "Failed to add title card";
+        const message =
+          e instanceof Error ? e.message : "Failed to add title card";
         setUploadState((prev) => ({ ...prev, error: message }));
         toast.error(message || "Failed to add title card. Please try again.");
         throw e;
@@ -341,11 +384,11 @@ export function useArtifactUpload({
         resetState();
       }
     },
-    [user?.email, user?.id, createArtifact, resetState]
+    [defaultContext, user?.id, createArtifactInternal, resetState]
   );
 
-  // Check if upload is possible (has required context)
-  const canUpload = Boolean(user?.email || user?.id);
+  // Check if upload is possible (user is authenticated)
+  const canUpload = Boolean(user?.id);
 
   return {
     uploadState,

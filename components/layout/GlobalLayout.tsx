@@ -6,6 +6,9 @@ import GlobalHeader from "./GlobalHeader";
 import { useHeader } from "./HeaderContext";
 import { setCurrentPath } from "@/lib/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
+import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
+import { useArtifactUpload } from "@/hooks/useArtifactUpload";
+import type { Artifact } from "@/types";
 
 interface GlobalLayoutProps {
   children: ReactNode;
@@ -29,46 +32,63 @@ function PathTracker() {
 
 export default function GlobalLayout({ children }: GlobalLayoutProps) {
   const { headerContent } = useHeader();
-  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  function handleFileUpload(files: File[]) {
-    console.log(files);
-    switch (pathname) {
-      case "/projects/":
-        // upload to currentproject
-        // select page
-        break;
-      case "/folder/":
-        // select project
-        // select page
-        break;
-      case "/p/":
-        // upload to current project, current page
-        break;
-      default:
-      // upload public
+  const { addArtifact } = usePublicArtifacts();
+
+  // Handle artifact creation - add to public feed optimistically
+  const handleArtifactCreated = (artifact: Artifact) => {
+    addArtifact(artifact);
+  };
+
+  // Use upload hook for global drag/drop and paste uploads
+  const { handleFileUpload, handleUrlUpload } = useArtifactUpload({
+    onArtifactCreated: handleArtifactCreated,
+  });
+
+  // Get current project context from URL if on project page
+  const getUploadContext = () => {
+    const projectId = searchParams?.get("id");
+    const pageId = searchParams?.get("page");
+    if (projectId && pageId) {
+      return { projectId, pageId };
     }
+    return undefined;
+  };
+
+  function handleGlobalFileUpload(files: File[]) {
+    const context = getUploadContext();
+    handleFileUpload(files, context);
   }
 
-  function handleUrlAdd(url: string) {
-    console.log(url);
+  function handleGlobalUrlAdd(url: string) {
+    const context = getUploadContext();
+    handleUrlUpload(url, undefined, context);
   }
 
   function handlePaste(e: ClipboardEvent) {
     const text = e.clipboardData?.getData("text/plain");
     if (text) {
-      handleUrlAdd(text);
+      // Check if it looks like a URL
+      try {
+        new URL(text);
+        handleGlobalUrlAdd(text);
+      } catch {
+        // Not a valid URL, ignore
+      }
     } else {
       const files = e.clipboardData?.files;
-      if (files) {
-        handleFileUpload(Array.from(files));
+      if (files && files.length > 0) {
+        handleGlobalFileUpload(Array.from(files));
       }
     }
   }
 
   useEffect(() => {
-    window.removeEventListener("paste", handlePaste);
     window.addEventListener("paste", handlePaste);
+    return () => {
+      window.removeEventListener("paste", handlePaste);
+    };
   }, []);
 
   return (
@@ -89,12 +109,8 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
 
       <main className="flex-1 min-h-0">{children}</main>
       <DropzoneUploader
-        onFiles={(files) => {
-          handleFileUpload(files);
-        }}
-        onUrl={(url) => {
-          handleUrlAdd(url);
-        }}
+        onFiles={handleGlobalFileUpload}
+        onUrl={handleGlobalUrlAdd}
       />
     </div>
   );
