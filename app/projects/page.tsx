@@ -107,6 +107,7 @@ export default function ProjectsPage() {
                 key={folder.id}
                 folder={folder}
                 projectCount={folder.projectCount}
+                canEdit={folder.canEdit}
               />
             ))}
           </div>

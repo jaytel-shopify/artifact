@@ -9,7 +9,7 @@ export type ProjectWithCover = Project & {
   coverArtifacts: Artifact[];
   artifactCount: number;
 };
-export type FolderWithCount = Folder & { projectCount: number };
+export type FolderWithCount = Folder & { projectCount: number; canEdit: boolean };
 
 export interface ProjectsData {
   projects: ProjectWithCover[];
@@ -135,10 +135,22 @@ async function fetcher(userId?: string): Promise<ProjectsData> {
     }
   }
 
-  const foldersWithCounts: FolderWithCount[] = validFolders.map((folder) => ({
-    ...folder,
-    projectCount: projectCountByFolder.get(folder.id) || 0,
-  }));
+  // Create a map of folder access levels from the access entries
+  const folderAccessMap = new Map<string, string>();
+  for (const access of userFoldersAccess) {
+    folderAccessMap.set(access.resource_id, access.access_level);
+  }
+
+  const foldersWithCounts: FolderWithCount[] = validFolders.map((folder) => {
+    const accessLevel = folderAccessMap.get(folder.id);
+    // User can edit if they have owner or editor access (not viewer or derived)
+    const canEdit = accessLevel === "owner" || accessLevel === "editor";
+    return {
+      ...folder,
+      projectCount: projectCountByFolder.get(folder.id) || 0,
+      canEdit,
+    };
+  });
 
   return {
     projects: projectsWithCovers,
