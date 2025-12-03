@@ -33,6 +33,7 @@ interface FolderCardProps {
     creator_id: string;
   };
   projectCount: number;
+  canEdit?: boolean;
 }
 
 /**
@@ -41,7 +42,11 @@ interface FolderCardProps {
  * Self-contained folder card with all actions and dialogs built-in.
  * Uses globalMutate to refresh page data after mutations.
  */
-export default function FolderCard({ folder, projectCount }: FolderCardProps) {
+export default function FolderCard({
+  folder,
+  projectCount,
+  canEdit = false,
+}: FolderCardProps) {
   const { user } = useAuth();
 
   // Dialog states
@@ -90,41 +95,43 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
       <ContextMenu>
         <ContextMenuTrigger asChild>
           <Card className="group relative p-4" onMouseEnter={handleMouseEnter}>
-            {/* Actions Menu (visible on hover) */}
-            <div className="flex items-start justify-end">
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  asChild
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="hover:bg-background text-text-primary absolute top-2 right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100"
+            {/* Actions Menu (visible on hover) - only show if user has any actions available */}
+            {canEdit && (
+              <div className="flex items-start justify-end absolute top-2 right-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    asChild
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setRenameOpen(true)}>
-                    Rename Folder
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => setShareOpen(true)}>
-                    Manage Access
-                  </DropdownMenuItem>
-                  <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => setDeleteOpen(true)}
-                  >
-                    Delete Folder
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-background text-text-primary z-10 opacity-0 transition-opacity group-hover:opacity-100"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+                      Rename Folder
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                      Manage Access
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => setDeleteOpen(true)}
+                    >
+                      Delete Folder
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
 
             <Link
               href={`/folder/?id=${folder.id}`}
-              className="block space-y-1 after:content-[''] after:absolute after:inset-0"
+              className="block space-y-1 after:content-[''] after:absolute after:inset-0 aspect-[5/1]"
               aria-label={
                 folder.name +
                 " - " +
@@ -141,20 +148,24 @@ export default function FolderCard({ folder, projectCount }: FolderCardProps) {
           </Card>
         </ContextMenuTrigger>
 
-        {/* Context Menu (right-click) */}
+        {/* Context Menu (right-click) - only show edit actions if user can edit */}
         <ContextMenuContent>
-          <ContextMenuItem onClick={() => setRenameOpen(true)}>
-            Rename Folder
-          </ContextMenuItem>
-          <ContextMenuItem onClick={() => setShareOpen(true)}>
-            Manage Access
-          </ContextMenuItem>
-          <ContextMenuItem
-            variant="destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            Delete Folder
-          </ContextMenuItem>
+          {canEdit && (
+            <>
+              <ContextMenuItem onClick={() => setRenameOpen(true)}>
+                Rename Folder
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => setShareOpen(true)}>
+                Manage Access
+              </ContextMenuItem>
+              <ContextMenuItem
+                variant="destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                Delete Folder
+              </ContextMenuItem>
+            </>
+          )}
         </ContextMenuContent>
       </ContextMenu>
 
