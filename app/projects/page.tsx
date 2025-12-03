@@ -5,15 +5,10 @@ import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
-import ProjectCard from "@/components/presentation/ProjectCard";
-import FolderCard from "@/components/folders/FolderCard";
 import FolderDialog from "@/components/folders/FolderDialog";
-import ArtifactCard from "@/components/presentation/ArtifactCard";
-// import QuickSiteCard from "@/components/presentation/QuickSiteCard";
-import { EmptyProjectsState } from "@/components/projects/EmptyProjectsState";
+import { EmptyProjectsState } from "@/components/projects";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { useProjectsData } from "@/hooks/useProjectsData";
-// import { useQuickSites } from "@/hooks/useQuickSites";
 import { createFolder } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
 import { Button } from "@/components/ui/button";
@@ -24,6 +19,7 @@ import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { ProjectsPageSkeleton } from "@/components/ui/skeleton";
+import { ProjectsSection, FoldersSection } from "@/components/projects";
 
 export default function ProjectsPage() {
   const router = useTransitionRouter();
@@ -31,9 +27,6 @@ export default function ProjectsPage() {
 
   // Fetch all data
   const { projects, folders, isLoading, error } = useProjectsData(user?.id);
-
-  // Fetch Quick sites
-  // const { sites: quickSites, isLoading: sitesLoading } = useQuickSites();
 
   // Create folder dialog state
   const [createFolderOpen, setCreateFolderOpen] = useState(false);
@@ -72,7 +65,7 @@ export default function ProjectsPage() {
         <ViewToggle />
       </>
     ),
-    center: <SearchBar mode="dashboard" />,
+    center: <SearchBar />,
     right: (
       <>
         <Button variant="ghost" onClick={() => setCreateFolderOpen(true)}>
@@ -97,34 +90,8 @@ export default function ProjectsPage() {
     <div className="max-w-[1100px] mx-auto p-6 space-y-10">
       {error && <p className="text-destructive">{String(error)}</p>}
 
-      {/* Folders Section */}
-      {folders.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-large">Folders</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {folders.map((folder) => (
-              <FolderCard
-                key={folder.id}
-                folder={folder}
-                projectCount={folder.projectCount}
-                canEdit={folder.canEdit}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Projects Section */}
-      {uncategorizedProjects.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-large">Projects</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {uncategorizedProjects.map((p) => (
-              <ProjectCard key={p.id} project={p} />
-            ))}
-          </div>
-        </div>
-      )}
+      <FoldersSection folders={folders} />
+      <ProjectsSection projects={uncategorizedProjects} />
 
       {/* Empty State */}
       {!isLoading &&

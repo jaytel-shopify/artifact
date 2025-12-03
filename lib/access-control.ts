@@ -77,6 +77,7 @@ export async function searchUsers(query: string): Promise<User[]> {
             slack_handle: data.slack_handle,
             slack_image_url: data.slack_image_url,
             slack_id: data.slack_id,
+            title: data.title,
           });
         }
       } catch {
@@ -97,7 +98,6 @@ export async function searchUsers(query: string): Promise<User[]> {
       .filter(
         (user) =>
           user.name.toLowerCase().includes(lowerQuery) ||
-          user.email.toLowerCase().includes(lowerQuery) ||
           (user.slack_handle &&
             user.slack_handle.toLowerCase().includes(lowerQuery))
       )

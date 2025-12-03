@@ -2,46 +2,36 @@
 
 import { waitForQuick } from "./quick";
 import { getProjects } from "./quick-db";
-import { getUserAccessibleResources } from "./access-control";
-import type { Artifact, Project, Folder, ProjectArtifact } from "@/types";
-
-/**
- * Search mode determines which resources to search
- * - "public": Only published artifacts (for homepage)
- * - "dashboard": Only user's folders, projects, and personal artifacts
- * - "all": Search everything (default)
- */
-export type SearchMode = "public" | "dashboard" | "all";
+import { searchUsers as searchUsersFromAccessControl } from "./access-control";
+import type { Artifact, Project, User, ProjectArtifact, Page } from "@/types";
+import type { ProjectWithCover } from "@/hooks/useProjectsData";
 
 /**
  * Search Results
  *
- * Grouped results from searching across all user-accessible resources
+ * Grouped results from searching across resources
  */
 export type SearchResults = {
-  publicArtifacts: Artifact[];
-  folders: Folder[];
-  projects: Project[];
-  personalArtifacts: Artifact[];
+  projects: ProjectWithCover[];
+  publishedArtifacts: Artifact[];
+  users: User[];
 };
 
 /**
- * Search through all resources accessible to a user
+ * Search through resources
  *
- * Searches based on mode:
- * - "public": Only published artifacts
- * - "dashboard": User's folders, projects, and personal artifacts
- * - "all": Everything (default)
+ * Always returns:
+ * - Projects the user belongs to (matching query) with cover data
+ * - All published artifacts (matching query)
+ * - Users (matching query)
  *
  * @param query - Search term (case-insensitive)
  * @param userId - User.id of the user performing the search
- * @param mode - Search mode ("public" | "dashboard" | "all")
  * @returns SearchResults grouped by resource type
  */
 export async function searchResources(
   query: string,
-  userId: string,
-  mode: SearchMode = "all"
+  userId: string
 ): Promise<SearchResults> {
   // Normalize query
   const normalizedQuery = query.toLowerCase().trim();
@@ -49,10 +39,9 @@ export async function searchResources(
   // Handle empty query
   if (!normalizedQuery) {
     return {
-      publicArtifacts: [],
-      folders: [],
       projects: [],
-      personalArtifacts: [],
+      publishedArtifacts: [],
+      users: [],
     };
   }
 
@@ -63,173 +52,168 @@ export async function searchResources(
 
   const quick = await waitForQuick();
 
-  // Search based on mode
-  if (mode === "public") {
-    // Only search published artifacts
-    const publicArtifacts = await searchPublicArtifacts(normalizedQuery, quick);
-    return {
-      publicArtifacts,
-      folders: [],
-      projects: [],
-      personalArtifacts: [],
-    };
-  }
-
-  if (mode === "dashboard") {
-    // Only search user's dashboard content (folders, projects, personal artifacts)
-    const [folders, projects] = await Promise.all([
-      searchFolders(normalizedQuery, userId),
-      searchProjects(normalizedQuery, userId),
-    ]);
-
-    // Get personal artifacts linked to user's accessible projects
-    const accessibleProjectIds = projects.map((p) => p.id);
-    const personalArtifacts = await getPersonalArtifactsViaJunction(
-      normalizedQuery,
-      accessibleProjectIds,
-      quick
-    );
-
-    return {
-      publicArtifacts: [],
-      folders,
-      projects,
-      personalArtifacts,
-    };
-  }
-
-  // Default: search everything
-  const [publicArtifacts, folders, projects] = await Promise.all([
-    searchPublicArtifacts(normalizedQuery, quick),
-    searchFolders(normalizedQuery, userId),
-    searchProjects(normalizedQuery, userId),
+  // Search all three in parallel
+  const [projects, publishedArtifacts, users] = await Promise.all([
+    searchProjectsWithCovers(normalizedQuery, userId, quick),
+    searchPublishedArtifacts(normalizedQuery, quick),
+    searchUsers(normalizedQuery, quick),
   ]);
 
-  // Get personal artifacts linked to user's accessible projects
-  const accessibleProjectIds = projects.map((p) => p.id);
-  const personalArtifacts = await getPersonalArtifactsViaJunction(
-    normalizedQuery,
-    accessibleProjectIds,
-    quick
-  );
-
   return {
-    publicArtifacts,
-    folders,
     projects,
-    personalArtifacts,
+    publishedArtifacts,
+    users,
   };
 }
 
 /**
- * Search for public artifacts by name
+ * Search for user's accessible projects by name and enrich with cover data
+ * @param userId - User.id to check access for
+ */
+async function searchProjectsWithCovers(
+  normalizedQuery: string,
+  userId: string,
+  quick: any
+): Promise<ProjectWithCover[]> {
+  const userProjects = await getProjects(userId);
+
+  // Filter by query first
+  const matchingProjects = userProjects.filter((project) =>
+    project.name.toLowerCase().includes(normalizedQuery)
+  );
+
+  if (matchingProjects.length === 0) {
+    return [];
+  }
+
+  // Enrich with cover data
+  const projectIds = matchingProjects.map((p) => p.id);
+
+  // Batch fetch pages and junction entries
+  const [allPages, allJunctionEntries] = await Promise.all([
+    quick.db
+      .collection("pages")
+      .where({ project_id: { $in: projectIds } })
+      .find(),
+    quick.db
+      .collection("project_artifacts")
+      .where({ project_id: { $in: projectIds } })
+      .find(),
+  ]);
+
+  // Group pages by project_id
+  const pagesByProject = new Map<string, Page[]>();
+  for (const page of allPages) {
+    const pages = pagesByProject.get(page.project_id) || [];
+    pages.push(page);
+    pagesByProject.set(page.project_id, pages);
+  }
+
+  // Group junction entries by project_id and collect artifact IDs
+  const junctionByProject = new Map<string, ProjectArtifact[]>();
+  const allArtifactIds = new Set<string>();
+  for (const entry of allJunctionEntries) {
+    const entries = junctionByProject.get(entry.project_id) || [];
+    entries.push(entry);
+    junctionByProject.set(entry.project_id, entries);
+    allArtifactIds.add(entry.artifact_id);
+  }
+
+  // Batch fetch artifacts for covers
+  const allArtifacts: Artifact[] =
+    allArtifactIds.size > 0
+      ? await quick.db
+          .collection("artifacts")
+          .where({ id: { $in: Array.from(allArtifactIds) } })
+          .find()
+      : [];
+
+  // Create artifact lookup map
+  const artifactById = new Map<string, Artifact>();
+  for (const artifact of allArtifacts) {
+    artifactById.set(artifact.id, artifact);
+  }
+
+  // Build projects with covers
+  return matchingProjects.map((project) => {
+    const projectJunctions = junctionByProject.get(project.id) || [];
+    const projectPages = pagesByProject.get(project.id) || [];
+
+    // Find first page
+    const sortedPages = projectPages.sort((a, b) => a.position - b.position);
+    const firstPage =
+      sortedPages.find((p) => p.position === 0) || sortedPages[0];
+
+    // Get cover artifacts (first 3 from first page)
+    let coverArtifacts: Artifact[] = [];
+    if (firstPage) {
+      const firstPageJunctions = projectJunctions
+        .filter((j) => j.page_id === firstPage.id)
+        .sort((a, b) => a.position - b.position);
+
+      coverArtifacts = firstPageJunctions
+        .slice(0, 3)
+        .map((j) => {
+          const artifact = artifactById.get(j.artifact_id);
+          if (!artifact) return null;
+          return { ...artifact, name: j.name || artifact.name };
+        })
+        .filter((a): a is Artifact => a !== null);
+    }
+
+    return {
+      ...project,
+      coverArtifacts,
+      artifactCount: projectJunctions.length,
+    };
+  });
+}
+
+/**
+ * Search for published artifacts by name
  * Uses .where() to filter by published at the database level
  */
-async function searchPublicArtifacts(
+async function searchPublishedArtifacts(
   normalizedQuery: string,
   quick: any
 ): Promise<Artifact[]> {
   const collection = quick.db.collection("artifacts");
 
   // Use .where() to filter by published at the database level
-  const publicArtifacts = await collection.where({ published: true }).find();
+  const publishedArtifacts = await collection.where({ published: true }).find();
 
   // Client-side filtering for name substring match (case-insensitive)
-  return publicArtifacts.filter((artifact: Artifact) =>
+  return publishedArtifacts.filter((artifact: Artifact) =>
     artifact.name.toLowerCase().includes(normalizedQuery)
   );
 }
 
 /**
- * Search for user's accessible folders by name
- * Uses batch query to fetch only folders user has access to
- * @param userId - User.id to check access for
+ * Search for users by name, email, or slack handle
+ * Falls back to database users in local dev when /users.json isn't available
  */
-async function searchFolders(
+async function searchUsers(
   normalizedQuery: string,
-  userId: string
-): Promise<Folder[]> {
-  const quick = await waitForQuick();
-
-  // Get folders user has access to via access control system
-  const accessibleFolders = await getUserAccessibleResources(userId, "folder");
-
-  if (accessibleFolders.length === 0) {
-    return [];
-  }
-
-  const accessibleFolderIds = accessibleFolders.map((a) => a.resource_id);
-
-  // Batch fetch only the folders user has access to
-  const userFolders = await quick.db
-    .collection("folders")
-    .where({ id: { $in: accessibleFolderIds } })
-    .find();
-
-  // Client-side filtering for name substring match (case-insensitive)
-  return userFolders.filter((folder: Folder) =>
-    folder.name.toLowerCase().includes(normalizedQuery)
-  );
-}
-
-/**
- * Search for user's accessible projects by name
- * Uses getProjects() which returns projects the user created OR has been granted access to
- * @param userId - User.id to check access for
- */
-async function searchProjects(
-  normalizedQuery: string,
-  userId: string
-): Promise<Project[]> {
-  const userProjects = await getProjects(userId);
-
-  // Client-side filtering for name substring match (case-insensitive)
-  return userProjects.filter((project) =>
-    project.name.toLowerCase().includes(normalizedQuery)
-  );
-}
-
-/**
- * Get personal artifacts linked to accessible projects via junction table
- * Only returns unpublished artifacts that match the search query
- * Uses batch queries to avoid full table scans
- */
-async function getPersonalArtifactsViaJunction(
-  normalizedQuery: string,
-  accessibleProjectIds: string[],
   quick: any
-): Promise<Artifact[]> {
-  if (accessibleProjectIds.length === 0) {
-    return [];
+): Promise<User[]> {
+  // Try the access control search first (fetches from /users.json)
+  const users = await searchUsersFromAccessControl(normalizedQuery);
+
+  // If we got results, return them
+  if (users.length > 0) {
+    return users;
   }
 
-  // Batch fetch junction entries only for accessible projects
-  const junctionCollection = quick.db.collection("project_artifacts");
-  const relevantJunctionEntries: ProjectArtifact[] = await junctionCollection
-    .where({ project_id: { $in: accessibleProjectIds } })
-    .find();
-
-  if (relevantJunctionEntries.length === 0) {
+  // Fall back to searching users in the database (for local dev with mock data)
+  try {
+    const dbUsers: User[] = await quick.db.collection("users").find();
+    return dbUsers.filter(
+      (user) =>
+        user.name?.toLowerCase().includes(normalizedQuery) ||
+        user.email?.toLowerCase().includes(normalizedQuery) ||
+        user.slack_handle?.toLowerCase().includes(normalizedQuery)
+    );
+  } catch {
     return [];
   }
-
-  // Get unique artifact IDs from junction entries
-  const artifactIds = [
-    ...new Set(relevantJunctionEntries.map((entry: ProjectArtifact) => entry.artifact_id)),
-  ];
-
-  // Batch fetch only the artifacts we need
-  const artifactsCollection = quick.db.collection("artifacts");
-  const linkedArtifacts: Artifact[] = await artifactsCollection
-    .where({ id: { $in: artifactIds } })
-    .find();
-
-  // Filter to:
-  // 1. Only unpublished artifacts
-  // 2. Only artifacts matching the search query
-  return linkedArtifacts.filter(
-    (artifact: Artifact) =>
-      !artifact.published &&
-      artifact.name.toLowerCase().includes(normalizedQuery)
-  );
 }

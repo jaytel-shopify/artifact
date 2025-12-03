@@ -8,7 +8,8 @@ export default function ViewToggle() {
   const isExplore =
     pathname === "/" ||
     pathname.startsWith("/user") ||
-    pathname.startsWith("/a");
+    pathname.startsWith("/a") ||
+    pathname.startsWith("/search");
   const isProjects = pathname.startsWith("/projects");
 
   return (

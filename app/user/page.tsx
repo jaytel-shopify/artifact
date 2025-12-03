@@ -28,7 +28,7 @@ export default function UserProfilePage() {
         <ViewToggle />
       </>
     ),
-    center: <SearchBar mode="public" />,
+    center: <SearchBar />,
     right: (
       <>
         <HeaderUserAvatar />

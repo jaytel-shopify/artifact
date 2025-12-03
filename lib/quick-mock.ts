@@ -987,9 +987,12 @@ export function createMockQuick() {
       },
     },
     id: {
-      email: "dev@shopify.com",
+      id: MOCK_USER_ID,
+      email: MOCK_USER_EMAIL,
       fullName: "Local Developer",
       firstName: "Local",
+      slackHandle: "local-dev",
+      slackImageUrl: "https://i.pravatar.cc/150?u=dev@shopify.com",
       waitForUser: async function () {
         return this;
       },
