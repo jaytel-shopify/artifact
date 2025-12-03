@@ -238,11 +238,11 @@ export default function UploadPreviewDialog({
 
         <div className="flex-1 min-h-0 space-y-4">
           {/* Media Preview */}
-          <div className="relative bg-secondary rounded-button overflow-hidden flex items-center justify-center max-w-40 mx-auto shadow-lg rotate-3">
+          <div className="relative flex items-center justify-center">
             {currentUpload.type === "video" ? (
               <video
                 src={currentUpload.previewUrl}
-                className="max-w-full max-h-full object-contain"
+                className="object-contain rounded-button shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
                 controls
                 muted
                 playsInline
@@ -251,7 +251,7 @@ export default function UploadPreviewDialog({
               <img
                 src={currentUpload.previewUrl}
                 alt={currentUpload.name}
-                className="max-w-full max-h-full object-contain"
+                className="object-contain rounded-button shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
               />
             )}
 
