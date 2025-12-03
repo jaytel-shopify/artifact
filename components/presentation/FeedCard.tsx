@@ -25,22 +25,24 @@ export default function FeedCard({
   const [activeViewTransition, setActiveViewTransition] = useState(false);
 
   return (
-    <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border">
-      <ArtifactThumbnail
-        artifact={artifact}
-        className="col-span-1 col-start-1 row-span-2 row-start-1 w-full"
-        activeViewTransition={activeViewTransition}
-      />
+    <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border group">
+      <Link
+        href={`/a/?id=${artifact.id}${userId ? `&userId=${userId}` : ""}`}
+        className="col-span-1 col-start-1 row-span-2 row-start-1 w-full hover:opacity-100"
+        tabIndex={tabIndex}
+        onClick={(e) => {
+          // setActiveViewTransition(true);
+        }}
+      >
+        <ArtifactThumbnail
+          artifact={artifact}
+          className="w-full"
+          activeViewTransition={activeViewTransition}
+        />
+      </Link>
 
-      <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4 flex justify-between items-center">
-        <Link
-          href={`/a/?id=${artifact.id}${userId ? `&userId=${userId}` : ""}`}
-          className="after:absolute after:inset-0 after:content-['']"
-          tabIndex={tabIndex}
-          onClick={(e) => {
-            // setActiveViewTransition(true);
-          }}
-        >
+      <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:p-4 flex justify-between items-center">
+        <Link href={`/user/?id=${artifact.creator?.id}`}>
           <span className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-primary/80 backdrop-blur-md gap-2">
             <UserAvatar
               id={artifact.creator?.id}

@@ -23,6 +23,7 @@ import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { getCurrentPath } from "@/lib/navigation";
 import { cacheKeys } from "@/lib/cache-keys";
+import Link from "@/components/ui/TransitionLink";
 
 async function fetchArtifact(
   artifactId: string
@@ -218,12 +219,8 @@ export default function Page() {
           )}
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => {
-                if (artifact.creator?.id) {
-                  router.push(`/user/?id=${artifact.creator.id}`);
-                }
-              }}
+            <Link
+              href={`/user/?id=${artifact.creator?.id}`}
               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
             >
               <UserAvatar
@@ -236,7 +233,7 @@ export default function Page() {
               <p className="text-medium text-text-secondary capitalize">
                 {artifact.creator?.name}
               </p>
-            </button>
+            </Link>
             <p
               className="text-medium text-text-secondary capitalize"
               style={{ color: "var(--color-disabled)" }}
