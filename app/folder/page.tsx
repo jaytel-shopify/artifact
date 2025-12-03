@@ -1,7 +1,8 @@
 "use client";
 
 import { Suspense, useState, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import useSWR, { mutate as globalMutate } from "swr";
 import { ArrowLeft, MoreVertical } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -167,7 +168,7 @@ async function fetchFolderData(
 function FolderPageContent() {
   const searchParams = useSearchParams();
   const folderId = searchParams?.get("id") || "";
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { user } = useAuth();
 
   // Use SWR for folder data - ProjectCard will call globalMutate(cacheKeys.folderData(folderId))

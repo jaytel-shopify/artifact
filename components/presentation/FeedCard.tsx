@@ -1,10 +1,11 @@
 "use client";
 
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 import { useReactions } from "@/hooks/useReactions";
 import { ArtifactWithCreator } from "@/hooks/usePublicArtifacts";
 import { UserAvatar } from "@/components/auth/UserAvatar";
+import { useState } from "react";
 
 interface FeedCardProps {
   artifact: ArtifactWithCreator;
@@ -13,15 +14,22 @@ interface FeedCardProps {
   userId?: string;
 }
 
-export default function FeedCard({ artifact, tabIndex, userId }: FeedCardProps) {
+export default function FeedCard({
+  artifact,
+  tabIndex,
+  userId,
+}: FeedCardProps) {
   const { userLiked, userDisliked, handleLike, handleDislike, canReact } =
     useReactions({ artifact });
+
+  const [activeViewTransition, setActiveViewTransition] = useState(false);
 
   return (
     <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border">
       <ArtifactThumbnail
         artifact={artifact}
         className="col-span-1 col-start-1 row-span-2 row-start-1 w-full"
+        activeViewTransition={activeViewTransition}
       />
 
       <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 transition-opacity duration-300 hover:opacity-100 md:p-4 flex justify-between items-center">
@@ -29,6 +37,9 @@ export default function FeedCard({ artifact, tabIndex, userId }: FeedCardProps) 
           href={`/a/?id=${artifact.id}${userId ? `&userId=${userId}` : ""}`}
           className="after:absolute after:inset-0 after:content-['']"
           tabIndex={tabIndex}
+          onClick={(e) => {
+            // setActiveViewTransition(true);
+          }}
         >
           <span className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-primary/80 backdrop-blur-md gap-2">
             <UserAvatar

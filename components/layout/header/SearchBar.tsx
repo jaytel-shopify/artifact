@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -18,7 +18,7 @@ interface SearchBarProps {
 }
 
 export default function SearchBar({ mode = "all" }: SearchBarProps) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const [query, setQuery] = useState("");
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {

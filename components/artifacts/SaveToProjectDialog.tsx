@@ -19,7 +19,7 @@ import {
 import { getProjects, getPages, addArtifactToProject } from "@/lib/quick-db";
 import type { Project, Page } from "@/types";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 
 interface SaveToProjectDialogProps {
   isOpen: boolean;
@@ -36,7 +36,7 @@ export function SaveToProjectDialog({
   artifactName,
   userEmail,
 }: SaveToProjectDialogProps) {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [pages, setPages] = useState<Page[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");

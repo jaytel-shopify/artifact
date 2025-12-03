@@ -5,7 +5,8 @@ import useSWR, { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { getArtifactById, deleteArtifact } from "@/lib/quick-db";
 import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -32,7 +33,7 @@ async function fetchArtifact(
 
 export default function Page() {
   const searchParams = useSearchParams();
-  const router = useRouter();
+  const router = useTransitionRouter();
   const artifactId = searchParams?.get("id") || "";
   const userId = searchParams?.get("userId") || null;
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
@@ -154,41 +155,44 @@ export default function Page() {
   }, [hasNext, hasPrevious, handleNext, handlePrevious, handleBack]);
 
   // Set header content
-  useSetHeader({
-    left: (
-      <Button
-        variant="default"
-        size="icon"
-        onClick={handleBack}
-        aria-label="Back"
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </Button>
-    ),
-    right: (
-      <>
-        {isCreator && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsDeleteDialogOpen(true)}
-            aria-label="Delete artifact"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        )}
+  useSetHeader(
+    {
+      left: (
         <Button
           variant="default"
-          onClick={() => setIsSaveDialogOpen(true)}
-          disabled={!user}
+          size="icon"
+          onClick={handleBack}
+          aria-label="Back"
         >
-          Save to Project
+          <ArrowLeft className="h-4 w-4" />
         </Button>
-        <HeaderUserAvatar />
-        <DarkModeToggle />
-      </>
-    ),
-  }, [isCreator]);
+      ),
+      right: (
+        <>
+          {isCreator && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsDeleteDialogOpen(true)}
+              aria-label="Delete artifact"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+          <Button
+            variant="default"
+            onClick={() => setIsSaveDialogOpen(true)}
+            disabled={!user}
+          >
+            Save to Project
+          </Button>
+          <HeaderUserAvatar />
+          <DarkModeToggle />
+        </>
+      ),
+    },
+    [isCreator]
+  );
 
   if (isLoading) {
     return null;

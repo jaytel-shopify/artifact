@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { searchResources, SearchResults, SearchMode } from "@/lib/search";
 import { waitForQuick } from "@/lib/quick";
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 import { Card } from "@/components/ui/card";
 import ArtifactThumbnail from "@/components/presentation/ArtifactThumbnail";
 import { useSetHeader } from "@/components/layout/HeaderContext";

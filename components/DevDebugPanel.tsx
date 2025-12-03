@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import {
   Dialog,
   DialogContent,
@@ -45,7 +45,7 @@ export default function DevDebugPanel({
   userId,
 }: DevDebugPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   useEffect(() => {
     function handleKeyPress(e: KeyboardEvent) {
