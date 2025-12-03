@@ -7,10 +7,34 @@ import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams } from "next/navigation";
 import { useTransitionRouter } from "@/hooks/useTransitionRouter";
-import { getArtifactById, deleteArtifact } from "@/lib/quick-db";
+import {
+  getArtifactById,
+  deleteArtifact,
+  updateArtifact,
+} from "@/lib/quick-db";
 import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ArrowLeft, ArrowRight, Trash2 } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  MoreVertical,
+  Pencil,
+  Trash2,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
@@ -105,6 +129,9 @@ export default function Page() {
   const { user } = useAuth();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
 
   // Check if current user is the creator
   const isCreator = user?.id && artifact?.creator_id === user.id;
@@ -133,6 +160,23 @@ export default function Page() {
       setIsDeleteDialogOpen(false);
     }
   }, [artifact, isCreator, user?.id, handleBack]);
+
+  const handleSaveEdit = useCallback(async () => {
+    if (!artifact || !isCreator) return;
+
+    try {
+      await updateArtifact(artifact.id, {
+        name: editName,
+        description: editDescription,
+      });
+      toast.success("Artifact updated");
+      mutate(); // Refresh artifact data
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Failed to update artifact:", error);
+      toast.error("Failed to update artifact");
+    }
+  }, [artifact, isCreator, editName, editDescription, mutate]);
 
   const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
     artifact,
@@ -171,14 +215,32 @@ export default function Page() {
       right: (
         <>
           {isCreator && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsDeleteDialogOpen(true)}
-              aria-label="Delete artifact"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="More options">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    setEditName(artifact?.name || "");
+                    setEditDescription(artifact?.description || "");
+                    setIsEditing(true);
+                  }}
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  variant="destructive"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
           <Button
             variant="default"
@@ -306,6 +368,48 @@ export default function Page() {
         confirmVariant="destructive"
         isLoading={isDeleting}
       />
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Artifact</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-4">
+            <div className="flex flex-col gap-2">
+              <label htmlFor="name" className="text-small text-text-secondary">
+                Name
+              </label>
+              <Input
+                id="name"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Artifact name"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label
+                htmlFor="description"
+                className="text-small text-text-secondary"
+              >
+                Description
+              </label>
+              <Input
+                id="description"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="Description (optional)"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setIsEditing(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
