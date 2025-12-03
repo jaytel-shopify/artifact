@@ -26,7 +26,7 @@ export function UsersSection({ users, title = "People" }: UsersSectionProps) {
           <Link key={user.id} href={`/user?id=${user.id}`}>
             <Card className="p-4 flex items-center gap-3 hover:bg-background-secondary transition-colors cursor-pointer">
               <div className="flex align-center items-center gap-4 w-full justify-between">
-                <div className="min-w-0">
+                <div className="min-w-0 space-y-1">
                   <h3 className="text-medium text-text-primary truncate">
                     {user.name}
                   </h3>

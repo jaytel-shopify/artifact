@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, FormEvent } from "react";
+import { useSearchParams, usePathname } from "next/navigation";
 import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { Input } from "@/components/ui/input";
 
@@ -24,8 +25,21 @@ function SearchIcon({ className }: { className?: string }) {
 
 export default function SearchBar() {
   const router = useTransitionRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Sync query with URL - clear when navigating away from search page
+  useEffect(() => {
+    const isSearchPage = pathname === "/search" || pathname === "/search/";
+    if (isSearchPage) {
+      const urlQuery = searchParams?.get("q") || "";
+      setQuery(urlQuery);
+    } else {
+      setQuery("");
+    }
+  }, [pathname, searchParams]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

@@ -150,7 +150,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const [itemBeingAddedToCollection, setItemBeingAddedToCollection] =
       useState<UniqueIdentifier | null>(null);
     const containerRef = useRef<HTMLUListElement | null>(null);
-    
+
     // Space+drag panning state
     const isSpaceHeld = useKeyHeld("Space");
     const isPanningRef = useRef(false);
@@ -220,7 +220,10 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       const c = containerRef.current;
       if (!c) return;
       const idx = getCurrentScrollIndex(c);
-      const max = c.querySelectorAll(".carousel-item-wrapper:not(.collection-child-hidden)").length - 1;
+      const max =
+        c.querySelectorAll(
+          ".carousel-item-wrapper:not(.collection-child-hidden)"
+        ).length - 1;
       scrollToIndex(c, Math.max(0, Math.min(max, idx + dir)));
     }, []);
 
@@ -234,11 +237,11 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       // Detect when space was released (was held, now not held)
       if (wasSpaceHeldRef.current && !isSpaceHeld && containerRef.current) {
         isPanningRef.current = false;
-        
+
         // IMMEDIATELY disable snap scroll via DOM before browser can snap
         // (React's className update already happened, so we need direct DOM manipulation)
         containerRef.current.classList.add("disable-snap-scroll");
-        
+
         // Animate to nearest snap point
         const nearestIndex = getCurrentScrollIndex(containerRef.current);
         scrollToIndex(containerRef.current, nearestIndex);
@@ -247,20 +250,23 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     }, [isSpaceHeld]);
 
     // Pan handlers for space+drag
-    const handlePanStart = useCallback((e: React.MouseEvent) => {
-      if (!isSpaceHeld || !containerRef.current) return;
-      
-      isPanningRef.current = true;
-      panStartRef.current = {
-        x: e.clientX,
-        scrollLeft: containerRef.current.scrollLeft,
-      };
-      e.preventDefault();
-    }, [isSpaceHeld]);
+    const handlePanStart = useCallback(
+      (e: React.MouseEvent) => {
+        if (!isSpaceHeld || !containerRef.current) return;
+
+        isPanningRef.current = true;
+        panStartRef.current = {
+          x: e.clientX,
+          scrollLeft: containerRef.current.scrollLeft,
+        };
+        e.preventDefault();
+      },
+      [isSpaceHeld]
+    );
 
     const handlePanMove = useCallback((e: React.MouseEvent) => {
       if (!isPanningRef.current || !containerRef.current) return;
-      
+
       const dx = e.clientX - panStartRef.current.x;
       containerRef.current.scrollLeft = panStartRef.current.scrollLeft - dx;
     }, []);
@@ -423,7 +429,11 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           <ul
             ref={containerRef}
             className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""} ${isSpaceHeld ? "pan-mode" : ""}`}
-            style={sidebarOpen ? { paddingRight: "calc(var(--sidebar-width) + 1rem)" } : undefined}
+            style={
+              sidebarOpen
+                ? { paddingRight: "calc(var(--sidebar-width) + 1rem)" }
+                : undefined
+            }
             onMouseDown={handlePanStart}
             onMouseMove={handlePanMove}
             onMouseUp={handlePanEnd}

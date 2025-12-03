@@ -92,22 +92,26 @@ export default function SearchPage() {
     results.publishedArtifacts.length +
     results.users.length;
 
-  return (
-    <div className="max-w-[1100px] mx-auto p-6 pb-12 mt-10 space-y-15">
-      <ProjectsSection projects={results.projects} />
-      <ArtifactsSection
-        artifacts={results.publishedArtifacts}
-        title="Artifacts"
-      />
-      <UsersSection users={results.users} />
+  if (totalResults === 0) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <p className="text-text-secondary">
+          No results found for &quot;{query}&quot;
+        </p>
+      </div>
+    );
+  }
 
-      {totalResults === 0 && (
-        <div className="text-center py-12">
-          <p className="text-text-secondary">
-            No results found for &quot;{query}&quot;
-          </p>
-        </div>
-      )}
+  return (
+    <div className="fixed inset-0 flex items-center justify-center">
+      <div className="max-w-[1100px] w-full p-6 space-y-15">
+        <ProjectsSection projects={results.projects} />
+        <ArtifactsSection
+          artifacts={results.publishedArtifacts}
+          title="Artifacts"
+        />
+        <UsersSection users={results.users} />
+      </div>
     </div>
   );
 }
