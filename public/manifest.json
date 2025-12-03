@@ -10,36 +10,16 @@
   "scope": "/",
   "icons": [
     {
-      "src": "/favicons/icon-16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicons/icon-32.png",
-      "sizes": "32x32",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicons/icon-64.png",
-      "sizes": "64x64",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicons/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png"
-    },
-    {
-      "src": "/favicons/icon-180.png",
-      "sizes": "180x180",
-      "type": "image/png",
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "/favicons/icon-256.png",
-      "sizes": "256x256",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ],
   "categories": ["productivity", "design", "collaboration"],
@@ -51,8 +31,9 @@
       "url": "/projects",
       "icons": [
         {
-          "src": "/favicons/icon-128.png",
-          "sizes": "128x128"
+          "src": "/favicon.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
         }
       ]
     }
