@@ -327,18 +327,18 @@ export default function Page() {
             <Button
               variant="default"
               size="icon"
-              onClick={handlePrevious}
-              disabled={!hasPrevious}
-              aria-label="Previous"
+              onClick={handleNext}
+              disabled={!hasNext}
+              aria-label="Next"
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="default"
               size="icon"
-              onClick={handleNext}
-              disabled={!hasNext}
-              aria-label="Next"
+              onClick={handlePrevious}
+              disabled={!hasPrevious}
+              aria-label="Previous"
             >
               <ArrowRight className="h-4 w-4" />
             </Button>

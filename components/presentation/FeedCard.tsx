@@ -41,7 +41,7 @@ export default function FeedCard({
         />
       </Link>
 
-      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:p-4 flex justify-between items-center">
+      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 opacity-1 group-hover:opacity-100 transition-opacity duration-300 md:p-4 flex justify-between items-center">
         <Link
           href={`/user/?id=${artifact.creator?.id}`}
           className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark transition-colors"
