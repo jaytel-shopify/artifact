@@ -156,9 +156,9 @@ class VideoPoolManager {
   /**
    * Evict the least recently used video
    */
-  private evictLRU(): PooledVideo | null {
+  private evictLRU(): PooledVideo | undefined {
     // Find the oldest active video
-    let oldest: PooledVideo | null = null;
+    let oldest: PooledVideo | undefined = undefined;
     let oldestTime = Infinity;
 
     for (const pv of this.pool) {
@@ -168,7 +168,7 @@ class VideoPoolManager {
       }
     }
 
-    if (!oldest) return null;
+    if (!oldest) return undefined;
 
     // Release the oldest
     const video = oldest.element;
