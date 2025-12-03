@@ -47,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning style={{ backgroundColor: "#010b0f" }}>
       <head>
         {/* PWA Meta Tags */}
         <meta name="application-name" content="Artifact" />
@@ -68,7 +68,7 @@ export default function RootLayout({
           strategy="lazyOnload"
         />
       </head>
-      <body className={`${inter.variable} antialiased`}>
+      <body className={`${inter.variable} antialiased`} style={{ backgroundColor: "#010b0f" }}>
         <SWRProvider>
           <AuthProvider>
             <ThemeProvider

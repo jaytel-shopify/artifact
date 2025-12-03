@@ -70,7 +70,9 @@ export default function Page() {
   const navigationArtifacts = userId ? userArtifacts : publishedArtifacts;
 
   // Find current artifact index and get next/previous
-  const currentIndex = navigationArtifacts.findIndex((a) => a.id === artifactId);
+  const currentIndex = navigationArtifacts.findIndex(
+    (a) => a.id === artifactId
+  );
   const hasNext = currentIndex > 0; // Going backwards in time (newer)
   const hasPrevious =
     currentIndex >= 0 && currentIndex < navigationArtifacts.length - 1; // Going forwards in time (older)
@@ -81,13 +83,17 @@ export default function Page() {
 
   const handleNext = useCallback(() => {
     if (nextArtifact) {
-      router.push(`/a/?id=${nextArtifact.id}${userId ? `&userId=${userId}` : ""}`);
+      router.push(
+        `/a/?id=${nextArtifact.id}${userId ? `&userId=${userId}` : ""}`
+      );
     }
   }, [nextArtifact, router, userId]);
 
   const handlePrevious = useCallback(() => {
     if (previousArtifact) {
-      router.push(`/a/?id=${previousArtifact.id}${userId ? `&userId=${userId}` : ""}`);
+      router.push(
+        `/a/?id=${previousArtifact.id}${userId ? `&userId=${userId}` : ""}`
+      );
     }
   }, [previousArtifact, router, userId]);
 
@@ -167,7 +173,7 @@ export default function Page() {
             <button
               onClick={() => {
                 if (artifact.creator?.id) {
-                  router.push(`/user?id=${artifact.creator.id}`);
+                  router.push(`/user/?id=${artifact.creator.id}`);
                 }
               }}
               className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"

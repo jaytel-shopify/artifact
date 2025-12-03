@@ -32,7 +32,7 @@ export default function Home() {
     name?: string;
     metadata?: Record<string, unknown>;
   }) => {
-    if (!user?.id) {
+    if (!user?.email) {
       throw new Error("Must be logged in to create artifacts");
     }
 
@@ -42,7 +42,7 @@ export default function Home() {
         source_url: artifactData.source_url,
         file_path: artifactData.file_path || undefined,
         name: artifactData.name || "Untitled",
-        creator_id: user.id,
+        creator_id: user.email,
         metadata: artifactData.metadata || {},
         published: true,
       });

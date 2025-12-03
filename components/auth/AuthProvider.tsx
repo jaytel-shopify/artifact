@@ -122,15 +122,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user,
   };
 
-  // Show loading state
+  // Show loading state with spinner (hardcoded dark bg to prevent white flash)
   if (loading) {
     return (
       <AuthContext.Provider value={value}>
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-foreground"></div>
-            <p className="mt-4 text-small text-text-secondary">Loading...</p>
-          </div>
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ backgroundColor: "#010b0f" }}
+        >
+          <div
+            className="animate-spin rounded-full h-8 w-8 border-b-2"
+            style={{ borderColor: "#fff" }}
+          />
         </div>
       </AuthContext.Provider>
     );
