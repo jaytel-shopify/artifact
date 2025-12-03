@@ -15,10 +15,10 @@ import {
   type MigrationLog,
 } from "@/lib/migration";
 import { clearMigrationData, getMigrationStats } from "@/lib/migration-state";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 
 export default function MigratePage() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const [progress, setProgress] = useState<MigrationProgress | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [stats, setStats] = useState<any>(null);

@@ -1,4 +1,6 @@
-import Link from "next/link";
+"use client";
+
+import Link from "@/components/ui/TransitionLink";
 
 export default function Logo() {
   return (

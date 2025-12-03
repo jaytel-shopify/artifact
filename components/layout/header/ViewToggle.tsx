@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 import { usePathname } from "next/navigation";
 
 export default function ViewToggle() {

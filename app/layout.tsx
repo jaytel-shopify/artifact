@@ -7,6 +7,7 @@ import { AuthProvider } from "@/components/auth/AuthProvider";
 import { HeaderProvider } from "@/components/layout/HeaderContext";
 import GlobalLayout from "@/components/layout/GlobalLayout";
 import { SWRProvider } from "@/components/SWRProvider";
+import ViewTransitionHandler from "@/components/ViewTransitionHandler";
 import "./globals.css";
 
 const inter = Inter({
@@ -84,10 +85,12 @@ export default function RootLayout({
               enableSystem
               disableTransitionOnChange
             >
-              <HeaderProvider>
-                <GlobalLayout>{children}</GlobalLayout>
-              </HeaderProvider>
-              <Toaster />
+              <ViewTransitionHandler>
+                <HeaderProvider>
+                  <GlobalLayout>{children}</GlobalLayout>
+                </HeaderProvider>
+                <Toaster />
+              </ViewTransitionHandler>
             </ThemeProvider>
           </AuthProvider>
         </SWRProvider>

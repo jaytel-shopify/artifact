@@ -1,13 +1,14 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { useEffect, useRef, Suspense } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createProject as createProjectDB, getProjects } from "@/lib/quick-db";
 
 function NewProjectContent() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const hasCreatedRef = useRef(false);

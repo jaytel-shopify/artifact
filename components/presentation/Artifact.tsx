@@ -28,6 +28,7 @@ function ArtifactImage({
       draggable={false}
       width={width}
       height={height}
+      style={{ viewTransitionName: "artifact-component" }}
     />
   );
 }

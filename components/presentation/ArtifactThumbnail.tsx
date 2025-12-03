@@ -6,11 +6,13 @@ import type { Artifact } from "@/types";
 interface ArtifactThumbnailProps {
   artifact: Artifact;
   className?: string;
+  activeViewTransition?: boolean;
 }
 
 export default function ArtifactThumbnail({
   artifact,
   className = "",
+  activeViewTransition = false,
 }: ArtifactThumbnailProps) {
   const baseClasses = `
     shadow-sm
@@ -29,6 +31,11 @@ export default function ArtifactThumbnail({
             width={artifact.metadata.width}
             height={artifact.metadata.height}
             className="w-full"
+            style={{
+              viewTransitionName: activeViewTransition
+                ? "artifact-component"
+                : undefined,
+            }}
           />
         </div>
       );

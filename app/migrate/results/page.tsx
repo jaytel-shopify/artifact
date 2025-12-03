@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { getPublishedArtifacts } from "@/lib/quick-db";
 import type { Artifact } from "@/types";
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 
 // Lazy-loading video component
 function LazyVideo({ src, thumbnail }: { src: string; thumbnail?: string }) {

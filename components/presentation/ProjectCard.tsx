@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 import useSWR, { mutate as globalMutate, preload } from "swr";
 import { toast } from "sonner";
 import { MoreVertical, Folder as FolderIcon, X } from "lucide-react";

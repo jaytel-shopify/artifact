@@ -9,11 +9,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 
 export default function LoginPage() {
   const { user, loading, isAuthenticated } = useAuth();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   useEffect(() => {
     if (isAuthenticated && user && !loading) {

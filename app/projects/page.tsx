@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -26,7 +26,7 @@ import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { ProjectsPageSkeleton } from "@/components/ui/skeleton";
 
 export default function ProjectsPage() {
-  const router = useRouter();
+  const router = useTransitionRouter();
   const { user } = useAuth();
 
   // Fetch all data

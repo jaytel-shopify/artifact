@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 import { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { FolderPlus, MoreVertical } from "lucide-react";
