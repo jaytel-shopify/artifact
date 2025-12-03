@@ -11,7 +11,6 @@ interface UseCarouselItemsProps {
   artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   isSettling: boolean;
-  pageId?: string;
   containerRef: React.RefObject<HTMLUListElement | null>;
 }
 
@@ -22,11 +21,9 @@ export function useCarouselItems({
   artifacts,
   expandedCollections = new Set(),
   isSettling,
-  pageId,
   containerRef,
 }: UseCarouselItemsProps) {
   const [items, setItems] = useState<ArtifactWithPosition[]>(artifacts);
-  const prevPageIdRef = useRef(pageId);
   const prevArtifactsRef = useRef(artifacts);
   const prevVisibleCountRef = useRef(0);
 
@@ -123,76 +120,54 @@ export function useCarouselItems({
     prevExpandedRef.current = new Set(expandedCollections);
   }, [expandedCollections]);
 
-  // Sync artifacts with local state (respecting animation state)
+  // Sync artifacts with local state
   useEffect(() => {
-    // Block sync during animation - critical for smooth animation!
     if (isSettling) return;
 
-    // Quick check: if visible count changed, update immediately
-    // (This catches expand/collapse which changes visible items)
-    if (visibleArtifacts.length !== prevVisibleCountRef.current) {
+    const prevIds = prevArtifactsRef.current.map((a) => a.id).sort().join(",");
+    const newIds = visibleArtifacts.map((a) => a.id).sort().join(",");
+    const idsChanged = prevIds !== newIds;
+
+    const syncItems = () => {
       setItems(visibleArtifacts);
-      prevVisibleCountRef.current = visibleArtifacts.length;
       prevArtifactsRef.current = artifacts;
+      prevVisibleCountRef.current = visibleArtifacts.length;
+    };
+
+    // Visible count changed (expand/collapse)
+    if (visibleArtifacts.length !== prevVisibleCountRef.current) {
+      syncItems();
       return;
     }
 
-    const prevIds = prevArtifactsRef.current
-      .map((a) => a.id)
-      .sort()
-      .join(",");
-    const newIds = visibleArtifacts.map((a) => a.id).sort().join(",");
-
-    // Sync if items added/removed
-    if (prevIds !== newIds) {
-      // Check if items were added (not removed) AND page didn't change
+    // Items added/removed
+    if (idsChanged) {
       const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
-      const pageChanged = prevPageIdRef.current !== pageId;
+      syncItems();
 
-      setItems(visibleArtifacts);
-      prevArtifactsRef.current = artifacts;
-      prevPageIdRef.current = pageId;
-      prevVisibleCountRef.current = visibleArtifacts.length;
-
-      // Scroll to end if items were added AND page didn't change
-      // (don't auto-scroll when switching pages)
-      if (itemsAdded && !pageChanged && containerRef.current) {
-        setTimeout(() => {
-          if (containerRef.current) {
-            scrollToEnd(containerRef.current);
-          }
-        }, 100);
+      if (itemsAdded && containerRef.current) {
+        setTimeout(() => containerRef.current && scrollToEnd(containerRef.current), 100);
       }
       return;
     }
 
-    // Check if order changed OR properties changed
+    // Order or properties changed
     const prevOrder = prevArtifactsRef.current.map((a) => a.id).join(",");
     const currentOrder = artifacts.map((a) => a.id).join(",");
     const orderChanged = prevOrder !== currentOrder;
 
-    const itemsChanged = visibleArtifacts.some((newArtifact) => {
-      const prevArtifact = prevArtifactsRef.current.find(
-        (a) => a.id === newArtifact.id
-      );
-      if (!prevArtifact) return true;
-
-      // Check if name or metadata changed
-      return (
-        newArtifact.name !== prevArtifact.name ||
-        JSON.stringify(newArtifact.metadata) !==
-          JSON.stringify(prevArtifact.metadata)
-      );
+    const propsChanged = visibleArtifacts.some((a) => {
+      const prev = prevArtifactsRef.current.find((p) => p.id === a.id);
+      return !prev || a.name !== prev.name || 
+        JSON.stringify(a.metadata) !== JSON.stringify(prev.metadata);
     });
 
-    if (orderChanged || itemsChanged) {
-      // Top-level order changed or properties changed - update items
-      setItems(visibleArtifacts);
-      prevVisibleCountRef.current = visibleArtifacts.length;
+    if (orderChanged || propsChanged) {
+      syncItems();
     }
 
     prevArtifactsRef.current = artifacts;
-  }, [artifacts, isSettling, pageId, visibleArtifacts, containerRef]);
+  }, [artifacts, isSettling, visibleArtifacts, containerRef]);
 
   return {
     items,

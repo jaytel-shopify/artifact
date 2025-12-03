@@ -32,6 +32,8 @@ function init() {
   const now = new Date().toISOString();
   const projectId = "sample-1";
   const pageId = "page-1";
+  const pageId1b = "page-1b"; // Second page for Sample Project
+  const pageId1c = "page-1c"; // Third page for Sample Project
   const project2Id = "sample-2";
   const project3Id = "sample-3";
   const page2Id = "page-2";
@@ -114,6 +116,7 @@ function init() {
   ];
 
   db.pages = [
+    // Sample Project pages (3 pages to test switching)
     {
       id: pageId,
       project_id: projectId,
@@ -122,6 +125,23 @@ function init() {
       created_at: now,
       updated_at: now,
     },
+    {
+      id: pageId1b,
+      project_id: projectId,
+      name: "Page 02",
+      position: 1,
+      created_at: now,
+      updated_at: now,
+    },
+    {
+      id: pageId1c,
+      project_id: projectId,
+      name: "Page 03",
+      position: 2,
+      created_at: now,
+      updated_at: now,
+    },
+    // Other projects
     {
       id: page2Id,
       project_id: project2Id,
@@ -516,7 +536,7 @@ function init() {
 
   // Junction table: project_artifacts (links artifacts to projects/pages with position)
   db.project_artifacts = [
-    // Sample Project (projectId, pageId) artifacts
+    // Sample Project - Page 01 (first 4 artifacts)
     {
       id: "pa-1",
       project_id: projectId,
@@ -553,57 +573,59 @@ function init() {
       created_at: now,
       updated_at: now,
     },
+    // Sample Project - Page 02 (different artifacts: video, dog image, nature)
     {
-      id: "pa-5",
+      id: "pa-20",
       project_id: projectId,
-      page_id: pageId,
-      artifact_id: "art-2",
-      position: 4,
+      page_id: pageId1b,
+      artifact_id: "art-2", // Dog image
+      position: 0,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "pa-6",
+      id: "pa-21",
       project_id: projectId,
-      page_id: pageId,
-      artifact_id: "art-3",
-      position: 5,
+      page_id: pageId1b,
+      artifact_id: "art-3", // Big Buck Bunny video
+      position: 1,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "pa-7",
+      id: "pa-22",
       project_id: projectId,
-      page_id: pageId,
-      artifact_id: "art-4",
-      position: 6,
+      page_id: pageId1b,
+      artifact_id: "art-4", // Nature image
+      position: 2,
+      created_at: now,
+      updated_at: now,
+    },
+    // Sample Project - Page 03 (different artifacts: video, website, title card)
+    {
+      id: "pa-30",
+      project_id: projectId,
+      page_id: pageId1c,
+      artifact_id: "art-5", // For Bigger Blazes video
+      position: 0,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "pa-8",
+      id: "pa-31",
       project_id: projectId,
-      page_id: pageId,
-      artifact_id: "art-5",
-      position: 7,
+      page_id: pageId1c,
+      artifact_id: "art-6", // Shopify website
+      position: 1,
       created_at: now,
       updated_at: now,
     },
     {
-      id: "pa-9",
+      id: "pa-32",
       project_id: projectId,
-      page_id: pageId,
-      artifact_id: "art-6",
-      position: 8,
-      created_at: now,
-      updated_at: now,
-    },
-    {
-      id: "pa-10",
-      project_id: projectId,
-      page_id: pageId,
-      artifact_id: "art-7",
-      position: 9,
+      page_id: pageId1c,
+      artifact_id: "art-7", // Title card
+      position: 2,
       created_at: now,
       updated_at: now,
     },

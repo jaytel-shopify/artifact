@@ -73,7 +73,6 @@ interface Props {
   onFocusArtifact?: (artifactId: string) => void;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
-  pageId?: string;
 }
 
 const measuring: MeasuringConfiguration = {
@@ -139,7 +138,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       onFocusArtifact,
       focusedArtifactId,
       isReadOnly = false,
-      pageId,
     },
     forwardedRef
   ) {
@@ -171,7 +169,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       artifacts,
       expandedCollections,
       isSettling,
-      pageId,
       containerRef,
     });
 
@@ -213,7 +210,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       const container = containerRef.current;
       if (!container) return;
       container.scrollLeft = container.scrollLeft;
-    }, [columns, pageId]);
+    }, [columns]);
 
     // Arrow key navigation - override native scroll with smooth scrollToIndex
     const navigateCarousel = useCallback((dir: number) => {

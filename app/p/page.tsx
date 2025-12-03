@@ -522,21 +522,20 @@ function PresentationPageInner({
           style={{
             marginLeft:
               sidebarOpen && !presentationMode ? "var(--sidebar-width)" : "0",
-            transition:
-              "margin-left 400ms var(--spring-elegant-easing-light)",
+            transition: "margin-left 400ms var(--spring-elegant-easing-light)",
           }}
         >
           <div className="h-full relative">
             {/* Canvas */}
             <div className="h-full">
               <Canvas
+                key={currentPageId}
                 ref={setCarouselRef}
                 columns={columns}
                 fitMode={fitMode}
                 sidebarOpen={sidebarOpen && !presentationMode}
                 artifacts={artifacts}
                 expandedCollections={expandedCollections}
-                pageId={currentPageId || undefined}
                 onReorder={async (reorderedArtifacts) => {
                   const command = new ReorderArtifactsCommand(
                     reorderedArtifacts,

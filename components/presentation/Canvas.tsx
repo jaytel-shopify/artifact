@@ -28,7 +28,6 @@ interface CanvasProps {
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
   fitMode?: boolean;
-  pageId?: string;
 }
 
 const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
@@ -49,7 +48,6 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     focusedArtifactId,
     isReadOnly = false,
     fitMode = false,
-    pageId,
   },
   ref
 ) {
@@ -74,7 +72,6 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         onFocusArtifact={onFocusArtifact}
         focusedArtifactId={focusedArtifactId}
         isReadOnly={isReadOnly}
-        pageId={pageId}
       />
     </div>
   );
