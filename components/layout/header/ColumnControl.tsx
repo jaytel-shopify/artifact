@@ -311,7 +311,7 @@ export default function ColumnControl({
             <button
               key={i}
               onClick={() => handleDotClick(i + 1)}
-              className="dot-indicator w-2 h-2 bg-secondary/20 rounded-full cursor-pointer hover:bg-secondary/40 transition-colors"
+              className="relative w-2 h-2 bg-secondary/20 rounded-full cursor-pointer hover:bg-secondary/40 transition-colors before:content-[''] before:absolute before:inset-[-12px]"
             />
           ))}
         </div>
