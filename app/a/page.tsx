@@ -1,17 +1,19 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
+import { toast } from "sonner";
 import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams, useRouter } from "next/navigation";
-import { getArtifactById } from "@/lib/quick-db";
+import { getArtifactById, deleteArtifact } from "@/lib/quick-db";
 import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Trash2 } from "lucide-react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useReactions } from "@/hooks/useReactions";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
@@ -19,6 +21,7 @@ import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
 import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { getCurrentPath } from "@/lib/navigation";
+import { cacheKeys } from "@/lib/cache-keys";
 
 async function fetchArtifact(
   artifactId: string
@@ -98,6 +101,37 @@ export default function Page() {
   }, [previousArtifact, router, userId]);
 
   const { user } = useAuth();
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Check if current user is the creator
+  const isCreator = user?.id && artifact?.creator_id === user.id;
+
+  const handleDelete = useCallback(async () => {
+    if (!artifact || !isCreator) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteArtifact(artifact.id);
+      toast.success("Artifact deleted");
+
+      // Invalidate caches
+      globalMutate(cacheKeys.publicArtifacts);
+      if (user?.id) {
+        globalMutate(cacheKeys.projectsData(user.id));
+      }
+
+      // Navigate back
+      handleBack();
+    } catch (error) {
+      console.error("Failed to delete artifact:", error);
+      toast.error("Failed to delete artifact");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+    }
+  }, [artifact, isCreator, user?.id, handleBack]);
+
   const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
     artifact,
     mutate,
@@ -133,6 +167,16 @@ export default function Page() {
     ),
     right: (
       <>
+        {isCreator && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            aria-label="Delete artifact"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
         <Button
           variant="default"
           onClick={() => setIsSaveDialogOpen(true)}
@@ -144,7 +188,7 @@ export default function Page() {
         <DarkModeToggle />
       </>
     ),
-  });
+  }, [isCreator]);
 
   if (isLoading) {
     return null;
@@ -249,6 +293,18 @@ export default function Page() {
           userEmail={user.email}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Artifact"
+        description={`Are you sure you want to delete "${artifact.name}"? This action cannot be undone.`}
+        confirmLabel={isDeleting ? "Deleting..." : "Delete"}
+        confirmVariant="destructive"
+        isLoading={isDeleting}
+      />
     </div>
   );
 }
