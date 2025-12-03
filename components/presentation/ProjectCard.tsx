@@ -6,8 +6,7 @@ import useSWR, { mutate as globalMutate, preload } from "swr";
 import { toast } from "sonner";
 import { MoreVertical, Folder as FolderIcon, X } from "lucide-react";
 import { Card, CardFooter } from "@/components/ui/card";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   ContextMenu,
   ContextMenuContent,
@@ -26,24 +25,8 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { InputDialog } from "@/components/ui/input-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import ArtifactThumbnail from "./ArtifactThumbnail";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { updateProject, deleteProject, getProjectById } from "@/lib/quick-db";
@@ -114,9 +97,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   // Dialog states
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [renameOpen, setRenameOpen] = useState(false);
-  const [newName, setNewName] = useState(project.name);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isRenaming, setIsRenaming] = useState(false);
 
   // Get folders from SWR cache for "Move to Folder" menu
   const { data } = useSWR<ProjectsData>(cacheKeys.projectsData(user?.id));
@@ -150,37 +130,28 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   };
 
   const handleDelete = async () => {
-    // Capture current folder before async operations
     const currentFolderId = project.folder_id;
-    setIsDeleting(true);
     try {
       await deleteProject(project.id);
       await refreshCaches([currentFolderId]);
       toast.success(`Project "${project.name}" deleted`);
-      setDeleteOpen(false);
     } catch (error) {
       console.error("Failed to delete project:", error);
       toast.error("Failed to delete project");
-    } finally {
-      setIsDeleting(false);
+      throw error;
     }
   };
 
-  const handleRename = async () => {
-    if (!newName.trim()) return;
-    // Capture current folder before async operations
+  const handleRename = async (newName: string) => {
     const currentFolderId = project.folder_id;
-    setIsRenaming(true);
     try {
-      await updateProject(project.id, { name: newName.trim() });
+      await updateProject(project.id, { name: newName });
       await refreshCaches([currentFolderId]);
-      toast.success(`Project renamed to "${newName.trim()}"`);
-      setRenameOpen(false);
+      toast.success(`Project renamed to "${newName}"`);
     } catch (error) {
       console.error("Failed to rename project:", error);
       toast.error("Failed to rename project");
-    } finally {
-      setIsRenaming(false);
+      throw error;
     }
   };
 
@@ -213,10 +184,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     }
   };
 
-  const openRename = () => {
-    setNewName(project.name);
-    setRenameOpen(true);
-  };
+  const openRename = () => setRenameOpen(true);
 
   return (
     <>
@@ -374,69 +342,25 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         </ContextMenuContent>
       </ContextMenu>
 
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Project</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete &ldquo;{project.name}&rdquo;? This
-              will permanently delete the project and all its pages and
-              artifacts. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              className={buttonVariants({ variant: "destructive" })}
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete Project"
+        description={`Are you sure you want to delete "${project.name}"? This will permanently delete the project and all its pages and artifacts. This action cannot be undone.`}
+      />
 
-      {/* Rename Dialog */}
-      <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Project</DialogTitle>
-            <DialogDescription>
-              Enter a new name for &ldquo;{project.name}&rdquo;
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              placeholder="Project name"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && newName.trim()) {
-                  handleRename();
-                }
-              }}
-              autoFocus
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRenameOpen(false)}
-              disabled={isRenaming}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleRename}
-              disabled={isRenaming || !newName.trim()}
-            >
-              {isRenaming ? "Renaming..." : "Rename"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InputDialog
+        isOpen={renameOpen}
+        onClose={() => setRenameOpen(false)}
+        onSubmit={handleRename}
+        title="Rename Project"
+        description={`Enter a new name for "${project.name}"`}
+        placeholder="Project name"
+        initialValue={project.name}
+        submitLabel="Rename"
+        submittingLabel="Renaming..."
+      />
     </>
   );
 }

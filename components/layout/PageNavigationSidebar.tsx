@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
   ContextMenu,
@@ -140,7 +140,7 @@ function SortablePageItem({
           ref={setNodeRef}
           style={style}
           {...(isEditing ? {} : { ...attributes, ...listeners })}
-          className={`border border-none flex items-center p-4 rounded-button transition-colors ${
+          className={`border border-none flex items-center p-4 rounded-button transition-colors group ${
             isEditing
               ? "border-secondary"
               : isActive
@@ -163,6 +163,10 @@ function SortablePageItem({
           >
             {page.name}
           </span>
+          <Pencil
+            className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            onClick={onRename}
+          />
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>

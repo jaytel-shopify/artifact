@@ -21,16 +21,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { DeleteConfirmDialog } from "@/components/ui/delete-confirm-dialog";
 import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { deleteArtifact } from "@/lib/quick-db";
@@ -50,21 +41,17 @@ interface ArtifactCardProps {
 export default function ArtifactCard({ artifact }: ArtifactCardProps) {
   const { user } = useAuth();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [saveToProjectOpen, setSaveToProjectOpen] = useState(false);
 
   const handleDelete = async () => {
-    setIsDeleting(true);
     try {
       await deleteArtifact(artifact.id);
       globalMutate(cacheKeys.projectsData(user?.id));
       toast.success(`Artifact "${artifact.name}" deleted`);
-      setDeleteOpen(false);
     } catch (error) {
       console.error("Failed to delete artifact:", error);
       toast.error("Failed to delete artifact");
-    } finally {
-      setIsDeleting(false);
+      throw error;
     }
   };
 
@@ -134,28 +121,13 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
         </ContextMenuContent>
       </ContextMenu>
 
-      {/* Delete Dialog */}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete artifact?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete &quot;{artifact.name}&quot;. This
-              action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={isDeleting}
-              className="bg-destructive text-white hover:bg-destructive/90"
-            >
-              {isDeleting ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmDialog
+        isOpen={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onConfirm={handleDelete}
+        title="Delete artifact?"
+        description={`This will permanently delete "${artifact.name}". This action cannot be undone.`}
+      />
 
       {/* Save to Project Dialog */}
       {user?.email && (

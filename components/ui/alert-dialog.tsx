@@ -83,10 +83,7 @@ function AlertDialogFooter({
   return (
     <div
       data-slot="alert-dialog-footer"
-      className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
-        className
-      )}
+      className={cn("flex flex-col-reverse gap-2 sm:flex-row", className)}
       {...props}
     />
   );
@@ -112,7 +109,10 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-text-secondary text-small", className)}
+      className={cn(
+        "text-text-secondary text-small leading-[1.4] text-pretty",
+        className
+      )}
       {...props}
     />
   );
