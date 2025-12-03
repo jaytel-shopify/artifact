@@ -23,6 +23,7 @@ import {
   type ViewportKey,
 } from "@/lib/viewports";
 import { useArtifactUpload } from "@/hooks/useArtifactUpload";
+import UploadPreviewDialog from "./UploadPreviewDialog";
 import type { Artifact, ArtifactWithPosition } from "@/types";
 
 type DialogType = "url" | "titleCard" | null;
@@ -54,7 +55,11 @@ export default function ArtifactAdder({
   const {
     uploadState,
     fileInputRef,
+    pendingFiles,
+    showPreviewDialog,
     handleFileInputChange,
+    confirmFileUpload,
+    clearPendingFiles,
     handleUrlUpload,
     handleTitleCardUpload,
     openFilePicker,
@@ -67,7 +72,6 @@ export default function ArtifactAdder({
     uploading,
     totalFiles,
     currentFileIndex,
-    currentFileName,
     currentProgress,
     error,
   } = uploadState;
@@ -151,6 +155,24 @@ export default function ArtifactAdder({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* Upload Preview Dialog */}
+      <UploadPreviewDialog
+        files={pendingFiles?.files || []}
+        isOpen={showPreviewDialog}
+        onClose={clearPendingFiles}
+        onConfirm={confirmFileUpload}
+        uploading={uploading}
+        uploadProgress={
+          uploading
+            ? {
+                currentIndex: currentFileIndex,
+                currentProgress,
+                totalFiles,
+              }
+            : undefined
+        }
+      />
 
       {/* URL Dialog */}
       <Dialog
@@ -295,48 +317,6 @@ export default function ArtifactAdder({
               {uploading ? "Creating…" : "Create"}
             </Button>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Upload Progress Dialog */}
-      <Dialog open={uploading} onOpenChange={() => {}}>
-        <DialogContent className="w-full max-w-md" showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle className="text-text-primary">
-              Uploading Files
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            {totalFiles > 1 && (
-              <div className="text-small text-text-primary/70">
-                File {currentFileIndex} of {totalFiles}
-              </div>
-            )}
-
-            {currentFileName && (
-              <div className="text-small text-text-primary/90 truncate">
-                {currentFileName}
-              </div>
-            )}
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-small">
-                <span className="text-text-primary/70">Progress</span>
-                <span className="text-text-primary/90">
-                  {Math.round(currentProgress)}%
-                </span>
-              </div>
-
-              {/* Progress bar */}
-              <div className="w-full h-2 bg-text-primary/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-text-primary transition-all duration-300 ease-out"
-                  style={{ width: `${currentProgress}%` }}
-                />
-              </div>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
     </>

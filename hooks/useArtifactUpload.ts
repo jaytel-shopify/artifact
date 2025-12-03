@@ -5,7 +5,6 @@ import {
   getArtifactTypeFromMimeType,
   validateFile,
 } from "@/lib/quick-storage";
-import { generateArtifactName } from "@/lib/artifactNames";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
 import {
   DEFAULT_VIEWPORT_KEY,
@@ -18,6 +17,7 @@ import {
 } from "@/lib/quick-db";
 import { useAuth } from "@/components/auth/AuthProvider";
 import type { Artifact, ArtifactType, ArtifactWithPosition } from "@/types";
+import type { PendingUpload } from "@/components/upload/UploadPreviewDialog";
 
 export interface UploadState {
   uploading: boolean;
@@ -41,6 +41,14 @@ const initialUploadState: UploadState = {
 export interface UploadContext {
   projectId: string | null;
   pageId: string | null;
+}
+
+/** Files pending preview before upload */
+export interface PendingFiles {
+  files: File[];
+  context?: UploadContext;
+  /** If true, user must select project/page in dialog */
+  requireProjectSelection?: boolean;
 }
 
 interface UseArtifactUploadOptions {
@@ -69,6 +77,7 @@ export function useArtifactUpload({
   const { user } = useAuth();
   const [uploadState, setUploadState] =
     useState<UploadState>(initialUploadState);
+  const [pendingFiles, setPendingFiles] = useState<PendingFiles | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
@@ -76,6 +85,10 @@ export function useArtifactUpload({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  }, []);
+
+  const clearPendingFiles = useCallback(() => {
+    setPendingFiles(null);
   }, []);
 
   /**
@@ -89,6 +102,7 @@ export function useArtifactUpload({
         source_url: string;
         file_path?: string | null;
         name?: string;
+        description?: string;
         metadata?: Record<string, unknown>;
       },
       context?: UploadContext
@@ -104,6 +118,7 @@ export function useArtifactUpload({
           source_url: artifactData.source_url,
           file_path: artifactData.file_path || undefined,
           name: artifactData.name || "Untitled",
+          description: artifactData.description,
           creator_id: user.id,
           metadata: artifactData.metadata || {},
           published: false,
@@ -125,6 +140,7 @@ export function useArtifactUpload({
         source_url: artifactData.source_url,
         file_path: artifactData.file_path || undefined,
         name: artifactData.name || "Untitled",
+        description: artifactData.description,
         creator_id: user.id,
         metadata: artifactData.metadata || {},
         published: true,
@@ -137,23 +153,55 @@ export function useArtifactUpload({
   );
 
   /**
-   * Handle media file uploads (images/videos)
-   * @param files - Files to upload
+   * Stage files for preview before upload
+   * Opens the preview dialog where user can set name/description
+   * @param files - Files to stage
    * @param context - Optional project context (overrides defaultContext)
+   * @param requireProjectSelection - If true, user must select project/page in dialog
    */
-  const handleFileUpload = useCallback(
-    async (files: File[], context?: UploadContext) => {
+  const stageFilesForUpload = useCallback(
+    (files: File[], context?: UploadContext, requireProjectSelection?: boolean) => {
       if (files.length === 0) return;
       if (!user?.id) {
         toast.error("Unable to upload: please sign in first");
         return;
       }
 
+      // Validate all files first
+      for (const file of files) {
+        const validation = validateFile(file, { maxSizeMB: maxFileSizeMB });
+        if (!validation.valid) {
+          toast.error(validation.error || "File too large");
+          return;
+        }
+      }
+
       const effectiveContext = context || defaultContext;
+      setPendingFiles({ files, context: effectiveContext, requireProjectSelection });
+    },
+    [defaultContext, user?.id, maxFileSizeMB]
+  );
+
+  /**
+   * Confirm and upload staged files with user-provided metadata
+   * Called after user confirms in the preview dialog
+   * @param uploads - Pending uploads with name/description from dialog
+   * @param context - Optional context from dialog (overrides pendingFiles.context)
+   */
+  const confirmFileUpload = useCallback(
+    async (uploads: PendingUpload[], context?: UploadContext) => {
+      if (uploads.length === 0) return;
+      if (!user?.id) {
+        toast.error("Unable to upload: please sign in first");
+        return;
+      }
+
+      // Use context from dialog if provided, otherwise use stored context
+      const effectiveContext = context || pendingFiles?.context;
 
       setUploadState({
         uploading: true,
-        totalFiles: files.length,
+        totalFiles: uploads.length,
         currentFileIndex: 0,
         currentFileName: "",
         currentProgress: 0,
@@ -161,35 +209,22 @@ export function useArtifactUpload({
       });
 
       try {
-        // Validate all files first
-        for (const file of files) {
-          const validation = validateFile(file, { maxSizeMB: maxFileSizeMB });
-          if (!validation.valid) {
-            toast.error(validation.error || "File too large");
-            resetState();
-            return;
-          }
-        }
-
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
+        for (let i = 0; i < uploads.length; i++) {
+          const upload = uploads[i];
           setUploadState((prev) => ({
             ...prev,
-            currentFileName: file.name,
+            currentFileName: upload.file.name,
             currentFileIndex: i + 1,
             currentProgress: 0,
           }));
 
           // Upload file to Quick.fs
-          const upResult = await uploadFile(file, (progress) => {
+          const upResult = await uploadFile(upload.file, (progress) => {
             setUploadState((prev) => ({
               ...prev,
               currentProgress: progress.percentage,
             }));
           });
-
-          // Determine file type from MIME type
-          const type = getArtifactTypeFromMimeType(upResult.mimeType);
 
           // Build metadata with dimensions and type-specific defaults
           const metadata: Record<string, unknown> = {};
@@ -201,40 +236,37 @@ export function useArtifactUpload({
           }
 
           // Add video-specific defaults
-          if (type === "video") {
+          if (upload.type === "video") {
             metadata.hideUI = true;
             metadata.loop = true;
             metadata.muted = true;
           }
 
-          // Create artifact with generated name
-          const artifactName = generateArtifactName(
-            type,
-            upResult.fullUrl,
-            file
-          );
+          // Create artifact with user-provided name and description
           const artifact = await createArtifactInternal(
             {
-              type,
+              type: upload.type,
               source_url: upResult.fullUrl,
               file_path: upResult.url,
-              name: artifactName,
+              name: upload.name || upload.suggestedName,
+              description: upload.description || undefined,
               metadata,
             },
             effectiveContext
           );
 
           // Generate thumbnail asynchronously for videos
-          if (type === "video" && artifact) {
-            generateAndUploadThumbnail(file, artifact.id).catch((err) => {
+          if (upload.type === "video" && artifact) {
+            generateAndUploadThumbnail(upload.file, artifact.id).catch((err) => {
               console.error("Thumbnail generation failed:", err);
             });
           }
         }
 
         toast.success(
-          `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}`
+          `Successfully uploaded ${uploads.length} file${uploads.length > 1 ? "s" : ""}`
         );
+        clearPendingFiles();
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : "Upload failed";
         setUploadState((prev) => ({ ...prev, error: message }));
@@ -243,24 +275,22 @@ export function useArtifactUpload({
         resetState();
       }
     },
-    [
-      defaultContext,
-      user?.id,
-      createArtifactInternal,
-      maxFileSizeMB,
-      resetState,
-    ]
+    [pendingFiles?.context, user?.id, createArtifactInternal, clearPendingFiles, resetState]
   );
 
   /**
-   * Handle file input change event
+   * Handle file input change event - stages files for preview
    */
   const handleFileInputChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
-      handleFileUpload(files);
+      stageFilesForUpload(files);
+      // Reset file input so the same file can be selected again
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     },
-    [handleFileUpload]
+    [stageFilesForUpload]
   );
 
   /**
@@ -301,13 +331,19 @@ export function useArtifactUpload({
 
       try {
         const dims = getViewportDimensions(viewport);
-        const artifactName = generateArtifactName("url", url);
+        // Use the URL hostname as the name
+        let urlName = "URL";
+        try {
+          urlName = new URL(url).hostname;
+        } catch {
+          // Keep default
+        }
 
         await createArtifactInternal(
           {
             type: "url",
             source_url: url,
-            name: artifactName,
+            name: urlName,
             metadata: {
               viewport,
               width: dims.width,
@@ -390,15 +426,25 @@ export function useArtifactUpload({
   // Check if upload is possible (user is authenticated)
   const canUpload = Boolean(user?.id);
 
+  // Check if preview dialog should be shown
+  const showPreviewDialog = pendingFiles !== null && pendingFiles.files.length > 0;
+
   return {
     uploadState,
     fileInputRef,
     canUpload,
-    handleFileUpload,
+    // Preview flow
+    pendingFiles,
+    showPreviewDialog,
+    stageFilesForUpload,
+    confirmFileUpload,
+    clearPendingFiles,
+    // File input handlers
     handleFileInputChange,
+    openFilePicker,
+    // Other upload handlers
     handleUrlUpload,
     handleTitleCardUpload,
-    openFilePicker,
     resetState,
   };
 }

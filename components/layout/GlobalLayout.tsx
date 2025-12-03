@@ -6,6 +6,7 @@ import GlobalHeader from "./GlobalHeader";
 import { useHeader } from "./HeaderContext";
 import { setCurrentPath } from "@/lib/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
+import UploadPreviewDialog from "@/components/upload/UploadPreviewDialog";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
 import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import type { Artifact } from "@/types";
@@ -32,6 +33,7 @@ function PathTracker() {
 
 export default function GlobalLayout({ children }: GlobalLayoutProps) {
   const { headerContent } = useHeader();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const { addArtifact } = usePublicArtifacts();
@@ -42,9 +44,22 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
   };
 
   // Use upload hook for global drag/drop and paste uploads
-  const { handleFileUpload, handleUrlUpload } = useArtifactUpload({
+  const {
+    uploadState,
+    pendingFiles,
+    showPreviewDialog,
+    stageFilesForUpload,
+    confirmFileUpload,
+    clearPendingFiles,
+    handleUrlUpload,
+  } = useArtifactUpload({
     onArtifactCreated: handleArtifactCreated,
   });
+
+  const { uploading, currentFileIndex, currentProgress, totalFiles } = uploadState;
+
+  // Determine if we're on a page that requires project selection
+  const requireProjectSelection = pathname === "/projects/" || pathname === "/folder/";
 
   // Get current project context from URL if on project page
   const getUploadContext = () => {
@@ -58,7 +73,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
 
   function handleGlobalFileUpload(files: File[]) {
     const context = getUploadContext();
-    handleFileUpload(files, context);
+    stageFilesForUpload(files, context, requireProjectSelection);
   }
 
   function handleGlobalUrlAdd(url: string) {
@@ -89,7 +104,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
     return () => {
       window.removeEventListener("paste", handlePaste);
     };
-  }, []);
+  }, [pathname, searchParams]);
 
   return (
     <div
@@ -108,9 +123,30 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
       />
 
       <main className="flex-1 min-h-0">{children}</main>
+
       <DropzoneUploader
         onFiles={handleGlobalFileUpload}
         onUrl={handleGlobalUrlAdd}
+      />
+
+      {/* Global Upload Preview Dialog */}
+      <UploadPreviewDialog
+        files={pendingFiles?.files || []}
+        isOpen={showPreviewDialog}
+        onClose={clearPendingFiles}
+        onConfirm={confirmFileUpload}
+        uploading={uploading}
+        uploadProgress={
+          uploading
+            ? {
+                currentIndex: currentFileIndex,
+                currentProgress,
+                totalFiles,
+              }
+            : undefined
+        }
+        requireProjectSelection={pendingFiles?.requireProjectSelection}
+        initialContext={pendingFiles?.context}
       />
     </div>
   );
