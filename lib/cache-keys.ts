@@ -24,4 +24,8 @@ export const cacheKeys = {
 
   /** Public artifacts feed */
   publicArtifacts: "public-artifacts",
+
+  /** Synced artifacts for a specific page (used in presentation view) */
+  pageArtifacts: (pageId?: string) =>
+    pageId ? `synced-artifacts-${pageId}` : null,
 } as const;

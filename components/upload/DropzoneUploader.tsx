@@ -36,6 +36,11 @@ export default function DropzoneUploader() {
         globalMutate(cacheKeys.projectData(context.projectId));
       }
 
+      // Refresh page artifacts if we have a pageId (for /p/ presentation page)
+      if (context?.pageId) {
+        globalMutate(cacheKeys.pageArtifacts(context.pageId));
+      }
+
       if (user?.id) {
         globalMutate(cacheKeys.projectsData(user.id));
       }
