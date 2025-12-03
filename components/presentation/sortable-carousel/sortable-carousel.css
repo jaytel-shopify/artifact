@@ -30,6 +30,23 @@
   scroll-behavior: auto;
 }
 
+/* Pan mode - space+drag to scroll carousel */
+.carousel.pan-mode {
+  cursor: grab;
+  scroll-snap-type: none;
+  scroll-behavior: auto;
+  user-select: none;
+}
+
+.carousel.pan-mode:active {
+  cursor: grabbing;
+}
+
+.carousel.pan-mode * {
+  cursor: inherit !important;
+  user-select: none !important;
+}
+
 /* Only apply 100% height when columns is set to 1 */
 .carousel-horizontal.single-column {
   height: 100%;

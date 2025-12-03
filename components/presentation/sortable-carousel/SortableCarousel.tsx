@@ -2,6 +2,7 @@ import React, {
   useState,
   useRef,
   useEffect,
+  useLayoutEffect,
   useCallback,
   forwardRef,
   useImperativeHandle,
@@ -41,6 +42,8 @@ import { useCollectionMode } from "./useCollectionMode";
 import { useCarouselItems } from "./useCarouselItems";
 import { useDragHandlers } from "./useDragHandlers";
 import { getCollectionMetadata } from "@/lib/collection-utils";
+import { getCurrentScrollIndex, scrollToIndex } from "./carousel-utils";
+import { useKeyHeld } from "@/hooks/useKeyHeld";
 import "./sortable-carousel.css";
 
 type VideoMetadata = { hideUI?: boolean; loop?: boolean; muted?: boolean };
@@ -144,6 +147,12 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const [itemBeingAddedToCollection, setItemBeingAddedToCollection] =
       useState<UniqueIdentifier | null>(null);
     const containerRef = useRef<HTMLUListElement | null>(null);
+    
+    // Space+drag panning state
+    const isSpaceHeld = useKeyHeld("Space");
+    const isPanningRef = useRef(false);
+    const panStartRef = useRef({ x: 0, scrollLeft: 0 });
+    const wasSpaceHeldRef = useRef(false);
 
     // Expose the containerRef to parent via forwardedRef
     useImperativeHandle(forwardedRef, () => containerRef.current!);
@@ -203,14 +212,55 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       container.scrollLeft = container.scrollLeft;
     }, [columns, pageId]);
 
+    // Handle pan mode release - animate to nearest snap point
+    useLayoutEffect(() => {
+      // Detect when space was released (was held, now not held)
+      if (wasSpaceHeldRef.current && !isSpaceHeld && containerRef.current) {
+        isPanningRef.current = false;
+        
+        // IMMEDIATELY disable snap scroll via DOM before browser can snap
+        // (React's className update already happened, so we need direct DOM manipulation)
+        containerRef.current.classList.add("disable-snap-scroll");
+        
+        // Animate to nearest snap point
+        const nearestIndex = getCurrentScrollIndex(containerRef.current);
+        scrollToIndex(containerRef.current, nearestIndex);
+      }
+      wasSpaceHeldRef.current = isSpaceHeld;
+    }, [isSpaceHeld]);
+
+    // Pan handlers for space+drag
+    const handlePanStart = useCallback((e: React.MouseEvent) => {
+      if (!isSpaceHeld || !containerRef.current) return;
+      
+      isPanningRef.current = true;
+      panStartRef.current = {
+        x: e.clientX,
+        scrollLeft: containerRef.current.scrollLeft,
+      };
+      e.preventDefault();
+    }, [isSpaceHeld]);
+
+    const handlePanMove = useCallback((e: React.MouseEvent) => {
+      if (!isPanningRef.current || !containerRef.current) return;
+      
+      const dx = e.clientX - panStartRef.current.x;
+      containerRef.current.scrollLeft = panStartRef.current.scrollLeft - dx;
+    }, []);
+
+    const handlePanEnd = useCallback(() => {
+      isPanningRef.current = false;
+    }, []);
+
     const itemIds = items.map((artifact) => artifact.id);
     const activeIndex =
       activeId != null ? itemIds.indexOf(activeId.toString()) : -1;
 
+    // Conditionally create sensors - disabled during pan mode
     const sensors = useSensors(
       useSensor(PointerSensor, {
         activationConstraint: {
-          distance: 8,
+          distance: isSpaceHeld ? Infinity : 8, // Disable drag when space held
         },
         button: 0,
       }),
@@ -354,7 +404,11 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         >
           <ul
             ref={containerRef}
-            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""}`}
+            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""} ${isSpaceHeld ? "pan-mode" : ""}`}
+            onMouseDown={handlePanStart}
+            onMouseMove={handlePanMove}
+            onMouseUp={handlePanEnd}
+            onMouseLeave={handlePanEnd}
           >
             {items.map((artifact, index) => {
               const artifactMetadata = getCollectionMetadata(artifact);
@@ -564,7 +618,7 @@ function SortableCarouselItem({
     setActivatorNodeRef,
   } = useSortable({
     id,
-    animateLayoutChanges: always,
+    animateLayoutChanges: () => true,
     disabled: props.isReadOnly,
   });
 
@@ -650,8 +704,4 @@ function HiddenCarouselItem({
       }}
     />
   );
-}
-
-function always() {
-  return true;
 }
