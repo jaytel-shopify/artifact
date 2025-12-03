@@ -52,6 +52,7 @@ interface Props {
   layout: Layout;
   columns?: number;
   fitMode?: boolean;
+  sidebarOpen?: boolean;
   artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   onReorder?: (artifacts: ArtifactWithPosition[]) => void;
@@ -123,6 +124,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       layout,
       columns = 3,
       fitMode = false,
+      sidebarOpen = false,
       artifacts,
       expandedCollections,
       onReorder,
@@ -272,7 +274,8 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     const totalPaddingRem = 2;
     const totalGapRem = 1 * (columns - 1);
     const totalSpacingRem = totalPaddingRem + totalGapRem;
-    const columnWidth = `calc((100vw - ${totalSpacingRem}rem) / ${columns})`;
+    const sidebarOffset = sidebarOpen ? " - var(--sidebar-width)" : "";
+    const columnWidth = `calc((100vw${sidebarOffset} - ${totalSpacingRem}rem) / ${columns})`;
 
     // Fit mode is ONLY enabled when columns is 1
     const isFitMode = columns === 1 ? fitMode : false;
@@ -405,6 +408,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           <ul
             ref={containerRef}
             className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""} ${isSpaceHeld ? "pan-mode" : ""}`}
+            style={sidebarOpen ? { paddingRight: "calc(var(--sidebar-width) + 1rem)" } : undefined}
             onMouseDown={handlePanStart}
             onMouseMove={handlePanMove}
             onMouseUp={handlePanEnd}

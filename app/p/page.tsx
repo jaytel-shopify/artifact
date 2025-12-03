@@ -91,7 +91,10 @@ function buildPresentationHeader({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onSidebarToggle}
+          onClick={(e) => {
+            onSidebarToggle?.();
+            (e.currentTarget as HTMLButtonElement).blur();
+          }}
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
         >
           {sidebarOpen ? (
@@ -520,6 +523,7 @@ function PresentationPageInner({
                 ref={setCarouselRef}
                 columns={columns}
                 fitMode={fitMode}
+                sidebarOpen={sidebarOpen && !presentationMode}
                 artifacts={artifacts}
                 expandedCollections={expandedCollections}
                 pageId={currentPageId || undefined}
