@@ -12,6 +12,7 @@ import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { FileText, FolderOpen, Presentation } from "lucide-react";
 
 export default function SearchPage() {
@@ -36,7 +37,12 @@ export default function SearchPage() {
       </>
     ),
     center: <SearchBar mode={mode} />,
-    right: <DarkModeToggle />,
+    right: (
+      <>
+        <HeaderUserAvatar />
+        <DarkModeToggle />
+      </>
+    ),
   });
 
   useEffect(() => {

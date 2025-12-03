@@ -5,7 +5,6 @@ import useSWR from "swr";
 import { ArtifactWithCreator } from "@/types";
 import { Button } from "@/components/ui/button";
 import { useSearchParams, useRouter } from "next/navigation";
-import Link from "next/link";
 import { getArtifactById } from "@/lib/quick-db";
 import ArtifactComponent from "@/components/presentation/Artifact";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -17,6 +16,7 @@ import { useReactions } from "@/hooks/useReactions";
 import { UserAvatar } from "@/components/auth/UserAvatar";
 import { formatTimeAgo } from "@/lib/utils";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
+import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { getCurrentPath } from "@/lib/navigation";
 
@@ -134,11 +134,7 @@ export default function Page() {
         >
           Save to Project
         </Button>
-        {user && (
-          <Link href={`/user?id=${user.id}`}>
-            <UserAvatar size="lg" />
-          </Link>
-        )}
+        <HeaderUserAvatar />
         <DarkModeToggle />
       </>
     ),

@@ -46,6 +46,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import ColumnControl from "@/components/layout/header/ColumnControl";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
@@ -125,6 +126,7 @@ function buildPresentationHeader({
     right: !presentationMode ? (
       <>
         {rightExtra}
+        <HeaderUserAvatar />
         <DarkModeToggle />
       </>
     ) : undefined,

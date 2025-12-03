@@ -22,6 +22,7 @@ import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { ProjectsPageSkeleton } from "@/components/ui/skeleton";
 
 export default function ProjectsPage() {
@@ -81,6 +82,7 @@ export default function ProjectsPage() {
           New Project
         </Button>
         <PWAInstallPrompt />
+        <HeaderUserAvatar />
         <DarkModeToggle />
       </>
     ),

@@ -19,6 +19,7 @@ import DeleteFolderDialog from "@/components/folders/DeleteFolderDialog";
 import EditableTitle from "@/components/presentation/EditableTitle";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
+import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { FolderPageSkeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { Project, Artifact, Folder, ProjectArtifact, Page } from "@/types";
@@ -307,6 +308,7 @@ function FolderPageContent() {
             </DropdownMenu>
           )}
 
+          <HeaderUserAvatar />
           <DarkModeToggle />
         </>
       ),

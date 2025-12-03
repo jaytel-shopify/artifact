@@ -41,7 +41,7 @@ export function UserAvatar({
     xs: "w-4 h-4 min-w-4 text-small",
     sm: "w-6 h-6 min-w-6 text-small",
     md: "w-8 h-8 min-w-8 text-small",
-    lg: "w-10 h-10 min-w-10 text-text-primary",
+    lg: "w-9.5 h-9.5 min-w-9.5 text-text-primary",
   };
 
   const sizeClass = sizeClasses[size];

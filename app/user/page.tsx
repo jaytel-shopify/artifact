@@ -2,17 +2,16 @@
 
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
-import Link from "next/link";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { UserAvatar } from "@/components/auth/UserAvatar";
 import ArtifactFeed from "@/components/presentation/ArtifactFeed";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { Button } from "@/components/ui/button";
+import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 
 export default function UserProfilePage() {
   const searchParams = useSearchParams();
@@ -32,11 +31,7 @@ export default function UserProfilePage() {
     center: <SearchBar mode="public" />,
     right: (
       <>
-        {user && (
-          <Link href={`/user?id=${user.id}`}>
-            <UserAvatar size="lg" />
-          </Link>
-        )}
+        <HeaderUserAvatar />
         <DarkModeToggle />
       </>
     ),
