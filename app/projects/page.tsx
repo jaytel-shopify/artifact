@@ -94,7 +94,7 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="max-w-[1100px] mx-auto p-6 space-y-10">
+    <div className="max-w-7xl mx-auto p-6 space-y-10">
       {error && <p className="text-destructive">{String(error)}</p>}
 
       {/* Folders Section */}

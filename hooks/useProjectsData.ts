@@ -156,18 +156,22 @@ export function useProjectsData(userId?: string) {
     () => (userId ? fetcher(userId) : { projects: [], folders: [] }),
     {
       revalidateOnFocus: false,
-      dedupingInterval: 2000, // Reduced to allow rapid mutations
+      dedupingInterval: 2000,
       refreshInterval: 60000,
+      keepPreviousData: true, // Prevent flashing during revalidation
     }
   );
 
   const projects = data?.projects || [];
   const folders = data?.folders || [];
 
+  // Only show loading on initial load (no data yet), not during revalidation
+  const isInitialLoading = isLoading && !data;
+
   return {
     projects,
     folders,
-    isLoading,
+    isLoading: isInitialLoading,
     error,
     mutate,
   };
