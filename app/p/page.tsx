@@ -271,8 +271,14 @@ function PresentationPageInner({
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    onEscape: unfocusArtifact,
-    canEscape: columns === 1 && fitMode,
+    onEscape: () => {
+      if (sidebarOpen) {
+        setSidebarOpen(false);
+      } else {
+        unfocusArtifact();
+      }
+    },
+    canEscape: sidebarOpen || (columns === 1 && fitMode),
     onTogglePresentationMode: () => setPresentationMode((prev) => !prev),
   });
 
