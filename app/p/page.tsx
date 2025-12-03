@@ -91,7 +91,10 @@ function buildPresentationHeader({
         <Button
           variant="ghost"
           size="icon"
-          onClick={onSidebarToggle}
+          onClick={(e) => {
+            onSidebarToggle?.();
+            (e.currentTarget as HTMLButtonElement).blur();
+          }}
           aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
         >
           {sidebarOpen ? (
