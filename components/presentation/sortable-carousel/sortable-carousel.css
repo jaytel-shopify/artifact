@@ -389,6 +389,13 @@
   padding-bottom: 8px; /* Creates space for stack card to peek out */
 }
 
+/* Only fill available space for URL types in collections (needed for iframe aspect ratio) */
+.carousel-item-wrapper.is-collection
+  .carousel-item-content-wrapper:has(.carousel-item[data-content-type="url"]) {
+  flex: 1;
+  min-height: 0;
+}
+
 /* Stack card - positioned to peek behind carousel-item, inset for depth */
 .collection-stack-card {
   position: absolute;
