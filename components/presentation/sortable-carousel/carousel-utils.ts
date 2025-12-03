@@ -12,7 +12,9 @@ gsap.registerPlugin(ScrollToPlugin);
  * Based on scroll position divided by equal item width
  */
 export function getCurrentScrollIndex(container: HTMLElement): number {
-  const items = container.querySelectorAll(".carousel-item-wrapper");
+  const items = container.querySelectorAll(
+    ".carousel-item-wrapper:not(.collection-child-hidden)"
+  );
   if (items.length === 0) return 0;
 
   const firstItem = items[0] as HTMLElement;
@@ -31,26 +33,38 @@ export function getCurrentScrollIndex(container: HTMLElement): number {
 }
 
 /**
+ * Scroll to the end of the carousel with smooth animation
+ */
+export function scrollToEnd(container: HTMLElement): void {
+  container.classList.add("disable-snap-scroll");
+
+  gsap.to(container, {
+    scrollLeft: container.scrollWidth,
+    duration: 0.65,
+    ease: "power3.out",
+    overwrite: "auto",
+    onComplete: () => {
+      container.classList.remove("disable-snap-scroll");
+    },
+  });
+}
+
+/**
  * Scroll to a specific item index with smooth animation
  * GSAP scrollTo automatically overwrites previous tweens
  */
-export function scrollToIndex(container: HTMLElement, index: number): void {
-  const items = container.querySelectorAll(".carousel-item-wrapper");
+export function scrollToIndex(
+  container: HTMLElement,
+  index: number,
+  onComplete?: () => void
+): void {
+  const items = container.querySelectorAll(
+    ".carousel-item-wrapper:not(.collection-child-hidden)"
+  );
   const targetItem = items[index] as HTMLElement;
 
-  if (!targetItem) return;
-
-  // Disable snap scroll during animation
-  container.classList.add("disable-snap-scroll");
-
-  const distance = Math.abs(
-    targetItem.getBoundingClientRect().left -
-      container.getBoundingClientRect().left
-  );
-
-  // Skip animation if distance is negligible
-  if (distance < 1) {
-    container.classList.remove("disable-snap-scroll");
+  if (!targetItem) {
+    onComplete?.();
     return;
   }
 
@@ -59,8 +73,17 @@ export function scrollToIndex(container: HTMLElement, index: number): void {
     window.getComputedStyle(container).scrollPaddingLeft || "0"
   );
 
-  // GSAP scrollTo - automatically overwrites previous tweens
   const targetScrollLeft = targetItem.offsetLeft - scrollPaddingLeft;
+  const scrollDistance = Math.abs(targetScrollLeft - container.scrollLeft);
+
+  // Skip animation if distance is negligible
+  if (scrollDistance < 1) {
+    onComplete?.();
+    return;
+  }
+
+  // Disable snap scroll during animation
+  container.classList.add("disable-snap-scroll");
 
   gsap.to(container, {
     scrollLeft: targetScrollLeft,
@@ -69,6 +92,7 @@ export function scrollToIndex(container: HTMLElement, index: number): void {
     overwrite: "auto",
     onComplete: () => {
       container.classList.remove("disable-snap-scroll");
+      onComplete?.();
     },
   });
 }

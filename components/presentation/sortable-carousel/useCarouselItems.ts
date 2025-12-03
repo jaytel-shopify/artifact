@@ -5,6 +5,7 @@ import {
   getCollectionArtifacts,
   getAllCollectionIds,
 } from "@/lib/collection-utils";
+import { scrollToEnd } from "./carousel-utils";
 
 interface UseCarouselItemsProps {
   artifacts: ArtifactWithPosition[];
@@ -158,10 +159,7 @@ export function useCarouselItems({
       if (itemsAdded && !pageChanged && containerRef.current) {
         setTimeout(() => {
           if (containerRef.current) {
-            containerRef.current.scrollTo({
-              left: containerRef.current.scrollWidth,
-              behavior: "smooth",
-            });
+            scrollToEnd(containerRef.current);
           }
         }, 100);
       }
