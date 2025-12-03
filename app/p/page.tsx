@@ -514,14 +514,16 @@ function PresentationPageInner({
         )}
 
         {/* Main Content */}
+        {/* Note: Using margin-left instead of transform for sidebar offset because
+            CSS transforms create a containing block that breaks position:fixed elements
+            like DragOverlay, causing incorrect Y positioning during drag */}
         <div
           className="flex-1 min-w-0"
           style={{
-            transform:
-              sidebarOpen && !presentationMode
-                ? "translateX(var(--sidebar-width))"
-                : "translateX(0)",
-            transition: "transform 400ms var(--spring-elegant-easing-light)",
+            marginLeft:
+              sidebarOpen && !presentationMode ? "var(--sidebar-width)" : "0",
+            transition:
+              "margin-left 400ms var(--spring-elegant-easing-light)",
           }}
         >
           <div className="h-full relative">

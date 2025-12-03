@@ -34,7 +34,7 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS, isKeyboardEvent } from "@dnd-kit/utilities";
-import type { ArtifactWithPosition, Artifact } from "@/types";
+import type { ArtifactWithPosition } from "@/types";
 
 import { CarouselItem, Layout, Position } from "./CarouselItem";
 import type { Props as CarouselItemProps } from "./CarouselItem";
