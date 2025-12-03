@@ -1,7 +1,5 @@
 "use client";
 
-import type { ArtifactType } from "@/types";
-import { createArtifact as createArtifactDB } from "@/lib/quick-db";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
@@ -9,12 +7,11 @@ import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import ArtifactAdder from "@/components/upload/ArtifactAdder";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
-import { useAuth } from "@/components/auth/AuthProvider";
 import ArtifactFeed from "@/components/presentation/ArtifactFeed";
 import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
+import type { Artifact } from "@/types";
 
 export default function Home() {
-  const { user } = useAuth();
   const {
     artifacts,
     isLoading,
@@ -25,36 +22,9 @@ export default function Home() {
     addArtifact,
   } = usePublicArtifacts();
 
-  const createArtifact = async (artifactData: {
-    type: ArtifactType;
-    source_url: string;
-    file_path?: string | null;
-    name?: string;
-    metadata?: Record<string, unknown>;
-  }) => {
-    if (!user?.email) {
-      throw new Error("Must be logged in to create artifacts");
-    }
-
-    try {
-      const artifact = await createArtifactDB({
-        type: artifactData.type,
-        source_url: artifactData.source_url,
-        file_path: artifactData.file_path || undefined,
-        name: artifactData.name || "Untitled",
-        creator_id: user.email,
-        metadata: artifactData.metadata || {},
-        published: true,
-      });
-
-      // Optimistically add to the beginning
-      addArtifact(artifact);
-
-      return artifact;
-    } catch (error) {
-      console.error("Failed to create artifact:", error);
-      throw error;
-    }
+  // Handle artifact creation - add to feed optimistically
+  const handleArtifactCreated = (artifact: Artifact) => {
+    addArtifact(artifact);
   };
 
   // Set header content
@@ -68,7 +38,7 @@ export default function Home() {
     center: <SearchBar mode="public" />,
     right: (
       <>
-        <ArtifactAdder createArtifact={createArtifact} />
+        <ArtifactAdder onArtifactCreated={handleArtifactCreated} />
         <HeaderUserAvatar />
         <DarkModeToggle />
       </>

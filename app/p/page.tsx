@@ -31,7 +31,6 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useArtifactFocus } from "@/hooks/useArtifactFocus";
 import { useProjectTracking } from "@/hooks/useProjectTracking";
 import { useUserFolders } from "@/hooks/useUserFolders";
-import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import { useTitleCardEditor } from "@/hooks/useTitleCardEditor";
 import { useMediaReplacement } from "@/hooks/useMediaReplacement";
 import { usePageHandlers } from "@/hooks/usePageHandlers";
@@ -367,15 +366,6 @@ function PresentationPageInner({
   // Track project access and set document title
   useProjectTracking(project);
 
-  // // Artifact upload handlers
-  // const { uploadState, handleFileUpload, handleUrlAdd, isPending } =
-  //   useArtifactUpload({
-  //     projectId: project?.id,
-  //     currentPageId: currentPageId || undefined,
-  //     createArtifact,
-  //     refetchArtifacts,
-  //   });
-
   // Page management handlers
   const { handlePageCreate, handlePageDelete, handlePageRename } =
     usePageHandlers(pages, createPage, updatePage, deletePage, selectPage);
@@ -429,8 +419,7 @@ function PresentationPageInner({
             variant="icon"
             projectId={project.id}
             pageId={currentPageId}
-            onAdded={refetchArtifacts}
-            createArtifact={createArtifact}
+            onArtifactCreated={() => refetchArtifacts()}
           />
         </div>
       ),

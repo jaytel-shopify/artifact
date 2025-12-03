@@ -80,7 +80,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
       <Suspense fallback={null}>
         <PathTracker />
       </Suspense>
-      
+
       <GlobalHeader
         left={headerContent.left}
         center={headerContent.center}

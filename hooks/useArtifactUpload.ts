@@ -1,99 +1,211 @@
-import { useState, useCallback, useTransition } from "react";
+import { useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
-import { uploadFile, getArtifactTypeFromMimeType } from "@/lib/quick-storage";
+import {
+  uploadFile,
+  getArtifactTypeFromMimeType,
+  validateFile,
+} from "@/lib/quick-storage";
 import { generateArtifactName } from "@/lib/artifactNames";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
+import {
+  DEFAULT_VIEWPORT_KEY,
+  getViewportDimensions,
+  type ViewportKey,
+} from "@/lib/viewports";
+import { createArtifactInProject, createArtifact as createStandaloneArtifact } from "@/lib/quick-db";
+import { useAuth } from "@/components/auth/AuthProvider";
+import type { Artifact, ArtifactType, ArtifactWithPosition } from "@/types";
 
-interface UploadState {
+export interface UploadState {
   uploading: boolean;
   totalFiles: number;
-  completedFiles: number;
+  currentFileIndex: number;
+  currentFileName: string;
   currentProgress: number;
+  error: string | null;
 }
 
+const initialUploadState: UploadState = {
+  uploading: false,
+  totalFiles: 0,
+  currentFileIndex: 0,
+  currentFileName: "",
+  currentProgress: 0,
+  error: null,
+};
+
 interface UseArtifactUploadOptions {
-  projectId: string | undefined;
-  currentPageId: string | undefined;
-  createArtifact: (data: any) => Promise<any>;
-  refetchArtifacts: () => void;
+  /** Project ID - if not provided, creates standalone published artifacts */
+  projectId?: string;
+  /** Page ID - required if projectId is provided */
+  pageId?: string;
+  /** Callback when artifact is created */
+  onArtifactCreated?: (artifact: Artifact | ArtifactWithPosition) => void;
+  /** Max file size in MB (default 250) */
+  maxFileSizeMB?: number;
 }
 
 /**
- * Hook to handle artifact upload (files and URLs)
+ * Hook to handle all artifact upload operations (files, URLs, title cards)
+ *
+ * Two modes:
+ * 1. Project mode (projectId + pageId provided): Creates artifacts linked to a project/page
+ * 2. Standalone mode (no projectId): Creates published standalone artifacts
  */
 export function useArtifactUpload({
   projectId,
-  currentPageId,
-  createArtifact,
-  refetchArtifacts,
+  pageId,
+  onArtifactCreated,
+  maxFileSizeMB = 250,
 }: UseArtifactUploadOptions) {
-  const [isPending, startTransition] = useTransition();
-  const [uploadState, setUploadState] = useState<UploadState>({
-    uploading: false,
-    totalFiles: 0,
-    completedFiles: 0,
-    currentProgress: 0,
-  });
+  const { user } = useAuth();
+  const [uploadState, setUploadState] = useState<UploadState>(initialUploadState);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileUpload = useCallback(
-    async (files: File[]) => {
-      if (!projectId || !currentPageId) return;
-      if (files.length === 0) return;
+  // Determine mode: project-based or standalone
+  const isProjectMode = Boolean(projectId && pageId);
 
-      // Validate all files first (50MB limit)
-      const { validateFile } = await import("@/lib/quick-storage");
-      for (const file of files) {
-        const validation = validateFile(file, { maxSizeMB: 50 });
-        if (!validation.valid) {
-          toast.error(validation.error || "File too large");
-          return;
-        }
+  const resetState = useCallback(() => {
+    setUploadState(initialUploadState);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  /**
+   * Internal helper to create an artifact
+   * Supports both project-linked and standalone artifacts
+   */
+  const createArtifact = useCallback(
+    async (artifactData: {
+      type: ArtifactType;
+      source_url: string;
+      file_path?: string | null;
+      name?: string;
+      metadata?: Record<string, unknown>;
+    }): Promise<Artifact | ArtifactWithPosition | null> => {
+      if (!user?.id) return null;
+
+      // Project mode: create artifact linked to project/page
+      if (isProjectMode && projectId && pageId) {
+        const { artifact, projectArtifact } = await createArtifactInProject({
+          project_id: projectId,
+          page_id: pageId,
+          type: artifactData.type,
+          source_url: artifactData.source_url,
+          file_path: artifactData.file_path || undefined,
+          name: artifactData.name || "Untitled",
+          creator_id: user.id,
+          metadata: artifactData.metadata || {},
+          published: false,
+        });
+
+        const artifactWithPosition: ArtifactWithPosition = {
+          ...artifact,
+          position: projectArtifact.position,
+          project_artifact_id: projectArtifact.id,
+        };
+
+        onArtifactCreated?.(artifactWithPosition);
+        return artifactWithPosition;
       }
 
-      // Initialize upload state
+      // Standalone mode: create published artifact not linked to any project
+      const artifact = await createStandaloneArtifact({
+        type: artifactData.type,
+        source_url: artifactData.source_url,
+        file_path: artifactData.file_path || undefined,
+        name: artifactData.name || "Untitled",
+        creator_id: user.id,
+        metadata: artifactData.metadata || {},
+        published: true,
+      });
+
+      onArtifactCreated?.(artifact);
+      return artifact;
+    },
+    [projectId, pageId, isProjectMode, user?.id, onArtifactCreated]
+  );
+
+  /**
+   * Handle media file uploads (images/videos)
+   */
+  const handleFileUpload = useCallback(
+    async (files: File[]) => {
+      if (files.length === 0) return;
+      if (!user?.email && !user?.id) {
+        toast.error("Unable to upload: please sign in first");
+        return;
+      }
+      if (isProjectMode && (!projectId || !pageId)) {
+        toast.error("Unable to upload: missing project context");
+        return;
+      }
+
       setUploadState({
         uploading: true,
         totalFiles: files.length,
-        completedFiles: 0,
+        currentFileIndex: 0,
+        currentFileName: "",
         currentProgress: 0,
+        error: null,
       });
 
       try {
-        let completedCount = 0;
-
+        // Validate all files first
         for (const file of files) {
-          // Upload file to Quick.fs with progress tracking
-          const upResult = await uploadFile(file, (progress) => {
-            const fileProgress = progress.percentage;
-            const overallProgress = Math.round(
-              (completedCount * 100 + fileProgress) / files.length
-            );
+          const validation = validateFile(file, { maxSizeMB: maxFileSizeMB });
+          if (!validation.valid) {
+            toast.error(validation.error || "File too large");
+            resetState();
+            return;
+          }
+        }
 
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          setUploadState((prev) => ({
+            ...prev,
+            currentFileName: file.name,
+            currentFileIndex: i + 1,
+            currentProgress: 0,
+          }));
+
+          // Upload file to Quick.fs
+          const upResult = await uploadFile(file, (progress) => {
             setUploadState((prev) => ({
               ...prev,
-              currentProgress: overallProgress,
+              currentProgress: progress.percentage,
             }));
           });
 
           // Determine file type from MIME type
           const type = getArtifactTypeFromMimeType(upResult.mimeType);
 
-          // Set default metadata for videos (muted, loop, hide controls)
-          const defaultMetadata =
-            type === "video" ? { hideUI: true, loop: true, muted: true } : {};
+          // Build metadata with dimensions and type-specific defaults
+          const metadata: Record<string, unknown> = {};
+
+          // Add dimensions if available
+          if (upResult.width && upResult.height) {
+            metadata.width = upResult.width;
+            metadata.height = upResult.height;
+          }
+
+          // Add video-specific defaults
+          if (type === "video") {
+            metadata.hideUI = true;
+            metadata.loop = true;
+            metadata.muted = true;
+          }
 
           // Create artifact with generated name
-          const artifactName = generateArtifactName(
-            type,
-            upResult.fullUrl,
-            file
-          );
+          const artifactName = generateArtifactName(type, upResult.fullUrl, file);
           const artifact = await createArtifact({
             type,
             source_url: upResult.fullUrl,
             file_path: upResult.url,
             name: artifactName,
-            metadata: defaultMetadata,
+            metadata,
           });
 
           // Generate thumbnail asynchronously for videos
@@ -102,86 +214,148 @@ export function useArtifactUpload({
               console.error("Thumbnail generation failed:", err);
             });
           }
-          completedCount++;
-          setUploadState((prev) => ({
-            ...prev,
-            completedFiles: completedCount,
-            currentProgress: Math.round((completedCount / files.length) * 100),
-          }));
         }
 
         toast.success(
           `Successfully uploaded ${files.length} file${files.length > 1 ? "s" : ""}`
         );
-
-        startTransition(() => {
-          refetchArtifacts();
-        });
-      } catch (err) {
-        toast.error("Failed to upload files. Please try again.");
-        console.error(err);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Upload failed";
+        setUploadState((prev) => ({ ...prev, error: message }));
+        toast.error(message || "Upload failed. Please try again.");
       } finally {
-        setUploadState({
-          uploading: false,
-          totalFiles: 0,
-          completedFiles: 0,
-          currentProgress: 0,
-        });
+        resetState();
       }
     },
-    [projectId, currentPageId, createArtifact, refetchArtifacts]
+    [projectId, pageId, isProjectMode, user?.email, user?.id, createArtifact, maxFileSizeMB, resetState]
   );
 
-  const handleUrlAdd = useCallback(
-    async (url: string) => {
-      if (!projectId || !currentPageId) return;
+  /**
+   * Handle file input change event
+   */
+  const handleFileInputChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      handleFileUpload(files);
+    },
+    [handleFileUpload]
+  );
+
+  /**
+   * Trigger file picker
+   */
+  const openFilePicker = useCallback(() => {
+    fileInputRef.current?.click();
+  }, []);
+
+  /**
+   * Handle URL artifact creation
+   */
+  const handleUrlUpload = useCallback(
+    async (url: string, viewport: ViewportKey = DEFAULT_VIEWPORT_KEY) => {
+      if (!url) return;
+      if (!user?.email && !user?.id) {
+        toast.error("Unable to add URL: please sign in first");
+        return;
+      }
 
       setUploadState({
         uploading: true,
         totalFiles: 1,
-        completedFiles: 0,
+        currentFileIndex: 1,
+        currentFileName: url,
         currentProgress: 50,
+        error: null,
       });
 
       try {
+        const dims = getViewportDimensions(viewport);
         const artifactName = generateArtifactName("url", url);
+
         await createArtifact({
           type: "url",
           source_url: url,
           name: artifactName,
+          metadata: {
+            viewport,
+            width: dims.width,
+            height: dims.height,
+          },
         });
-
-        setUploadState((prev) => ({
-          ...prev,
-          completedFiles: 1,
-          currentProgress: 100,
-        }));
 
         toast.success("Successfully added URL artifact");
-
-        startTransition(() => {
-          refetchArtifacts();
-        });
-      } catch (err) {
-        toast.error("Failed to add URL artifact. Please try again.");
-        console.error(err);
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed to add URL";
+        setUploadState((prev) => ({ ...prev, error: message }));
+        toast.error(message || "Failed to add URL. Please try again.");
+        throw e;
       } finally {
-        setUploadState({
-          uploading: false,
-          totalFiles: 0,
-          completedFiles: 0,
-          currentProgress: 0,
-        });
+        resetState();
       }
     },
-    [projectId, currentPageId, createArtifact, refetchArtifacts]
+    [user?.email, user?.id, createArtifact, resetState]
   );
+
+  /**
+   * Handle title card creation
+   */
+  const handleTitleCardUpload = useCallback(
+    async (headline: string, subheadline: string) => {
+      if (!headline && !subheadline) {
+        const error = "Please enter at least a headline or subheadline";
+        setUploadState((prev) => ({ ...prev, error }));
+        return;
+      }
+      if (!user?.email && !user?.id) {
+        toast.error("Unable to create title card: please sign in first");
+        return;
+      }
+
+      setUploadState({
+        uploading: true,
+        totalFiles: 1,
+        currentFileIndex: 1,
+        currentFileName: headline || "Title Card",
+        currentProgress: 50,
+        error: null,
+      });
+
+      try {
+        await createArtifact({
+          type: "titleCard",
+          source_url: "",
+          name: headline || "Title Card",
+          metadata: {
+            headline,
+            subheadline,
+          },
+        });
+
+        toast.success("Successfully added title card");
+      } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : "Failed to add title card";
+        setUploadState((prev) => ({ ...prev, error: message }));
+        toast.error(message || "Failed to add title card. Please try again.");
+        throw e;
+      } finally {
+        resetState();
+      }
+    },
+    [user?.email, user?.id, createArtifact, resetState]
+  );
+
+  // Check if upload is possible (has required context)
+  const canUpload = Boolean(user?.email || user?.id);
 
   return {
     uploadState,
+    fileInputRef,
+    canUpload,
     handleFileUpload,
-    handleUrlAdd,
-    isPending,
+    handleFileInputChange,
+    handleUrlUpload,
+    handleTitleCardUpload,
+    openFilePicker,
+    resetState,
   };
 }
-

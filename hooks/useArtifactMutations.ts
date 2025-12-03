@@ -39,7 +39,7 @@ export function useArtifactMutations({
       metadata?: Record<string, unknown>;
       published?: boolean;
     }) => {
-      if (!projectId || !pageId || !user?.email) return null;
+      if (!projectId || !pageId || !user?.id) return null;
 
       try {
         const { artifact, projectArtifact } = await createArtifactInProject({
@@ -49,7 +49,7 @@ export function useArtifactMutations({
           source_url: artifactData.source_url,
           file_path: artifactData.file_path || undefined,
           name: artifactData.name || "Untitled",
-          creator_id: user.email,
+          creator_id: user.id,
           metadata: artifactData.metadata || {},
           published: artifactData.published || false,
         });
@@ -67,7 +67,7 @@ export function useArtifactMutations({
         throw error;
       }
     },
-    [projectId, pageId, user?.email]
+    [projectId, pageId, user?.id]
   );
 
   const updateArtifact = useCallback(

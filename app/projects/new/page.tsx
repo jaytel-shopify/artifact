@@ -18,7 +18,7 @@ function NewProjectContent() {
     async function createNewProject() {
       // Prevent double execution in React Strict Mode
       if (hasCreatedRef.current) return;
-      if (!user?.email) return; // Wait for user to be loaded
+      if (!user?.id) return; // Wait for user to be loaded
 
       hasCreatedRef.current = true;
 
@@ -41,7 +41,7 @@ function NewProjectContent() {
         // Create the project (with optional folder assignment)
         const project = await createProjectDB({
           name: projectName,
-          creator_id: user.email,
+          creator_id: user.id,
           folder_id: folderId || null,
         });
 
