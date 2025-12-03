@@ -12,6 +12,7 @@ interface CanvasProps {
   columns: number;
   artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
+  sidebarOpen?: boolean;
   onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
@@ -35,6 +36,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     columns,
     artifacts,
     expandedCollections,
+    sidebarOpen = false,
     onReorder,
     onCreateCollection,
     onRemoveFromCollection,
@@ -58,6 +60,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         layout={Layout.Horizontal}
         columns={columns}
         fitMode={fitMode}
+        sidebarOpen={sidebarOpen}
         artifacts={artifacts}
         expandedCollections={expandedCollections}
         onReorder={onReorder}

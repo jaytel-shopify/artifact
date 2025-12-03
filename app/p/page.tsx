@@ -520,6 +520,7 @@ function PresentationPageInner({
                 ref={setCarouselRef}
                 columns={columns}
                 fitMode={fitMode}
+                sidebarOpen={sidebarOpen && !presentationMode}
                 artifacts={artifacts}
                 expandedCollections={expandedCollections}
                 pageId={currentPageId || undefined}
