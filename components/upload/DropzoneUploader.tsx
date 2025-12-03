@@ -8,6 +8,7 @@ import { useArtifactUpload, type UploadContext } from "@/hooks/useArtifactUpload
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cacheKeys } from "@/lib/cache-keys";
 import UploadPreviewDialog from "./UploadPreviewDialog";
+import UrlPreviewDialog from "./UrlPreviewDialog";
 import type { Artifact } from "@/types";
 
 export default function DropzoneUploader() {
@@ -62,7 +63,11 @@ export default function DropzoneUploader() {
     stageFilesForUpload,
     confirmFileUpload,
     clearPendingFiles,
-    handleUrlUpload,
+    pendingUrl,
+    showUrlPreviewDialog,
+    stageUrlForUpload,
+    confirmUrlUpload,
+    clearPendingUrl,
   } = useArtifactUpload({
     onArtifactCreated: handleArtifactCreated,
   });
@@ -93,9 +98,9 @@ export default function DropzoneUploader() {
   const handleUrlAdd = useCallback(
     (url: string) => {
       const context = getUploadContext();
-      handleUrlUpload(url, undefined, context);
+      stageUrlForUpload(url, context, requireProjectSelection);
     },
-    [getUploadContext, handleUrlUpload]
+    [getUploadContext, stageUrlForUpload, requireProjectSelection]
   );
 
   // Wrap confirmFileUpload to also refresh caches
@@ -105,6 +110,20 @@ export default function DropzoneUploader() {
       refreshCachesForContext(context || pendingFiles?.context);
     },
     [confirmFileUpload, refreshCachesForContext, pendingFiles?.context]
+  );
+
+  // Wrap confirmUrlUpload to also refresh caches
+  const handleConfirmUrlUpload = useCallback(
+    async (
+      name: string,
+      description: string,
+      viewport: Parameters<typeof confirmUrlUpload>[2],
+      context?: UploadContext
+    ) => {
+      await confirmUrlUpload(name, description, viewport, context);
+      refreshCachesForContext(context || pendingUrl?.context);
+    },
+    [confirmUrlUpload, refreshCachesForContext, pendingUrl?.context]
   );
 
   // Handle paste events for files and URLs
@@ -286,6 +305,17 @@ export default function DropzoneUploader() {
         }
         requireProjectSelection={pendingFiles?.requireProjectSelection}
         initialContext={pendingFiles?.context}
+      />
+
+      {/* URL Preview Dialog */}
+      <UrlPreviewDialog
+        url={pendingUrl?.url || ""}
+        isOpen={showUrlPreviewDialog}
+        onClose={clearPendingUrl}
+        onConfirm={handleConfirmUrlUpload}
+        uploading={uploading}
+        requireProjectSelection={pendingUrl?.requireProjectSelection}
+        initialContext={pendingUrl?.context}
       />
     </>
   );

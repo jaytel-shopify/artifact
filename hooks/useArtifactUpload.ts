@@ -51,6 +51,14 @@ export interface PendingFiles {
   requireProjectSelection?: boolean;
 }
 
+/** URL pending preview before upload */
+export interface PendingUrl {
+  url: string;
+  context?: UploadContext;
+  /** If true, user must select project/page in dialog */
+  requireProjectSelection?: boolean;
+}
+
 interface UseArtifactUploadOptions {
   /** Default project context - can be overridden per-call */
   defaultContext?: UploadContext;
@@ -78,6 +86,7 @@ export function useArtifactUpload({
   const [uploadState, setUploadState] =
     useState<UploadState>(initialUploadState);
   const [pendingFiles, setPendingFiles] = useState<PendingFiles | null>(null);
+  const [pendingUrl, setPendingUrl] = useState<PendingUrl | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
@@ -89,6 +98,10 @@ export function useArtifactUpload({
 
   const clearPendingFiles = useCallback(() => {
     setPendingFiles(null);
+  }, []);
+
+  const clearPendingUrl = useCallback(() => {
+    setPendingUrl(null);
   }, []);
 
   /**
@@ -301,15 +314,48 @@ export function useArtifactUpload({
   }, []);
 
   /**
+   * Stage a URL for preview before upload
+   * Opens the URL preview dialog where user can set name/description
+   * @param url - URL to stage
+   * @param context - Optional project context (overrides defaultContext)
+   * @param requireProjectSelection - If true, user must select project/page in dialog
+   */
+  const stageUrlForUpload = useCallback(
+    (url: string, context?: UploadContext, requireProjectSelection?: boolean) => {
+      if (!url) return;
+      if (!user?.id) {
+        toast.error("Unable to add URL: please sign in first");
+        return;
+      }
+
+      // Validate URL
+      try {
+        new URL(url);
+      } catch {
+        toast.error("Invalid URL");
+        return;
+      }
+
+      const effectiveContext = context || defaultContext;
+      setPendingUrl({ url, context: effectiveContext, requireProjectSelection });
+    },
+    [defaultContext, user?.id]
+  );
+
+  /**
    * Handle URL artifact creation
    * @param url - URL to embed
    * @param viewport - Viewport size (default: laptop)
+   * @param name - Optional custom name for the artifact
+   * @param description - Optional description for the artifact
    * @param context - Optional project context (overrides defaultContext)
    */
   const handleUrlUpload = useCallback(
     async (
       url: string,
       viewport: ViewportKey = DEFAULT_VIEWPORT_KEY,
+      name?: string,
+      description?: string,
       context?: UploadContext
     ) => {
       if (!url) return;
@@ -331,12 +377,14 @@ export function useArtifactUpload({
 
       try {
         const dims = getViewportDimensions(viewport);
-        // Use the URL hostname as the name
-        let urlName = "URL";
-        try {
-          urlName = new URL(url).hostname;
-        } catch {
-          // Keep default
+        // Use provided name, or fall back to URL hostname
+        let urlName = name?.trim() || "";
+        if (!urlName) {
+          try {
+            urlName = new URL(url).hostname;
+          } catch {
+            urlName = "URL";
+          }
         }
 
         await createArtifactInternal(
@@ -344,6 +392,7 @@ export function useArtifactUpload({
             type: "url",
             source_url: url,
             name: urlName,
+            description: description?.trim() || undefined,
             metadata: {
               viewport,
               width: dims.width,
@@ -364,6 +413,32 @@ export function useArtifactUpload({
       }
     },
     [defaultContext, user?.id, createArtifactInternal, resetState]
+  );
+
+  /**
+   * Confirm and upload staged URL with user-provided metadata
+   * Called after user confirms in the URL preview dialog
+   * @param name - User-provided name
+   * @param description - User-provided description
+   * @param viewport - Selected viewport
+   * @param context - Optional context from dialog (overrides pendingUrl.context)
+   */
+  const confirmUrlUpload = useCallback(
+    async (
+      name: string,
+      description: string,
+      viewport: ViewportKey = DEFAULT_VIEWPORT_KEY,
+      context?: UploadContext
+    ) => {
+      if (!pendingUrl?.url) return;
+
+      // Use context from dialog if provided, otherwise use stored context
+      const effectiveContext = context || pendingUrl.context;
+
+      await handleUrlUpload(pendingUrl.url, viewport, name, description, effectiveContext);
+      clearPendingUrl();
+    },
+    [pendingUrl, handleUrlUpload, clearPendingUrl]
   );
 
   /**
@@ -429,16 +504,25 @@ export function useArtifactUpload({
   // Check if preview dialog should be shown
   const showPreviewDialog = pendingFiles !== null && pendingFiles.files.length > 0;
 
+  // Check if URL preview dialog should be shown
+  const showUrlPreviewDialog = pendingUrl !== null;
+
   return {
     uploadState,
     fileInputRef,
     canUpload,
-    // Preview flow
+    // File preview flow
     pendingFiles,
     showPreviewDialog,
     stageFilesForUpload,
     confirmFileUpload,
     clearPendingFiles,
+    // URL preview flow
+    pendingUrl,
+    showUrlPreviewDialog,
+    stageUrlForUpload,
+    confirmUrlUpload,
+    clearPendingUrl,
     // File input handlers
     handleFileInputChange,
     openFilePicker,

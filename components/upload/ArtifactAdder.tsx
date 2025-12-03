@@ -44,6 +44,8 @@ export default function ArtifactAdder({
 }: ArtifactAdderProps) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const [url, setUrl] = useState("");
+  const [urlName, setUrlName] = useState("");
+  const [urlDescription, setUrlDescription] = useState("");
   const [viewport, setViewport] = useState<ViewportKey>(DEFAULT_VIEWPORT_KEY);
   const [headline, setHeadline] = useState("");
   const [subheadline, setSubheadline] = useState("");
@@ -78,6 +80,8 @@ export default function ArtifactAdder({
 
   function resetUrlState() {
     setUrl("");
+    setUrlName("");
+    setUrlDescription("");
     setViewport(DEFAULT_VIEWPORT_KEY);
   }
 
@@ -90,7 +94,7 @@ export default function ArtifactAdder({
   async function handleUrlSubmit() {
     if (!url) return;
     try {
-      await handleUrlUpload(url, viewport);
+      await handleUrlUpload(url, viewport, urlName, urlDescription);
       setOpenDialog(null);
       resetUrlState();
     } catch {
@@ -196,11 +200,36 @@ export default function ArtifactAdder({
 
           <div className="space-y-4">
             <div className="space-y-2">
+              <label className="text-small text-text-primary/70">URL</label>
               <Input
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 placeholder="https://example.com/artifact"
                 disabled={uploading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-small text-text-primary/70">Name</label>
+              <Input
+                value={urlName}
+                onChange={(e) => setUrlName(e.target.value)}
+                placeholder="Enter a name for this artifact"
+                disabled={uploading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-small text-text-primary/70">
+                Description (optional)
+              </label>
+              <textarea
+                value={urlDescription}
+                onChange={(e) => setUrlDescription(e.target.value)}
+                placeholder="Add a description..."
+                disabled={uploading}
+                rows={3}
+                className="w-full min-w-0 rounded-button border border-border bg-primary px-3 py-2 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
               />
             </div>
 
