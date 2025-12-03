@@ -426,11 +426,6 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
           <ul
             ref={containerRef}
             className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""} ${isSpaceHeld ? "pan-mode" : ""}`}
-            style={
-              sidebarOpen
-                ? { paddingRight: "calc(var(--sidebar-width) + 1rem)" }
-                : undefined
-            }
             onMouseDown={handlePanStart}
             onMouseMove={handlePanMove}
             onMouseUp={handlePanEnd}
