@@ -236,9 +236,9 @@ export default function UploadPreviewDialog({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 space-y-4 overflow-y-auto">
+        <div className="flex-1 min-h-0 space-y-4">
           {/* Media Preview */}
-          <div className="relative aspect-video bg-secondary rounded-lg overflow-hidden flex items-center justify-center">
+          <div className="relative bg-secondary rounded-button overflow-hidden flex items-center justify-center max-w-40 mx-auto shadow-lg rotate-3">
             {currentUpload.type === "video" ? (
               <video
                 src={currentUpload.previewUrl}
@@ -291,11 +291,7 @@ export default function UploadPreviewDialog({
 
           {/* Project/Page Selection */}
           {requireProjectSelection && !uploading && (
-            <div className="space-y-4 p-4 bg-secondary rounded-lg">
-              <div className="text-small font-medium text-text-primary">
-                Upload to Project
-              </div>
-
+            <div>
               {isLoadingProjects ? (
                 <p className="text-small text-text-secondary">
                   Loading projects...
