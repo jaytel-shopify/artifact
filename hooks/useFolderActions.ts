@@ -32,18 +32,20 @@ export function useFolderActions(
 
       const oldFolderId = project.folder_id;
       const folder = userFolders.find((f) => f.id === folderId);
-      const projectsKey = cacheKeys.projectsData(userId);
 
-      // Optimistically update the cache - this happens synchronously
-      globalMutate(
+      // Optimistically update the cache
+      const projectsKey = cacheKeys.projectsData(userId);
+      await globalMutate(
         projectsKey,
         (currentData: ProjectsData | undefined) => {
           if (!currentData) return currentData;
 
+          // Update the project's folder_id in the cached data
           const updatedProjects = currentData.projects.map((p) =>
             p.id === project.id ? { ...p, folder_id: folderId } : p
           );
 
+          // Update folder counts
           const updatedFolders = currentData.folders.map((f) => {
             if (f.id === folderId) {
               return { ...f, projectCount: f.projectCount + 1 };
@@ -62,27 +64,23 @@ export function useFolderActions(
         { revalidate: false }
       );
 
-      // Show success immediately (optimistic)
-      toast.success(`Moved to ${folder?.name || "folder"}`);
+      try {
+        const { moveProjectToFolder } = await import("@/lib/quick-folders");
+        await moveProjectToFolder(project.id, folderId);
+        toast.success(`Moved to ${folder?.name || "folder"}`);
 
-      // Do server work in background - don't await
-      (async () => {
-        try {
-          const { moveProjectToFolder } = await import("@/lib/quick-folders");
-          await moveProjectToFolder(project.id, folderId);
-
-          // Silently revalidate folder caches in background
-          if (oldFolderId) {
-            globalMutate(cacheKeys.folderData(oldFolderId));
-          }
-          globalMutate(cacheKeys.folderData(folderId));
-        } catch (error) {
-          // Revert optimistic update on error
-          console.error("Failed to move project:", error);
-          toast.error("Failed to move project - reverting");
-          globalMutate(projectsKey);
+        // Revalidate in background to ensure consistency
+        globalMutate(projectsKey);
+        if (oldFolderId) {
+          globalMutate(cacheKeys.folderData(oldFolderId));
         }
-      })();
+        globalMutate(cacheKeys.folderData(folderId));
+      } catch (error) {
+        // Revert optimistic update on error
+        globalMutate(projectsKey);
+        toast.error("Failed to move project");
+        console.error(error);
+      }
     },
     [project, userFolders, userId]
   );
@@ -91,18 +89,20 @@ export function useFolderActions(
     if (!project) return;
 
     const oldFolderId = project.folder_id;
-    const projectsKey = cacheKeys.projectsData(userId);
 
-    // Optimistically update the cache - this happens synchronously
-    globalMutate(
+    // Optimistically update the cache
+    const projectsKey = cacheKeys.projectsData(userId);
+    await globalMutate(
       projectsKey,
       (currentData: ProjectsData | undefined) => {
         if (!currentData) return currentData;
 
+        // Update the project's folder_id to null in the cached data
         const updatedProjects = currentData.projects.map((p) =>
           p.id === project.id ? { ...p, folder_id: null } : p
         );
 
+        // Update folder count
         const updatedFolders = currentData.folders.map((f) => {
           if (f.id === oldFolderId) {
             return { ...f, projectCount: Math.max(0, f.projectCount - 1) };
@@ -118,26 +118,22 @@ export function useFolderActions(
       { revalidate: false }
     );
 
-    // Show success immediately (optimistic)
-    toast.success("Removed from folder");
+    try {
+      const { removeProjectFromFolder } = await import("@/lib/quick-folders");
+      await removeProjectFromFolder(project.id);
+      toast.success("Removed from folder");
 
-    // Do server work in background - don't await
-    (async () => {
-      try {
-        const { removeProjectFromFolder } = await import("@/lib/quick-folders");
-        await removeProjectFromFolder(project.id);
-
-        // Silently revalidate folder cache in background
-        if (oldFolderId) {
-          globalMutate(cacheKeys.folderData(oldFolderId));
-        }
-      } catch (error) {
-        // Revert optimistic update on error
-        console.error("Failed to remove from folder:", error);
-        toast.error("Failed to remove from folder - reverting");
-        globalMutate(projectsKey);
+      // Revalidate in background to ensure consistency
+      globalMutate(projectsKey);
+      if (oldFolderId) {
+        globalMutate(cacheKeys.folderData(oldFolderId));
       }
-    })();
+    } catch (error) {
+      // Revert optimistic update on error
+      globalMutate(projectsKey);
+      toast.error("Failed to remove from folder");
+      console.error(error);
+    }
   }, [project, userId]);
 
   return {

@@ -52,7 +52,8 @@ import {
   removeProjectFromFolder,
 } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
-import type { Project, Artifact, Folder } from "@/types";
+import type { Project } from "@/types";
+import type { Artifact } from "@/types";
 import type { ProjectsData } from "@/hooks/useProjectsData";
 
 interface ProjectCoverData {
@@ -183,116 +184,33 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     }
   };
 
-  const handleMoveToFolder = (folderId: string) => {
+  const handleMoveToFolder = async (folderId: string) => {
+    // Capture all state before async operations (dropdown closes immediately)
     const folder = folders.find((f) => f.id === folderId);
     const folderName = folder?.name || "folder";
     const oldFolderId = project.folder_id;
-    const projectsKey = cacheKeys.projectsData(user?.id);
-
-    // Optimistically update the cache immediately
-    globalMutate(
-      projectsKey,
-      (currentData: ProjectsData | undefined) => {
-        if (!currentData) return currentData;
-
-        const updatedProjects = currentData.projects.map((p) =>
-          p.id === project.id ? { ...p, folder_id: folderId } : p
-        );
-
-        const updatedFolders = currentData.folders.map((f) => {
-          if (f.id === folderId) {
-            return { ...f, projectCount: f.projectCount + 1 };
-          }
-          if (f.id === oldFolderId) {
-            return { ...f, projectCount: Math.max(0, f.projectCount - 1) };
-          }
-          return f;
-        });
-
-        return { projects: updatedProjects, folders: updatedFolders };
-      },
-      { revalidate: false }
-    );
-
-    // Show success immediately
-    toast.success(`Moved to ${folderName}`);
-
-    // Do server work in background
-    (async () => {
-      try {
-        await moveProjectToFolder(project.id, folderId);
-        // Refresh folder caches silently
-        if (oldFolderId) {
-          globalMutate(cacheKeys.folderData(oldFolderId));
-        }
-        globalMutate(cacheKeys.folderData(folderId));
-      } catch (error) {
-        console.error("Failed to move project:", error);
-        toast.error("Failed to move project - reverting");
-        globalMutate(projectsKey);
-      }
-    })();
+    
+    try {
+      await moveProjectToFolder(project.id, folderId);
+      await refreshCaches([folderId, oldFolderId]);
+      toast.success(`Moved to ${folderName}`);
+    } catch (error) {
+      console.error("Failed to move project:", error);
+      toast.error("Failed to move project");
+    }
   };
 
-  const handleRemoveFromFolder = () => {
+  const handleRemoveFromFolder = async () => {
+    // Capture current folder before async operations
     const oldFolderId = project.folder_id;
-    const projectsKey = cacheKeys.projectsData(user?.id);
-    const folderKey = oldFolderId ? cacheKeys.folderData(oldFolderId) : null;
-
-    // Optimistically update the projects cache immediately
-    globalMutate(
-      projectsKey,
-      (currentData: ProjectsData | undefined) => {
-        if (!currentData) return currentData;
-
-        const updatedProjects = currentData.projects.map((p) =>
-          p.id === project.id ? { ...p, folder_id: null } : p
-        );
-
-        const updatedFolders = currentData.folders.map((f) => {
-          if (f.id === oldFolderId) {
-            return { ...f, projectCount: Math.max(0, f.projectCount - 1) };
-          }
-          return f;
-        });
-
-        return { projects: updatedProjects, folders: updatedFolders };
-      },
-      { revalidate: false }
-    );
-
-    // Optimistically update the folder page cache (remove project from list)
-    if (folderKey) {
-      globalMutate(
-        folderKey,
-        (currentData: { folder: Folder; projects: ProjectCoverData[]; canEdit: boolean } | undefined) => {
-          if (!currentData) return currentData;
-
-          return {
-            ...currentData,
-            projects: currentData.projects.filter((p) => p.id !== project.id),
-          };
-        },
-        { revalidate: false }
-      );
+    try {
+      await removeProjectFromFolder(project.id);
+      await refreshCaches([oldFolderId]);
+      toast.success("Removed from folder");
+    } catch (error) {
+      console.error("Failed to remove from folder:", error);
+      toast.error("Failed to remove from folder");
     }
-
-    // Show success immediately
-    toast.success("Removed from folder");
-
-    // Do server work in background
-    (async () => {
-      try {
-        await removeProjectFromFolder(project.id);
-      } catch (error) {
-        console.error("Failed to remove from folder:", error);
-        toast.error("Failed to remove from folder - reverting");
-        globalMutate(projectsKey);
-        if (folderKey) {
-          globalMutate(folderKey);
-        }
-      }
-    })();
   };
 
   const openRename = () => {

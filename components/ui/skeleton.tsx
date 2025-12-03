@@ -109,7 +109,7 @@ function ArtifactCardSkeleton({ className }: { className?: string }) {
  */
 function ProjectsPageSkeleton() {
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-10">
+    <div className="max-w-[1100px] mx-auto p-6 space-y-10">
       {/* Folders Section */}
       <div className="space-y-4">
         <Skeleton className="h-6 w-20" />
@@ -209,3 +209,4 @@ export {
   HomeFeedSkeleton,
   CanvasSkeleton,
 };
+
