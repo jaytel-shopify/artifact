@@ -44,6 +44,7 @@ import { useDragHandlers } from "./useDragHandlers";
 import { getCollectionMetadata } from "@/lib/collection-utils";
 import { getCurrentScrollIndex, scrollToIndex } from "./carousel-utils";
 import { useKeyHeld } from "@/hooks/useKeyHeld";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import "./sortable-carousel.css";
 
 type VideoMetadata = { hideUI?: boolean; loop?: boolean; muted?: boolean };
@@ -213,6 +214,20 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       if (!container) return;
       container.scrollLeft = container.scrollLeft;
     }, [columns, pageId]);
+
+    // Arrow key navigation - override native scroll with smooth scrollToIndex
+    const navigateCarousel = useCallback((dir: number) => {
+      const c = containerRef.current;
+      if (!c) return;
+      const idx = getCurrentScrollIndex(c);
+      const max = c.querySelectorAll(".carousel-item-wrapper:not(.collection-child-hidden)").length - 1;
+      scrollToIndex(c, Math.max(0, Math.min(max, idx + dir)));
+    }, []);
+
+    useKeyboardShortcuts({
+      onArrowLeft: () => navigateCarousel(-1),
+      onArrowRight: () => navigateCarousel(1),
+    });
 
     // Handle pan mode release - animate to nearest snap point
     useLayoutEffect(() => {

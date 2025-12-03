@@ -1,12 +1,17 @@
 import { useEffect } from "react";
 
 interface UseKeyboardShortcutsOptions {
-  // Escape key to exit focus mode
   onEscape?: () => void;
   canEscape?: boolean;
-
-  // Presentation mode toggle (CMD/Ctrl + . or /)
   onTogglePresentationMode?: () => void;
+  onArrowLeft?: () => void;
+  onArrowRight?: () => void;
+}
+
+/** Check if event target is an editable field */
+function isEditableTarget(e: KeyboardEvent): boolean {
+  const t = e.target as HTMLElement;
+  return t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable;
 }
 
 /**
@@ -16,47 +21,39 @@ export function useKeyboardShortcuts({
   onEscape,
   canEscape = false,
   onTogglePresentationMode,
+  onArrowLeft,
+  onArrowRight,
 }: UseKeyboardShortcutsOptions) {
-  // Escape key handler
   useEffect(() => {
-    if (!onEscape || !canEscape) return;
-
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && onEscape) {
+      // Escape
+      if (e.key === "Escape" && canEscape && onEscape) {
         e.preventDefault();
         onEscape();
+        return;
       }
-    }
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onEscape, canEscape]);
+      // Skip if typing in input
+      if (isEditableTarget(e)) return;
 
-  // Presentation mode toggle (CMD+. or CMD+/)
-  useEffect(() => {
-    if (!onTogglePresentationMode) return;
-
-    function handleKeyDown(e: KeyboardEvent) {
-      // Check for CMD+. or CMD+/ (also support Ctrl for Windows/Linux)
-      if ((e.metaKey || e.ctrlKey) && (e.key === "." || e.key === "/")) {
-        // Don't trigger if user is typing in an input
-        const target = e.target as HTMLElement;
-        if (
-          target.tagName === "INPUT" ||
-          target.tagName === "TEXTAREA" ||
-          target.isContentEditable
-        ) {
-          return;
-        }
-
+      // Presentation mode toggle (CMD+. or CMD+/)
+      if ((e.metaKey || e.ctrlKey) && (e.key === "." || e.key === "/") && onTogglePresentationMode) {
         e.preventDefault();
-        if (onTogglePresentationMode) {
-          onTogglePresentationMode();
-        }
+        onTogglePresentationMode();
+        return;
+      }
+
+      // Arrow navigation
+      if (e.key === "ArrowLeft" && onArrowLeft) {
+        e.preventDefault();
+        onArrowLeft();
+      } else if (e.key === "ArrowRight" && onArrowRight) {
+        e.preventDefault();
+        onArrowRight();
       }
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onTogglePresentationMode]);
+  }, [onEscape, canEscape, onTogglePresentationMode, onArrowLeft, onArrowRight]);
 }
