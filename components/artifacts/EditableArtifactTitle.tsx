@@ -74,7 +74,7 @@ export default function EditableArtifactTitle({
     }
   }, [isEditing]);
 
-  const handleDoubleClick = useCallback(() => {
+  const handleClick = useCallback(() => {
     if (!readOnly && onUpdate) {
       setIsEditing(true);
     }
@@ -130,9 +130,11 @@ export default function EditableArtifactTitle({
   if (isEditing) {
     return (
       <div className={`flex items-center gap-2 ${className}`}>
-        <div className="text-text-secondary">
-          {getArtifactIcon(artifactType)}
-        </div>
+        {isUrlArtifact && (
+          <div className="text-text-secondary">
+            {getArtifactIcon(artifactType)}
+          </div>
+        )}
         <Input
           ref={inputRef}
           type="text"
@@ -150,20 +152,22 @@ export default function EditableArtifactTitle({
 
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      {/* Left: Icon */}
-      <div className="text-text-secondary flex-shrink-0">
-        {getArtifactIcon(artifactType)}
-      </div>
+      {/* Left: Icon (only for URL artifacts) */}
+      {isUrlArtifact && (
+        <div className="text-text-secondary flex-shrink-0">
+          {getArtifactIcon(artifactType)}
+        </div>
+      )}
 
       {/* Center: Title */}
       <div
         className={`${
           readOnly
             ? "px-2 py-1"
-            : "cursor-pointer hover:bg-secondary/10 rounded-md px-2 py-1 transition-colors duration-200"
+            : "cursor-text hover:bg-secondary/10 rounded-md px-2 py-1 transition-colors duration-200"
         } flex-1 min-w-0`}
-        onDoubleClick={handleDoubleClick}
-        title={readOnly ? undefined : "Double-click to edit"}
+        onClick={handleClick}
+        title={readOnly ? undefined : "Click to edit"}
       >
         <div className="text-small text-text-secondary truncate select-none">
           {currentTitle || "Untitled"}
