@@ -8,14 +8,19 @@ const USERS_COLLECTION = "users";
 // ==================== USER QUERIES ====================
 
 /**
- * Get a user by their UUID
+ * Get a user by their Quick.id (stored in the `id` field)
+ * 
+ * Note: Quick.db auto-generates UUIDs for document IDs, but we store the 
+ * Quick.id (numeric ID from quick.id.waitForUser()) in the `id` field.
+ * This function queries by the `id` field value, not the document ID.
  */
 export async function getUserById(id: string): Promise<User | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);
 
   try {
-    return await collection.findById(id);
+    const results = await collection.where({ id }).find();
+    return results.length > 0 ? results[0] : null;
   } catch (error) {
     console.error("[Users] User not found by ID:", id, error);
     return null;
@@ -115,31 +120,10 @@ export async function getOrCreateUser(quickIdentity: {
   slackId?: string;
   slackHandle?: string;
 }): Promise<User> {
-  // Check if user already exists
+  // Check if user already exists by ID
   const existingUser = await getUserById(quickIdentity.id);
 
   if (existingUser) {
-    // Optionally update user data if it has changed
-    const needsUpdate =
-      existingUser.name !== quickIdentity.fullName ||
-      existingUser.slack_image_url !== quickIdentity.slackImageUrl ||
-      existingUser.slack_id !== quickIdentity.slackId ||
-      existingUser.slack_handle !== quickIdentity.slackHandle;
-
-    if (needsUpdate) {
-      const updated = await updateUser(existingUser.id, {
-        name: quickIdentity.fullName,
-        slack_image_url: quickIdentity.slackImageUrl,
-        slack_id: quickIdentity.slackId,
-        slack_handle: quickIdentity.slackHandle,
-      });
-      console.log("[Users] Updated existing user:", {
-        id: updated.id,
-        email: updated.email,
-      });
-      return updated;
-    }
-
     return existingUser;
   }
 

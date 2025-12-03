@@ -108,6 +108,42 @@ export async function searchUsers(query: string): Promise<User[]> {
   }
 }
 
+/**
+ * Get a user from /users.json by their Vault ID
+ * Used for profile pages of users who haven't logged in yet
+ */
+export async function getUserFromDirectoryById(userId: string): Promise<User | null> {
+  try {
+    const response = await fetch("/users.json");
+    if (!response.ok) return null;
+
+    const text = await response.text();
+    const lines = text.split("\n").filter((line) => line.trim().length > 0);
+
+    for (const line of lines) {
+      try {
+        const data = JSON.parse(line);
+        if (String(data.id) === userId) {
+          return {
+            id: String(data.id),
+            email: data.email,
+            name: data.name || "",
+            slack_handle: data.slack_handle,
+            slack_image_url: data.slack_image_url,
+            slack_id: data.slack_id,
+            title: data.title,
+          };
+        }
+      } catch {
+        // Skip invalid lines
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 // ==================== ACCESS MANAGEMENT ====================
 
 /**

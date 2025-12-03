@@ -1,5 +1,6 @@
 import useSWR from "swr";
 import { waitForQuick } from "@/lib/quick";
+import { getUserFromDirectoryById } from "@/lib/access-control";
 import type { Artifact, ArtifactWithCreator, User } from "@/types";
 
 async function fetchUserArtifacts(userId: string): Promise<Artifact[]> {
@@ -15,8 +16,15 @@ async function fetchUserArtifacts(userId: string): Promise<Artifact[]> {
 async function fetchUserInfo(userId: string): Promise<User | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection("users");
-  const userData = await collection.findById(userId);
-  return userData ? (userData as User) : null;
+
+  // First try Quick.db
+  const results = await collection.where({ id: userId }).find();
+  if (results.length > 0) {
+    return results[0] as User;
+  }
+
+  // Fall back to /users.json for users who haven't logged in
+  return await getUserFromDirectoryById(userId);
 }
 
 export function useUserArtifacts(userId: string | null) {
