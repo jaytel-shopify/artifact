@@ -13,6 +13,7 @@ import type { Artifact } from "@/types";
 export default function DropzoneUploader() {
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
+  const isInternalDrag = useRef(false);
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -146,19 +147,28 @@ export default function DropzoneUploader() {
       );
     }
 
+    // Track when drag starts from within the page
+    function handleDragStart() {
+      isInternalDrag.current = true;
+    }
+
+    function handleDragEnd() {
+      isInternalDrag.current = false;
+    }
+
     function handleDragEnter(evt: DragEvent) {
-      if (!hasFilesOrUrl(evt)) return;
+      if (!hasFilesOrUrl(evt) || isInternalDrag.current) return;
       dragDepth.current += 1;
       setDragging(true);
     }
 
     function handleDragOver(evt: DragEvent) {
-      if (!hasFilesOrUrl(evt)) return;
+      if (!hasFilesOrUrl(evt) || isInternalDrag.current) return;
       evt.preventDefault();
     }
 
     function handleDragLeave(evt: DragEvent) {
-      if (!hasFilesOrUrl(evt)) return;
+      if (!hasFilesOrUrl(evt) || isInternalDrag.current) return;
       dragDepth.current = Math.max(0, dragDepth.current - 1);
       if (dragDepth.current === 0) {
         setDragging(false);
@@ -166,7 +176,11 @@ export default function DropzoneUploader() {
     }
 
     async function handleDrop(evt: DragEvent) {
-      if (!hasFilesOrUrl(evt)) return;
+      // Reset internal drag flag on drop
+      const wasInternalDrag = isInternalDrag.current;
+      isInternalDrag.current = false;
+
+      if (!hasFilesOrUrl(evt) || wasInternalDrag) return;
       evt.preventDefault();
       dragDepth.current = 0;
       setDragging(false);
@@ -181,16 +195,28 @@ export default function DropzoneUploader() {
         evt.dataTransfer?.getData("text/uri-list") ||
         evt.dataTransfer?.getData("text/plain");
       if (uri) {
-        handleUrlAdd(uri.trim());
+        const trimmedUri = uri.trim();
+        // Validate it's a proper URL
+        try {
+          new URL(trimmedUri);
+        } catch {
+          // Not a valid URL, ignore
+          return;
+        }
+        handleUrlAdd(trimmedUri);
       }
     }
 
+    document.addEventListener("dragstart", handleDragStart);
+    document.addEventListener("dragend", handleDragEnd);
     window.addEventListener("dragenter", handleDragEnter);
     window.addEventListener("dragover", handleDragOver);
     window.addEventListener("dragleave", handleDragLeave);
     window.addEventListener("drop", handleDrop);
 
     return () => {
+      document.removeEventListener("dragstart", handleDragStart);
+      document.removeEventListener("dragend", handleDragEnd);
       window.removeEventListener("dragenter", handleDragEnter);
       window.removeEventListener("dragover", handleDragOver);
       window.removeEventListener("dragleave", handleDragLeave);

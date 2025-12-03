@@ -1,19 +1,49 @@
 "use client";
 
-import { Globe, Play, FileText, Type } from "lucide-react";
+import { Globe, Play, Type } from "lucide-react";
+import { useRef, useCallback } from "react";
+import { useVideoPool } from "@/hooks/useVideoPool";
 import type { Artifact } from "@/types";
 
 interface ArtifactThumbnailProps {
   artifact: Artifact;
   className?: string;
   activeViewTransition?: boolean;
+  /** Enable video playback on hover (default: true for video artifacts) */
+  enableVideoHover?: boolean;
 }
 
 export default function ArtifactThumbnail({
   artifact,
   className = "",
   activeViewTransition = false,
+  enableVideoHover = true,
 }: ArtifactThumbnailProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { requestVideo, releaseVideo } = useVideoPool();
+
+  const handleMouseEnter = useCallback(() => {
+    if (artifact.type !== "video" || !enableVideoHover) return;
+    if (!containerRef.current) return;
+
+    requestVideo(
+      `thumbnail-${artifact.id}`,
+      artifact.source_url,
+      containerRef.current
+    );
+  }, [
+    artifact.id,
+    artifact.source_url,
+    artifact.type,
+    enableVideoHover,
+    requestVideo,
+  ]);
+
+  const handleMouseLeave = useCallback(() => {
+    if (artifact.type !== "video" || !enableVideoHover) return;
+    releaseVideo();
+  }, [artifact.type, enableVideoHover, releaseVideo]);
+
   const baseClasses = `
     shadow-sm
     overflow-hidden
@@ -54,7 +84,12 @@ export default function ArtifactThumbnail({
       const thumbnailUrl = (artifact.metadata as any)?.thumbnail_url;
       if (thumbnailUrl) {
         return (
-          <div className={baseClasses}>
+          <div
+            ref={containerRef}
+            className={`${baseClasses} relative`}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
             <img
               src={thumbnailUrl}
               alt={artifact.name}
@@ -63,6 +98,12 @@ export default function ArtifactThumbnail({
               width={artifact.metadata.width}
               height={artifact.metadata.height}
             />
+            {/* Play icon indicator */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-12 h-12 rounded-full bg-black/40 backdrop-blur-sm flex items-center justify-center opacity-60 group-hover:opacity-0 transition-opacity duration-200">
+                <Play className="w-5 h-5 text-white ml-0.5" fill="white" />
+              </div>
+            </div>
           </div>
         );
       }

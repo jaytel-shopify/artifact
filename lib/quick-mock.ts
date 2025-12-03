@@ -217,7 +217,7 @@ function init() {
       file_path: null,
       name: "Sample Video - Big Buck Bunny",
       description: "A sample video with a clean and modern look",
-      published: false,
+      published: true,
       creator_id: MOCK_USER_ID,
       metadata: {
         duration: 634,
@@ -253,7 +253,7 @@ function init() {
       file_path: null,
       name: "Sample Video - For Bigger Blazes",
       description: "A sample video with a clean and modern look",
-      published: false,
+      published: true,
       creator_id: MOCK_USER_ID,
       metadata: {
         duration: 15,
