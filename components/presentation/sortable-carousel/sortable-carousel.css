@@ -321,6 +321,33 @@
   }
 }
 
+/* Collections in single column mode - hide stack indicator and fit to viewport */
+.carousel-horizontal.single-column .collection-stack-card {
+  display: none;
+}
+
+.carousel-horizontal.single-column .carousel-item-wrapper.is-collection {
+  margin-bottom: 0;
+}
+
+.carousel-horizontal.single-column
+  .carousel-item-wrapper.is-collection
+  .carousel-item-content-wrapper {
+  padding-bottom: 0;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.carousel-horizontal.single-column
+  .carousel-item-wrapper.is-collection
+  .carousel-item {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
 /* ==========================================================================
    Collection Mode Indicators
    ========================================================================== */

@@ -262,9 +262,11 @@ function PresentationPageInner({
     [isFollowing, followedUser, followUser, stopFollowing]
   );
 
-  // Auto-disable fit mode when columns > 1
+  // Auto-enable fit mode when columns = 1, disable when columns > 1
   useEffect(() => {
-    if (columns > 1 && fitMode) {
+    if (columns === 1 && !fitMode) {
+      setFitMode(true);
+    } else if (columns > 1 && fitMode) {
       setFitMode(false);
     }
   }, [columns, fitMode]);
