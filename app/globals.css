@@ -440,6 +440,8 @@
 @theme inline {
   --font-sans: var(--font-family-primary);
 
+  --color-dark: var(--c-dark);
+  --color-light: var(--c-light);
   --color-background: var(--c-background);
   --color-primary: var(--c-primary);
   --color-secondary: var(--c-secondary);

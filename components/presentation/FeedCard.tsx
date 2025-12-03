@@ -41,29 +41,30 @@ export default function FeedCard({
         />
       </Link>
 
-      <div className="col-span-1 col-start-1 row-start-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:p-4 flex justify-between items-center">
-        <Link href={`/user/?id=${artifact.creator?.id}`}>
-          <span className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-primary/80 backdrop-blur-md gap-2">
-            <UserAvatar
-              id={artifact.creator?.id}
-              email={artifact.creator?.email}
-              name={artifact.creator?.name}
-              imageUrl={artifact.creator?.slack_image_url}
-              size="sm"
-            />
-            <h3 className="text-small text-text-primary line-clamp-1 overflow-ellipsis">
-              {artifact.creator?.name}
-            </h3>
-          </span>
+      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 md:p-4 flex justify-between items-center">
+        <Link
+          href={`/user/?id=${artifact.creator?.id}`}
+          className="pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark transition-colors"
+        >
+          <UserAvatar
+            id={artifact.creator?.id}
+            email={artifact.creator?.email}
+            name={artifact.creator?.name}
+            imageUrl={artifact.creator?.slack_image_url}
+            size="sm"
+          />
+          <h3 className="text-small text-light line-clamp-1 overflow-ellipsis">
+            {artifact.creator?.name}
+          </h3>
         </Link>
         <div className="relative z-10 flex gap-2">
           <button
             onClick={handleLike}
             disabled={!canReact}
-            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-text-primary transition-colors ${
+            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light transition-colors ${
               userLiked
-                ? "bg-primary"
-                : "bg-primary/80 backdrop-blur-md hover:bg-primary"
+                ? "bg-dark"
+                : "bg-dark/35 backdrop-blur-md hover:bg-dark"
             } ${!canReact ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span className="tabular-nums">
@@ -74,10 +75,10 @@ export default function FeedCard({
           <button
             onClick={handleDislike}
             disabled={!canReact}
-            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-text-primary transition-colors ${
+            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light transition-colors ${
               userDisliked
-                ? "bg-primary"
-                : "bg-primary/80 backdrop-blur-md hover:bg-primary"
+                ? "bg-dark"
+                : "bg-dark/35 backdrop-blur-md hover:bg-dark"
             } ${!canReact ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span className="tabular-nums">
