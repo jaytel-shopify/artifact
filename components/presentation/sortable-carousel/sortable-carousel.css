@@ -236,6 +236,11 @@
   user-select: none;
 }
 
+/* Only apply full width in fit mode (single column) */
+.carousel-horizontal.fit-mode .carousel-item-content {
+  width: auto;
+}
+
 .carousel-item:focus-visible:not(.carousel-item-wrapper.active .carousel-item) {
   outline: none;
 }
