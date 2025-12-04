@@ -15,7 +15,8 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white! hover:bg-destructive/90 focus-visible:ring-destructive/20",
         outline: "bg-background hover:bg-secondary hover:text-text-primary",
-        primary: "button-primary",
+        primary:
+          "button-primary before:transition-transform before:duration-1000 before:ease-extreme hover:before:scale-x-105 hover:before:scale-y-98",
         secondary: "bg-primary/50 text-text-primary hover:bg-primary/80",
         ghost:
           "hover:bg-primary text-text-primary border-transparent hover:text-text-primary hover:shadow-md active:shadow-none",
@@ -49,11 +50,19 @@ function Button({
   size,
   asChild = false,
   href,
+  children,
   ...props
 }: ButtonProps) {
   const classes = cn(
     buttonVariants({ variant, size, className }),
     "text-small"
+  );
+
+  const isPrimary = variant === "primary";
+  const content = isPrimary ? (
+    <span className="relative">{children}</span>
+  ) : (
+    children
   );
 
   if (href) {
@@ -63,7 +72,9 @@ function Button({
         href={href}
         data-slot="button"
         className={classes}
-      />
+      >
+        {content}
+      </Link>
     );
   }
 
@@ -74,7 +85,9 @@ function Button({
       data-slot="button"
       className={classes}
       {...(props as React.ComponentProps<"button">)}
-    />
+    >
+      {content}
+    </Comp>
   );
 }
 
