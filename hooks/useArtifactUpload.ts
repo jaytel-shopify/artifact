@@ -6,6 +6,7 @@ import {
   validateFile,
 } from "@/lib/quick-storage";
 import { generateAndUploadThumbnail } from "@/lib/video-thumbnails";
+import { generateAndUploadUrlScreenshot } from "@/lib/url-screenshots";
 import {
   DEFAULT_VIEWPORT_KEY,
   getViewportDimensions,
@@ -387,7 +388,7 @@ export function useArtifactUpload({
           }
         }
 
-        await createArtifactInternal(
+        const artifact = await createArtifactInternal(
           {
             type: "url",
             source_url: url,
@@ -401,6 +402,13 @@ export function useArtifactUpload({
           },
           effectiveContext
         );
+
+        // Generate screenshot asynchronously for URL artifacts
+        if (artifact) {
+          generateAndUploadUrlScreenshot(url, artifact.id).catch((err) => {
+            console.error("URL screenshot generation failed:", err);
+          });
+        }
 
         toast.success("Successfully added URL artifact");
       } catch (e: unknown) {
