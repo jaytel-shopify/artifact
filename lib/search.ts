@@ -55,7 +55,7 @@ export async function searchResources(
   // Search all three in parallel
   const [projects, publishedArtifacts, users] = await Promise.all([
     searchProjectsWithCovers(normalizedQuery, userId, quick),
-    searchPublishedArtifacts(normalizedQuery, quick),
+    searchPublishedArtifacts(normalizedQuery, userId, quick),
     searchUsers(normalizedQuery, quick),
   ]);
 
@@ -172,9 +172,11 @@ async function searchProjectsWithCovers(
 /**
  * Search for published artifacts by name
  * Uses .where() to filter by published at the database level
+ * Results are sorted with the user's own artifacts first
  */
 async function searchPublishedArtifacts(
   normalizedQuery: string,
+  userId: string,
   quick: any
 ): Promise<Artifact[]> {
   const collection = quick.db.collection("artifacts");
@@ -183,9 +185,18 @@ async function searchPublishedArtifacts(
   const publishedArtifacts = await collection.where({ published: true }).find();
 
   // Client-side filtering for name substring match (case-insensitive)
-  return publishedArtifacts.filter((artifact: Artifact) =>
+  const matchingArtifacts = publishedArtifacts.filter((artifact: Artifact) =>
     artifact.name.toLowerCase().includes(normalizedQuery)
   );
+
+  // Sort with user's own artifacts first
+  return matchingArtifacts.sort((a: Artifact, b: Artifact) => {
+    const aIsOwn = a.creator_id === userId;
+    const bIsOwn = b.creator_id === userId;
+    if (aIsOwn && !bIsOwn) return -1;
+    if (!aIsOwn && bIsOwn) return 1;
+    return 0;
+  });
 }
 
 /**
