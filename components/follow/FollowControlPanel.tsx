@@ -58,7 +58,7 @@ export default function FollowControlPanel() {
             <h3 className="font-bold text-small">Follow Mode</h3>
             <div className="flex gap-2">
               {followers.length > 0 && (
-                <span className="text-small bg-primary text-text-primary px-2 py-1 rounded-full text-medium">
+                <span className="text-small bg-primary text-text-primary px-2 py-1 rounded-full">
                   {followers.length} follower{followers.length !== 1 ? "s" : ""}
                 </span>
               )}
@@ -77,7 +77,7 @@ export default function FollowControlPanel() {
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="text-medium text-small truncate">
+                  <div className="text-small truncate">
                     Following {followedUser.name || followedUser.email}
                   </div>
                   {followedUser.title && (
@@ -101,7 +101,7 @@ export default function FollowControlPanel() {
           {/* Show if you have followers (auto-leading) */}
           {!isFollowing && followers.length > 0 && (
             <div className="bg-primary border-2 border-border rounded p-3">
-              <div className="text-medium text-small mb-1">
+              <div className="text-small mb-1">
                 🎯 Broadcasting to {followers.length} follower
                 {followers.length !== 1 ? "s" : ""}
               </div>
@@ -132,7 +132,7 @@ export default function FollowControlPanel() {
                     <DialogTitle>Follow a User</DialogTitle>
                     <DialogDescription>
                       Select a user to follow their actions in real-time.
-                      They'll automatically become a leader.
+                      They&apos;ll automatically become a leader.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-2 mt-4">
@@ -156,7 +156,7 @@ export default function FollowControlPanel() {
                               />
                             )}
                             <div className="flex-1 text-left min-w-0">
-                              <div className="text-medium truncate">
+                              <div className="text-small truncate">
                                 {user.name || user.email}
                               </div>
                               {user.title && (
@@ -183,7 +183,7 @@ export default function FollowControlPanel() {
           {/* Show current followers */}
           {!isFollowing && followers.length > 0 && (
             <div className="pt-2 border-t-2 border-border">
-              <div className="text-medium text-text-secondary mb-2">
+              <div className="text-small text-text-secondary mb-2">
                 Current Followers:
               </div>
               <div className="space-y-1">

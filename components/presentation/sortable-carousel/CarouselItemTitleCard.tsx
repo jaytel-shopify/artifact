@@ -11,14 +11,14 @@ export function CarouselItemTitleCard({
 }: CarouselItemTitleCardProps) {
   return (
     <div className="@container w-full h-full aspect-video bg-primary border-border border">
-      <div className="w-full h-full flex flex-col items-center justify-center p-2 @[400px]:p-4 @[600px]:p-4 @[800px]:p-6 text-center">
+      <div className="w-full h-full flex flex-col items-center justify-center p-[6cqw] text-center">
         {headline && (
-          <h1 className="text-medium text-[min(4cqw,2rem)] text-text-primary mb-2 select-none">
+          <h1 className="text-medium text-[clamp(0.5rem,6cqw,3rem)] text-text-primary mb-[2cqw] select-none text-balance">
             {headline}
           </h1>
         )}
         {subheadline && (
-          <p className="text-small text-[min(2cqw,1rem)] text-text-secondary leading-relaxed select-none">
+          <p className="text-small text-[clamp(0.25rem,4cqw,2rem)] text-text-secondary leading-relaxed select-none text-balance">
             {subheadline}
           </p>
         )}
