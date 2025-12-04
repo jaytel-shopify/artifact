@@ -303,9 +303,7 @@ export function SharePanel({
 
           {/* Who has access */}
           <div className="space-y-3">
-            <h3 className="text-text-primary text-medium text-text-secondary">
-              Who has access
-            </h3>
+            <h3 className="text-small text-text-secondary">Who has access</h3>
 
             {loading ? (
               <div className="text-center py-8 text-text-secondary">
@@ -316,10 +314,10 @@ export function SharePanel({
                 No one has access yet
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {/* Owner */}
                 {owner && (
-                  <div className="flex items-center gap-3 py-3">
+                  <div className="flex items-center gap-3">
                     <UserAvatar
                       email={owner.user_email}
                       name={owner.user_name || owner.user_email}
@@ -344,7 +342,7 @@ export function SharePanel({
                 {otherUsers.map((access) => (
                   <div
                     key={access.id}
-                    className="flex items-center gap-3 py-3 group"
+                    className="flex items-center gap-3 group"
                   >
                     <UserAvatar
                       email={access.user_email}
