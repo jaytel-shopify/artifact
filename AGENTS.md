@@ -14,11 +14,16 @@ To install: `npm install -g @shopify/quick`
 Deploy with `quick deploy dir your-subdomain`
 This will upload the files in `dir` and be hosted at your-subdomain.quick.shopify.io
 If a site already exists, a confirmation (y/n) will be presented to allow overwriting.
+You should never attempt to bypass or automate confirmation. This is intended for users to confirm their actions.
 
 When deploying, only deploy the output files. If you use a build system like vite, use /dist for example. This is for the final html & assets.
 
 ## Dev Environment
 
+Sites can be previewed locally for rapid development iteration and testing using `quick serve`.
+This will boot a small server in the current directory that will serve the site locally with full API functionality.
+
+Important Notes:
 - Quick sites are for frontend static assets only.
 - Do not create anything that requires a backend.
 - Each site must have an index.html file
@@ -60,14 +65,6 @@ const published = await posts
   .limit(10)
   .find();
 
-// Query by array of ids
-const postIds = ["123", "456", "789"];
-const published = await posts
-  .where({ id: { $in: postIds } })
-  .orderBy("created_at", "desc")
-  .orderBy("position", "asc")
-  .find();
-
 // Real-time
 const unsubscribe = posts.subscribe({
   onCreate: (doc) => console.log("New:", doc),
@@ -76,45 +73,147 @@ const unsubscribe = posts.subscribe({
 });
 ```
 
-### AI (quick.ai)
+### AI (quick.ai), Agentic Workflows
 
-LLM proxy chat and embeddings API.
+Quick AI allows full utilization of OpenAI Client libraries in the browser via Shopify LLM proxy.
 
+Include Quick Client Library:
+```html
+<script src="/client/quick.js"></script>
+```
+
+Initialize the client library:
 ```javascript
-// Simple Q&A
-const answer = await quick.ai.ask("What is the capital of France?");
-// Returns: "Paris is the capital of France..."
+import OpenAI from 'https://cdn.jsdelivr.net/npm/openai/+esm';
 
-// Chat with system context
-const response = await quick.ai.askWithSystem(
-  "You are a helpful assistant",
-  "Explain quantum computing"
-);
-// Returns: "Quantum computing is..."
-
-// Full chat with options
-const chat = await quick.ai.chat(
-  [
-    { role: "system", content: "You are helpful" },
-    { role: "user", content: "Hello" },
-  ],
-  {
-    model: "gpt-4",
-    temperature: 0.8,
-    max_tokens: 500,
-  }
-);
-// Returns: { choices: [{ message: { content: "Hello! How can I help?" } }] }
-
-// Streaming
-await quick.ai.chatStream(messages, (contentChunk, fullContent) => {
-  process.stdout.write(contentChunk || "");
+const openaiClient = new OpenAI({
+  baseURL: `/api/ai`,
+  apiKey: 'not-needed', // Quick AI is pre-authenticated, this is a dummy value
+  dangerouslyAllowBrowser: true
 });
-// Callback receives: (contentChunk: string, fullContent: string)
+```
 
-// Embeddings
-const embeddings = await quick.ai.embed("Hello world");
-// Returns: [0.123, -0.456, ...]
+Use OpenAI Responses API to create and stream responses:
+```javascript
+// Stream a chat response
+const messages = [
+  { role: 'system', content: 'You are a helpful assistant' },
+  { role: 'user', content: 'Explain async/await in JavaScript' }
+];
+
+const stream = await openaiClient.chat.completions.create({
+  model: 'gpt-5.1',
+  messages: messages,
+  temperature: 1,
+  stream: true,
+});
+
+let fullResponse = '';
+for await (const chunk of stream) {
+  const content = chunk.choices[0]?.delta?.content;
+  if (content) {
+    fullResponse += content;
+    // Update UI with each chunk
+    document.getElementById('output').textContent = fullResponse;
+  }
+}
+```
+
+Use OpenAI Agents SDK for more advance use-cases such as Agentic Flows, MCP integration and more.
+
+Basic Agent example
+```javascript
+import OpenAI from 'https://cdn.jsdelivr.net/npm/openai/+esm';
+import { Agent, run, setDefaultOpenAIClient } from 'https://cdn.jsdelivr.net/npm/@openai/agents/+esm';
+
+const openaiClient = new OpenAI({
+  baseURL: `${window.location.origin}/api/ai`,
+  apiKey: 'not-needed',
+  dangerouslyAllowBrowser: true
+});
+
+// Configure Agent SDK
+OpenAIAgents.setDefaultOpenAIClient(openaiClient);
+
+// Create Agent
+const agent = new OpenAIAgents.Agent({
+  name: 'My Assistant',
+  model: 'gpt-5.1',
+  instructions: 'You are a helpful assistant'
+});
+
+// Run agent with streaming
+const result = await OpenAIAgents.run(agent, 'Explain quantum computing', {
+  stream: true
+});
+
+// Process streaming response
+for await (const event of result) {
+  if (event.type === 'raw_model_stream_event') {
+    const content = event.data?.delta?.content || event.data?.delta;
+    if (content) {
+      document.getElementById('output').textContent += content;
+    }
+  }
+}
+
+await result.completed;
+```
+
+Use QuickMCPServerStreamableHttp.js to interoperate with MCP servers:
+
+```html
+<!-- Load QuickMCPServerStreamableHttp -->
+<script src="https://quick.shopify.io/QuickMCPServerStreamableHttp.js"></script>
+
+<script type="module">
+import OpenAI from 'https://cdn.jsdelivr.net/npm/openai/+esm';
+import { Agent, run, setDefaultOpenAIClient } from 'https://cdn.jsdelivr.net/npm/@openai/agents/+esm';
+
+const openaiClient = new OpenAI({
+  baseURL: `${window.location.origin}/api/ai`,
+  apiKey: 'not-needed',
+  dangerouslyAllowBrowser: true
+});
+
+setDefaultOpenAIClient(openaiClient);
+
+// Initialize MCP server for tool access
+const mcpServer = new QuickMCPServerStreamableHttp({
+  url: `${window.location.origin}/api/ai/mcp/vault_set`,
+  name: 'vault_set'
+});
+await mcpServer.connect();
+
+// Create Agent with MCP tools
+const agent = new Agent({
+  name: 'My Assistant',
+  model: 'gpt-5.1',
+  instructions: 'You are a helpful assistant with database access',
+  mcpServers: [mcpServer]
+});
+
+// Run agent with streaming
+const result = await run(agent, 'What is Shopify Vacation Policy in Canada?', {
+  stream: true
+});
+
+// Process streaming response with tool call logging
+for await (const event of result) {
+  if (event.type === 'raw_model_stream_event') {
+    const content = event.data?.delta?.content || event.data?.delta;
+    if (content) {
+      document.getElementById('output').textContent += content;
+    }
+  }
+
+  // Log when tools are used
+  if (event.type === 'run_item_stream_event' && event.name === 'tool_call_started') {
+    console.log(`🔧 Tool: ${event.item.name}`);
+  }
+}
+
+await result.completed;
 ```
 
 ### File Storage (quick.fs)
