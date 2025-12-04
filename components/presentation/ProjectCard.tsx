@@ -35,7 +35,6 @@ import {
   removeProjectFromFolder,
 } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
-import type { Project } from "@/types";
 import type { Artifact } from "@/types";
 import type { ProjectsData } from "@/hooks/useProjectsData";
 

@@ -80,6 +80,8 @@ export default function ArtifactThumbnail({
               alt={artifact.name}
               className="w-full h-full object-cover"
               loading="lazy"
+              width={artifact.metadata.width}
+              height={artifact.metadata.height}
             />
           </div>
         );
@@ -87,7 +89,9 @@ export default function ArtifactThumbnail({
       // Fallback to Globe icon if no thumbnail
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-secondary/20 flex items-center justify-center aspect-[16/11]">
+          <div
+            className={`w-full h-full bg-secondary/20 flex items-center justify-center aspect-[${artifact.metadata.width || 16}/${artifact.metadata.height || 9}]`}
+          >
             <Globe className="w-8 h-8 text-text-secondary" />
           </div>
         </div>
@@ -143,9 +147,14 @@ export default function ArtifactThumbnail({
 
     case "titleCard":
       return (
-        <div className={baseClasses}>
-          <div className="w-full h-full bg-gradient-to-br from-secondary to-card flex items-center justify-center aspect-[16/9]">
-            <Type className="w-8 h-8 text-text-primary" />
+        <div className={`${baseClasses} @container`}>
+          <div className="w-full h-full bg-primary flex flex-col gap-[1cqw] items-center justify-center aspect-[16/9]">
+            <p className="text-text-primary text-small text-[clamp(0.5rem,6cqw,3rem)] text-balance">
+              {artifact.metadata.headline}
+            </p>
+            <p className="text-text-secondary text-small text-[clamp(0.25rem,6cqw,3rem)] text-balance">
+              {artifact.metadata.subheadline}
+            </p>
           </div>
         </div>
       );

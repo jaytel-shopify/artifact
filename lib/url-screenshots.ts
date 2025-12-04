@@ -15,18 +15,22 @@ const SCREENSHOT_SERVICE_URL =
  */
 export async function generateAndUploadUrlScreenshot(
   url: string,
-  artifactId: string
+  artifactId: string,
+  width?: number,
+  height?: number
 ): Promise<void> {
   try {
     console.log(`Generating screenshot for URL artifact ${artifactId}: ${url}`);
 
     // Call the screenshot service
-    const screenshotUrl = `${SCREENSHOT_SERVICE_URL}?url=${encodeURIComponent(url)}`;
+    const screenshotUrl = `${SCREENSHOT_SERVICE_URL}?url=${encodeURIComponent(url)}&width=${width || 1280}&height=${height || 800}`;
     const response = await fetch(screenshotUrl);
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Screenshot service failed: ${response.status} - ${errorText}`);
+      throw new Error(
+        `Screenshot service failed: ${response.status} - ${errorText}`
+      );
     }
 
     // Get the screenshot as a blob

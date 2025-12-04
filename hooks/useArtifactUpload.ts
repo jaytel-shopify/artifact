@@ -429,7 +429,12 @@ export function useArtifactUpload({
 
         // Generate screenshot asynchronously for URL artifacts
         if (artifact) {
-          generateAndUploadUrlScreenshot(url, artifact.id).catch((err) => {
+          generateAndUploadUrlScreenshot(
+            url,
+            artifact.id,
+            dims.width,
+            dims.height
+          ).catch((err) => {
             console.error("URL screenshot generation failed:", err);
           });
         }
