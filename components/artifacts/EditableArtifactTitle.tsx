@@ -182,7 +182,7 @@ export default function EditableArtifactTitle({
         className={`${
           readOnly
             ? "px-2 py-1"
-            : "cursor-text hover:bg-primary border border-border rounded-md px-2 py-1 transition-colors duration-200"
+            : "cursor-text hover:bg-primary border border-transparent rounded-md px-2 py-1 transition-colors duration-200"
         } flex-1 min-w-0`}
         onClick={handleClick}
         title={readOnly ? undefined : "Click to edit"}

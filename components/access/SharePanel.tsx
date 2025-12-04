@@ -298,11 +298,6 @@ export function SharePanel({
                   {selectedAccessLevel}
                 </Button>
               )}
-
-              <p className="text-small text-text-secondary">
-                Search and select people to invite. They&apos;ll receive a Slack
-                notification.
-              </p>
             </div>
           )}
 
