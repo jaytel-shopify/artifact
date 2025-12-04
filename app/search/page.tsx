@@ -103,8 +103,8 @@ export default function SearchPage() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center">
-      <div className="max-w-[1100px] w-full p-6 space-y-15">
+    <div className="min-h-screen py-8">
+      <div className="max-w-[1100px] w-full mx-auto px-6 space-y-15">
         <ProjectsSection projects={results.projects} />
         <ArtifactsSection
           artifacts={results.publishedArtifacts}
