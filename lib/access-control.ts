@@ -98,8 +98,7 @@ export async function searchUsers(query: string): Promise<User[]> {
       .filter(
         (user) =>
           user.name.toLowerCase().includes(lowerQuery) ||
-          (user.slack_handle &&
-            user.slack_handle.toLowerCase().includes(lowerQuery))
+          (user.title && user.title.toLowerCase().includes(lowerQuery))
       )
       .slice(0, 50); // Limit to 50 results
   } catch (error) {
