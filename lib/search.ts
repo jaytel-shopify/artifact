@@ -189,7 +189,7 @@ async function searchPublishedArtifacts(
 }
 
 /**
- * Search for users by name, email, or slack handle
+ * Search for users by name
  * Falls back to database users in local dev when /users.json isn't available
  */
 async function searchUsers(
@@ -204,14 +204,17 @@ async function searchUsers(
     return users;
   }
 
+  // Normalize to remove diacritics (e.g., "ë" -> "e", "é" -> "e")
+  const normalize = (str: string) =>
+    str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+  const normalizedSearchQuery = normalize(normalizedQuery);
+
   // Fall back to searching users in the database (for local dev with mock data)
   try {
     const dbUsers: User[] = await quick.db.collection("users").find();
-    return dbUsers.filter(
-      (user) =>
-        user.name?.toLowerCase().includes(normalizedQuery) ||
-        user.email?.toLowerCase().includes(normalizedQuery) ||
-        user.slack_handle?.toLowerCase().includes(normalizedQuery)
+    return dbUsers.filter((user) =>
+      normalize(user.name || "").includes(normalizedSearchQuery)
     );
   } catch {
     return [];

@@ -92,14 +92,14 @@ export async function searchUsers(query: string): Promise<User[]> {
       return users.slice(0, 50); // Return first 50 if no query
     }
 
-    const lowerQuery = query.toLowerCase().trim();
+    // Normalize to remove diacritics (e.g., "ë" -> "e", "é" -> "e")
+    const normalize = (str: string) =>
+      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+    const normalizedQuery = normalize(query.trim());
 
     return users
-      .filter(
-        (user) =>
-          user.name.toLowerCase().includes(lowerQuery) ||
-          (user.title && user.title.toLowerCase().includes(lowerQuery))
-      )
+      .filter((user) => normalize(user.name).includes(normalizedQuery))
       .slice(0, 50); // Limit to 50 results
   } catch (error) {
     console.error("[AccessControl] Error searching users:", error);
