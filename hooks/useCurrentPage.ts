@@ -22,22 +22,18 @@ export function useCurrentPage(pages: Page[], projectId?: string) {
     [searchParams, router, pathname]
   );
 
-  // Initialize with page from URL or first page when pages load
+  // Initialize from URL on first load only - don't override valid state
   useEffect(() => {
     if (pages.length === 0) return;
+    if (currentPageId && pages.find((p) => p.id === currentPageId)) return;
 
-    // Check if pageId from URL is valid
     const pageFromUrl = pageIdFromUrl
       ? pages.find((p) => p.id === pageIdFromUrl)
       : null;
 
     if (pageFromUrl) {
-      // URL has a valid pageId - use it
-      if (currentPageId !== pageFromUrl.id) {
-        setCurrentPageId(pageFromUrl.id);
-      }
-    } else if (!currentPageId || !pages.find((p) => p.id === currentPageId)) {
-      // No valid pageId in URL or state - use first page and update URL
+      setCurrentPageId(pageFromUrl.id);
+    } else {
       const firstPage = pages.find((p) => p.position === 0) || pages[0];
       setCurrentPageId(firstPage.id);
       updateUrl(firstPage.id);

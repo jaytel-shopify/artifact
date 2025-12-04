@@ -31,8 +31,7 @@ export function useSyncedArtifacts(
     () => (pageId ? fetcher(pageId) : []),
     {
       revalidateOnFocus: false,
-      dedupingInterval: 0, // Allow immediate refetching for real-time sync
-      keepPreviousData: true,
+      dedupingInterval: 0,
     }
   );
 
