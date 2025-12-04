@@ -90,7 +90,10 @@ export default function ArtifactThumbnail({
       return (
         <div className={baseClasses}>
           <div
-            className={`w-full h-full bg-secondary/20 flex items-center justify-center aspect-[${artifact.metadata.width || 16}/${artifact.metadata.height || 9}]`}
+            className="w-full h-full bg-secondary/20 flex items-center justify-center"
+            style={{
+              aspectRatio: `${artifact.metadata.width || 16}/${artifact.metadata.height || 9}`,
+            }}
           >
             <Globe className="w-8 h-8 text-text-secondary" />
           </div>

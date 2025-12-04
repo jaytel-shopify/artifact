@@ -107,7 +107,16 @@ export function usePublicArtifacts() {
 
   const addArtifact = (artifact: ArtifactWithCreator) => {
     // Optimistically add artifact to the beginning of SWR cache
-    mutate((current = []) => [artifact, ...current], { revalidate: false });
+    // Check for duplicates to prevent double-adding
+    mutate(
+      (current = []) => {
+        if (current.some((a) => a.id === artifact.id)) {
+          return current; // Already exists, don't add duplicate
+        }
+        return [artifact, ...current];
+      },
+      { revalidate: false }
+    );
   };
 
   const removeArtifact = (artifactId: string) => {

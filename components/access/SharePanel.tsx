@@ -92,8 +92,10 @@ export function SharePanel({
     loadAccessList();
   }, [isOpen, loadAccessList]);
 
-  // Check if current user is owner
+  // Check if current user is owner or editor (both can manage access)
   const isOwner = currentUserAccess === "owner";
+  const canManageAccess =
+    currentUserAccess === "owner" || currentUserAccess === "editor";
 
   // Handle adding a user to the invite list
   const handleAddUser = (user: User | null) => {
@@ -242,8 +244,8 @@ export function SharePanel({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          {/* Invite Section - Only show if user is owner */}
-          {isOwner && (
+          {/* Invite Section - Show if user can manage access (owner or editor) */}
+          {canManageAccess && (
             <div className="space-y-3">
               {/* Search and Access Level */}
               <div className="flex gap-2">
@@ -298,19 +300,12 @@ export function SharePanel({
                   {selectedAccessLevel}
                 </Button>
               )}
-
-              <p className="text-small text-text-secondary">
-                Search and select people to invite. They&apos;ll receive a Slack
-                notification.
-              </p>
             </div>
           )}
 
           {/* Who has access */}
           <div className="space-y-3">
-            <h3 className="text-text-primary text-medium text-text-secondary">
-              Who has access
-            </h3>
+            <h3 className="text-small text-text-secondary">Who has access</h3>
 
             {loading ? (
               <div className="text-center py-8 text-text-secondary">
@@ -321,10 +316,10 @@ export function SharePanel({
                 No one has access yet
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {/* Owner */}
                 {owner && (
-                  <div className="flex items-center gap-3 py-3">
+                  <div className="flex items-center gap-3">
                     <UserAvatar
                       email={owner.user_email}
                       name={owner.user_name || owner.user_email}
@@ -349,7 +344,7 @@ export function SharePanel({
                 {otherUsers.map((access) => (
                   <div
                     key={access.id}
-                    className="flex items-center gap-3 py-3 group"
+                    className="flex items-center gap-3 group"
                   >
                     <UserAvatar
                       email={access.user_email}
@@ -367,8 +362,8 @@ export function SharePanel({
                       </div>
                     </div>
 
-                    {/* Access Level Dropdown - Only owner can change */}
-                    {isOwner ? (
+                    {/* Access Level Dropdown - Owner or editor can change */}
+                    {canManageAccess ? (
                       <Select
                         value={access.access_level}
                         onValueChange={(value) => {
@@ -393,7 +388,8 @@ export function SharePanel({
                           <SelectItem value="viewer">viewer</SelectItem>
                           <SelectItem
                             value="remove"
-                            className="text-destructive"
+                            className="text-small"
+                            style={{ color: "var(--c-destructive)" }}
                           >
                             Remove access
                           </SelectItem>

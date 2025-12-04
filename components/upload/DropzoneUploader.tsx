@@ -27,11 +27,20 @@ export default function DropzoneUploader() {
   // Handle artifact creation - add to public feed if published
   const handleArtifactCreated = useCallback(
     (artifact: Artifact) => {
-      if (artifact.published) {
-        addArtifact(artifact);
+      if (artifact.published && user) {
+        // Attach creator info for proper display in feed
+        addArtifact({
+          ...artifact,
+          creator: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            slack_image_url: user.slack_image_url,
+          },
+        });
       }
     },
-    [addArtifact]
+    [addArtifact, user]
   );
 
   // Refresh caches after upload completes based on context

@@ -23,7 +23,7 @@ function ArtifactImage({
     <img
       src={url}
       alt={alt}
-      className="class=max-w-full max-h-full w-auto h-auto object-contain rounded-card overflow-hidden max-h-full"
+      className="max-w-full max-h-full w-auto h-auto object-contain rounded-card overflow-hidden"
       loading="lazy"
       draggable={false}
       width={width}
@@ -74,24 +74,33 @@ function ArtifactWebsite({
   height?: number;
   fitMode?: boolean;
 }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
+  const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
     const updateScale = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
-        const containerHeight = containerRef.current.offsetHeight;
+      if (wrapperRef.current) {
+        const parentEl = wrapperRef.current.parentElement;
+        if (!parentEl) return;
 
-        const scaleX = containerWidth / width;
-        const scaleY = containerHeight / height;
+        const availableWidth = parentEl.clientWidth;
+        const availableHeight = parentEl.clientHeight;
+
+        const scaleX = availableWidth / width;
+        const scaleY = availableHeight / height;
 
         // Use Math.min to "contain" (fit within bounds)
         const newScale = fitMode
           ? Math.min(scaleX, scaleY)
           : Math.max(scaleX, scaleY) * 1.01;
 
+        // Calculate the actual displayed size
+        const displayWidth = width * newScale;
+        const displayHeight = height * newScale;
+
         setScale(newScale);
+        setContainerSize({ width: displayWidth, height: displayHeight });
       }
     };
 
@@ -99,9 +108,9 @@ function ArtifactWebsite({
     window.addEventListener("resize", updateScale);
 
     let resizeObserver: ResizeObserver | null = null;
-    if (containerRef.current) {
+    if (wrapperRef.current?.parentElement) {
       resizeObserver = new ResizeObserver(updateScale);
-      resizeObserver.observe(containerRef.current);
+      resizeObserver.observe(wrapperRef.current.parentElement);
     }
 
     const timer = setTimeout(updateScale, 100);
@@ -115,12 +124,12 @@ function ArtifactWebsite({
 
   return (
     <div
-      ref={containerRef}
-      className="overflow-hidden relative max-w-full max-h-full"
+      ref={wrapperRef}
+      className="overflow-hidden relative"
       style={{
-        aspectRatio: `${width} / ${height}`,
-        width: "100%",
-        height: "auto",
+        width: containerSize.width || "100%",
+        height: containerSize.height || "100%",
+        maxWidth: "100%",
         maxHeight: "100%",
       }}
     >
@@ -131,7 +140,7 @@ function ArtifactWebsite({
         style={{
           border: 0,
           transform: `scale(${scale})`,
-          transformOrigin: fitMode ? "top center" : "top left",
+          transformOrigin: "top left",
         }}
         allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
         referrerPolicy="no-referrer-when-downgrade"
@@ -214,7 +223,7 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
             url={artifact.source_url}
             width={urlMeta?.width}
             height={urlMeta?.height}
-            fitMode={false}
+            fitMode={true}
           />
         </div>
       );

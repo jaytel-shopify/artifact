@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense, useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTransitionRouter } from "@/hooks/useTransitionRouter";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import useSWR, { mutate as globalMutate } from "swr";
 import { ArrowLeft, MoreVertical } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -242,6 +243,18 @@ function FolderPageContent() {
   }
 
   const backUrl = "/projects/";
+
+  // ESC key navigates back to projects (only when no dialogs are open)
+  const isAnyDialogOpen = renameDialogOpen || accessDialogOpen || deleteDialogOpen;
+  
+  const handleEscape = useCallback(() => {
+    router.push(backUrl);
+  }, [router]);
+
+  useKeyboardShortcuts({
+    onEscape: handleEscape,
+    canEscape: !isAnyDialogOpen,
+  });
 
   async function handleFolderRename(name: string) {
     // Just update local state - EditableTitle already saved to database
