@@ -61,6 +61,8 @@ export default function ColumnControl({
   const rafRef = useRef<number | null>(null);
   const onOverscrollRef = useRef(onOverscroll);
   onOverscrollRef.current = onOverscroll;
+  const onColumnsChangeRef = useRef(onColumnsChange);
+  onColumnsChangeRef.current = onColumnsChange;
 
   // Handle scaleY based on movement delta
   const prevPosRef = useRef(columnToPosition(columns));
@@ -88,9 +90,10 @@ export default function ColumnControl({
     []
   );
 
+  // Sync from prop (external changes don't trigger onColumnsChange)
   useEffect(() => {
-    onColumnsChange(localColumns);
-  }, [localColumns, onColumnsChange]);
+    setLocalColumns(columns);
+  }, [columns]);
 
   // Set initial position on mount
   useLayoutEffect(() => {
@@ -260,10 +263,11 @@ export default function ColumnControl({
         const newColumn = nearestIndex + 1;
         if (newColumn !== localColumns && newColumn >= 1 && newColumn <= 8) {
           setLocalColumns(newColumn);
+          onColumnsChange(newColumn);
         }
       }
     },
-    [localColumns]
+    [localColumns, onColumnsChange]
   );
 
   const handleLostPointerCapture = useCallback(() => {
@@ -276,7 +280,8 @@ export default function ColumnControl({
 
   const handleDotClick = useCallback((columnIndex: number) => {
     setLocalColumns(columnIndex);
-  }, []);
+    onColumnsChange(columnIndex);
+  }, [onColumnsChange]);
 
   // Keyboard controls: keys 1-8 set column count
   useEffect(() => {
@@ -293,6 +298,7 @@ export default function ColumnControl({
       const key = parseInt(e.key, 10);
       if (key >= 1 && key <= 8) {
         setLocalColumns(key);
+        onColumnsChangeRef.current(key);
       }
     };
 

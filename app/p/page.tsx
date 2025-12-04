@@ -479,6 +479,7 @@ function PresentationPageInner({
       user,
       currentPageId,
       columnControlsOverscrollAmount,
+      columns, // Required for ColumnControl to update when columns changes externally
     ]
   );
 
