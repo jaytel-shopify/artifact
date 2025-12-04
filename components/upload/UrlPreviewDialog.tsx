@@ -73,10 +73,18 @@ export default function UrlPreviewDialog({
   );
   const [isLoadingProjects, setIsLoadingProjects] = useState(false);
 
+  // Normalize URL by adding https:// if missing
+  const normalizeUrl = (url: string): string => {
+    const trimmed = url.trim();
+    if (!trimmed) return trimmed;
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
   // Get suggested name from URL hostname
   const suggestedName = useMemo(() => {
     try {
-      return new URL(urlValue).hostname;
+      return new URL(normalizeUrl(urlValue)).hostname;
     } catch {
       return "URL";
     }
@@ -142,13 +150,16 @@ export default function UrlPreviewDialog({
         ? { projectId: selectedProjectId, pageId: selectedPageId }
         : initialContext;
 
-    onConfirm(urlValue, name || suggestedName, description, viewport, context);
+    // Pass normalized URL (with https:// prefix if missing)
+    onConfirm(normalizeUrl(urlValue), name || suggestedName, description, viewport, context);
   };
 
-  // Validate URL
+  // Validate URL - accepts patterns like shopify.com, www.shopify.com, etc.
   const isValidUrl = useMemo(() => {
+    const trimmed = urlValue.trim();
+    if (!trimmed) return false;
     try {
-      new URL(urlValue);
+      new URL(normalizeUrl(trimmed));
       return true;
     } catch {
       return false;
