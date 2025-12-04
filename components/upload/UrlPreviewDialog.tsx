@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UrlAutocomplete } from "./UrlAutocomplete";
 import {
   Dialog,
   DialogContent,
@@ -179,12 +180,12 @@ export default function UrlPreviewDialog({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 space-y-4">
-          {/* URL Input */}
+          {/* URL Input with Autocomplete */}
           <div className="gap-2 flex flex-col">
             <label className="text-small text-text-secondary">URL</label>
-            <Input
+            <UrlAutocomplete
               value={urlValue}
-              onChange={(e) => setUrlValue(e.target.value)}
+              onChange={setUrlValue}
               placeholder="https://example.com"
               disabled={uploading}
               autoFocus={!url}

@@ -159,8 +159,8 @@ export function UserSearchAutocomplete({
               key={user.id}
               onClick={() => handleSelect(user)}
               className={`
-                w-full px-3 py-2 flex items-center gap-3 hover:bg-secondary transition-colors
-                ${index === selectedIndex ? "bg-secondary" : ""}
+                w-full px-3 py-2 flex items-center gap-3 hover:bg-secondary/10 transition-colors
+                ${index === selectedIndex ? "bg-secondary/10" : ""}
               `}
             >
               {/* Avatar */}
