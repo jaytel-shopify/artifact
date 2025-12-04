@@ -83,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           slackImageUrl: userData.slackImageUrl,
           slackId: userData.slackId,
           slackHandle: userData.slackHandle,
+          title: userData.title,
         });
 
         console.log("[AuthProvider] User synced to DB:", {

@@ -47,7 +47,7 @@ export default function UserProfilePage() {
     ),
   });
 
-  const displayName = userInfo?.name || userInfo?.email || userId;
+  const displayName = userInfo?.name || userInfo?.email;
   const isOwnProfile = user?.id === userId;
 
   if (!userId) {
@@ -66,14 +66,16 @@ export default function UserProfilePage() {
           {userInfo?.slack_image_url && (
             <Image
               src={userInfo.slack_image_url}
-              alt={displayName}
+              alt={displayName || "User"}
               width={64}
               height={64}
               className="h-24 w-24 rounded-full"
             />
           )}
           <div className="flex flex-col items-center gap-1">
-            <h1 className="text-2xl font-medium">{displayName}</h1>
+            {displayName && (
+              <h1 className="text-2xl font-medium">{displayName}</h1>
+            )}
             {userInfo?.title && (
               <p className="text-sm text-center text-text-secondary font-medium">
                 {userInfo.title}
@@ -109,7 +111,7 @@ export default function UserProfilePage() {
         emptyMessage={
           isOwnProfile
             ? "You haven't created any public artifacts yet"
-            : `${displayName} hasn't created any public artifacts yet`
+            : `${displayName || "This user"} hasn't created any public artifacts yet`
         }
         userId={userId}
       />

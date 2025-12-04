@@ -85,6 +85,7 @@ export async function createUser(data: {
   slack_image_url?: string;
   slack_id?: string;
   slack_handle?: string;
+  title?: string;
 }): Promise<User> {
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);
@@ -96,6 +97,7 @@ export async function createUser(data: {
     slack_image_url: data.slack_image_url,
     slack_id: data.slack_id,
     slack_handle: data.slack_handle,
+    title: data.title,
   };
 
   const user = await collection.create(userData);
@@ -119,6 +121,7 @@ export async function getOrCreateUser(quickIdentity: {
   slackImageUrl?: string;
   slackId?: string;
   slackHandle?: string;
+  title?: string;
 }): Promise<User> {
   // Check if user already exists by ID
   const existingUser = await getUserById(quickIdentity.id);
@@ -135,6 +138,7 @@ export async function getOrCreateUser(quickIdentity: {
     slack_image_url: quickIdentity.slackImageUrl,
     slack_id: quickIdentity.slackId,
     slack_handle: quickIdentity.slackHandle,
+    title: quickIdentity.title,
   });
 }
 

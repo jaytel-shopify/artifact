@@ -20,7 +20,16 @@ async function fetchUserInfo(userId: string): Promise<User | null> {
   // First try Quick.db
   const results = await collection.where({ id: userId }).find();
   if (results.length > 0) {
-    return results[0] as User;
+    const dbUser = results[0] as User;
+    
+    // If title is missing, fetch from directory and merge
+    if (!dbUser.title) {
+      const directoryUser = await getUserFromDirectoryById(userId);
+      if (directoryUser?.title) {
+        return { ...dbUser, title: directoryUser.title };
+      }
+    }
+    return dbUser;
   }
 
   // Fall back to /users.json for users who haven't logged in
