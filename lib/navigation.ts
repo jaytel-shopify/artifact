@@ -8,4 +8,3 @@ export function setCurrentPath(path: string) {
 export function getCurrentPath(): string | null {
   return currentPath;
 }
-

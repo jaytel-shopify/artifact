@@ -62,16 +62,16 @@ export default function Page() {
   const artifactId = searchParams?.get("id") || "";
   const userId = searchParams?.get("userId") || null;
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [previousPath, setPreviousPath] = useState<string | null>(null);
-
-  // Capture the path we came from when this page mounts
-  useEffect(() => {
+  
+  // Capture the path we came from during initial render (for back navigation)
+  // Must be in useState initializer - runs during render BEFORE PathTracker updates currentPath
+  const [previousPath] = useState<string | null>(() => {
     const path = getCurrentPath();
-    // Only store if it's not another detail page
     if (path && !path.startsWith("/a")) {
-      setPreviousPath(path);
+      return path;
     }
-  }, []); // Empty deps - only run on mount
+    return null;
+  });
 
   const handleBack = useCallback(() => {
     if (previousPath) {

@@ -11,6 +11,7 @@ import { useSyncedArtifacts } from "@/hooks/useSyncedArtifacts";
 import { toast } from "sonner";
 import type { Project, Page } from "@/types";
 import { getProjectById } from "@/lib/quick-db";
+import { getCurrentPath } from "@/lib/navigation";
 import { useArtifactCommands } from "@/hooks/useArtifactCommands";
 import {
   ReorderArtifactsCommand,
@@ -214,6 +215,16 @@ function PresentationPageInner({
   // Sidebar state (extracted from old AppLayout)
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Capture the path we came from during initial render (for back navigation)
+  // Must be in useState initializer - runs during render BEFORE PathTracker updates currentPath
+  const [previousPath] = useState<string | null>(() => {
+    const path = getCurrentPath();
+    if (path && !path.startsWith("/p")) {
+      return path;
+    }
+    return null;
+  });
+
   // Load column and fit mode preferences
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -399,10 +410,10 @@ function PresentationPageInner({
     replaceMediaSync
   );
 
-  // Smart back URL: Go to folder if project is in a folder, otherwise /projects
-  const backUrl = project?.folder_id
-    ? `/folder/?id=${project.folder_id}`
-    : "/projects/";
+  // Smart back URL: Go back to where we came from, or fall back to folder/projects
+  const backUrl =
+    previousPath ||
+    (project?.folder_id ? `/folder/?id=${project.folder_id}` : "/projects/");
 
   // const isUploading = uploadState.uploading || isPending;
   const isPageLoading = !project || pages.length === 0;
