@@ -322,7 +322,7 @@ export default function ColumnControl({
           onPointerMove={handlePointerMove}
           onLostPointerCapture={handleLostPointerCapture}
         >
-          {localColumns}
+          <span className="relative">{localColumns}</span>
         </span>
       </div>
     </div>
