@@ -28,10 +28,12 @@ import type { Project, Page } from "@/types";
 import type { UploadContext } from "@/hooks/useArtifactUpload";
 
 interface UrlPreviewDialogProps {
-  url: string;
+  /** Initial URL to prefill (can be empty to let user enter it) */
+  url?: string;
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (
+    url: string,
     name: string,
     description: string,
     viewport: ViewportKey,
@@ -45,7 +47,7 @@ interface UrlPreviewDialogProps {
 }
 
 export default function UrlPreviewDialog({
-  url,
+  url = "",
   isOpen,
   onClose,
   onConfirm,
@@ -54,6 +56,7 @@ export default function UrlPreviewDialog({
   initialContext,
 }: UrlPreviewDialogProps) {
   const { user } = useAuth();
+  const [urlValue, setUrlValue] = useState(url);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [viewport, setViewport] = useState<ViewportKey>(DEFAULT_VIEWPORT_KEY);
@@ -72,15 +75,16 @@ export default function UrlPreviewDialog({
   // Get suggested name from URL hostname
   const suggestedName = useMemo(() => {
     try {
-      return new URL(url).hostname;
+      return new URL(urlValue).hostname;
     } catch {
       return "URL";
     }
-  }, [url]);
+  }, [urlValue]);
 
-  // Reset form when dialog opens with a new URL
+  // Reset form when dialog opens
   useEffect(() => {
-    if (isOpen && url) {
+    if (isOpen) {
+      setUrlValue(url);
       setName("");
       setDescription("");
       setViewport(DEFAULT_VIEWPORT_KEY);
@@ -137,16 +141,27 @@ export default function UrlPreviewDialog({
         ? { projectId: selectedProjectId, pageId: selectedPageId }
         : initialContext;
 
-    onConfirm(name || suggestedName, description, viewport, context);
+    onConfirm(urlValue, name || suggestedName, description, viewport, context);
   };
+
+  // Validate URL
+  const isValidUrl = useMemo(() => {
+    try {
+      new URL(urlValue);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [urlValue]);
 
   // Determine if confirm button should be disabled
   const isConfirmDisabled = useMemo(() => {
     if (uploading) return true;
+    if (!urlValue.trim() || !isValidUrl) return true;
     if (requireProjectSelection && (!selectedProjectId || !selectedPageId))
       return true;
     return false;
-  }, [uploading, requireProjectSelection, selectedProjectId, selectedPageId]);
+  }, [uploading, urlValue, isValidUrl, requireProjectSelection, selectedProjectId, selectedPageId]);
 
   return (
     <Dialog
@@ -164,8 +179,17 @@ export default function UrlPreviewDialog({
         </DialogHeader>
 
         <div className="flex-1 min-h-0 space-y-4">
-          {/* URL Preview */}
-          <div className="text-small text-text-secondary break-all">{url}</div>
+          {/* URL Input */}
+          <div className="gap-2 flex flex-col">
+            <label className="text-small text-text-secondary">URL</label>
+            <Input
+              value={urlValue}
+              onChange={(e) => setUrlValue(e.target.value)}
+              placeholder="https://example.com"
+              disabled={uploading}
+              autoFocus={!url}
+            />
+          </div>
 
           {/* Project/Page Selection */}
           {requireProjectSelection && !uploading && (
@@ -180,8 +204,8 @@ export default function UrlPreviewDialog({
                 </p>
               ) : (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-small text-text-primary/70">
+                  <div className="gap-2 flex flex-col">
+                    <label className="text-small text-text-secondary">
                       Project
                     </label>
                     <Select
@@ -201,8 +225,8 @@ export default function UrlPreviewDialog({
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-small text-text-primary/70">
+                  <div className="gap-2 flex flex-col">
+                    <label className="text-small text-text-secondary">
                       Page
                     </label>
                     <Select
@@ -231,20 +255,41 @@ export default function UrlPreviewDialog({
             </div>
           )}
 
+          <div className="gap-2 flex flex-col">
+            <label className="text-small text-text-secondary">Viewport</label>
+            <Select
+              value={viewport}
+              onValueChange={(value) => setViewport(value as ViewportKey)}
+              disabled={uploading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select viewport" />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(VIEWPORTS).map(([key, vp]) => (
+                  <SelectItem key={key} value={key}>
+                    {vp.label} ({vp.width}x{vp.height})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {/* Name input */}
-          <div className="space-y-2">
-            <label className="text-small text-text-primary/70">Name</label>
+          <div className="gap-2 flex flex-col">
+            <label className="text-small text-text-secondary">Name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder={suggestedName}
               disabled={uploading}
+              autoFocus={!!url}
             />
           </div>
 
           {/* Description input */}
-          <div className="space-y-2">
-            <label className="text-small text-text-primary/70">
+          <div className="gap-2 flex flex-col">
+            <label className="text-small text-text-secondary">
               Description (optional)
             </label>
             <textarea
@@ -256,36 +301,16 @@ export default function UrlPreviewDialog({
               className="w-full min-w-0 rounded-button border border-border bg-primary px-3 py-2 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
             />
           </div>
-
-          {/* Viewport Selection */}
-          <div className="space-y-2">
-            <p className="text-small text-text-primary/70">Viewport</p>
-            <div className="flex flex-wrap gap-2 text-small">
-              {Object.entries(VIEWPORTS).map(([key, vp]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setViewport(key as ViewportKey)}
-                  disabled={uploading}
-                  className={`rounded-full px-3 py-1 border transition cursor-pointer border-border bg-secondary text-text-primary disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {vp.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose} disabled={uploading}>
-            Cancel
-          </Button>
           <Button
             variant="primary"
             onClick={handleConfirm}
             disabled={isConfirmDisabled}
+            className="w-full"
           >
-            {uploading ? "Adding..." : "Add"}
+            {uploading ? "Adding..." : "Add Artifact"}
           </Button>
         </DialogFooter>
       </DialogContent>

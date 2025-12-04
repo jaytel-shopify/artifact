@@ -239,21 +239,23 @@ export default function UploadPreviewDialog({
         <div className="flex-1 min-h-0 space-y-4">
           {/* Media Preview */}
           <div className="relative flex items-center justify-center">
-            {currentUpload.type === "video" ? (
-              <video
-                src={currentUpload.previewUrl}
-                className="object-contain rounded-button shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
-                controls
-                muted
-                playsInline
-              />
-            ) : (
-              <img
-                src={currentUpload.previewUrl}
-                alt={currentUpload.name}
-                className="object-contain rounded-button shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
-              />
-            )}
+            <div className="size-40 flex items-center justify-center">
+              {currentUpload.type === "video" ? (
+                <video
+                  src={currentUpload.previewUrl}
+                  className="object-contain rounded-button-inner shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
+                  controls
+                  muted
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={currentUpload.previewUrl}
+                  alt={currentUpload.name}
+                  className="object-contain rounded-button-inner shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
+                />
+              )}
+            </div>
 
             {/* Navigation arrows for multiple files */}
             {isMultiple && !uploading && (
@@ -283,12 +285,6 @@ export default function UploadPreviewDialog({
             )}
           </div>
 
-          {/* File info */}
-          <div className="text-small text-text-secondary">
-            {currentUpload.file.name} (
-            {(currentUpload.file.size / 1024 / 1024).toFixed(2)} MB)
-          </div>
-
           {/* Project/Page Selection */}
           {requireProjectSelection && !uploading && (
             <div>
@@ -301,9 +297,9 @@ export default function UploadPreviewDialog({
                   No projects found. Create a project first to upload.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-small text-text-primary/70">
+                <div className="grid grid-cols-2 gap-x-4">
+                  <div className="gap-2 flex flex-col">
+                    <label className="text-small text-text-secondary">
                       Project
                     </label>
                     <Select
@@ -323,8 +319,8 @@ export default function UploadPreviewDialog({
                     </Select>
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-small text-text-primary/70">
+                  <div className="gap-2 flex flex-col">
+                    <label className="text-small text-text-secondary">
                       Page
                     </label>
                     <Select
@@ -354,8 +350,8 @@ export default function UploadPreviewDialog({
           )}
 
           {/* Name input */}
-          <div className="space-y-2">
-            <label className="text-small text-text-primary/70">Name</label>
+          <div className="gap-2 flex flex-col">
+            <label className="text-small text-text-secondary">Name</label>
             <Input
               value={currentUpload.name}
               onChange={(e) => updateCurrentUpload({ name: e.target.value })}
@@ -365,8 +361,8 @@ export default function UploadPreviewDialog({
           </div>
 
           {/* Description input */}
-          <div className="space-y-2">
-            <label className="text-small text-text-primary/70">
+          <div className="gap-2 flex flex-col">
+            <label className="text-small text-text-secondary">
               Description (optional)
             </label>
             <textarea
@@ -383,9 +379,9 @@ export default function UploadPreviewDialog({
 
           {/* Upload progress */}
           {uploading && uploadProgress && (
-            <div className="space-y-2">
+            <div className="gap-2 flex flex-col">
               <div className="flex justify-between text-small">
-                <span className="text-text-primary/70">
+                <span className="text-text-secondary">
                   Uploading {uploadProgress.currentIndex} of{" "}
                   {uploadProgress.totalFiles}
                 </span>
@@ -404,7 +400,7 @@ export default function UploadPreviewDialog({
 
           {/* Thumbnail navigation for multiple files */}
           {isMultiple && pendingUploads.length <= 10 && !uploading && (
-            <div className="flex gap-2 overflow-x-auto py-2">
+            <div className="flex gap-2 overflow-x-auto py-2 -mx-6 px-8 scrollbar-hide">
               {pendingUploads.map((upload, index) => (
                 <button
                   key={index}
@@ -435,19 +431,17 @@ export default function UploadPreviewDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={handleClose} disabled={uploading}>
-            Cancel
-          </Button>
           <Button
             variant="primary"
             onClick={handleConfirm}
             disabled={isConfirmDisabled}
+            className="w-full"
           >
             {uploading
-              ? "Uploading..."
+              ? "Adding..."
               : isMultiple
-                ? `Upload ${pendingUploads.length} Files`
-                : "Upload"}
+                ? `Add ${pendingUploads.length} Artifacts`
+                : "Add Artifact"}
           </Button>
         </DialogFooter>
       </DialogContent>

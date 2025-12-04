@@ -17,13 +17,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  VIEWPORTS,
-  DEFAULT_VIEWPORT_KEY,
-  type ViewportKey,
-} from "@/lib/viewports";
 import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import UploadPreviewDialog from "./UploadPreviewDialog";
+import UrlPreviewDialog from "./UrlPreviewDialog";
 import type { Artifact, ArtifactWithPosition } from "@/types";
 
 type DialogType = "url" | "titleCard" | null;
@@ -43,15 +39,12 @@ export default function ArtifactAdder({
   onArtifactCreated,
 }: ArtifactAdderProps) {
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
-  const [url, setUrl] = useState("");
-  const [urlName, setUrlName] = useState("");
-  const [urlDescription, setUrlDescription] = useState("");
-  const [viewport, setViewport] = useState<ViewportKey>(DEFAULT_VIEWPORT_KEY);
   const [headline, setHeadline] = useState("");
   const [subheadline, setSubheadline] = useState("");
 
   // Build context if both projectId and pageId are provided
-  const defaultContext = projectId && pageId ? { projectId, pageId } : undefined;
+  const defaultContext =
+    projectId && pageId ? { projectId, pageId } : undefined;
 
   // Use centralized upload hook - handles artifact creation internally
   const {
@@ -62,7 +55,7 @@ export default function ArtifactAdder({
     handleFileInputChange,
     confirmFileUpload,
     clearPendingFiles,
-    handleUrlUpload,
+    confirmUrlUpload,
     handleTitleCardUpload,
     openFilePicker,
   } = useArtifactUpload({
@@ -70,36 +63,12 @@ export default function ArtifactAdder({
     onArtifactCreated,
   });
 
-  const {
-    uploading,
-    totalFiles,
-    currentFileIndex,
-    currentProgress,
-    error,
-  } = uploadState;
-
-  function resetUrlState() {
-    setUrl("");
-    setUrlName("");
-    setUrlDescription("");
-    setViewport(DEFAULT_VIEWPORT_KEY);
-  }
+  const { uploading, totalFiles, currentFileIndex, currentProgress, error } =
+    uploadState;
 
   function resetTitleCardState() {
     setHeadline("");
     setSubheadline("");
-  }
-
-  // Handle URL submission
-  async function handleUrlSubmit() {
-    if (!url) return;
-    try {
-      await handleUrlUpload(url, viewport, urlName, urlDescription);
-      setOpenDialog(null);
-      resetUrlState();
-    } catch {
-      // Error already handled by hook
-    }
   }
 
   // Handle Title Card submission
@@ -178,104 +147,17 @@ export default function ArtifactAdder({
         }
       />
 
-      {/* URL Dialog */}
-      <Dialog
-        open={openDialog === "url"}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            setOpenDialog(null);
-            resetUrlState();
-          }
+      {/* URL Preview Dialog */}
+      <UrlPreviewDialog
+        isOpen={openDialog === "url"}
+        onClose={() => setOpenDialog(null)}
+        onConfirm={async (url, name, description, viewport) => {
+          await confirmUrlUpload(url, name, description, viewport);
+          setOpenDialog(null);
         }}
-      >
-        <DialogContent
-          className="w-full max-w-2xl"
-          showCloseButton={!uploading}
-        >
-          <DialogHeader>
-            <DialogTitle className="text-text-primary">
-              Embed via URL
-            </DialogTitle>
-          </DialogHeader>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-small text-text-primary/70">URL</label>
-              <Input
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://example.com/artifact"
-                disabled={uploading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-small text-text-primary/70">Name</label>
-              <Input
-                value={urlName}
-                onChange={(e) => setUrlName(e.target.value)}
-                placeholder="Enter a name for this artifact"
-                disabled={uploading}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="text-small text-text-primary/70">
-                Description (optional)
-              </label>
-              <textarea
-                value={urlDescription}
-                onChange={(e) => setUrlDescription(e.target.value)}
-                placeholder="Add a description..."
-                disabled={uploading}
-                rows={3}
-                className="w-full min-w-0 rounded-button border border-border bg-primary px-3 py-2 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-small text-text-primary/70">Viewport</p>
-              <div className="flex flex-wrap gap-2 text-small">
-                {Object.entries(VIEWPORTS).map(([key, vp]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setViewport(key as ViewportKey)}
-                    disabled={uploading}
-                    className={`rounded-full px-3 py-1 border transition cursor-pointer border-border bg-secondary text-text-primary disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {vp.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {error && (
-              <div className="text-small text-destructive">{error}</div>
-            )}
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setOpenDialog(null);
-                resetUrlState();
-              }}
-              disabled={uploading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleUrlSubmit}
-              disabled={uploading || !url}
-              variant="primary"
-            >
-              {uploading ? "Adding…" : "Add"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        uploading={uploading}
+        initialContext={defaultContext}
+      />
 
       {/* Title Card Dialog */}
       <Dialog
@@ -299,9 +181,7 @@ export default function ArtifactAdder({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-small text-text-primary/70">
-                Headline
-              </label>
+              <label className="text-small text-text-secondary">Headline</label>
               <Input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
@@ -311,7 +191,7 @@ export default function ArtifactAdder({
             </div>
 
             <div className="space-y-2">
-              <label className="text-small text-text-primary/70">
+              <label className="text-small text-text-secondary">
                 Subheadline
               </label>
               <Input

@@ -4,7 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { mutate as globalMutate } from "swr";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
-import { useArtifactUpload, type UploadContext } from "@/hooks/useArtifactUpload";
+import {
+  useArtifactUpload,
+  type UploadContext,
+} from "@/hooks/useArtifactUpload";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { cacheKeys } from "@/lib/cache-keys";
 import UploadPreviewDialog from "./UploadPreviewDialog";
@@ -72,10 +75,12 @@ export default function DropzoneUploader() {
     onArtifactCreated: handleArtifactCreated,
   });
 
-  const { uploading, currentFileIndex, currentProgress, totalFiles } = uploadState;
+  const { uploading, currentFileIndex, currentProgress, totalFiles } =
+    uploadState;
 
   // Determine if we're on a page that requires project selection
-  const requireProjectSelection = pathname === "/projects/" || pathname === "/folder/";
+  const requireProjectSelection =
+    pathname === "/projects/" || pathname === "/folder/";
 
   // Get current project context from URL if on project page
   const getUploadContext = useCallback(() => {
@@ -105,7 +110,10 @@ export default function DropzoneUploader() {
 
   // Wrap confirmFileUpload to also refresh caches
   const handleConfirmUpload = useCallback(
-    async (uploads: Parameters<typeof confirmFileUpload>[0], context?: UploadContext) => {
+    async (
+      uploads: Parameters<typeof confirmFileUpload>[0],
+      context?: UploadContext
+    ) => {
       await confirmFileUpload(uploads, context);
       refreshCachesForContext(context || pendingFiles?.context);
     },
@@ -115,12 +123,13 @@ export default function DropzoneUploader() {
   // Wrap confirmUrlUpload to also refresh caches
   const handleConfirmUrlUpload = useCallback(
     async (
+      url: string,
       name: string,
       description: string,
-      viewport: Parameters<typeof confirmUrlUpload>[2],
+      viewport: Parameters<typeof confirmUrlUpload>[3],
       context?: UploadContext
     ) => {
-      await confirmUrlUpload(name, description, viewport, context);
+      await confirmUrlUpload(url, name, description, viewport, context);
       refreshCachesForContext(context || pendingUrl?.context);
     },
     [confirmUrlUpload, refreshCachesForContext, pendingUrl?.context]
@@ -129,6 +138,21 @@ export default function DropzoneUploader() {
   // Handle paste events for files and URLs
   const handlePaste = useCallback(
     (e: ClipboardEvent) => {
+      // Ignore paste when focus is in an input, textarea, or contenteditable element
+      const activeEl = document.activeElement;
+      if (
+        activeEl instanceof HTMLInputElement ||
+        activeEl instanceof HTMLTextAreaElement ||
+        activeEl?.getAttribute("contenteditable") === "true"
+      ) {
+        return;
+      }
+
+      // Also ignore if a dialog is open (check for radix dialog)
+      if (document.querySelector("[role='dialog']")) {
+        return;
+      }
+
       const text = e.clipboardData?.getData("text/plain");
       if (text) {
         try {
@@ -253,35 +277,7 @@ export default function DropzoneUploader() {
         {dragging && (
           <div className="absolute inset-0 flex items-center justify-center bg-primary/60 backdrop-blur-lg text-text-primary pointer-events-none">
             <div className="text-center space-y-3 w-full max-w-xs px-6">
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-background/10 border border-text-primary/20">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="h-6 w-6 text-text-primary"
-                >
-                  <path
-                    d="M12 16v-8m0 0 3 3m-3-3-3 3"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M6 17.5V18a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2v-.5"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
               <div className="text-medium">Drop to upload your artifacts</div>
-              <div className="text-small text-text-secondary">
-                Images or videos up to 50MB each
-              </div>
-              <div className="h-1 w-full overflow-hidden rounded-full bg-background/10">
-                <div className="h-full w-full animate-[progress_1.2s_linear_infinite] bg-text-primary" />
-              </div>
             </div>
           </div>
         )}

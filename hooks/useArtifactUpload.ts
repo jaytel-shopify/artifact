@@ -174,7 +174,11 @@ export function useArtifactUpload({
    * @param requireProjectSelection - If true, user must select project/page in dialog
    */
   const stageFilesForUpload = useCallback(
-    (files: File[], context?: UploadContext, requireProjectSelection?: boolean) => {
+    (
+      files: File[],
+      context?: UploadContext,
+      requireProjectSelection?: boolean
+    ) => {
       if (files.length === 0) return;
       if (!user?.id) {
         toast.error("Unable to upload: please sign in first");
@@ -191,7 +195,11 @@ export function useArtifactUpload({
       }
 
       const effectiveContext = context || defaultContext;
-      setPendingFiles({ files, context: effectiveContext, requireProjectSelection });
+      setPendingFiles({
+        files,
+        context: effectiveContext,
+        requireProjectSelection,
+      });
     },
     [defaultContext, user?.id, maxFileSizeMB]
   );
@@ -271,9 +279,11 @@ export function useArtifactUpload({
 
           // Generate thumbnail asynchronously for videos
           if (upload.type === "video" && artifact) {
-            generateAndUploadThumbnail(upload.file, artifact.id).catch((err) => {
-              console.error("Thumbnail generation failed:", err);
-            });
+            generateAndUploadThumbnail(upload.file, artifact.id).catch(
+              (err) => {
+                console.error("Thumbnail generation failed:", err);
+              }
+            );
           }
         }
 
@@ -289,7 +299,13 @@ export function useArtifactUpload({
         resetState();
       }
     },
-    [pendingFiles?.context, user?.id, createArtifactInternal, clearPendingFiles, resetState]
+    [
+      pendingFiles?.context,
+      user?.id,
+      createArtifactInternal,
+      clearPendingFiles,
+      resetState,
+    ]
   );
 
   /**
@@ -322,7 +338,11 @@ export function useArtifactUpload({
    * @param requireProjectSelection - If true, user must select project/page in dialog
    */
   const stageUrlForUpload = useCallback(
-    (url: string, context?: UploadContext, requireProjectSelection?: boolean) => {
+    (
+      url: string,
+      context?: UploadContext,
+      requireProjectSelection?: boolean
+    ) => {
       if (!url) return;
       if (!user?.id) {
         toast.error("Unable to add URL: please sign in first");
@@ -338,7 +358,11 @@ export function useArtifactUpload({
       }
 
       const effectiveContext = context || defaultContext;
-      setPendingUrl({ url, context: effectiveContext, requireProjectSelection });
+      setPendingUrl({
+        url,
+        context: effectiveContext,
+        requireProjectSelection,
+      });
     },
     [defaultContext, user?.id]
   );
@@ -424,8 +448,9 @@ export function useArtifactUpload({
   );
 
   /**
-   * Confirm and upload staged URL with user-provided metadata
+   * Confirm and upload URL with user-provided metadata
    * Called after user confirms in the URL preview dialog
+   * @param url - The URL to upload (from dialog, may differ from staged URL)
    * @param name - User-provided name
    * @param description - User-provided description
    * @param viewport - Selected viewport
@@ -433,20 +458,21 @@ export function useArtifactUpload({
    */
   const confirmUrlUpload = useCallback(
     async (
+      url: string,
       name: string,
       description: string,
       viewport: ViewportKey = DEFAULT_VIEWPORT_KEY,
       context?: UploadContext
     ) => {
-      if (!pendingUrl?.url) return;
+      if (!url) return;
 
       // Use context from dialog if provided, otherwise use stored context
-      const effectiveContext = context || pendingUrl.context;
+      const effectiveContext = context || pendingUrl?.context;
 
-      await handleUrlUpload(pendingUrl.url, viewport, name, description, effectiveContext);
+      await handleUrlUpload(url, viewport, name, description, effectiveContext);
       clearPendingUrl();
     },
-    [pendingUrl, handleUrlUpload, clearPendingUrl]
+    [pendingUrl?.context, handleUrlUpload, clearPendingUrl]
   );
 
   /**
@@ -510,7 +536,8 @@ export function useArtifactUpload({
   const canUpload = Boolean(user?.id);
 
   // Check if preview dialog should be shown
-  const showPreviewDialog = pendingFiles !== null && pendingFiles.files.length > 0;
+  const showPreviewDialog =
+    pendingFiles !== null && pendingFiles.files.length > 0;
 
   // Check if URL preview dialog should be shown
   const showUrlPreviewDialog = pendingUrl !== null;

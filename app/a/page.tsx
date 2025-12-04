@@ -62,7 +62,7 @@ export default function Page() {
   const artifactId = searchParams?.get("id") || "";
   const userId = searchParams?.get("userId") || null;
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  
+
   // Capture the path we came from during initial render (for back navigation)
   // Must be in useState initializer - runs during render BEFORE PathTracker updates currentPath
   const [previousPath] = useState<string | null>(() => {
@@ -403,10 +403,12 @@ export default function Page() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setIsEditing(false)}>
+            <Button variant="ghost" onClick={() => setIsEditing(false)}>
               Cancel
             </Button>
-            <Button onClick={handleSaveEdit}>Save</Button>
+            <Button variant="primary" onClick={handleSaveEdit}>
+              Save
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
