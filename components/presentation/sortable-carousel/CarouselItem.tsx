@@ -213,12 +213,12 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                 readOnly={isReadOnly || !onUpdateTitle}
               />
             </div>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               {onFocus && !isReadOnly && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
+                  className="carousel-item-focus-button h-6 w-6 p-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
                   onClick={(e) => {
                     e.stopPropagation();
                     onFocus();

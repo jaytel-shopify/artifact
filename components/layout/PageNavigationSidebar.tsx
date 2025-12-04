@@ -121,7 +121,7 @@ function SortablePageItem({
       <div
         ref={setNodeRef}
         style={style}
-        className={`flex items-center p-4 rounded-button cursor-pointer transition-all ${
+        className={`flex items-center p-3 rounded-button cursor-pointer transition-all ${
           isActive
             ? "bg-primary"
             : "hover:bg-primary opacity-50 hover:opacity-100"
@@ -140,7 +140,7 @@ function SortablePageItem({
           ref={setNodeRef}
           style={style}
           {...(isEditing ? {} : { ...attributes, ...listeners })}
-          className={`border border-none flex items-center p-4 rounded-button transition-colors group ${
+          className={`border border-none flex items-center p-3 rounded-button transition-colors group ${
             isEditing
               ? "border-secondary"
               : isActive

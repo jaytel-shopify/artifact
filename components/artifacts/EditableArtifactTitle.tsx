@@ -129,11 +129,20 @@ export default function EditableArtifactTitle({
 
   if (isEditing) {
     return (
-      <div className={`flex items-center gap-2 ${className}`}>
-        {isUrlArtifact && (
-          <div className="text-text-secondary">
-            {getArtifactIcon(artifactType)}
-          </div>
+      <div className={`flex items-center gap-0 ${className}`}>
+        {isUrlArtifact && sourceUrl && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="external-link-button h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
+            onClick={(e) => {
+              e.stopPropagation();
+              window.open(sourceUrl, "_blank", "noopener,noreferrer");
+            }}
+            aria-label="Open in new tab"
+          >
+            <SquareArrowOutUpRight className="h-3.5 w-3.5" />
+          </Button>
         )}
         <Input
           ref={inputRef}
@@ -151,12 +160,21 @@ export default function EditableArtifactTitle({
   }
 
   return (
-    <div className={`flex items-center gap-1 ${className}`}>
-      {/* Left: Icon (only for URL artifacts) */}
-      {isUrlArtifact && (
-        <div className="text-text-secondary flex-shrink-0">
-          {getArtifactIcon(artifactType)}
-        </div>
+    <div className={`flex items-center gap-0 ${className}`}>
+      {/* Left: External link for URL artifacts */}
+      {isUrlArtifact && sourceUrl && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="external-link-button h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
+          onClick={(e) => {
+            e.stopPropagation();
+            window.open(sourceUrl, "_blank", "noopener,noreferrer");
+          }}
+          aria-label="Open in new tab"
+        >
+          <SquareArrowOutUpRight className="h-3.5 w-3.5" />
+        </Button>
       )}
 
       {/* Center: Title */}
@@ -173,22 +191,6 @@ export default function EditableArtifactTitle({
           {currentTitle || "Untitled"}
         </div>
       </div>
-
-      {/* Right: External link for URL artifacts */}
-      {isUrlArtifact && sourceUrl && (
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
-          onClick={(e) => {
-            e.stopPropagation();
-            window.open(sourceUrl, "_blank", "noopener,noreferrer");
-          }}
-          aria-label="Open in new tab"
-        >
-          <SquareArrowOutUpRight className="h-3.5 w-3.5" />
-        </Button>
-      )}
     </div>
   );
 }
