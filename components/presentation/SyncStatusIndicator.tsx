@@ -75,9 +75,9 @@ export default function SyncStatusIndicator({
                       src={user.slackImageUrl}
                       alt={displayName}
                       title={displayName}
-                      width={24}
-                      height={24}
-                      className={`w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 transition-all cursor-pointer object-cover ${
+                      width={36}
+                      height={36}
+                      className={`w-9 h-9 flex-shrink-0 rounded-full border border-border transition-all cursor-pointer object-cover ${
                         isFollowing
                           ? "border-primary-foreground ring-2 ring-destructive"
                           : "border-primary-foreground ring-1 ring-primary/20 hover:ring-2 hover:ring-primary/40"
@@ -111,9 +111,6 @@ export default function SyncStatusIndicator({
               </div>
             )}
           </div>
-          <span className="ml-1 whitespace-nowrap">
-            {viewersCount} {viewersCount === 1 ? "viewer" : "viewers"}
-          </span>
         </div>
       )}
     </div>
