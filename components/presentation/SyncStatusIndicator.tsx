@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import useSWR from "swr";
+import { getUserByEmail } from "@/lib/quick-users";
 
 interface User {
   socketId: string;
@@ -17,6 +19,12 @@ interface SyncStatusIndicatorProps {
   followingUserId?: string | null;
 }
 
+// Fetch slack images for a list of emails
+async function fetchSlackImages(emails: string[]) {
+  const results = await Promise.all(emails.map((e) => getUserByEmail(e)));
+  return Object.fromEntries(emails.map((e, i) => [e, results[i]?.slack_image_url]));
+}
+
 export default function SyncStatusIndicator({
   isPresenceReady,
   getUsers,
@@ -26,18 +34,21 @@ export default function SyncStatusIndicator({
   const [users, setUsers] = useState<User[]>([]);
   const [updateTrigger, setUpdateTrigger] = useState(0);
 
-  // Update users list when triggered (by WebSocket events, not polling)
+  // Update users list when triggered
   useEffect(() => {
     if (!isPresenceReady) {
       setUsers([]);
       return;
     }
-
-    const usersList = getUsers();
-
-    // Count by socket ID (each connection counts as a separate viewer)
-    setUsers(usersList);
+    setUsers(getUsers());
   }, [isPresenceReady, getUsers, updateTrigger]);
+
+  // Fetch slack images from database (SWR handles caching)
+  const emails = users.map((u) => u.email);
+  const { data: slackImages } = useSWR(
+    emails.length > 0 ? ["slack-images", ...emails] : null,
+    () => fetchSlackImages(emails)
+  );
 
   // Expose update function to parent via window event
   useEffect(() => {
@@ -62,6 +73,7 @@ export default function SyncStatusIndicator({
               const displayName = user.name || user.email || "Unknown";
               const initial = displayName[0].toUpperCase();
               const isFollowing = followingUserId === user.socketId;
+              const imageUrl = user.slackImageUrl || slackImages?.[user.email];
 
               return (
                 <div
@@ -70,9 +82,9 @@ export default function SyncStatusIndicator({
                   style={{ zIndex: 5 - index }}
                   onClick={() => onFollowUser?.(user.socketId)}
                 >
-                  {user.slackImageUrl ? (
+                  {imageUrl ? (
                     <img
-                      src={user.slackImageUrl}
+                      src={imageUrl}
                       alt={displayName}
                       title={displayName}
                       width={36}
@@ -85,7 +97,7 @@ export default function SyncStatusIndicator({
                     />
                   ) : (
                     <div
-                      className={`w-6 h-6 min-w-[24px] min-h-[24px] flex-shrink-0 rounded-full border-2 bg-gradient-to-br from-primary to-primary flex items-center justify-center text-small  text-text-primary transition-all cursor-pointer ${
+                      className={`w-9 h-9 flex-shrink-0 rounded-full border bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-medium font-medium text-text-primary transition-all cursor-pointer ${
                         isFollowing
                           ? "border-primary-foreground ring-2 ring-destructive"
                           : "border-primary-foreground ring-1 ring-primary/20 hover:ring-2 hover:ring-primary/40"
