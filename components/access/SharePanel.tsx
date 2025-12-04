@@ -92,8 +92,10 @@ export function SharePanel({
     loadAccessList();
   }, [isOpen, loadAccessList]);
 
-  // Check if current user is owner
+  // Check if current user is owner or editor (both can manage access)
   const isOwner = currentUserAccess === "owner";
+  const canManageAccess =
+    currentUserAccess === "owner" || currentUserAccess === "editor";
 
   // Handle adding a user to the invite list
   const handleAddUser = (user: User | null) => {
@@ -242,8 +244,8 @@ export function SharePanel({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-          {/* Invite Section - Only show if user is owner */}
-          {isOwner && (
+          {/* Invite Section - Show if user can manage access (owner or editor) */}
+          {canManageAccess && (
             <div className="space-y-3">
               {/* Search and Access Level */}
               <div className="flex gap-2">
@@ -360,8 +362,8 @@ export function SharePanel({
                       </div>
                     </div>
 
-                    {/* Access Level Dropdown - Only owner can change */}
-                    {isOwner ? (
+                    {/* Access Level Dropdown - Owner or editor can change */}
+                    {canManageAccess ? (
                       <Select
                         value={access.access_level}
                         onValueChange={(value) => {
