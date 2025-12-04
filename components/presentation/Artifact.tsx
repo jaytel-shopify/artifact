@@ -140,7 +140,7 @@ function ArtifactWebsite({
         style={{
           border: 0,
           transform: `scale(${scale})`,
-          transformOrigin: fitMode ? "top center" : "top left",
+          transformOrigin: "top left",
         }}
         allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
         referrerPolicy="no-referrer-when-downgrade"
@@ -223,7 +223,7 @@ export default function Artifact({ artifact, className = "" }: ArtifactProps) {
             url={artifact.source_url}
             width={urlMeta?.width}
             height={urlMeta?.height}
-            fitMode={false}
+            fitMode={true}
           />
         </div>
       );

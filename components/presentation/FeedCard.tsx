@@ -29,7 +29,7 @@ export default function FeedCard({
     "transition-all",
     "duration-500",
     "ease-bouyant",
-    "opacity-0",
+    "opacity-1",
     "translate-y-full",
     "group-hover:translate-y-0",
     "group-hover:rotate-0",
