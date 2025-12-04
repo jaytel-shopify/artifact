@@ -388,7 +388,8 @@ export function SharePanel({
                           <SelectItem value="viewer">viewer</SelectItem>
                           <SelectItem
                             value="remove"
-                            className="text-destructive"
+                            className="text-small"
+                            style={{ color: "var(--c-destructive)" }}
                           >
                             Remove access
                           </SelectItem>
