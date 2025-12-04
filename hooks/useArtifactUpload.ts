@@ -433,7 +433,8 @@ export function useArtifactUpload({
             url,
             artifact.id,
             dims.width,
-            dims.height
+            dims.height,
+            effectiveContext?.pageId ?? undefined
           ).catch((err) => {
             console.error("URL screenshot generation failed:", err);
           });

@@ -1,7 +1,9 @@
 "use client";
 
+import { mutate as globalMutate } from "swr";
 import { uploadFile } from "./quick-storage";
 import { updateArtifact, getArtifactById } from "./quick-db";
+import { cacheKeys } from "./cache-keys";
 
 const SCREENSHOT_SERVICE_URL =
   "https://screenshot-service-91326127678.us-east4.run.app";
@@ -12,15 +14,19 @@ const SCREENSHOT_SERVICE_URL =
  *
  * @param url - The URL to screenshot
  * @param artifactId - The ID of the artifact to update
+ * @param width - Optional viewport width
+ * @param height - Optional viewport height
+ * @param pageId - Optional page ID to invalidate page-specific cache
  */
 export async function generateAndUploadUrlScreenshot(
   url: string,
   artifactId: string,
   width?: number,
-  height?: number
+  height?: number,
+  pageId?: string
 ): Promise<void> {
   try {
-    console.log(`Generating screenshot for URL artifact ${artifactId}: ${url}`);
+    console.time("generated screenshot");
 
     // Call the screenshot service
     const screenshotUrl = `${SCREENSHOT_SERVICE_URL}?url=${encodeURIComponent(url)}&width=${width || 1280}&height=${height || 800}`;
@@ -46,11 +52,6 @@ export async function generateAndUploadUrlScreenshot(
     // Upload the screenshot to Quick.fs
     const uploadResult = await uploadFile(screenshotFile);
 
-    console.log(
-      `Screenshot uploaded for artifact ${artifactId}:`,
-      uploadResult.fullUrl
-    );
-
     // Get the current artifact to preserve existing metadata
     const artifact = await getArtifactById(artifactId);
 
@@ -67,7 +68,13 @@ export async function generateAndUploadUrlScreenshot(
       },
     });
 
-    console.log(`Screenshot metadata updated for artifact ${artifactId}`);
+    // Trigger frontend refresh so the new thumbnail appears
+    globalMutate(cacheKeys.publicArtifacts);
+    if (pageId) {
+      globalMutate(cacheKeys.pageArtifacts(pageId));
+    }
+
+    console.timeEnd("generated screenshot");
   } catch (error) {
     // Log the error but don't throw - screenshot generation is nice-to-have
     console.error(
