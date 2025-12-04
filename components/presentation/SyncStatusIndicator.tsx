@@ -104,7 +104,7 @@ export default function SyncStatusIndicator({
             })}
             {viewersCount > 5 && (
               <div
-                className="w-6 h-6 rounded-full border-2 border-primary-foreground ring-1 ring-primary/20 bg-gradient-to-br from-primary to-primary flex items-center justify-center text-small  text-text-primary"
+                className="w-9 h-9 rounded-full border border-border ring-1 ring-primary/20 bg-primary flex items-center justify-center text-small text-text-primary"
                 title={`${viewersCount - 5} more viewer${viewersCount - 5 === 1 ? "" : "s"}`}
               >
                 +{viewersCount - 5}
