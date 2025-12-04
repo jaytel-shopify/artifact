@@ -60,7 +60,23 @@ function Button({
 
   const isPrimary = variant === "primary";
   const content = isPrimary ? (
-    <span className="relative">{children}</span>
+    <span
+      className="relative"
+      style={{
+        display: "inherit",
+        alignItems: "inherit",
+        justifyContent: "inherit",
+        gap: "inherit",
+        flexWrap: "inherit",
+        flexDirection: "inherit",
+        flexShrink: "inherit",
+        flexGrow: "inherit",
+        flexBasis: "inherit",
+        flex: "inherit",
+      }}
+    >
+      {children}
+    </span>
   ) : (
     children
   );
