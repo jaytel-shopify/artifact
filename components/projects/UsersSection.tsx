@@ -23,7 +23,7 @@ export function UsersSection({ users, title = "People" }: UsersSectionProps) {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {users.map((user) => (
-          <Link key={user.id} href={`/user?id=${user.id}`}>
+          <Link key={user.id} href={`/user/?id=${user.id}`}>
             <Card className="p-4 flex items-center gap-3 hover:bg-background-secondary transition-colors cursor-pointer">
               <div className="flex align-center items-center gap-4 w-full justify-between">
                 <div className="min-w-0 space-y-1">
