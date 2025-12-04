@@ -91,6 +91,13 @@ export default function Page() {
     { revalidateOnFocus: false }
   );
 
+  // Update page title when artifact loads
+  useEffect(() => {
+    if (artifact?.name) {
+      document.title = `${artifact.name} | Artifact`;
+    }
+  }, [artifact?.name]);
+
   // Fetch artifacts for navigation - use user artifacts if userId is provided
   const { artifacts: publishedArtifacts } = usePublicArtifacts();
   const { artifacts: userArtifacts } = useUserArtifacts(userId);

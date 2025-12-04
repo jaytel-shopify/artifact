@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
@@ -27,6 +27,10 @@ export default function ProjectsPage() {
 
   // Fetch all data
   const { projects, folders, isLoading, error } = useProjectsData(user?.id);
+
+  useEffect(() => {
+    document.title = "Projects | Artifact";
+  }, []);
 
   // Create folder dialog state
   const [createFolderOpen, setCreateFolderOpen] = useState(false);

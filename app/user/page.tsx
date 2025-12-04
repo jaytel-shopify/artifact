@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useSetHeader } from "@/components/layout/HeaderContext";
@@ -19,6 +20,15 @@ export default function UserProfilePage() {
   const { user } = useAuth();
 
   const { artifacts, userInfo, isLoading, error } = useUserArtifacts(userId);
+
+  // Update page title when user info loads
+  useEffect(() => {
+    if (userInfo?.name) {
+      document.title = `${userInfo.name} | Artifact`;
+    } else if (userId) {
+      document.title = "User | Artifact";
+    }
+  }, [userInfo?.name, userId]);
 
   // Set header content
   useSetHeader({

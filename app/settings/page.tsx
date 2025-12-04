@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +12,10 @@ import {
 } from "@/components/ui/card";
 
 export default function SettingsPage() {
+  useEffect(() => {
+    document.title = "Settings | Artifact";
+  }, []);
+
   return (
     <main className="min-h-screen bg-background text-text-primary">
       <div className="max-w-4xl mx-auto p-6 space-y-6">

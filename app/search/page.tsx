@@ -41,6 +41,15 @@ export default function SearchPage() {
     ),
   });
 
+  // Update page title
+  useEffect(() => {
+    if (query) {
+      document.title = `"${query}" | Search | Artifact`;
+    } else {
+      document.title = "Search | Artifact";
+    }
+  }, [query]);
+
   useEffect(() => {
     async function performSearch() {
       if (!query.trim()) {

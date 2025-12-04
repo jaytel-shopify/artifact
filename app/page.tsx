@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import Logo from "@/components/layout/header/Logo";
 import ViewToggle from "@/components/layout/header/ViewToggle";
@@ -21,6 +22,10 @@ export default function Home() {
     loadMore,
     addArtifact,
   } = usePublicArtifacts();
+
+  useEffect(() => {
+    document.title = "Feed | Artifact";
+  }, []);
 
   // Handle artifact creation - add to feed optimistically
   const handleArtifactCreated = (artifact: Artifact) => {
