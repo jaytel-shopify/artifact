@@ -71,6 +71,20 @@ export default function ArtifactThumbnail({
       );
 
     case "url":
+      const urlThumbnail = (artifact.metadata as any)?.thumbnail_url;
+      if (urlThumbnail) {
+        return (
+          <div className={baseClasses}>
+            <img
+              src={urlThumbnail}
+              alt={artifact.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+            />
+          </div>
+        );
+      }
+      // Fallback to Globe icon if no thumbnail
       return (
         <div className={baseClasses}>
           <div className="w-full h-full bg-secondary/20 flex items-center justify-center aspect-[16/11]">

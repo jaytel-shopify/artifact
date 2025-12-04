@@ -152,12 +152,12 @@ function ArtifactTitleCard({
     <div className="w-full h-full aspect-video bg-secondary flex items-center justify-center">
       <div className="flex flex-col items-center justify-center p-8 text-center max-w-2xl">
         {headline && (
-          <h1 className="text-2xl font-semibold text-text-primary mb-4">
+          <h1 className="text-2xl font-semibold text-text-primary mb-4 select-none">
             {headline}
           </h1>
         )}
         {subheadline && (
-          <p className="text-lg text-text-secondary leading-relaxed">
+          <p className="text-lg text-text-secondary leading-relaxed select-none">
             {subheadline}
           </p>
         )}

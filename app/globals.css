@@ -424,10 +424,10 @@
 }
 
 .dark {
-  --c-dark: #09161b;
+  --c-dark: #0F1315;
   --c-light: #ffffff;
 
-  --c-background: #010b0f;
+  --c-background: #06090A;
   --c-primary: var(--c-dark);
   --c-secondary: #94b0bb;
   --c-disabled: #a3b4bb;
