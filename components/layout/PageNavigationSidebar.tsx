@@ -140,11 +140,11 @@ function SortablePageItem({
           ref={setNodeRef}
           style={style}
           {...(isEditing ? {} : { ...attributes, ...listeners })}
-          className={`border border-none flex items-center p-3 rounded-button transition-colors group ${
+          className={`border border-transparent flex items-center py-2 px-3 rounded-button transition-colors group ${
             isEditing
               ? "border-secondary"
               : isActive
-                ? "bg-primary border-border cursor-grab active:cursor-grabbing"
+                ? "bg-primary border-border! cursor-grab active:cursor-grabbing"
                 : "hover:bg-primary/70 cursor-grab active:cursor-grabbing"
           }`}
           onClick={isEditing ? undefined : onSelect}
@@ -297,9 +297,9 @@ export default function PageNavigationSidebar({
 
         {/* Add New Page Button (hidden in read-only mode) */}
         {!isReadOnly && onPageCreate && (
-          <Button onClick={onPageCreate}>
+          <Button variant="primary" onClick={onPageCreate}>
             <Plus className="h-4 w-4" />
-            <span>New Page</span>
+            <span>New page</span>
           </Button>
         )}
       </div>

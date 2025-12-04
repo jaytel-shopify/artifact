@@ -134,7 +134,7 @@ export default function EditableArtifactTitle({
           <Button
             variant="ghost"
             size="sm"
-            className="external-link-button h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
+            className="external-link-button h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-primary"
             onClick={(e) => {
               e.stopPropagation();
               window.open(sourceUrl, "_blank", "noopener,noreferrer");
@@ -153,7 +153,7 @@ export default function EditableArtifactTitle({
           onBlur={handleBlur}
           disabled={isUpdating}
           placeholder="Untitled"
-          className="h-6 text-small bg-secondary text-text-primary border border-border focus:border-border focus:bg-secondary px-2 py-1 min-w-0 w-full max-w-full"
+          className="h-6 text-small bg-transparent text-text-primary border border-[#3E8AE2] focus:border-[#3E8AE2] focus:bg-transparent px-2 py-1 min-w-0 w-full max-w-full"
         />
       </div>
     );
@@ -166,7 +166,7 @@ export default function EditableArtifactTitle({
         <Button
           variant="ghost"
           size="sm"
-          className="external-link-button h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
+          className="external-link-button h-6 w-6 p-0 flex-shrink-0 text-text-secondary hover:text-text-primary hover:bg-primary"
           onClick={(e) => {
             e.stopPropagation();
             window.open(sourceUrl, "_blank", "noopener,noreferrer");
@@ -182,7 +182,7 @@ export default function EditableArtifactTitle({
         className={`${
           readOnly
             ? "px-2 py-1"
-            : "cursor-text hover:bg-secondary/10 rounded-md px-2 py-1 transition-colors duration-200"
+            : "cursor-text hover:bg-primary border border-border rounded-md px-2 py-1 transition-colors duration-200"
         } flex-1 min-w-0`}
         onClick={handleClick}
         title={readOnly ? undefined : "Click to edit"}

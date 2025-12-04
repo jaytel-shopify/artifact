@@ -58,8 +58,9 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
 
   if (count === 0) {
     return (
-      <div className="flex w-full flex-1 items-center justify-center">
-        <span className="text-text-secondary text-medium">No artifacts</span>
+      <div className="flex w-full flex-col gap-2 flex-1 items-center justify-center -mt-6">
+        <img src="/favicon.svg" alt="Add Artifacts" className="w-10 h-10" />
+        <span className="text-text-secondary text-medium">Add Artifacts</span>
       </div>
     );
   }
@@ -160,7 +161,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
     const folder = folders.find((f) => f.id === folderId);
     const folderName = folder?.name || "folder";
     const oldFolderId = project.folder_id;
-    
+
     try {
       await moveProjectToFolder(project.id, folderId);
       await refreshCaches([folderId, oldFolderId]);

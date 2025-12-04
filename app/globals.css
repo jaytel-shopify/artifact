@@ -71,6 +71,17 @@
   scrollbar-width: none;
 }
 
+.\@10xl\:gap-6 {
+  @container (width >= 120rem) {
+    gap: calc(var(--spacing) * 6);
+  }
+}
+.\@10xl\:grid-cols-4 {
+  @container (width >= 120rem) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
 :root {
   /* Typography Tokens */
   --font-family-primary: var(--font-inter), sans-serif;

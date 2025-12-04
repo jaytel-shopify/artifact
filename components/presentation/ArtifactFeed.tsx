@@ -93,7 +93,8 @@ export default function ArtifactFeed({
     const resizeObserver = new ResizeObserver((entries) => {
       const [entry] = entries;
       const isSmall = entry.contentRect.width < 768;
-      computeMasonryGrid(artifacts, isSmall ? 2 : 4);
+      const isLarge = entry.contentRect.width >= 1920;
+      computeMasonryGrid(artifacts, isSmall ? 2 : isLarge ? 4 : 3);
     });
     resizeObserver.observe(masonryGridElement);
 
@@ -138,7 +139,7 @@ export default function ArtifactFeed({
         <div className="@container">
           <div
             ref={masonryGridRef}
-            className="grid grid-cols-2 gap-2 @3xl:gap-6 @3xl:grid-cols-4"
+            className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @10xl:grid-cols-4"
           >
             {masonryGrid.map((row, index) => (
               <div key={index} className="flex flex-col gap-[inherit]">
