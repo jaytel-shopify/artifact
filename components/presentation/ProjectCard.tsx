@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "@/components/ui/TransitionLink";
 import useSWR, { mutate as globalMutate, preload } from "swr";
 import { toast } from "sonner";
-import { MoreVertical, Folder as FolderIcon, X } from "lucide-react";
+import { MoreVertical, Folder as FolderIcon, X, Pencil, Trash2 } from "lucide-react";
 import { Card, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +58,6 @@ function ProjectCover({ artifacts }: { artifacts: Artifact[] }) {
   if (count === 0) {
     return (
       <div className="flex w-full flex-col gap-2 flex-1 items-center justify-center -mt-6">
-        <img src="/favicon.svg" alt="Add Artifacts" className="w-10 h-10" />
         <span className="text-text-secondary text-medium">Add Artifacts</span>
       </div>
     );
@@ -216,7 +215,8 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                   e.stopPropagation();
                 }}
               >
-                <DropdownMenuItem onClick={openRename}>
+                <DropdownMenuItem onClick={openRename} className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
                   Rename Project
                 </DropdownMenuItem>
 
@@ -260,7 +260,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
                 <DropdownMenuItem
                   variant="destructive"
                   onClick={() => setDeleteOpen(true)}
+                  className="flex items-center gap-2"
                 >
+                  <Trash2 className="h-4 w-4" />
                   Delete Project
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -296,7 +298,10 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
         {/* Context Menu (right-click) */}
         <ContextMenuContent>
-          <ContextMenuItem onClick={openRename}>Rename Project</ContextMenuItem>
+          <ContextMenuItem onClick={openRename} className="flex items-center gap-2">
+            <Pencil className="h-4 w-4" />
+            Rename Project
+          </ContextMenuItem>
 
           {/* Move to Folder submenu */}
           <ContextMenuSub>
@@ -336,7 +341,9 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <ContextMenuItem
             variant="destructive"
             onClick={() => setDeleteOpen(true)}
+            className="flex items-center gap-2"
           >
+            <Trash2 className="h-4 w-4" />
             Delete Project
           </ContextMenuItem>
         </ContextMenuContent>
@@ -346,7 +353,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
         isOpen={deleteOpen}
         onClose={() => setDeleteOpen(false)}
         onConfirm={handleDelete}
-        title="Delete Project"
+        title="Delete Project and all of its Artifacts"
         description={`Are you sure you want to delete "${project.name}"? This will permanently delete the project and all its pages and artifacts. This action cannot be undone.`}
       />
 
