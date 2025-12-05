@@ -10,7 +10,7 @@ function Skeleton({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("animate-pulse rounded-md bg-white/10", className)}
+      className={cn("animate-pulse rounded-md bg-secondary/50", className)}
       {...props}
     />
   );
@@ -28,17 +28,22 @@ function ProjectCardSkeleton({ className }: { className?: string }) {
         className
       )}
     >
-      {/* Cover area - 3 column preview */}
-      <div className="flex flex-1 w-full p-2 pt-4 gap-2">
-        <Skeleton className="flex-1 rounded-card-inner" />
-        <Skeleton className="flex-1 rounded-card-inner" />
-        <Skeleton className="flex-1 rounded-card-inner" />
-      </div>
-
       {/* Footer */}
       <div className="mt-auto p-4 space-y-2">
         <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-4 w-1/3" />
+      </div>
+      {/* Cover area - 3 column preview */}
+      <div className="flex flex-1 w-full p-2 pt-0 h-full overflow-hidden">
+        <div className="flex-1 p-1">
+          <Skeleton className="h-full rounded-card-inner" />
+        </div>
+        <div className="flex-1 p-1">
+          <Skeleton className="h-full rounded-card-inner" />
+        </div>
+        <div className="flex-1 p-1">
+          <Skeleton className="h-full rounded-card-inner" />
+        </div>
       </div>
     </div>
   );
@@ -76,12 +81,24 @@ function FeedCardSkeleton({
   return (
     <div
       className={cn(
-        "bg-primary rounded-card border-border border overflow-hidden",
+        "rounded-card w-full relative grid h-fit overflow-hidden border border-border",
         className
       )}
       style={{ aspectRatio }}
     >
-      <Skeleton className="w-full h-full rounded-none" />
+      {/* Thumbnail area */}
+      <Skeleton className="col-span-1 col-start-1 row-span-2 row-start-1 w-full h-full rounded-none" />
+
+      {/* Footer overlay */}
+      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex justify-between items-center">
+        {/* Avatar placeholder */}
+        <Skeleton className="h-8 w-24 rounded-button" />
+        {/* Reaction buttons placeholder */}
+        <div className="flex gap-2">
+          <Skeleton className="h-8 w-14 rounded-button" />
+          <Skeleton className="h-8 w-14 rounded-button" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -164,17 +181,19 @@ function HomeFeedSkeleton() {
 
   return (
     <div className="mx-auto p-6">
-      <div className="grid grid-cols-4 gap-2 lg:gap-6">
-        {aspectRatios.map((column, colIndex) => (
-          <div key={colIndex} className="flex flex-col gap-2 lg:gap-6">
-            {column.map((ratio, rowIndex) => (
-              <FeedCardSkeleton
-                key={`${colIndex}-${rowIndex}`}
-                aspectRatio={ratio}
-              />
-            ))}
-          </div>
-        ))}
+      <div className="@container">
+        <div className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @10xl:grid-cols-4">
+          {aspectRatios.map((column, colIndex) => (
+            <div key={colIndex} className="flex flex-col gap-[inherit]">
+              {column.map((ratio, rowIndex) => (
+                <FeedCardSkeleton
+                  key={`${colIndex}-${rowIndex}`}
+                  aspectRatio={ratio}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -209,4 +228,3 @@ export {
   HomeFeedSkeleton,
   CanvasSkeleton,
 };
-
