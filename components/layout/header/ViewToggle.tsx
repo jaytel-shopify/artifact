@@ -332,12 +332,11 @@ export default function ViewToggle() {
       currentIndexRef.current = clickedIndex;
       setLocalIndex(clickedIndex);
 
-      router.push(targetPath);
-
-      // Clear the block after a short delay
+      // Delay navigation to allow animation to start
       setTimeout(() => {
+        router.push(targetPath);
         blockLinkClickRef.current = false;
-      }, 50);
+      }, 100);
       return;
     }
 
