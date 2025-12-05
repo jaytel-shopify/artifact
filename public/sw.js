@@ -1,12 +1,12 @@
 // Service Worker for Artifact PWA
-const CACHE_NAME = "artifact-v2";
-const RUNTIME_CACHE = "artifact-runtime-v2";
+// Strategy: Stale-While-Revalidate for optimal performance
+const CACHE_VERSION = "v3";
+const CACHE_NAME = `artifact-${CACHE_VERSION}`;
 
-// Assets to cache on install
-// Note: Don't cache manifest.json as it can cause CORS issues with Quick's auth
-const PRECACHE_ASSETS = ["/", "/favicons/icon-256.png"];
+// Assets to precache on install
+const PRECACHE_ASSETS = ["/", "/favicon.svg"];
 
-// Install event - cache essential assets
+// Install event - precache essential assets
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -24,76 +24,93 @@ self.addEventListener("activate", (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter(
-              (cacheName) =>
-                cacheName !== CACHE_NAME && cacheName !== RUNTIME_CACHE
-            )
-            .map((cacheName) => caches.delete(cacheName))
+            .filter((name) => name.startsWith("artifact-") && name !== CACHE_NAME)
+            .map((name) => caches.delete(name))
         );
       })
       .then(() => self.clients.claim())
   );
 });
 
-// Fetch event - network first, fallback to cache
-self.addEventListener("fetch", (event) => {
-  // Skip non-GET requests
-  if (event.request.method !== "GET") return;
+// Stale-While-Revalidate: Return cached response immediately, update cache in background
+async function staleWhileRevalidate(request) {
+  const cache = await caches.open(CACHE_NAME);
+  const cachedResponse = await cache.match(request);
 
-  // Skip chrome-extension and other schemes
-  if (!event.request.url.startsWith("http")) return;
+  // Fetch fresh version in background
+  const fetchPromise = fetch(request)
+    .then((networkResponse) => {
+      // Only cache successful responses
+      if (networkResponse.ok) {
+        cache.put(request, networkResponse.clone());
+      }
+      return networkResponse;
+    })
+    .catch((error) => {
+      console.log("Network fetch failed:", error);
+      return null;
+    });
 
-  // IMPORTANT: Skip navigation requests entirely to allow Next.js client-side routing
-  // Intercepting these can cause hard refreshes instead of SPA navigation
-  if (event.request.mode === "navigate") {
-    return;
+  // Return cached response immediately if available, otherwise wait for network
+  return cachedResponse || fetchPromise;
+}
+
+// Network-first strategy for API calls and dynamic content
+async function networkFirst(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch (error) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    return new Response("Offline - content not available", {
+      status: 503,
+      statusText: "Service Unavailable",
+      headers: new Headers({ "Content-Type": "text/plain" }),
+    });
   }
+}
 
-  // Skip Quick API calls - always fetch fresh
+// Fetch event handler
+self.addEventListener("fetch", (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Skip non-GET requests
+  if (request.method !== "GET") return;
+
+  // Skip non-HTTP(S) requests
+  if (!request.url.startsWith("http")) return;
+
+  // Skip navigation requests - let Next.js handle routing
+  if (request.mode === "navigate") return;
+
+  // Skip Quick API and analytics - always fresh
   if (
-    event.request.url.includes("/client/quick.js") ||
-    event.request.url.includes("quicklytics")
+    url.pathname.includes("/client/quick.js") ||
+    url.hostname.includes("quicklytics") ||
+    url.pathname.startsWith("/api/")
   ) {
     return;
   }
 
-  // Skip Next.js data requests to ensure client-side navigation works
-  if (event.request.url.includes("/_next/")) {
+  // Skip Next.js internals - let Next.js handle these
+  if (url.pathname.startsWith("/_next/")) return;
+
+  // Skip external domains (CDNs, etc.) - use network-first
+  if (url.origin !== self.location.origin) {
+    event.respondWith(networkFirst(request));
     return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        // Clone the response
-        const responseToCache = response.clone();
-
-        // Cache successful responses
-        if (response.status === 200) {
-          caches.open(RUNTIME_CACHE).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-
-        return response;
-      })
-      .catch(() => {
-        // If network fails, try cache
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-
-          return new Response("Offline - content not available", {
-            status: 503,
-            statusText: "Service Unavailable",
-            headers: new Headers({
-              "Content-Type": "text/plain",
-            }),
-          });
-        });
-      })
-  );
+  // Use stale-while-revalidate for same-origin static assets
+  event.respondWith(staleWhileRevalidate(request));
 });
 
 // Handle messages from clients
