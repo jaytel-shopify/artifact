@@ -193,10 +193,16 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         }
         style={{
           ...style,
+          // For collapsed collections, aspect-ratio goes on carousel-item via CSS var
           aspectRatio:
-            isUrl && contentWidth && contentHeight
+            isUrl && contentWidth && contentHeight && !(isCollectionFirst && !isExpanded)
               ? `${contentWidth} / ${contentHeight}`
               : "",
+          // @ts-expect-error - CSS custom property
+          "--url-aspect-ratio":
+            isUrl && contentWidth && contentHeight
+              ? `${contentWidth} / ${contentHeight}`
+              : undefined,
         }}
         ref={ref}
         {...dragListeners}

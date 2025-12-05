@@ -449,6 +449,17 @@
   min-height: 0;
 }
 
+/* Collapsed collections with URLs: aspect-ratio on item, not wrapper */
+.carousel-item-wrapper.is-collection:has(
+    .carousel-item[data-content-type="url"]
+  ) {
+  height: fit-content;
+}
+
+.carousel-item-wrapper.is-collection .carousel-item[data-content-type="url"] {
+  aspect-ratio: var(--url-aspect-ratio);
+}
+
 /* Stack card - positioned to peek behind carousel-item, inset for depth */
 .collection-stack-card {
   position: absolute;

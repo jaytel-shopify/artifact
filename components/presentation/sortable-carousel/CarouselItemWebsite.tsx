@@ -145,7 +145,8 @@ export function CarouselItemWebsite({
     >
       {!isActivated ? (
         <div
-          className="group relative w-full h-full cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.005]"
+          className={`group relative w-full cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.005] ${fitMode ? "" : "h-full"}`}
+          style={fitMode ? { aspectRatio: `${width} / ${height}` } : undefined}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
         >
@@ -165,6 +166,9 @@ export function CarouselItemWebsite({
               src={thumbnailUrl}
               alt={`Preview of ${url}`}
               className="w-full h-full object-cover"
+              style={
+                fitMode ? { aspectRatio: `${width} / ${height}` } : undefined
+              }
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-fill-secondary gap-3">
