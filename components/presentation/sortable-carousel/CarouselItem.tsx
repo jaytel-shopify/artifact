@@ -227,6 +227,8 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                   className="carousel-item-focus-button h-6 w-6 p-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Blur to prevent spacebar (used for panning) from re-triggering this button
+                    (e.currentTarget as HTMLButtonElement).blur();
                     onFocus();
                   }}
                   aria-label={fitMode ? "Restore view" : "Focus on this item"}
