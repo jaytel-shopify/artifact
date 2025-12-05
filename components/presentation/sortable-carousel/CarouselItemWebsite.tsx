@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { ArrowRightIcon } from "lucide-react";
 import React, { useRef, useEffect, useState } from "react";
 
 function ClickToActivateIcon({ className }: { className?: string }) {
@@ -56,6 +54,14 @@ export function CarouselItemWebsite({
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [scale, setScale] = useState(1);
   const [isActivated, setIsActivated] = useState(false);
+  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
+
+  // Reset thumbnail state when URL changes
+  useEffect(() => {
+    setThumbnailLoaded(false);
+    setThumbnailError(false);
+  }, [thumbnailUrl]);
 
   // Calculate iframe scale only when activated
   useEffect(() => {
@@ -126,7 +132,7 @@ export function CarouselItemWebsite({
     }
   };
 
-  const displayThumbnail = thumbnailUrl || "/mock/artifact01.png";
+  const showThumbnail = thumbnailUrl && thumbnailLoaded && !thumbnailError;
 
   return (
     <div
@@ -143,17 +149,40 @@ export function CarouselItemWebsite({
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
         >
-          <img
-            src={displayThumbnail}
-            alt={`Preview of ${url}`}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 duration-200 ease-out">
-            <div className="flex items-center gap-2 text-white text-medium">
-              <ClickToActivateIcon />
-              <span>Click to activate</span>
+          {/* Hidden image to detect load/error */}
+          {thumbnailUrl && (
+            <img
+              src={thumbnailUrl}
+              alt=""
+              className="hidden"
+              onLoad={() => setThumbnailLoaded(true)}
+              onError={() => setThumbnailError(true)}
+            />
+          )}
+
+          {showThumbnail ? (
+            <img
+              src={thumbnailUrl}
+              alt={`Preview of ${url}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-fill-secondary gap-3">
+              <div className="w-8 h-8 border-2 border-text-secondary/30 border-t-text-secondary rounded-full animate-spin" />
+              <span className="text-small text-text-secondary">
+                Generating thumbnail…
+              </span>
             </div>
-          </div>
+          )}
+
+          {showThumbnail && (
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 duration-200 ease-out">
+              <div className="flex items-center gap-2 text-white text-medium">
+                <ClickToActivateIcon />
+                <span>Click to activate</span>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <iframe
