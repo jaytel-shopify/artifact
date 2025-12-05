@@ -88,17 +88,6 @@ function FeedCardSkeleton({
     >
       {/* Thumbnail area */}
       <Skeleton className="col-span-1 col-start-1 row-span-2 row-start-1 w-full h-full rounded-none" />
-
-      {/* Footer overlay */}
-      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex justify-between items-center">
-        {/* Avatar placeholder */}
-        <Skeleton className="h-8 w-24 rounded-button" />
-        {/* Reaction buttons placeholder */}
-        <div className="flex gap-2">
-          <Skeleton className="h-8 w-14 rounded-button" />
-          <Skeleton className="h-8 w-14 rounded-button" />
-        </div>
-      </div>
     </div>
   );
 }

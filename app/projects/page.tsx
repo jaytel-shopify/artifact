@@ -86,7 +86,7 @@ export default function ProjectsPage() {
   });
 
   // Show skeleton while loading
-  if (!isLoading) {
+  if (isLoading) {
     return <ProjectsPageSkeleton />;
   }
 
