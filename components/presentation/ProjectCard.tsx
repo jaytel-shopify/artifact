@@ -272,7 +272,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             <CardFooter className="mt-auto space-y-2 p-4">
               <Link
                 href={`/p/?id=${project.id}`}
-                className="space-y-1 after:content-[''] after:absolute after:inset-0 z-1 will-change-transform"
+                className="space-y-1 after:content-[''] after:absolute after:inset-0 z-1"
                 aria-label={
                   project.name +
                   " - " +
