@@ -89,6 +89,7 @@ export function InputDialog({
             Cancel
           </Button>
           <Button
+            variant="primary"
             onClick={handleSubmit}
             disabled={!value.trim() || isSubmitting}
           >

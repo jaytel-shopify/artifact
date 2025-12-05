@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "@/components/ui/TransitionLink";
-import { MoreVertical } from "lucide-react";
+import { MoreVertical, Pencil, Users, Trash2 } from "lucide-react";
 import { mutate as globalMutate, preload } from "swr";
 import { toast } from "sonner";
 import {
@@ -112,16 +112,20 @@ export default function FolderCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setRenameOpen(true)}>
+                    <DropdownMenuItem onClick={() => setRenameOpen(true)} className="flex items-center gap-2">
+                      <Pencil className="h-4 w-4" />
                       Rename Folder
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setShareOpen(true)}>
+                    <DropdownMenuItem onClick={() => setShareOpen(true)} className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
                       Manage Access
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       variant="destructive"
                       onClick={() => setDeleteOpen(true)}
+                      className="flex items-center gap-2"
                     >
+                      <Trash2 className="h-4 w-4" />
                       Delete Folder
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -152,16 +156,20 @@ export default function FolderCard({
         <ContextMenuContent>
           {canEdit && (
             <>
-              <ContextMenuItem onClick={() => setRenameOpen(true)}>
+              <ContextMenuItem onClick={() => setRenameOpen(true)} className="flex items-center gap-2">
+                <Pencil className="h-4 w-4" />
                 Rename Folder
               </ContextMenuItem>
-              <ContextMenuItem onClick={() => setShareOpen(true)}>
+              <ContextMenuItem onClick={() => setShareOpen(true)} className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
                 Manage Access
               </ContextMenuItem>
               <ContextMenuItem
                 variant="destructive"
                 onClick={() => setDeleteOpen(true)}
+                className="flex items-center gap-2"
               >
+                <Trash2 className="h-4 w-4" />
                 Delete Folder
               </ContextMenuItem>
             </>

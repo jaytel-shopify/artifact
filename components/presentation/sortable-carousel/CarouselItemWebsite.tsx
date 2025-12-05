@@ -178,7 +178,7 @@ export function CarouselItemWebsite({
           )}
 
           {showThumbnail && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 duration-200 ease-out">
+            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 duration-200 ease-out">
               <div className="flex items-center gap-2 text-white text-medium">
                 <ClickToActivateIcon />
                 <span>Click to activate</span>
