@@ -16,25 +16,40 @@ const inter = Inter({
 });
 
 // Inline manifest to bypass IAP CORS issues with manifest.json fetch
+// Must use absolute URLs since data URIs have no base URL context
+const SITE_URL = "https://artifact.quick.shopify.io";
+
 const manifestData = {
   name: "Artifact",
   short_name: "Artifact",
   description: "Collaborative presentation tool for design artifacts",
-  start_url: "/",
+  start_url: `${SITE_URL}/`,
   display: "standalone",
-  background_color: "#0F0F0F",
-  theme_color: "#0F0F0F",
+  background_color: "#06090a",
+  theme_color: "#06090a",
   orientation: "portrait-primary",
-  scope: "/",
+  scope: `${SITE_URL}/`,
   icons: [
     {
-      src: "/favicon.svg",
+      src: `${SITE_URL}/icons/web-app-manifest-192x192.png`,
+      sizes: "192x192",
+      type: "image/png",
+      purpose: "maskable",
+    },
+    {
+      src: `${SITE_URL}/icons/web-app-manifest-512x512.png`,
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "maskable",
+    },
+    {
+      src: `${SITE_URL}/favicon.svg`,
       sizes: "any",
       type: "image/svg+xml",
       purpose: "any",
     },
     {
-      src: "/favicon.svg",
+      src: `${SITE_URL}/favicon.svg`,
       sizes: "any",
       type: "image/svg+xml",
       purpose: "maskable",
@@ -46,10 +61,10 @@ const manifestData = {
       name: "Projects",
       short_name: "Projects",
       description: "View all projects",
-      url: "/projects",
+      url: `${SITE_URL}/projects`,
       icons: [
         {
-          src: "/favicon.svg",
+          src: `${SITE_URL}/favicon.svg`,
           sizes: "any",
           type: "image/svg+xml",
         },
@@ -103,7 +118,7 @@ export default function RootLayout({
         />
         <meta name="apple-mobile-web-app-title" content="Artifact" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#000000" />
+        <meta name="theme-color" content="#06090a" />
 
         {/* Service Worker Registration */}
         <Script src="/register-sw.js" strategy="afterInteractive" />
