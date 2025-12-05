@@ -230,6 +230,7 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                     onFocus();
                   }}
                   aria-label={fitMode ? "Restore view" : "Focus on this item"}
+                  data-carousel-focus-button="true"
                 >
                   {fitMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </Button>

@@ -85,10 +85,12 @@ export function CarouselItemWebsite({
   useEffect(() => {
     if (!isActivated) return;
     const handler = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      const target = e.target as HTMLElement;
+      // Don't deactivate when clicking the expand/collapse button
+      if (target.closest('[data-carousel-focus-button="true"]')) {
+        return;
+      }
+      if (containerRef.current && !containerRef.current.contains(target)) {
         setIsActivated(false);
       }
     };
