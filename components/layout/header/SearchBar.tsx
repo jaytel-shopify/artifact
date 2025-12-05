@@ -72,7 +72,7 @@ export default function SearchBar() {
         placeholder="Search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        className="peer border-border rounded-button h-full border pl-9 transition-shadow focus:shadow-[0_4px_12px_rgba(0,0,0,0.1)]"
+        className="peer border-border rounded-button h-full border pl-9 transition-shadow focus:shadow-[0_4px_12px_rgba(0,0,0,0.1)] bg-primary"
       />
       <SearchIcon className="text-text-secondary peer-focus:text-black pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 transition-colors" />
     </form>
