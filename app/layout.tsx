@@ -121,7 +121,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#06090a" />
 
         {/* Service Worker Registration */}
-        <Script src="/register-sw.js" strategy="afterInteractive" />
+        {/* <Script src="/register-sw.js" strategy="afterInteractive" /> */}
 
         {/* Quick Platform SDK - only works on deployed Quick sites */}
         <Script src="/client/quick.js" async fetchPriority="high" />
