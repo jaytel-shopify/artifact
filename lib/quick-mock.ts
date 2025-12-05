@@ -316,9 +316,9 @@ function init() {
       published: false,
       creator_id: MOCK_USER_ID,
       metadata: {
-        headline: "Welcome to the Project",
+        headline: "A sample title card with a clean and modern look",
         subheadline:
-          "This is a sample title card with a headline and subheadline",
+          "This is a sample title card with a headline and This is a sample title card with a headline and subheadline",
         width: 1280,
         height: 720,
       },
