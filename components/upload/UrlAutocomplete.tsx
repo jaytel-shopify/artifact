@@ -44,6 +44,7 @@ export function UrlAutocomplete({
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Sync external value changes
   useEffect(() => {
@@ -137,11 +138,14 @@ export function UrlAutocomplete({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
         dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node) &&
+        !dropdownRef.current.contains(target) &&
         inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
+        !inputRef.current.contains(target) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -191,25 +195,60 @@ export function UrlAutocomplete({
     setIsOpen(true);
   };
 
+  const toggleDropdown = () => {
+    if (allSites.length > 0) {
+      setIsOpen((prev) => !prev);
+    }
+  };
+
   return (
     <div className="relative">
-      <Input
-        ref={inputRef}
-        type="text"
-        placeholder={placeholder}
-        value={query}
-        onChange={handleInputChange}
-        onKeyDown={handleKeyDown}
-        onFocus={() => {
-          if (allSites.length > 0) {
-            setIsOpen(true);
-          }
-        }}
-        disabled={disabled}
-        autoFocus={autoFocus}
-        className="w-full"
-        autoComplete="off"
-      />
+      <div className="flex gap-2">
+        <Input
+          ref={inputRef}
+          type="text"
+          placeholder={placeholder}
+          value={query}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          className="w-full"
+          autoComplete="off"
+        />
+        {/* Quick Sites Button */}
+        {allSites.length > 0 && !loading && (
+          <button
+            ref={buttonRef}
+            type="button"
+            onClick={toggleDropdown}
+            disabled={disabled}
+            className="flex items-center gap-1.5 px-3 h-10 rounded-button border border-border bg-primary hover:bg-secondary/10 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50 disabled:pointer-events-none shrink-0"
+            title="Browse Quick sites"
+          >
+            <img src="/quick.svg" alt="Quick Sites" width={36} height={36} />
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
+            >
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        )}
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center w-10 h-10">
+            <div className="animate-spin h-4 w-4 border-2 border-border border-t-foreground rounded-full" />
+          </div>
+        )}
+      </div>
 
       {/* Autocomplete Dropdown */}
       {isOpen && results.length > 0 && (
@@ -234,13 +273,6 @@ export function UrlAutocomplete({
               )}
             </button>
           ))}
-        </div>
-      )}
-
-      {/* Loading State */}
-      {loading && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <div className="animate-spin h-4 w-4 border-2 border-border border-t-foreground rounded-full" />
         </div>
       )}
     </div>
