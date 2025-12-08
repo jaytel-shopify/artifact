@@ -159,12 +159,6 @@ export default function ArtifactFeed({
 
           {/* Infinite scroll sentinel */}
           {onLoadMore && <div ref={sentinelRef} className="h-px" />}
-
-          {isLoadingMore && (
-            <div className="mt-8 flex justify-center">
-              <p className="text-text-secondary">Loading more...</p>
-            </div>
-          )}
         </div>
       ) : (
         <div className="py-12 text-center">
