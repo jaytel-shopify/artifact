@@ -186,11 +186,12 @@ export function SaveToProjectDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isSaving}>
+          <Button variant="ghost" onClick={handleClose} disabled={isSaving}>
             Cancel
           </Button>
           <Button
             onClick={handleSave}
+            variant="primary"
             disabled={isSaving || !selectedProjectId || !selectedPageId}
           >
             {isSaving ? "Saving..." : "Save"}
