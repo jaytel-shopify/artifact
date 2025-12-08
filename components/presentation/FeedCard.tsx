@@ -5,7 +5,7 @@ import Link from "@/components/ui/TransitionLink";
 import { useReactions } from "@/hooks/useReactions";
 import { ArtifactWithCreator } from "@/hooks/usePublicArtifacts";
 import { UserAvatar } from "@/components/auth/UserAvatar";
-import { useState } from "react";
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 interface FeedCardProps {
@@ -23,7 +23,26 @@ export default function FeedCard({
   const { userLiked, userDisliked, handleLike, handleDislike, canReact } =
     useReactions({ artifact });
 
-  const [activeViewTransition, setActiveViewTransition] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Fade in when entering viewport
+  useEffect(() => {
+    const element = cardRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          element.style.opacity = "1";
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   const hoverClasses = cn(
     "transition-all",
@@ -37,20 +56,16 @@ export default function FeedCard({
   );
 
   return (
-    <div className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border group">
+    <div
+      ref={cardRef}
+      className="rounded-card w-full relative grid h-fit cursor-pointer overflow-hidden border border-border group opacity-0 transition-opacity duration-500"
+    >
       <Link
         href={`/a/?id=${artifact.id}${userId ? `&userId=${userId}` : ""}`}
         className="col-span-1 col-start-1 row-span-2 row-start-1 w-full hover:opacity-100"
         tabIndex={tabIndex}
-        onClick={(e) => {
-          // setActiveViewTransition(true);
-        }}
       >
-        <ArtifactThumbnail
-          artifact={artifact}
-          className="w-full"
-          activeViewTransition={activeViewTransition}
-        />
+        <ArtifactThumbnail artifact={artifact} className="w-full" />
       </Link>
 
       <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex justify-between items-center will-change-[opacity]">
