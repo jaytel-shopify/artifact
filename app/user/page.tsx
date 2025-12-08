@@ -69,7 +69,7 @@ export default function UserProfilePage() {
               alt={displayName || "User"}
               width={64}
               height={64}
-              className="h-24 w-24 rounded-full"
+              className="h-24 w-24 rounded-full object-cover"
             />
           )}
           <div className="flex flex-col items-center gap-1">
