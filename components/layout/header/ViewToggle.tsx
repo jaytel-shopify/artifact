@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "@/components/ui/TransitionLink";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import {
   useRef,
   useCallback,
@@ -38,7 +39,7 @@ const isSettled = (
 
 export default function ViewToggle() {
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useTransitionRouter();
 
   const isExplore =
     pathname === "/" ||

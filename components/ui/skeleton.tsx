@@ -161,17 +161,19 @@ function FolderPageSkeleton() {
  */
 function HomeFeedSkeleton() {
   // Create varied aspect ratios for realistic masonry look
+  // 5 columns to support all breakpoints (2-5 cols)
   const aspectRatios = [
     ["4/3", "3/4", "1/1", "4/5"],
     ["3/4", "4/3", "4/5", "1/1"],
     ["1/1", "4/5", "4/3", "3/4"],
     ["4/5", "1/1", "3/4", "4/3"],
+    ["3/4", "4/5", "1/1", "4/3"],
   ];
 
   return (
-    <div className="mx-auto p-6">
+    <div className="mx-auto pt-3 px-6 pb-6">
       <div className="@container">
-        <div className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @10xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @[80rem]:grid-cols-4 @[120rem]:grid-cols-5">
           {aspectRatios.map((column, colIndex) => (
             <div key={colIndex} className="flex flex-col gap-[inherit]">
               {column.map((ratio, rowIndex) => (

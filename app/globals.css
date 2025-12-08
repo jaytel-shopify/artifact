@@ -236,6 +236,12 @@ body {
 
 body {
   font-family: var(--font-family-primary);
+  animation: page-load-fade-in 300ms ease-out;
+}
+
+@keyframes page-load-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 .hide-scrollbar {
@@ -314,7 +320,7 @@ input[type="range"]::-moz-range-track {
   padding-inline: 0.25rem;
 }
 
-/* View Transitions - Page Crossfade */
+/* Page fade-in animation */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -324,26 +330,6 @@ input[type="range"]::-moz-range-track {
   }
 }
 
-@keyframes fade-out {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-::view-transition-group(*) {
-  pointer-events: none;
-}
-
-::view-transition-old(root) {
-  animation: 200ms ease-in-out fade-out;
-}
-
-::view-transition-new(root) {
-  animation: 200ms ease-in-out fade-in;
-}
 
 /* Search input clear button styling */
 input[type="search"]::-webkit-search-cancel-button {

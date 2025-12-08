@@ -6,6 +6,7 @@ import GlobalHeader from "./GlobalHeader";
 import { useHeader } from "./HeaderContext";
 import { setCurrentPath } from "@/lib/navigation";
 import DropzoneUploader from "@/components/upload/DropzoneUploader";
+import { usePageTransitionRef } from "@/components/ViewTransitionHandler";
 
 interface GlobalLayoutProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ function PathTracker() {
 
 export default function GlobalLayout({ children }: GlobalLayoutProps) {
   const { headerContent } = useHeader();
+  const pageRef = usePageTransitionRef();
 
   return (
     <div
@@ -46,7 +48,7 @@ export default function GlobalLayout({ children }: GlobalLayoutProps) {
         right={headerContent.right}
       />
 
-      <main className="flex-1 min-h-0">{children}</main>
+      <main ref={pageRef as React.RefObject<HTMLElement>} className="flex-1 min-h-0">{children}</main>
 
       <DropzoneUploader />
     </div>
