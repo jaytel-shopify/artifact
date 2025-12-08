@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import {
   ContextMenu,
@@ -170,8 +170,12 @@ function SortablePageItem({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={onRename}>Rename</ContextMenuItem>
-        <ContextMenuItem variant="destructive" onClick={onDelete}>
+        <ContextMenuItem onClick={onRename} className="flex items-center gap-2">
+          <Pencil className="h-4 w-4" />
+          Rename
+        </ContextMenuItem>
+        <ContextMenuItem variant="destructive" onClick={onDelete} className="flex items-center gap-2">
+          <Trash2 className="h-4 w-4" />
           Delete
         </ContextMenuItem>
       </ContextMenuContent>

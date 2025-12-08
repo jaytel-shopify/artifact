@@ -300,6 +300,7 @@ function init() {
         viewport: "laptop",
         width: 1512,
         height: 900,
+        thumbnail_url: "/mock/artifact04.png",
       },
       reactions: { like: [], dislike: [] },
       created_at: now,
@@ -315,9 +316,9 @@ function init() {
       published: false,
       creator_id: MOCK_USER_ID,
       metadata: {
-        headline: "Welcome to the Project",
+        headline: "A sample title card with a clean and modern look",
         subheadline:
-          "This is a sample title card with a headline and subheadline",
+          "This is a sample title card with a headline and This is a sample title card with a headline and subheadline",
         width: 1280,
         height: 720,
       },
@@ -527,6 +528,7 @@ function init() {
         viewport: "desktop",
         width: 1920,
         height: 1080,
+        thumbnail_url: "/mock/artifact05.png",
       },
       reactions: { like: [], dislike: [] },
       created_at: now,

@@ -193,10 +193,16 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         }
         style={{
           ...style,
+          // For collapsed collections, aspect-ratio goes on carousel-item via CSS var
           aspectRatio:
-            isUrl && contentWidth && contentHeight
+            isUrl && contentWidth && contentHeight && !(isCollectionFirst && !isExpanded)
               ? `${contentWidth} / ${contentHeight}`
               : "",
+          // @ts-expect-error - CSS custom property
+          "--url-aspect-ratio":
+            isUrl && contentWidth && contentHeight
+              ? `${contentWidth} / ${contentHeight}`
+              : undefined,
         }}
         ref={ref}
         {...dragListeners}
@@ -221,9 +227,12 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
                   className="carousel-item-focus-button h-6 w-6 p-0 text-text-secondary hover:text-text-primary hover:bg-secondary/10"
                   onClick={(e) => {
                     e.stopPropagation();
+                    // Blur to prevent spacebar (used for panning) from re-triggering this button
+                    (e.currentTarget as HTMLButtonElement).blur();
                     onFocus();
                   }}
                   aria-label={fitMode ? "Restore view" : "Focus on this item"}
+                  data-carousel-focus-button="true"
                 >
                   {fitMode ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
                 </Button>

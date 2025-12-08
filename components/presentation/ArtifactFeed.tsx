@@ -133,7 +133,7 @@ export default function ArtifactFeed({
   }
 
   return (
-    <div className="mx-auto p-6">
+    <div className="mx-auto pt-3 px-6 pb-6">
       {error && <p className="text-destructive">Failed to load artifacts</p>}
 
       {artifacts.length > 0 ? (

@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTransitionRouter } from "@/hooks/useTransitionRouter";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import useSWR, { mutate as globalMutate } from "swr";
-import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ArrowLeft, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import {
   DropdownMenu,
@@ -314,13 +314,16 @@ function FolderPageContent() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setRenameDialogOpen(true)}>
+                <DropdownMenuItem onClick={() => setRenameDialogOpen(true)} className="flex items-center gap-2">
+                  <Pencil className="h-4 w-4" />
                   Rename Folder
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   variant="destructive"
                   onClick={() => setDeleteDialogOpen(true)}
+                  className="flex items-center gap-2"
                 >
+                  <Trash2 className="h-4 w-4" />
                   Delete Folder
                 </DropdownMenuItem>
               </DropdownMenuContent>

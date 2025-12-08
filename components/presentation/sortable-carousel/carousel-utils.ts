@@ -38,10 +38,13 @@ export function getCurrentScrollIndex(container: HTMLElement): number {
 export function scrollToEnd(container: HTMLElement): void {
   container.classList.add("disable-snap-scroll");
 
+  // Max scroll position is scrollWidth minus visible width
+  const maxScrollLeft = container.scrollWidth - container.clientWidth;
+
   gsap.to(container, {
-    scrollLeft: container.scrollWidth,
-    duration: 0.65,
-    ease: "power3.out",
+    scrollLeft: maxScrollLeft,
+    duration: 1,
+    ease: "power2.inOut",
     overwrite: "auto",
     onComplete: () => {
       container.classList.remove("disable-snap-scroll");

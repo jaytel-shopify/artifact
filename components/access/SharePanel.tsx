@@ -216,9 +216,9 @@ export function SharePanel({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
         {/* Header */}
-        <DialogHeader className="px-6 py-5 border-b border-border">
+        <DialogHeader className="px-6 pt-5 pb-3 border-b border-border">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-medium  text-text-primary">
+            <DialogTitle className="text-large text-text-primary">
               Share {resourceName}
             </DialogTitle>
 

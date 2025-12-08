@@ -56,7 +56,7 @@ export default function FeedCard({
       <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex justify-between items-center will-change-[opacity]">
         <Link
           href={`/user/?id=${artifact.creator?.id}`}
-          className={`pl-2 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark rotate-4 ${hoverClasses}`}
+          className={`pl-1 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark rotate-4 ${hoverClasses}`}
         >
           <UserAvatar
             id={artifact.creator?.id}

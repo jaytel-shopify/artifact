@@ -127,6 +127,7 @@ export function useCarouselItems({
     const prevIds = prevArtifactsRef.current.map((a) => a.id).sort().join(",");
     const newIds = visibleArtifacts.map((a) => a.id).sort().join(",");
     const idsChanged = prevIds !== newIds;
+    const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
 
     const syncItems = () => {
       setItems(visibleArtifacts);
@@ -134,19 +135,33 @@ export function useCarouselItems({
       prevVisibleCountRef.current = visibleArtifacts.length;
     };
 
-    // Visible count changed (expand/collapse)
+    // Scroll to end after layout is computed
+    const scrollToEndAfterLayout = () => {
+      if (!containerRef.current) return;
+      requestAnimationFrame(() => {
+        if (containerRef.current) {
+          scrollToEnd(containerRef.current);
+        }
+      });
+    };
+
+    // Visible count changed (expand/collapse or items added/removed)
     if (visibleArtifacts.length !== prevVisibleCountRef.current) {
       syncItems();
+      
+      // Scroll to end when new items are added
+      if (itemsAdded) {
+        scrollToEndAfterLayout();
+      }
       return;
     }
 
-    // Items added/removed
+    // Items added/removed (IDs changed but count stayed same - e.g., replace)
     if (idsChanged) {
-      const itemsAdded = artifacts.length > prevArtifactsRef.current.length;
       syncItems();
 
-      if (itemsAdded && containerRef.current) {
-        setTimeout(() => containerRef.current && scrollToEnd(containerRef.current), 100);
+      if (itemsAdded) {
+        scrollToEndAfterLayout();
       }
       return;
     }

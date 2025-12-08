@@ -43,6 +43,9 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [saveToProjectOpen, setSaveToProjectOpen] = useState(false);
 
+  // Only the creator can delete their own artifacts
+  const isOwner = user?.id === artifact.creator_id;
+
   const handleDelete = async () => {
     try {
       await deleteArtifact(artifact.id);
@@ -93,13 +96,17 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
                   <FolderPlus className="mr-2 h-4 w-4" />
                   Save to Project
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => setDeleteOpen(true)}
-                >
-                  Delete Artifact
-                </DropdownMenuItem>
+                {isOwner && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => setDeleteOpen(true)}
+                    >
+                      Delete Artifact
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -111,13 +118,17 @@ export default function ArtifactCard({ artifact }: ArtifactCardProps) {
             <FolderPlus className="mr-2 h-4 w-4" />
             Save to Project
           </ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuItem
-            variant="destructive"
-            onClick={() => setDeleteOpen(true)}
-          >
-            Delete Artifact
-          </ContextMenuItem>
+          {isOwner && (
+            <>
+              <ContextMenuSeparator />
+              <ContextMenuItem
+                variant="destructive"
+                onClick={() => setDeleteOpen(true)}
+              >
+                Delete Artifact
+              </ContextMenuItem>
+            </>
+          )}
         </ContextMenuContent>
       </ContextMenu>
 
