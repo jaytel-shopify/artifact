@@ -83,26 +83,29 @@ export default function ArtifactFeed({
     };
   }, []);
 
-  const [masonryGridElement, setMasonryGridElement] =
+  const [containerElement, setContainerElement] =
     useState<HTMLDivElement | null>(null);
-  const masonryGridRef = useCallback((node: HTMLDivElement | null) => {
-    setMasonryGridElement(node);
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    setContainerElement(node);
   }, []);
   useEffect(() => {
-    if (!masonryGridElement) return;
+    if (!containerElement) return;
 
     const resizeObserver = new ResizeObserver((entries) => {
       const [entry] = entries;
-      const isSmall = entry.contentRect.width < 768;
-      const isLarge = entry.contentRect.width >= 1920;
-      computeMasonryGrid(artifacts, isSmall ? 2 : isLarge ? 4 : 3);
+      const width = entry.contentRect.width;
+      let columns = 3;
+      if (width < 768) columns = 2;
+      else if (width >= 1920) columns = 5;
+      else if (width >= 1280) columns = 4;
+      computeMasonryGrid(artifacts, columns);
     });
-    resizeObserver.observe(masonryGridElement);
+    resizeObserver.observe(containerElement);
 
     return () => {
       resizeObserver.disconnect();
     };
-  }, [masonryGridElement, artifacts]);
+  }, [containerElement, artifacts]);
 
   // Infinite scroll with Intersection Observer
   useEffect(() => {
@@ -137,11 +140,8 @@ export default function ArtifactFeed({
       {error && <p className="text-destructive">Failed to load artifacts</p>}
 
       {artifacts.length > 0 ? (
-        <div className="@container">
-          <div
-            ref={masonryGridRef}
-            className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @10xl:grid-cols-4"
-          >
+        <div ref={containerRef} className="@container">
+          <div className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @[80rem]:grid-cols-4 @[120rem]:grid-cols-5">
             {masonryGrid.map((row, index) => (
               <div key={index} className="flex flex-col gap-[inherit]">
                 {row.artifacts.map(({ artifact, tabindex }) => (
