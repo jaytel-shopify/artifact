@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ArtifactWithCreator } from "@/types";
 import FeedCard from "@/components/presentation/FeedCard";
-import { HomeFeedSkeleton } from "../ui/skeleton";
 
 interface ArtifactFeedProps {
   artifacts: ArtifactWithCreator[];
@@ -133,7 +132,7 @@ export default function ArtifactFeed({
   }, [hasMore, isLoadingMore, onLoadMore]);
 
   if (isLoading) {
-    return <HomeFeedSkeleton />;
+    return null;
   }
 
   return (
