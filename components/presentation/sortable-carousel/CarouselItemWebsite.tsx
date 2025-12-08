@@ -139,17 +139,21 @@ export function CarouselItemWebsite({
   return (
     <div
       ref={containerRef}
-      className="carousel-item-content carousel-item-website"
+      className={`carousel-item-content carousel-item-website ${fitMode ? "fit-mode-website" : ""}`}
       style={{
         overflow: "hidden",
         pointerEvents: isDragging ? "none" : "auto",
+        display: fitMode ? "flex" : undefined,
+        justifyContent: fitMode ? "center" : undefined,
+        alignItems: fitMode ? "flex-start" : undefined,
       }}
     >
       {!isActivated ? (
         <div
-          className="group relative w-full h-full cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.005]"
+          className={`group relative cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.005] ${fitMode ? "h-full" : "w-full h-full"}`}
           onClick={handleClick}
           onDoubleClick={handleDoubleClick}
+          style={fitMode ? { aspectRatio: `${width} / ${height}` } : undefined}
         >
           {/* Hidden image to detect load/error */}
           {thumbnailUrl && (
@@ -166,7 +170,7 @@ export function CarouselItemWebsite({
             <img
               src={thumbnailUrl}
               alt={`Preview of ${url}`}
-              className="w-full h-full object-cover"
+              className={`w-full h-full ${fitMode ? "object-contain" : "object-cover"}`}
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center bg-fill-secondary gap-3">
@@ -187,20 +191,28 @@ export function CarouselItemWebsite({
           )}
         </div>
       ) : (
-        <iframe
-          src={url}
-          width={width}
-          height={height}
+        <div
           style={{
-            border: 0,
-            transform: `scale(${scale})`,
-            transformOrigin: fitMode ? "top center" : "top left",
-            pointerEvents: isDragging ? "none" : "auto",
+            width: fitMode ? `${width * scale}px` : undefined,
+            height: fitMode ? `${height * scale}px` : undefined,
+            flexShrink: 0,
           }}
-          allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
-          referrerPolicy="no-referrer-when-downgrade"
-          title={url}
-        />
+        >
+          <iframe
+            src={url}
+            width={width}
+            height={height}
+            style={{
+              border: 0,
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+              pointerEvents: isDragging ? "none" : "auto",
+            }}
+            allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
+            referrerPolicy="no-referrer-when-downgrade"
+            title={url}
+          />
+        </div>
       )}
     </div>
   );
