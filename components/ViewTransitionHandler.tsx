@@ -65,6 +65,14 @@ export default function ViewTransitionHandler({
 
   const navigate = useCallback(
     (href: string, method: "push" | "replace" = "push") => {
+      // Skip transition if navigating to the same route
+      const currentPath = window.location.pathname;
+      if (
+        href === currentPath ||
+        href === currentPath + window.location.search
+      ) {
+        return router[method](href);
+      }
       if (!contentRef.current) return router[method](href);
       navigating.current = true;
       contentRef.current.style.transition = `opacity ${FADE_MS}ms ease-in`;
