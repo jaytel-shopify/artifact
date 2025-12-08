@@ -1,8 +1,10 @@
 "use client";
 
+import { mutate as globalMutate } from "swr";
 import { Input, ALL_FORMATS, BlobSource, CanvasSink } from "mediabunny";
 import { uploadFile } from "./quick-storage";
 import { updateArtifact } from "./quick-db";
+import { cacheKeys } from "./cache-keys";
 
 /**
  * Generate a thumbnail image from the first frame of a video file
@@ -58,13 +60,19 @@ export async function generateVideoThumbnail(
     });
 
     // Get the first frame (timestamp 0)
+    const THUMBNAIL_COUNT = 10;
     const firstTimestamp = await videoTrack.getFirstTimestamp();
+    const lastTimestamp = await videoTrack.computeDuration();
+    const timestamps = Array.from(
+      { length: THUMBNAIL_COUNT },
+      (_, i2) =>
+        firstTimestamp +
+        (i2 * (lastTimestamp - firstTimestamp)) / THUMBNAIL_COUNT
+    );
 
     // Extract the frame
     let thumbnailBlob: Blob | null = null;
-    for await (const wrappedCanvas of sink.canvasesAtTimestamps([
-      firstTimestamp,
-    ])) {
+    for await (const wrappedCanvas of sink.canvasesAtTimestamps(timestamps)) {
       if (wrappedCanvas) {
         const canvas = wrappedCanvas.canvas as HTMLCanvasElement;
 
@@ -104,10 +112,12 @@ export async function generateVideoThumbnail(
  *
  * @param videoFile - The original video file
  * @param artifactId - The ID of the artifact to update
+ * @param pageId - Optional page ID to invalidate page-specific cache
  */
 export async function generateAndUploadThumbnail(
   videoFile: File,
-  artifactId: string
+  artifactId: string,
+  pageId?: string
 ): Promise<void> {
   try {
     console.log(`Generating thumbnail for video artifact ${artifactId}...`);
@@ -146,6 +156,12 @@ export async function generateAndUploadThumbnail(
         thumbnail_url: uploadResult.fullUrl,
       },
     });
+
+    // Trigger frontend refresh so the new thumbnail appears
+    globalMutate(cacheKeys.publicArtifacts);
+    if (pageId) {
+      globalMutate(cacheKeys.pageArtifacts(pageId));
+    }
 
     console.log(`Thumbnail metadata updated for artifact ${artifactId}`);
   } catch (error) {

@@ -131,7 +131,12 @@ export default function ArtifactThumbnail({
       // Fallback to play icon if no thumbnail
       return (
         <div className={baseClasses}>
-          <div className="w-full h-full bg-destructive/20 flex items-center justify-center aspect-[16/9]">
+          <div
+            className="w-full h-full bg-destructive/20 flex items-center justify-center"
+            style={{
+              aspectRatio: `${artifact.metadata.width || 16}/${artifact.metadata.height || 9}`,
+            }}
+          >
             <Play className="w-8 h-8 text-destructive" />
           </div>
         </div>

@@ -279,11 +279,13 @@ export function useArtifactUpload({
 
           // Generate thumbnail asynchronously for videos
           if (upload.type === "video" && artifact) {
-            generateAndUploadThumbnail(upload.file, artifact.id).catch(
-              (err) => {
-                console.error("Thumbnail generation failed:", err);
-              }
-            );
+            generateAndUploadThumbnail(
+              upload.file,
+              artifact.id,
+              effectiveContext?.pageId ?? undefined
+            ).catch((err) => {
+              console.error("Thumbnail generation failed:", err);
+            });
           }
         }
 
