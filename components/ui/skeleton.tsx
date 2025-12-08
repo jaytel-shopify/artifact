@@ -34,7 +34,7 @@ function ProjectCardSkeleton({ className }: { className?: string }) {
         <Skeleton className="h-4 w-1/3" />
       </div>
       {/* Cover area - 3 column preview */}
-      <div className="flex flex-1 w-full p-2 pt-0 h-full overflow-hidden">
+      <div className="flex flex-1 w-[140%] p-2 pt-0 h-full overflow-hidden">
         <div className="flex-1 p-1">
           <Skeleton className="h-full rounded-card-inner" />
         </div>
