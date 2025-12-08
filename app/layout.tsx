@@ -9,6 +9,7 @@ import GlobalLayout from "@/components/layout/GlobalLayout";
 import { SWRProvider } from "@/components/SWRProvider";
 import ViewTransitionHandler from "@/components/ViewTransitionHandler";
 import "./globals.css";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -149,6 +150,7 @@ export default function RootLayout({
                 </HeaderProvider>
                 <Toaster />
               </ViewTransitionHandler>
+              <PWAInstallPrompt />
             </ThemeProvider>
           </AuthProvider>
         </SWRProvider>

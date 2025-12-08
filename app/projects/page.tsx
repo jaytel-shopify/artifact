@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/auth/AuthProvider";
 import FolderDialog from "@/components/folders/FolderDialog";
 import { EmptyProjectsState } from "@/components/projects";
-import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { useProjectsData } from "@/hooks/useProjectsData";
 import { createFolder } from "@/lib/quick-folders";
 import { cacheKeys } from "@/lib/cache-keys";
@@ -78,7 +77,6 @@ export default function ProjectsPage() {
         <Button variant="primary" onClick={handleNewProject}>
           New Project
         </Button>
-        <PWAInstallPrompt />
         <HeaderUserAvatar />
         <DarkModeToggle />
       </>
