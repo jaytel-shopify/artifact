@@ -96,8 +96,9 @@ export default function ArtifactFeed({
       const width = entry.contentRect.width;
       let columns = 3;
       if (width < 768) columns = 2;
-      else if (width >= 1920) columns = 5;
-      else if (width >= 1280) columns = 4;
+      else if (width >= 2240) columns = 6;
+      else if (width >= 1680) columns = 5;
+      else if (width >= 1152) columns = 4;
       computeMasonryGrid(artifacts, columns);
     });
     resizeObserver.observe(containerElement);
@@ -141,7 +142,7 @@ export default function ArtifactFeed({
 
       {artifacts.length > 0 ? (
         <div ref={containerRef} className="@container">
-          <div className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @[80rem]:grid-cols-4 @[120rem]:grid-cols-5">
+          <div className="grid grid-cols-2 gap-[clamp(1rem,2vw,2.5rem)] @3xl:grid-cols-3 @[72rem]:grid-cols-4 @[105rem]:grid-cols-5 @[140rem]:grid-cols-6">
             {masonryGrid.map((row, index) => (
               <div key={index} className="flex flex-col gap-[inherit]">
                 {row.artifacts.map(({ artifact, tabindex }) => (
