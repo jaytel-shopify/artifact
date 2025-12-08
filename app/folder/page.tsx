@@ -50,12 +50,13 @@ async function fetchFolderData(
   folderId: string,
   userId: string
 ): Promise<FolderData | null> {
-  const [folderData, hasEditAccess, hasViewAccess, folderProjects] = await Promise.all([
-    getFolderById(folderId),
-    canUserEdit(folderId, "folder", userId),
-    canUserView(folderId, "folder", userId),
-    getProjectsInFolder(folderId, userId),
-  ]);
+  const [folderData, hasEditAccess, hasViewAccess, folderProjects] =
+    await Promise.all([
+      getFolderById(folderId),
+      canUserEdit(folderId, "folder", userId),
+      canUserView(folderId, "folder", userId),
+      getProjectsInFolder(folderId, userId),
+    ]);
 
   // Folder doesn't exist or user has no access
   if (!folderData || !hasViewAccess) {
@@ -127,37 +128,40 @@ async function fetchFolderData(
   }
 
   // Build projects with covers using the pre-fetched data
-  const projectsWithCovers: ProjectWithCover[] = folderProjects.map((project) => {
-    const projectJunctions = junctionByProject.get(project.id) || [];
-    const projectPages = pagesByProject.get(project.id) || [];
+  const projectsWithCovers: ProjectWithCover[] = folderProjects.map(
+    (project) => {
+      const projectJunctions = junctionByProject.get(project.id) || [];
+      const projectPages = pagesByProject.get(project.id) || [];
 
-    // Find first page (position 0 or first in list)
-    const sortedPages = projectPages.sort((a, b) => a.position - b.position);
-    const firstPage = sortedPages.find((p) => p.position === 0) || sortedPages[0];
+      // Find first page (position 0 or first in list)
+      const sortedPages = projectPages.sort((a, b) => a.position - b.position);
+      const firstPage =
+        sortedPages.find((p) => p.position === 0) || sortedPages[0];
 
-    // Get cover artifacts (first 3 from first page)
-    let coverArtifacts: Artifact[] = [];
-    if (firstPage) {
-      const firstPageJunctions = projectJunctions
-        .filter((j) => j.page_id === firstPage.id)
-        .sort((a, b) => a.position - b.position);
+      // Get cover artifacts (first 3 from first page)
+      let coverArtifacts: Artifact[] = [];
+      if (firstPage) {
+        const firstPageJunctions = projectJunctions
+          .filter((j) => j.page_id === firstPage.id)
+          .sort((a, b) => a.position - b.position);
 
-      coverArtifacts = firstPageJunctions
-        .slice(0, 3)
-        .map((j) => {
-          const artifact = artifactById.get(j.artifact_id);
-          if (!artifact) return null;
-          return { ...artifact, name: j.name || artifact.name };
-        })
-        .filter((a): a is Artifact => a !== null);
+        coverArtifacts = firstPageJunctions
+          .slice(0, 3)
+          .map((j) => {
+            const artifact = artifactById.get(j.artifact_id);
+            if (!artifact) return null;
+            return { ...artifact, name: j.name || artifact.name };
+          })
+          .filter((a): a is Artifact => a !== null);
+      }
+
+      return {
+        ...project,
+        coverArtifacts,
+        artifactCount: projectJunctions.length,
+      };
     }
-
-    return {
-      ...project,
-      coverArtifacts,
-      artifactCount: projectJunctions.length,
-    };
-  });
+  );
 
   return {
     folder: folderData,
@@ -245,8 +249,9 @@ function FolderPageContent() {
   const backUrl = "/projects/";
 
   // ESC key navigates back to projects (only when no dialogs are open)
-  const isAnyDialogOpen = renameDialogOpen || accessDialogOpen || deleteDialogOpen;
-  
+  const isAnyDialogOpen =
+    renameDialogOpen || accessDialogOpen || deleteDialogOpen;
+
   const handleEscape = useCallback(() => {
     router.push(backUrl);
   }, [router]);
@@ -304,7 +309,7 @@ function FolderPageContent() {
           {canEdit && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
+                <Button variant="ghost" size="icon">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

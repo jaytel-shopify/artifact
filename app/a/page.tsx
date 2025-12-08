@@ -360,7 +360,7 @@ export default function Page() {
           onClose={() => setIsSaveDialogOpen(false)}
           artifactId={artifactId}
           artifactName={artifact.name}
-          userEmail={user.email}
+          userId={user.id}
         />
       )}
 

@@ -26,7 +26,7 @@ interface SaveToProjectDialogProps {
   onClose: () => void;
   artifactId: string;
   artifactName: string;
-  userEmail: string;
+  userId: string;
 }
 
 export function SaveToProjectDialog({
@@ -34,7 +34,7 @@ export function SaveToProjectDialog({
   onClose,
   artifactId,
   artifactName,
-  userEmail,
+  userId,
 }: SaveToProjectDialogProps) {
   const router = useTransitionRouter();
   const [projects, setProjects] = useState<Project[]>([]);
@@ -46,9 +46,9 @@ export function SaveToProjectDialog({
 
   // Load projects when dialog opens
   useEffect(() => {
-    if (isOpen && userEmail) {
+    if (isOpen && userId) {
       setIsLoading(true);
-      getProjects(userEmail)
+      getProjects(userId)
         .then((p) => {
           setProjects(p);
           // Auto-select first project
@@ -62,7 +62,7 @@ export function SaveToProjectDialog({
         })
         .finally(() => setIsLoading(false));
     }
-  }, [isOpen, userEmail]);
+  }, [isOpen, userId]);
 
   // Load pages when project changes
   useEffect(() => {
