@@ -174,8 +174,11 @@ function ArtifactPageContent() {
     }
   }, [artifact, isCreator, user?.id, handleBack]);
 
+  // Allow both creator and publisher to edit
+  const canEdit = isCreator || isPublisher;
+
   const handleSaveEdit = useCallback(async () => {
-    if (!artifact || !isCreator) return;
+    if (!artifact || !canEdit) return;
 
     try {
       await updateArtifact(artifact.id, {
@@ -189,7 +192,7 @@ function ArtifactPageContent() {
       console.error("Failed to update artifact:", error);
       toast.error("Failed to update artifact");
     }
-  }, [artifact, isCreator, editName, editDescription, mutate]);
+  }, [artifact, canEdit, editName, editDescription, mutate]);
 
   const handleUnpublish = useCallback(async () => {
     if (!artifact || !isPublisher) return;
@@ -258,31 +261,31 @@ function ArtifactPageContent() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {isCreator && (
-                  <>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setEditName(artifact?.name || "");
-                        setEditDescription(artifact?.description || "");
-                        setIsEditing(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                      Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      variant="destructive"
-                      onClick={() => setIsDeleteDialogOpen(true)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      Delete
-                    </DropdownMenuItem>
-                  </>
+                {canEdit && (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setEditName(artifact?.name || "");
+                      setEditDescription(artifact?.description || "");
+                      setIsEditing(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit
+                  </DropdownMenuItem>
                 )}
                 {isPublisher && (
                   <DropdownMenuItem onClick={handleUnpublish}>
                     <EyeOff className="h-4 w-4" />
                     Unpublish
+                  </DropdownMenuItem>
+                )}
+                {isCreator && (
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Delete
                   </DropdownMenuItem>
                 )}
               </DropdownMenuContent>
@@ -300,7 +303,7 @@ function ArtifactPageContent() {
         </>
       ),
     },
-    [isCreator, isPublisher, handleUnpublish]
+    [isCreator, isPublisher, canEdit, handleUnpublish]
   );
 
   if (isLoading) {
