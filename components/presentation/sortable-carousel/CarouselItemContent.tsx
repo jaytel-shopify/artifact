@@ -17,7 +17,6 @@ interface CarouselItemContentProps {
     muted?: boolean;
     headline?: string;
     subheadline?: string;
-    thumbnail_url?: string;
   };
   fitMode?: boolean;
 }
@@ -56,7 +55,6 @@ export const CarouselItemContent = React.memo(
             height={height}
             isDragging={isDragging}
             fitMode={fitMode}
-            thumbnailUrl={metadata?.thumbnail_url}
           />
         );
       case "titleCard":
@@ -85,8 +83,7 @@ export const CarouselItemContent = React.memo(
       prevProps.metadata?.loop === nextProps.metadata?.loop &&
       prevProps.metadata?.muted === nextProps.metadata?.muted &&
       prevProps.metadata?.headline === nextProps.metadata?.headline &&
-      prevProps.metadata?.subheadline === nextProps.metadata?.subheadline &&
-      prevProps.metadata?.thumbnail_url === nextProps.metadata?.thumbnail_url
+      prevProps.metadata?.subheadline === nextProps.metadata?.subheadline
     );
   }
 );
