@@ -140,7 +140,7 @@
   --c-primary: var(--c-light);
   --c-secondary: #666e71;
   --c-disabled: #a9b1b5;
-  --c-border: #ffffff26;
+  --c-border: #f0f0f0;
 
   --c-text-primary: var(--c-dark);
   --c-text-secondary: var(--c-secondary);
