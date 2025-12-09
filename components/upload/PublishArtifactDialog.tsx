@@ -56,7 +56,6 @@ export default function PublishArtifactDialog({
         name: name.trim(),
         description: description.trim(),
         published: true,
-        published_at: new Date().toISOString(),
       });
       
       toast.success("Artifact published to feed!");

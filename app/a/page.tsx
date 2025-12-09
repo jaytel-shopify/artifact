@@ -304,10 +304,16 @@ export default function Page() {
               </p>
             </Link>
             <p
-              className="text-medium text-text-secondary capitalize"
+              className="text-medium text-text-secondary"
               style={{ color: "var(--color-disabled)" }}
             >
-              {formatTimeAgo(artifact.published_at || artifact.created_at, { short: true })}
+              {new Date(
+                (artifact.metadata?.original_created_at as string) || artifact.created_at
+              ).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+              })}
             </p>
           </div>
 

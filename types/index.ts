@@ -98,7 +98,6 @@ export type Artifact = {
     >;
   reactions: ArtifactReactions;
   published: boolean;
-  published_at?: string; // When the artifact was published to the feed
   creator_id: string; // References User.id
   created_at: string;
   updated_at: string;
