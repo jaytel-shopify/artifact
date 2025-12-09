@@ -157,3 +157,10 @@ export type Folder = {
 
 // Access control types moved to lib/access-control.ts
 // FolderAccess is now part of the unified AccessEntry type
+
+export interface LottieMethods {
+  playSegments: (
+    segments: [number, number] | [number, number][],
+    forceFlag?: boolean
+  ) => void;
+}
