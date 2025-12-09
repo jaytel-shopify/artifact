@@ -10,39 +10,27 @@
   "scope": "https://artifact.quick.shopify.io/",
   "icons": [
     {
-      "src": "https://artifact.quick.shopify.io/icons/web-app-manifest-192x192.png",
+      "src": "https://artifact.quick.shopify.io/favicons/web-app-manifest-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "https://artifact.quick.shopify.io/icons/web-app-manifest-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    },
-    {
-      "src": "https://artifact.quick.shopify.io/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
       "purpose": "any"
     },
     {
-      "src": "https://artifact.quick.shopify.io/favicon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "maskable"
+      "src": "https://artifact.quick.shopify.io/favicons/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
   "categories": ["productivity", "design", "collaboration"],
   "shortcuts": [
     {
       "name": "Add URL",
-      "url": "https://artifact.quick.shopify.io/?new=url"
+      "url": "https://artifact.quick.shopify.io/projects/?new=url"
     },
     {
       "name": "Add Title Card",
-      "url": "https://artifact.quick.shopify.io/?new=titlecard"
+      "url": "https://artifact.quick.shopify.io/projects/?new=titlecard"
     }
   ],
   "share_target": {

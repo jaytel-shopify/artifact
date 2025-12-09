@@ -33,39 +33,27 @@ const manifestData = {
   scope: `${SITE_URL}/`,
   icons: [
     {
-      src: `${SITE_URL}/icons/web-app-manifest-192x192.png`,
+      src: `${SITE_URL}/favicons/web-app-manifest-192x192.png`,
       sizes: "192x192",
       type: "image/png",
-      purpose: "maskable",
-    },
-    {
-      src: `${SITE_URL}/icons/web-app-manifest-512x512.png`,
-      sizes: "512x512",
-      type: "image/png",
-      purpose: "maskable",
-    },
-    {
-      src: `${SITE_URL}/favicon.svg`,
-      sizes: "any",
-      type: "image/svg+xml",
       purpose: "any",
     },
     {
-      src: `${SITE_URL}/favicon.svg`,
-      sizes: "any",
-      type: "image/svg+xml",
-      purpose: "maskable",
+      src: `${SITE_URL}/favicons/web-app-manifest-512x512.png`,
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "any",
     },
   ],
   categories: ["productivity", "design", "collaboration"],
   shortcuts: [
     {
       name: "Add URL",
-      url: `${SITE_URL}/?new=url`,
+      url: `${SITE_URL}/projects/?new=url`,
     },
     {
       name: "Add Title Card",
-      url: `${SITE_URL}/?new=titlecard`,
+      url: `${SITE_URL}/projects/?new=titlecard`,
     },
   ],
   share_target: {
