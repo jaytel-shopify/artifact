@@ -9,7 +9,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 const FADE_MS = 200;
 
@@ -46,6 +46,7 @@ export default function ViewTransitionHandler({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const query = useSearchParams();
   const contentRef = useRef<HTMLElement | null>(null);
   const navigating = useRef(false);
 
@@ -61,7 +62,7 @@ export default function ViewTransitionHandler({
       });
       navigating.current = false;
     }
-  }, [pathname]);
+  }, [pathname, query]);
 
   const navigate = useCallback(
     (href: string, method: "push" | "replace" = "push") => {
