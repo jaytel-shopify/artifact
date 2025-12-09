@@ -32,6 +32,7 @@ export function useSyncedArtifacts(
     {
       revalidateOnFocus: false,
       dedupingInterval: 0,
+      keepPreviousData: false, // Don't show stale data when pageId changes
     }
   );
 

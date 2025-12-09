@@ -11,6 +11,29 @@
   height: calc(100% - 0.5rem);
 }
 
+/* ==========================================================================
+   Carousel Initial Mount Animation
+   ========================================================================== */
+
+/* All carousel items start invisible */
+.carousel .carousel-item-wrapper {
+  opacity: 0;
+}
+
+/* Fade in items when carousel is mounted - 'both' fill mode ensures opacity:0 before animation starts */
+.carousel.mounted .carousel-item-wrapper {
+  animation: carouselItemFadeIn 150ms ease-out both;
+}
+
+@keyframes carouselItemFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .carousel-horizontal {
   grid-auto-flow: column;
   grid-auto-columns: max-content;

@@ -149,6 +149,9 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       useState<UniqueIdentifier | null>(null);
     const containerRef = useRef<HTMLUListElement | null>(null);
 
+    // Track mounted state for initial fade-in animation
+    const [isMounted, setIsMounted] = useState(false);
+
     // Space+drag panning state
     const isSpaceHeld = useKeyHeld("Space");
     const isPanningRef = useRef(false);
@@ -157,6 +160,21 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
 
     // Expose the containerRef to parent via forwardedRef
     useImperativeHandle(forwardedRef, () => containerRef.current!);
+
+    // Trigger mounted state after initial render for fade-in animation
+    // Double rAF ensures CSS opacity:0 is applied before triggering the animation
+    useEffect(() => {
+      let frame2: number;
+      const frame1 = requestAnimationFrame(() => {
+        frame2 = requestAnimationFrame(() => {
+          setIsMounted(true);
+        });
+      });
+      return () => {
+        cancelAnimationFrame(frame1);
+        cancelAnimationFrame(frame2);
+      };
+    }, []);
 
     // Custom hooks for organized logic
     const {
@@ -402,11 +420,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
     );
 
     if (items.length === 0) {
-      return (
-        <div className="h-full flex items-center justify-center text-text-primary">
-          No artifacts yet. Add one to get started.
-        </div>
-      );
+      return null;
     }
 
     return (
@@ -425,7 +439,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
         >
           <ul
             ref={containerRef}
-            className={`carousel carousel-${layout} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""} ${isSpaceHeld ? "pan-mode" : ""}`}
+            className={`carousel carousel-${layout} ${isMounted ? "mounted" : ""} ${isSettling ? "settling" : ""} ${isFitMode ? "fit-mode" : ""} ${columns === 1 ? "single-column" : ""} ${isCollectionMode ? "collection-mode" : ""} ${isSpaceHeld ? "pan-mode" : ""}`}
             onMouseDown={handlePanStart}
             onMouseMove={handlePanMove}
             onMouseUp={handlePanEnd}

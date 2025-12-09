@@ -181,6 +181,12 @@ function PresentationPageInner({
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
     new Set()
   );
+  
+  // Page transition state - tracks when switching pages for smooth fade
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
+  const pendingPageIdRef = useRef<string | null>(null);
+  const selectPagePropRef = useRef(selectPageProp);
+  selectPagePropRef.current = selectPageProp;
 
   // Ref to the carousel container for follow sync
   const carouselRef = useRef<HTMLUListElement>(null);
@@ -304,8 +310,15 @@ function PresentationPageInner({
   const accessLevel = permissions.accessLevel;
   const isCollaborator = accessLevel === "editor";
 
-  // Use page state from props (managed by parent to keep artifacts in sync)
-  const selectPage = selectPageProp;
+  // Wrapped selectPage that triggers fade transition
+  const selectPageWithTransition = useCallback((pageId: string) => {
+    if (pageId === currentPageId) return;
+    pendingPageIdRef.current = pageId;
+    setIsPageTransitioning(true);
+  }, [currentPageId]);
+
+  // Use transition-wrapped page selection for smooth transitions
+  const selectPage = selectPageWithTransition;
 
   // Disable browser scroll restoration to prevent carousel scroll memory
   useEffect(() => {
@@ -313,6 +326,27 @@ function PresentationPageInner({
       history.scrollRestoration = "manual";
     }
   }, []);
+
+  // Handle pending page change after fade out completes
+  useEffect(() => {
+    if (!isPageTransitioning || !pendingPageIdRef.current) return;
+    
+    let fadeInTimer: NodeJS.Timeout;
+    const fadeOutTimer = setTimeout(() => {
+      const newPageId = pendingPageIdRef.current;
+      pendingPageIdRef.current = null;
+      if (newPageId) {
+        selectPagePropRef.current(newPageId);
+      }
+      // Small delay before fade in to ensure new content is rendered
+      fadeInTimer = setTimeout(() => setIsPageTransitioning(false), 50);
+    }, 150); // Fade out duration
+    
+    return () => {
+      clearTimeout(fadeOutTimer);
+      clearTimeout(fadeInTimer);
+    };
+  }, [isPageTransitioning]); // Removed selectPageProp dep - using ref instead
 
   // Reset carousel scroll position when page changes
   useEffect(() => {
@@ -538,8 +572,14 @@ function PresentationPageInner({
           }}
         >
           <div className="h-full relative">
-            {/* Canvas */}
-            <div className="h-full">
+            {/* Canvas with page transition */}
+            <div 
+              className="h-full"
+              style={{
+                opacity: isPageTransitioning ? 0 : 1,
+                transition: "opacity 150ms ease-out",
+              }}
+            >
               <Canvas
                 key={currentPageId}
                 ref={setCarouselRef}
