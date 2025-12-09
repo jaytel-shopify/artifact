@@ -10,6 +10,7 @@ import {
 import { waitForQuick } from "@/lib/quick";
 import { getOrCreateUser } from "@/lib/quick-users";
 import type { User } from "@/types";
+import { LoadingLottie } from "@/components/ui/LoadingLottie";
 
 interface AuthContextValue {
   user: User | null;
@@ -127,14 +128,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   if (loading) {
     return (
       <AuthContext.Provider value={value}>
-        <div
-          className="min-h-screen flex items-center justify-center"
-          style={{ backgroundColor: "#010b0f" }}
-        >
-          <div
-            className="animate-spin rounded-full h-8 w-8 border-b-2"
-            style={{ borderColor: "#fff" }}
-          />
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <LoadingLottie />
         </div>
       </AuthContext.Provider>
     );
