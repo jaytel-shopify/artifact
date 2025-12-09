@@ -85,7 +85,7 @@ export function InputDialog({
           />
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
+          <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
             Cancel
           </Button>
           <Button

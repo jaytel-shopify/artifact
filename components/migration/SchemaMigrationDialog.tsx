@@ -40,13 +40,25 @@ export function SchemaMigrationDialog() {
   const { user } = useAuth();
   const [state, setState] = useState<MigrationState>("checking");
   const [status, setStatus] = useState<MigrationStatus | null>(null);
-  const [userStatus, setUserStatus] = useState<UserMigrationStatus | null>(null);
-  const [normalizationStatus, setNormalizationStatus] = useState<ArtifactNormalizationStatus | null>(null);
-  const [progress, setProgress] = useState({ completed: 0, total: 0, stage: "" });
+  const [userStatus, setUserStatus] = useState<UserMigrationStatus | null>(
+    null
+  );
+  const [normalizationStatus, setNormalizationStatus] =
+    useState<ArtifactNormalizationStatus | null>(null);
+  const [progress, setProgress] = useState({
+    completed: 0,
+    total: 0,
+    stage: "",
+  });
   const [error, setError] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
-  const [migrationResult, setMigrationResult] = useState<{ migratedCount: number; usersCreated?: number } | null>(null);
-  const [lastMigrationType, setLastMigrationType] = useState<"schema" | "user" | "normalize">("schema");
+  const [migrationResult, setMigrationResult] = useState<{
+    migratedCount: number;
+    usersCreated?: number;
+  } | null>(null);
+  const [lastMigrationType, setLastMigrationType] = useState<
+    "schema" | "user" | "normalize"
+  >("schema");
 
   // Check migration status on mount
   useEffect(() => {
@@ -61,16 +73,17 @@ export function SchemaMigrationDialog() {
     async function check() {
       try {
         // Check all migration types
-        const [schemaStatus, userMigrationStatus, artifactNormStatus] = await Promise.all([
-          checkMigrationStatus(),
-          checkUserMigrationStatus(),
-          checkArtifactNormalizationStatus(),
-        ]);
-        
+        const [schemaStatus, userMigrationStatus, artifactNormStatus] =
+          await Promise.all([
+            checkMigrationStatus(),
+            checkUserMigrationStatus(),
+            checkArtifactNormalizationStatus(),
+          ]);
+
         setStatus(schemaStatus);
         setUserStatus(userMigrationStatus);
         setNormalizationStatus(artifactNormStatus);
-        
+
         // Prioritize schema migration first, then user migration, then normalization
         if (schemaStatus.needsMigration) {
           setState("needs-migration");
@@ -99,7 +112,11 @@ export function SchemaMigrationDialog() {
 
     setLastMigrationType("schema");
     setState("migrating");
-    setProgress({ completed: 0, total: status?.oldSchemaArtifactCount || 0, stage: "Migrating artifacts" });
+    setProgress({
+      completed: 0,
+      total: status?.oldSchemaArtifactCount || 0,
+      stage: "Migrating artifacts",
+    });
 
     const result = await migrateToNewSchema(user.email, (completed, total) => {
       setProgress({ completed, total, stage: "Migrating artifacts" });
@@ -107,13 +124,13 @@ export function SchemaMigrationDialog() {
 
     if (result.success) {
       setMigrationResult({ migratedCount: result.migratedCount });
-      
+
       // After schema migration, check if user migration or normalization is needed
       const [userMigrationStatus, artifactNormStatus] = await Promise.all([
         checkUserMigrationStatus(),
         checkArtifactNormalizationStatus(),
       ]);
-      
+
       if (userMigrationStatus.needsMigration) {
         setUserStatus(userMigrationStatus);
         setState("needs-user-migration");
@@ -132,15 +149,24 @@ export function SchemaMigrationDialog() {
   const handleUserMigrate = async () => {
     setLastMigrationType("user");
     setState("migrating-users");
-    setProgress({ completed: 0, total: userStatus?.emailBasedCreatorIds || 0, stage: "Creating user records" });
-
-    const result = await migrateCreatorIdsToUserIds((completed, total, stage) => {
-      setProgress({ completed, total, stage });
+    setProgress({
+      completed: 0,
+      total: userStatus?.emailBasedCreatorIds || 0,
+      stage: "Creating user records",
     });
 
+    const result = await migrateCreatorIdsToUserIds(
+      (completed, total, stage) => {
+        setProgress({ completed, total, stage });
+      }
+    );
+
     if (result.success) {
-      setMigrationResult({ migratedCount: result.migratedCount, usersCreated: result.usersCreated });
-      
+      setMigrationResult({
+        migratedCount: result.migratedCount,
+        usersCreated: result.usersCreated,
+      });
+
       // After user migration, check if normalization is needed
       const artifactNormStatus = await checkArtifactNormalizationStatus();
       if (artifactNormStatus.needsNormalization) {
@@ -158,7 +184,11 @@ export function SchemaMigrationDialog() {
   const handleNormalize = async () => {
     setLastMigrationType("normalize");
     setState("normalizing");
-    setProgress({ completed: 0, total: normalizationStatus?.totalArtifacts || 0, stage: "Normalizing artifacts" });
+    setProgress({
+      completed: 0,
+      total: normalizationStatus?.totalArtifacts || 0,
+      stage: "Normalizing artifacts",
+    });
 
     const result = await normalizeArtifactSchema((completed, total) => {
       setProgress({ completed, total, stage: "Normalizing artifacts" });
@@ -216,7 +246,9 @@ export function SchemaMigrationDialog() {
                 Artifact Schema Normalization Required
               </>
             )}
-            {(state === "migrating" || state === "migrating-users" || state === "normalizing") && (
+            {(state === "migrating" ||
+              state === "migrating-users" ||
+              state === "normalizing") && (
               <>
                 <Loader2 className="h-5 w-5 animate-spin" />
                 Migrating Data...
@@ -274,7 +306,9 @@ export function SchemaMigrationDialog() {
                 <p className="text-medium mb-1">What will happen:</p>
                 <ul className="list-disc list-inside text-text-secondary space-y-1">
                   <li>
-                    User records will be created for {userStatus.uniqueEmails.length} unique email{userStatus.uniqueEmails.length !== 1 ? "s" : ""}
+                    User records will be created for{" "}
+                    {userStatus.uniqueEmails.length} unique email
+                    {userStatus.uniqueEmails.length !== 1 ? "s" : ""}
                   </li>
                   <li>Creator IDs will be updated to reference User records</li>
                   <li>Your data will remain intact</li>
@@ -295,16 +329,28 @@ export function SchemaMigrationDialog() {
                 <p className="text-medium mb-1">Issues found:</p>
                 <ul className="list-disc list-inside text-text-secondary space-y-1">
                   {normalizationStatus.missingPublished > 0 && (
-                    <li>{normalizationStatus.missingPublished} missing &quot;published&quot; field</li>
+                    <li>
+                      {normalizationStatus.missingPublished} missing
+                      &quot;published&quot; field
+                    </li>
                   )}
                   {normalizationStatus.missingReactions > 0 && (
-                    <li>{normalizationStatus.missingReactions} missing &quot;reactions&quot; field</li>
+                    <li>
+                      {normalizationStatus.missingReactions} missing
+                      &quot;reactions&quot; field
+                    </li>
                   )}
                   {normalizationStatus.hasOldSchemaFields > 0 && (
-                    <li>{normalizationStatus.hasOldSchemaFields} with old schema fields</li>
+                    <li>
+                      {normalizationStatus.hasOldSchemaFields} with old schema
+                      fields
+                    </li>
                   )}
                   {normalizationStatus.missingDescription > 0 && (
-                    <li>{normalizationStatus.missingDescription} missing &quot;description&quot; field</li>
+                    <li>
+                      {normalizationStatus.missingDescription} missing
+                      &quot;description&quot; field
+                    </li>
                   )}
                 </ul>
                 <p className="text-medium mt-2 mb-1">What will happen:</p>
@@ -317,7 +363,9 @@ export function SchemaMigrationDialog() {
             </div>
           )}
 
-          {(state === "migrating" || state === "migrating-users" || state === "normalizing") && (
+          {(state === "migrating" ||
+            state === "migrating-users" ||
+            state === "normalizing") && (
             <div className="space-y-4">
               <DialogDescription>
                 Please wait while your data is being migrated. Do not close this
@@ -347,7 +395,11 @@ export function SchemaMigrationDialog() {
               Successfully migrated {migrationResult.migratedCount} record
               {migrationResult.migratedCount !== 1 ? "s" : ""}
               {migrationResult.usersCreated !== undefined && (
-                <> and created {migrationResult.usersCreated} user record{migrationResult.usersCreated !== 1 ? "s" : ""}</>
+                <>
+                  {" "}
+                  and created {migrationResult.usersCreated} user record
+                  {migrationResult.usersCreated !== 1 ? "s" : ""}
+                </>
               )}
               . The page will reload to apply changes.
             </DialogDescription>
@@ -368,7 +420,7 @@ export function SchemaMigrationDialog() {
         <DialogFooter>
           {state === "needs-migration" && (
             <>
-              <Button variant="outline" onClick={handleDismiss}>
+              <Button variant="ghost" onClick={handleDismiss}>
                 Later
               </Button>
               <Button onClick={handleMigrate}>Migrate Now</Button>
@@ -377,7 +429,7 @@ export function SchemaMigrationDialog() {
 
           {state === "needs-user-migration" && (
             <>
-              <Button variant="outline" onClick={handleDismiss}>
+              <Button variant="ghost" onClick={handleDismiss}>
                 Later
               </Button>
               <Button onClick={handleUserMigrate}>Migrate Now</Button>
@@ -386,14 +438,16 @@ export function SchemaMigrationDialog() {
 
           {state === "needs-normalization" && (
             <>
-              <Button variant="outline" onClick={handleDismiss}>
+              <Button variant="ghost" onClick={handleDismiss}>
                 Later
               </Button>
               <Button onClick={handleNormalize}>Normalize Now</Button>
             </>
           )}
 
-          {(state === "migrating" || state === "migrating-users" || state === "normalizing") && (
+          {(state === "migrating" ||
+            state === "migrating-users" ||
+            state === "normalizing") && (
             <Button disabled>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
               Migrating...
@@ -406,16 +460,20 @@ export function SchemaMigrationDialog() {
 
           {state === "error" && (
             <>
-              <Button variant="outline" onClick={handleDismiss}>
+              <Button variant="ghost" onClick={handleDismiss}>
                 Dismiss
               </Button>
-              <Button onClick={
-                lastMigrationType === "user" 
-                  ? handleUserMigrate 
-                  : lastMigrationType === "normalize" 
-                    ? handleNormalize 
-                    : handleMigrate
-              }>Retry</Button>
+              <Button
+                onClick={
+                  lastMigrationType === "user"
+                    ? handleUserMigrate
+                    : lastMigrationType === "normalize"
+                      ? handleNormalize
+                      : handleMigrate
+                }
+              >
+                Retry
+              </Button>
             </>
           )}
         </DialogFooter>

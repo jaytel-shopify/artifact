@@ -181,7 +181,7 @@ export default function ArtifactAdder({
           </DialogHeader>
 
           <div className="space-y-4">
-            <div className="space-y-2">
+            <div className="gap-2 flex flex-col">
               <label className="text-small text-text-secondary">Headline</label>
               <Input
                 value={headline}
@@ -191,7 +191,7 @@ export default function ArtifactAdder({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="gap-2 flex flex-col">
               <label className="text-small text-text-secondary">
                 Subheadline
               </label>

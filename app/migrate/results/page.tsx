@@ -135,7 +135,7 @@ export default function MigrationResultsPage() {
             </p>
           </div>
           <Link href="/migrate">
-            <Button variant="outline">Back to Migration</Button>
+            <Button variant="ghost">Back to Migration</Button>
           </Link>
         </div>
       </div>

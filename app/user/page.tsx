@@ -12,7 +12,6 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import ArtifactFeed from "@/components/presentation/ArtifactFeed";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { Button } from "@/components/ui/button";
-import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 
 export default function UserProfilePage() {
   const searchParams = useSearchParams();
@@ -41,7 +40,6 @@ export default function UserProfilePage() {
     center: <SearchBar />,
     right: (
       <>
-        <HeaderUserAvatar />
         <DarkModeToggle />
       </>
     ),

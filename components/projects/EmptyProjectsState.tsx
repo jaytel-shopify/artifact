@@ -13,7 +13,7 @@ export function EmptyProjectsState({
     <div className="text-center py-12">
       <p className="text-text-secondary mb-4">No projects or folders yet</p>
       <div className="flex gap-2 justify-center">
-        <Button variant="outline" onClick={onCreateFolder}>
+        <Button variant="ghost" onClick={onCreateFolder}>
           Create Folder
         </Button>
         <Button onClick={onCreateProject}>Create Project</Button>

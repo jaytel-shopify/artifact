@@ -16,14 +16,14 @@ export default function DarkModeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="outline" size="icon" disabled>
+      <Button variant="ghost" size="icon" disabled>
         <Sun className="h-4 w-4" />
       </Button>
     );
   }
 
   const handleToggleTheme = () => {
-    if(document.startViewTransition) {
+    if (document.startViewTransition) {
       document.startViewTransition(() => {
         setTheme(theme === "dark" ? "light" : "dark");
       });
