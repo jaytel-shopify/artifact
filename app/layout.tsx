@@ -48,12 +48,12 @@ const manifestData = {
   categories: ["productivity", "design", "collaboration"],
   shortcuts: [
     {
-      name: "Add URL",
-      url: `${SITE_URL}/projects/?new=url`,
+      name: "Add Media",
+      url: `${SITE_URL}/?new=media`,
     },
     {
-      name: "Add Title Card",
-      url: `${SITE_URL}/projects/?new=titlecard`,
+      name: "Add URL",
+      url: `${SITE_URL}/?new=url`,
     },
   ],
   share_target: {

@@ -23,7 +23,7 @@ import UrlPreviewDialog from "./UrlPreviewDialog";
 import type { Artifact, ArtifactWithPosition } from "@/types";
 import { useSearchParams } from "next/navigation";
 
-type DialogType = "url" | "titleCard" | null;
+type DialogType = "url" | "titleCard" | "media" | null;
 
 interface ArtifactAdderProps {
   projectId?: string;
@@ -49,9 +49,7 @@ export default function ArtifactAdder({
     if (newParam === "url") {
       setOpenDialog("url");
     } else if (newParam === "media") {
-      // openFilePicker();
-    } else if (newParam === "titlecard") {
-      setOpenDialog("titleCard");
+      setOpenDialog("media");
     }
   }, [searchParams]);
 
@@ -62,15 +60,13 @@ export default function ArtifactAdder({
   // Use centralized upload hook - handles artifact creation internally
   const {
     uploadState,
-    fileInputRef,
     pendingFiles,
     showPreviewDialog,
-    handleFileInputChange,
+    stageFilesForUpload,
     confirmFileUpload,
     clearPendingFiles,
     confirmUrlUpload,
     handleTitleCardUpload,
-    openFilePicker,
   } = useArtifactUpload({
     defaultContext,
     onArtifactCreated,
@@ -78,6 +74,9 @@ export default function ArtifactAdder({
 
   const { uploading, totalFiles, currentFileIndex, currentProgress, error } =
     uploadState;
+
+  // Media dialog is open if explicitly set OR if there are pending files from hook
+  const isMediaDialogOpen = openDialog === "media" || showPreviewDialog;
 
   function resetTitleCardState() {
     setHeadline("");
@@ -95,18 +94,19 @@ export default function ArtifactAdder({
     }
   }
 
+  // Handle closing media dialog - clears both local state and pending files
+  const handleMediaDialogClose = () => {
+    setOpenDialog(null);
+    clearPendingFiles();
+  };
+
+  // Handle files added from within the dialog
+  const handleFilesAdded = (files: File[]) => {
+    stageFilesForUpload(files);
+  };
+
   return (
     <>
-      {/* Hidden file input for media uploads */}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        accept="image/*,video/*"
-        className="hidden"
-        onChange={handleFileInputChange}
-      />
-
       {/* Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -119,7 +119,10 @@ export default function ArtifactAdder({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
-          <DropdownMenuItem onClick={openFilePicker} className="cursor-pointer">
+          <DropdownMenuItem
+            onClick={() => setOpenDialog("media")}
+            className="cursor-pointer"
+          >
             <Image className="h-4 w-4 mr-2" />
             Media
           </DropdownMenuItem>
@@ -145,9 +148,12 @@ export default function ArtifactAdder({
       {/* Upload Preview Dialog */}
       <UploadPreviewDialog
         files={pendingFiles?.files || []}
-        isOpen={showPreviewDialog}
-        onClose={clearPendingFiles}
-        onConfirm={confirmFileUpload}
+        isOpen={isMediaDialogOpen}
+        onClose={handleMediaDialogClose}
+        onConfirm={(uploads, context) => {
+          confirmFileUpload(uploads, context);
+          setOpenDialog(null);
+        }}
         uploading={uploading}
         uploadProgress={
           uploading
@@ -158,6 +164,8 @@ export default function ArtifactAdder({
               }
             : undefined
         }
+        allowEmptyOpen
+        onFilesAdded={handleFilesAdded}
       />
 
       {/* URL Preview Dialog */}

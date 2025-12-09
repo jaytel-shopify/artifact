@@ -25,12 +25,12 @@
   "categories": ["productivity", "design", "collaboration"],
   "shortcuts": [
     {
-      "name": "Add URL",
-      "url": "https://artifact.quick.shopify.io/projects/?new=url"
+      "name": "Add Media",
+      "url": "https://artifact.quick.shopify.io/?new=media"
     },
     {
-      "name": "Add Title Card",
-      "url": "https://artifact.quick.shopify.io/projects/?new=titlecard"
+      "name": "Add URL",
+      "url": "https://artifact.quick.shopify.io/?new=url"
     }
   ],
   "share_target": {
