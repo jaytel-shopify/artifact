@@ -29,7 +29,7 @@ const Logo = forwardRef<LottieMethods>(function Logo(_, ref) {
         lottieRef={lottieRef}
         animationData={LottieLogo}
         loop={false}
-        className="lottie h-14 w-14 fill-text-primary"
+        className="lottie-light-dark h-14 w-14 fill-text-primary"
       />
     </Link>
   );

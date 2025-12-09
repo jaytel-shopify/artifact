@@ -59,9 +59,13 @@ export function WelcomeDialog() {
       >
         {/* Lottie Animation */}
         <div className="flex items-center justify-center bg-gradient-to-b from-[#1a2a32] to-[#0f1315] px-8 pt-8">
-          <div className="lottie aspect-square w-48">
+          <div className="aspect-square w-48">
             {animationData && (
-              <Lottie animationData={animationData} loop={false} />
+              <Lottie
+                animationData={animationData}
+                loop={false}
+                className="lottie-light"
+              />
             )}
           </div>
         </div>
@@ -131,4 +135,3 @@ function Feature({
     </div>
   );
 }
-

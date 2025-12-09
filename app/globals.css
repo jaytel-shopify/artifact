@@ -266,9 +266,19 @@ body {
   }
 }
 
-.lottie {
+.lottie-light-dark {
   svg * {
     fill: var(--c-text-primary);
+  }
+}
+.lottie-light {
+  svg * {
+    fill: var(--c-light);
+  }
+}
+.lottie-dark {
+  svg * {
+    fill: var(--c-dark);
   }
 }
 
