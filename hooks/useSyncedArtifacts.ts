@@ -21,6 +21,9 @@ export function useSyncedArtifacts(
   projectId: string | undefined,
   pageId: string | undefined
 ) {
+  // Track which pageId the current artifacts belong to
+  const [artifactsPageId, setArtifactsPageId] = useState<string | undefined>(undefined);
+  
   const {
     data: artifacts = [],
     error,
@@ -32,8 +35,19 @@ export function useSyncedArtifacts(
     {
       revalidateOnFocus: false,
       dedupingInterval: 0,
+      keepPreviousData: false, // Don't show stale data when pageId changes
     }
   );
+  
+  // Update tracked pageId when artifacts successfully load for current page
+  useEffect(() => {
+    if (!isLoading && pageId) {
+      setArtifactsPageId(pageId);
+    }
+  }, [isLoading, pageId]);
+  
+  // Check if artifacts are stale (from a different page)
+  const isArtifactsStale = pageId !== artifactsPageId;
 
   const presenceManagerRef = useRef<PresenceManager | null>(null);
   const [isPresenceReady, setIsPresenceReady] = useState(false);
@@ -190,9 +204,12 @@ export function useSyncedArtifacts(
     pageId,
   });
 
+  // Return empty artifacts if they're stale (from a different page) to prevent flicker
+  const safeArtifacts = isArtifactsStale ? [] : artifacts;
+
   return {
-    artifacts,
-    isLoading,
+    artifacts: safeArtifacts,
+    isLoading: isLoading || isArtifactsStale,
     error,
     isPresenceReady,
     ...mutations,

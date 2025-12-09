@@ -307,7 +307,7 @@ export default function Page() {
               className="text-medium text-text-secondary capitalize"
               style={{ color: "var(--color-disabled)" }}
             >
-              {formatTimeAgo(artifact.created_at, { short: true })}
+              {formatTimeAgo(artifact.published_at || artifact.created_at, { short: true })}
             </p>
           </div>
 

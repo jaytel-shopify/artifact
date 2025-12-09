@@ -503,10 +503,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                       : undefined
                   }
                   onPublish={
-                    onPublishArtifact &&
-                    currentUserId &&
-                    artifact.creator_id === currentUserId &&
-                    !artifact.published
+                    onPublishArtifact && !artifact.published
                       ? async () => onPublishArtifact(artifact.id)
                       : undefined
                   }

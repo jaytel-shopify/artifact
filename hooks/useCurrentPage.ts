@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useSearchParams, usePathname } from "next/navigation";
 import { Page } from "@/types";
 
 export function useCurrentPage(pages: Page[], projectId?: string) {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
 
   const pageIdFromUrl = searchParams?.get("page");
@@ -12,14 +11,16 @@ export function useCurrentPage(pages: Page[], projectId?: string) {
     pageIdFromUrl
   );
 
-  // Update URL with pageId
+  // Update URL with pageId using history API to avoid Next.js navigation
+  // This prevents full re-renders and Suspense boundary re-suspension
   const updateUrl = useCallback(
     (pageId: string) => {
       const params = new URLSearchParams(searchParams?.toString() || "");
       params.set("page", pageId);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      const newUrl = `${pathname}?${params.toString()}`;
+      window.history.replaceState(window.history.state, "", newUrl);
     },
-    [searchParams, router, pathname]
+    [searchParams, pathname]
   );
 
   // Initialize from URL on first load only - don't override valid state

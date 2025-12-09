@@ -491,6 +491,7 @@ export async function createArtifact(data: {
   creator_id: string; // User's ID
   metadata?: Record<string, unknown>;
   published?: boolean;
+  published_at?: string; // When the artifact was published to the feed
   description?: string;
   tags?: string[]; // Optional: tags for categorization/filtering
   reactions?: { like: string[]; dislike: string[] }; // Optional: for migration/import purposes
@@ -498,6 +499,8 @@ export async function createArtifact(data: {
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
+  const isPublished = data.published ?? false;
+  
   const artifactData = {
     type: data.type,
     source_url: data.source_url,
@@ -506,7 +509,9 @@ export async function createArtifact(data: {
     creator_id: data.creator_id,
     metadata: data.metadata || {},
     reactions: data.reactions || { like: [], dislike: [] },
-    published: data.published ?? false,
+    published: isPublished,
+    // Set published_at if provided, or auto-set when creating as published
+    published_at: data.published_at || (isPublished ? new Date().toISOString() : undefined),
     description: data.description || "",
     tags: data.tags || [],
   };

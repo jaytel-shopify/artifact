@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR from "swr";
+import useSWR, { mutate as globalMutate } from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -737,8 +737,14 @@ function PresentationPageInner({
         isOpen={publishArtifactId !== null}
         onClose={() => setPublishArtifactId(null)}
         onPublished={() => {
-          // Refresh artifacts after publishing
+          // Refresh project artifacts after publishing
           refetchArtifacts();
+          // Invalidate the public feed cache so it refetches with the new artifact
+          globalMutate("public-artifacts");
+          // Invalidate the artifact detail cache
+          if (publishArtifactId) {
+            globalMutate(`artifact-${publishArtifactId}`);
+          }
         }}
       />
 
