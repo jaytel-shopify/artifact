@@ -56,7 +56,7 @@ export function UrlAutocomplete({
 
   // Fetch user's Quick sites on mount
   useEffect(() => {
-    if (!user?.slack_handle) return;
+    if (!user?.email) return;
 
     const fetchSites = async () => {
       setLoading(true);
@@ -98,7 +98,7 @@ export function UrlAutocomplete({
                 ? site.last_modified_by.split("@")[0]
                 : site.last_modified_by;
               return (
-                siteOwner === user.slack_handle &&
+                siteOwner === user.email.split("@")[0] &&
                 site.site_url &&
                 site.site_name
               );
