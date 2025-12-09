@@ -164,14 +164,14 @@ export function CarouselItemWebsite({
           />
         </div>
 
-        {/* Click to activate overlay */}
+        {/* Click to activate overlay - only visible on hover */}
         {!isActivated && (
           <div
-            className="group absolute inset-0 cursor-pointer flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors"
+            className="group absolute inset-0 cursor-pointer flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors"
             onClick={handleClick}
             onDoubleClick={handleDoubleClick}
           >
-            <div className="flex items-center gap-2 text-white text-medium">
+            <div className="flex items-center gap-2 text-white text-medium opacity-0 group-hover:opacity-100 transition-opacity">
               <ClickToActivateIcon />
               <span>Click to activate</span>
             </div>
