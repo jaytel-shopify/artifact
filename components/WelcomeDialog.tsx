@@ -71,7 +71,7 @@ export function WelcomeDialog() {
         </div>
 
         {/* Content */}
-        <div className="space-y-4 p-12 pt-8">
+        <div className="space-y-4 p-12 pt-4">
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xlarge text-center text-balance">
               Welcome to Artifact
