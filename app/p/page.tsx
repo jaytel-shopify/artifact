@@ -53,6 +53,7 @@ import SyncStatusIndicator from "@/components/presentation/SyncStatusIndicator";
 import { SharePanel } from "@/components/access/SharePanel";
 import ReadOnlyBadge from "@/components/sharing/ReadOnlyBanner";
 import PageNavigationSidebar from "@/components/layout/PageNavigationSidebar";
+import PublishArtifactDialog from "@/components/upload/PublishArtifactDialog";
 
 const Canvas = dynamic(() => import("@/components/presentation/Canvas"), {
   ssr: false,
@@ -420,6 +421,12 @@ function PresentationPageInner({
 
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  
+  // Publish dialog state
+  const [publishArtifactId, setPublishArtifactId] = useState<string | null>(null);
+  const artifactToPublish = publishArtifactId 
+    ? artifacts.find(a => a.id === publishArtifactId) ?? null
+    : null;
 
   // Set header content using shared helper - must be called before any return statements
   useSetHeader(
@@ -600,6 +607,8 @@ function PresentationPageInner({
                 }}
                 onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
                 onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
+                onPublishArtifact={(artifactId) => setPublishArtifactId(artifactId)}
+                currentUserId={user?.id}
                 onFocusArtifact={(artifactId) => {
                   // If already in focused mode (columns=1, fitMode=true), restore
                   if (columns === 1 && fitMode) {
@@ -721,6 +730,17 @@ function PresentationPageInner({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Publish Artifact Dialog */}
+      <PublishArtifactDialog
+        artifact={artifactToPublish}
+        isOpen={publishArtifactId !== null}
+        onClose={() => setPublishArtifactId(null)}
+        onPublished={() => {
+          // Refresh artifacts after publishing
+          refetchArtifacts();
+        }}
+      />
 
       {/* Dev Debug Panel - Press '/' to toggle */}
       <DevDebugPanel
