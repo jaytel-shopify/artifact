@@ -39,7 +39,6 @@ interface CarouselItemWebsiteProps {
   height?: number;
   isDragging?: boolean;
   fitMode?: boolean;
-  thumbnailUrl?: string;
 }
 
 export function CarouselItemWebsite({
@@ -48,24 +47,15 @@ export function CarouselItemWebsite({
   height = 1080,
   isDragging = false,
   fitMode = false,
-  thumbnailUrl,
 }: CarouselItemWebsiteProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [scale, setScale] = useState(1);
   const [isActivated, setIsActivated] = useState(false);
-  const [thumbnailLoaded, setThumbnailLoaded] = useState(false);
-  const [thumbnailError, setThumbnailError] = useState(false);
 
-  // Reset thumbnail state when URL changes
+  // Calculate iframe scale
   useEffect(() => {
-    setThumbnailLoaded(false);
-    setThumbnailError(false);
-  }, [thumbnailUrl]);
-
-  // Calculate iframe scale only when activated
-  useEffect(() => {
-    if (!isActivated || !containerRef.current) return;
+    if (!containerRef.current) return;
 
     const updateScale = () => {
       const { offsetWidth: w, offsetHeight: h } = containerRef.current!;
@@ -79,7 +69,7 @@ export function CarouselItemWebsite({
     const observer = new ResizeObserver(updateScale);
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, [width, height, fitMode, isActivated]);
+  }, [width, height, fitMode]);
 
   // Click outside to deactivate
   useEffect(() => {
@@ -134,8 +124,6 @@ export function CarouselItemWebsite({
     }
   };
 
-  const showThumbnail = thumbnailUrl && thumbnailLoaded && !thumbnailError;
-
   return (
     <div
       ref={containerRef}
@@ -148,49 +136,11 @@ export function CarouselItemWebsite({
         alignItems: fitMode ? "flex-start" : undefined,
       }}
     >
-      {!isActivated ? (
-        <div
-          className={`group relative cursor-pointer transition-transform duration-200 ease-out hover:scale-[1.005] ${fitMode ? "h-full" : "w-full h-full"}`}
-          onClick={handleClick}
-          onDoubleClick={handleDoubleClick}
-          style={fitMode ? { aspectRatio: `${width} / ${height}` } : undefined}
-        >
-          {/* Hidden image to detect load/error */}
-          {thumbnailUrl && (
-            <img
-              src={thumbnailUrl}
-              alt=""
-              className="hidden"
-              onLoad={() => setThumbnailLoaded(true)}
-              onError={() => setThumbnailError(true)}
-            />
-          )}
-
-          {showThumbnail ? (
-            <img
-              src={thumbnailUrl}
-              alt={`Preview of ${url}`}
-              className={`w-full h-full ${fitMode ? "object-contain" : "object-cover"}`}
-            />
-          ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-fill-secondary gap-3">
-              <div className="w-8 h-8 border-2 border-text-secondary/30 border-t-text-secondary rounded-full animate-spin" />
-              <span className="text-small text-text-secondary">
-                Generating thumbnail…
-              </span>
-            </div>
-          )}
-
-          {showThumbnail && (
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 duration-200 ease-out">
-              <div className="flex items-center gap-2 text-white text-medium">
-                <ClickToActivateIcon />
-                <span>Click to activate</span>
-              </div>
-            </div>
-          )}
-        </div>
-      ) : (
+      <div
+        className={`relative ${fitMode ? "h-full" : "w-full h-full"}`}
+        style={fitMode ? { aspectRatio: `${width} / ${height}` } : undefined}
+      >
+        {/* Always render iframe underneath */}
         <div
           style={{
             width: fitMode ? `${width * scale}px` : undefined,
@@ -206,14 +156,28 @@ export function CarouselItemWebsite({
               border: 0,
               transform: `scale(${scale})`,
               transformOrigin: "top left",
-              pointerEvents: isDragging ? "none" : "auto",
+              pointerEvents: isActivated && !isDragging ? "auto" : "none",
             }}
             allow="clipboard-write; fullscreen; autoplay; encrypted-media; picture-in-picture"
             referrerPolicy="no-referrer-when-downgrade"
             title={url}
           />
         </div>
-      )}
+
+        {/* Click to activate overlay - only visible on hover */}
+        {!isActivated && (
+          <div
+            className="group absolute inset-0 cursor-pointer flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors"
+            onClick={handleClick}
+            onDoubleClick={handleDoubleClick}
+          >
+            <div className="flex items-center gap-2 text-white text-medium opacity-0 group-hover:opacity-100 transition-opacity">
+              <ClickToActivateIcon />
+              <span>Click to activate</span>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
