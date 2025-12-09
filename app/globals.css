@@ -240,8 +240,12 @@ body {
 }
 
 @keyframes page-load-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .hide-scrollbar {
@@ -259,6 +263,12 @@ body {
   }
   100% {
     transform: translateX(100%);
+  }
+}
+
+.lottie {
+  svg * {
+    fill: var(--c-text-primary);
   }
 }
 
@@ -329,7 +339,6 @@ input[type="range"]::-moz-range-track {
     opacity: 1;
   }
 }
-
 
 /* Search input clear button styling */
 input[type="search"]::-webkit-search-cancel-button {

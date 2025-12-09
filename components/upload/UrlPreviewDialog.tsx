@@ -95,7 +95,6 @@ export default function UrlPreviewDialog({
 
   // Reset form when dialog opens
   useEffect(() => {
-    console.log("isOpen", isOpen);
     if (isOpen) {
       setUrlValue(url);
       setName("");
