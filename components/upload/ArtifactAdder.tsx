@@ -157,6 +157,7 @@ export default function ArtifactAdder({
         }}
         uploading={uploading}
         initialContext={defaultContext}
+        showQuickSites
       />
 
       {/* Title Card Dialog */}

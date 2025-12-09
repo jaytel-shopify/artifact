@@ -45,6 +45,8 @@ interface UrlPreviewDialogProps {
   requireProjectSelection?: boolean;
   /** Pre-selected context (if any) */
   initialContext?: UploadContext;
+  /** Whether to show the Quick Sites dropdown button */
+  showQuickSites?: boolean;
 }
 
 export default function UrlPreviewDialog({
@@ -55,6 +57,7 @@ export default function UrlPreviewDialog({
   uploading = false,
   requireProjectSelection = false,
   initialContext,
+  showQuickSites = false,
 }: UrlPreviewDialogProps) {
   const { user } = useAuth();
   const [urlValue, setUrlValue] = useState(url);
@@ -151,7 +154,13 @@ export default function UrlPreviewDialog({
         : initialContext;
 
     // Pass normalized URL (with https:// prefix if missing)
-    onConfirm(normalizeUrl(urlValue), name || suggestedName, description, viewport, context);
+    onConfirm(
+      normalizeUrl(urlValue),
+      name || suggestedName,
+      description,
+      viewport,
+      context
+    );
   };
 
   // Validate URL - accepts patterns like shopify.com, www.shopify.com, etc.
@@ -173,7 +182,14 @@ export default function UrlPreviewDialog({
     if (requireProjectSelection && (!selectedProjectId || !selectedPageId))
       return true;
     return false;
-  }, [uploading, urlValue, isValidUrl, requireProjectSelection, selectedProjectId, selectedPageId]);
+  }, [
+    uploading,
+    urlValue,
+    isValidUrl,
+    requireProjectSelection,
+    selectedProjectId,
+    selectedPageId,
+  ]);
 
   return (
     <Dialog
@@ -200,6 +216,7 @@ export default function UrlPreviewDialog({
               placeholder="https://example.com"
               disabled={uploading}
               autoFocus={!url}
+              showQuickSites={showQuickSites}
             />
           </div>
 
@@ -310,7 +327,7 @@ export default function UrlPreviewDialog({
               placeholder="Add a description..."
               disabled={uploading}
               rows={3}
-              className="w-full min-w-0 rounded-button border border-border bg-primary px-3 py-2 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
+              className="w-full min-w-0 rounded-button border border-border bg-background p-3 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
             />
           </div>
         </div>

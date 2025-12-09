@@ -19,6 +19,8 @@ interface UrlAutocompleteProps {
   placeholder?: string;
   disabled?: boolean;
   autoFocus?: boolean;
+  /** Whether to show the Quick Sites dropdown button */
+  showQuickSites?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export function UrlAutocomplete({
   placeholder = "https://example.com",
   disabled = false,
   autoFocus = false,
+  showQuickSites = false,
 }: UrlAutocompleteProps) {
   const { user } = useAuth();
   const [query, setQuery] = useState(value);
@@ -217,13 +220,13 @@ export function UrlAutocomplete({
           autoComplete="off"
         />
         {/* Quick Sites Button */}
-        {allSites.length > 0 && !loading && (
+        {showQuickSites && allSites.length > 0 && !loading && (
           <button
             ref={buttonRef}
             type="button"
             onClick={toggleDropdown}
             disabled={disabled}
-            className="flex items-center gap-1.5 px-3 h-10 rounded-button border border-border bg-primary hover:bg-secondary/10 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50 disabled:pointer-events-none shrink-0"
+            className="flex items-center gap-1.5 px-3 h-10 rounded-button border border-border bg-background hover:bg-secondary/10 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50 disabled:pointer-events-none shrink-0"
             title="Browse Quick sites"
           >
             <img src="/quick.svg" alt="Quick Sites" width={36} height={36} />
@@ -254,15 +257,15 @@ export function UrlAutocomplete({
       {isOpen && results.length > 0 && (
         <div
           ref={dropdownRef}
-          className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-[300px] overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-primary border border-border rounded-button shadow-lg max-h-[300px] overflow-y-auto"
         >
           {results.map((site, index) => (
             <button
               key={site.site_url}
               onClick={() => handleSelect(site)}
               className={`
-                w-full px-3 py-2 flex flex-col items-start hover:bg-secondary/10 transition-colors text-left
-                ${index === selectedIndex ? "bg-secondary/10" : ""}
+                w-full px-3 py-2 flex flex-col items-start hover:bg-background transition-colors text-left
+                ${index === selectedIndex ? "bg-background" : ""}
               `}
             >
               <div className="text-small truncate w-full">{site.site_url}</div>
