@@ -20,6 +20,8 @@ interface PublishArtifactDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onPublished?: (artifact: Artifact) => void;
+  /** The user ID of who is publishing the artifact */
+  publisherId: string;
 }
 
 export default function PublishArtifactDialog({
@@ -27,6 +29,7 @@ export default function PublishArtifactDialog({
   isOpen,
   onClose,
   onPublished,
+  publisherId,
 }: PublishArtifactDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -48,7 +51,7 @@ export default function PublishArtifactDialog({
   }, [isOpen]);
 
   const handlePublish = async () => {
-    if (!artifact || !name.trim()) return;
+    if (!artifact || !name.trim() || !publisherId) return;
 
     setIsPublishing(true);
     try {
@@ -57,6 +60,7 @@ export default function PublishArtifactDialog({
         description: description.trim(),
         published: true,
         published_at: new Date().toISOString(),
+        published_by: publisherId,
       });
       
       toast.success("Artifact published to feed!");

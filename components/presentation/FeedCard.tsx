@@ -72,21 +72,27 @@ export default function FeedCard({
       </Link>
 
       <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex gap-2 justify-between items-center">
-        <Link
-          href={`/user/?id=${artifact.creator?.id}`}
-          className={`pl-1 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/40 backdrop-blur-md gap-2 hover:bg-dark rotate-2 ${hoverClasses}`}
-        >
-          <UserAvatar
-            id={artifact.creator?.id}
-            email={artifact.creator?.email}
-            name={artifact.creator?.name}
-            imageUrl={artifact.creator?.slack_image_url}
-            size="sm"
-          />
-          <h3 className="text-small text-light line-clamp-1 overflow-ellipsis">
-            {artifact.creator?.name}
-          </h3>
-        </Link>
+        {/* Show publisher if available, otherwise show creator */}
+        {(() => {
+          const displayUser = artifact.publisher || artifact.creator;
+          return displayUser ? (
+            <Link
+              href={`/user/?id=${displayUser.id}`}
+              className={`pl-1 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/40 backdrop-blur-md gap-2 hover:bg-dark rotate-2 ${hoverClasses}`}
+            >
+              <UserAvatar
+                id={displayUser.id}
+                email={displayUser.email}
+                name={displayUser.name}
+                imageUrl={displayUser.slack_image_url}
+                size="sm"
+              />
+              <h3 className="text-small text-light line-clamp-1 overflow-ellipsis">
+                {displayUser.name}
+              </h3>
+            </Link>
+          ) : null;
+        })()}
         <div className="relative z-10 flex gap-2">
           <button
             onClick={handleLike}

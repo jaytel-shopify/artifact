@@ -99,6 +99,7 @@ export type Artifact = {
   reactions: ArtifactReactions;
   published: boolean;
   published_at?: string; // When the artifact was published to the feed
+  published_by?: string; // User.id of who published the artifact (shown in feed/detail instead of creator)
   creator_id: string; // References User.id
   created_at: string;
   updated_at: string;
@@ -133,9 +134,11 @@ export type ArtifactWithPosition = Artifact & {
 /**
  * Artifact with creator user data attached.
  * Used when displaying artifacts with creator info.
+ * If published_by is set, publisher will be populated instead of (or in addition to) creator.
  */
 export type ArtifactWithCreator = Artifact & {
   creator?: User;
+  publisher?: User; // The user who published the artifact (if different from creator)
 };
 
 export type ViewportState = {

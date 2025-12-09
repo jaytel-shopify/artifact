@@ -40,19 +40,24 @@ async function fetchPublicArtifacts(
   // Apply pagination after sorting
   const paginatedArtifacts = publicArtifacts.slice(offset, offset + limit);
 
-  // Collect unique creator IDs
-  const creatorIds = [
-    ...new Set(paginatedArtifacts.map((a) => a.creator_id).filter(Boolean)),
-  ];
+  // Collect unique creator and publisher IDs
+  const userIds = new Set<string>();
+  paginatedArtifacts.forEach((a) => {
+    if (a.creator_id) userIds.add(a.creator_id);
+    if (a.published_by) userIds.add(a.published_by);
+  });
 
   // Batch fetch users
-  const usersMap = await getUsersByIds(creatorIds);
+  const usersMap = await getUsersByIds([...userIds]);
 
-  // Attach creator to each artifact
+  // Attach creator and publisher to each artifact
   const artifactsWithCreators: ArtifactWithCreator[] = paginatedArtifacts.map(
     (artifact) => ({
       ...artifact,
       creator: usersMap.get(artifact.creator_id),
+      publisher: artifact.published_by
+        ? usersMap.get(artifact.published_by)
+        : undefined,
     })
   );
 

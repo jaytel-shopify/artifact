@@ -452,7 +452,7 @@ export async function getArtifactsByPage(
 }
 
 /**
- * Get a single artifact by ID with creator user data
+ * Get a single artifact by ID with creator and publisher user data
  */
 export async function getArtifactById(
   id: string
@@ -468,9 +468,15 @@ export async function getArtifactById(
       ? await getUserById(artifact.creator_id)
       : null;
 
+    // Fetch the publisher user (if different from creator)
+    const publisher = artifact.published_by
+      ? await getUserById(artifact.published_by)
+      : null;
+
     return {
       ...artifact,
       creator: creator || undefined,
+      publisher: publisher || undefined,
     };
   } catch (error) {
     console.error("Artifact not found:", id, error);

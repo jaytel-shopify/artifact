@@ -17,6 +17,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import {
   ArrowLeft,
   ArrowRight,
+  EyeOff,
   MoreVertical,
   Pencil,
   Trash2,
@@ -41,7 +42,6 @@ import { SaveToProjectDialog } from "@/components/artifacts/SaveToProjectDialog"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useReactions } from "@/hooks/useReactions";
 import { UserAvatar } from "@/components/auth/UserAvatar";
-import { formatTimeAgo } from "@/lib/utils";
 import { usePublicArtifacts } from "@/hooks/usePublicArtifacts";
 import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
@@ -143,6 +143,12 @@ function ArtifactPageContent() {
   // Check if current user is the creator
   const isCreator = user?.id && artifact?.creator_id === user.id;
 
+  // Check if current user is the publisher (can unpublish)
+  const isPublisher = user?.id && artifact?.published_by === user.id;
+
+  // Determine which user to display (publisher takes precedence for published artifacts)
+  const displayUser = artifact?.publisher || artifact?.creator;
+
   const handleDelete = useCallback(async () => {
     if (!artifact || !isCreator) return;
 
@@ -185,6 +191,29 @@ function ArtifactPageContent() {
     }
   }, [artifact, isCreator, editName, editDescription, mutate]);
 
+  const handleUnpublish = useCallback(async () => {
+    if (!artifact || !isPublisher) return;
+
+    try {
+      await updateArtifact(artifact.id, {
+        published: false,
+        published_at: undefined,
+        published_by: undefined,
+      });
+      toast.success("Artifact unpublished from feed");
+
+      // Invalidate caches
+      globalMutate(cacheKeys.publicArtifacts);
+      mutate(); // Refresh artifact data
+
+      // Navigate back since it's no longer in the public feed
+      handleBack();
+    } catch (error) {
+      console.error("Failed to unpublish artifact:", error);
+      toast.error("Failed to unpublish artifact");
+    }
+  }, [artifact, isPublisher, mutate, handleBack]);
+
   const { userLiked, userDisliked, handleLike, handleDislike } = useReactions({
     artifact,
     mutate,
@@ -221,7 +250,7 @@ function ArtifactPageContent() {
       ),
       right: (
         <>
-          {isCreator && (
+          {(isCreator || isPublisher) && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" aria-label="More options">
@@ -229,23 +258,33 @@ function ArtifactPageContent() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => {
-                    setEditName(artifact?.name || "");
-                    setEditDescription(artifact?.description || "");
-                    setIsEditing(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  variant="destructive"
-                  onClick={() => setIsDeleteDialogOpen(true)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </DropdownMenuItem>
+                {isCreator && (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditName(artifact?.name || "");
+                        setEditDescription(artifact?.description || "");
+                        setIsEditing(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      variant="destructive"
+                      onClick={() => setIsDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {isPublisher && (
+                  <DropdownMenuItem onClick={handleUnpublish}>
+                    <EyeOff className="h-4 w-4" />
+                    Unpublish
+                  </DropdownMenuItem>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
@@ -261,7 +300,7 @@ function ArtifactPageContent() {
         </>
       ),
     },
-    [isCreator]
+    [isCreator, isPublisher, handleUnpublish]
   );
 
   if (isLoading) {
@@ -288,21 +327,23 @@ function ArtifactPageContent() {
           )}
 
           <div className="flex items-center gap-2">
-            <Link
-              href={`/user/?id=${artifact.creator?.id}`}
-              className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
-            >
-              <UserAvatar
-                id={artifact.creator?.id}
-                email={artifact.creator?.email}
-                name={artifact.creator?.name}
-                imageUrl={artifact.creator?.slack_image_url}
-                size="sm"
-              />
-              <p className="text-medium text-text-secondary capitalize">
-                {artifact.creator?.name}
-              </p>
-            </Link>
+            {displayUser && (
+              <Link
+                href={`/user/?id=${displayUser.id}`}
+                className="flex items-center gap-2 hover:opacity-70 transition-opacity cursor-pointer"
+              >
+                <UserAvatar
+                  id={displayUser.id}
+                  email={displayUser.email}
+                  name={displayUser.name}
+                  imageUrl={displayUser.slack_image_url}
+                  size="sm"
+                />
+                <p className="text-medium text-text-secondary capitalize">
+                  {displayUser.name}
+                </p>
+              </Link>
+            )}
             <p
               className="text-medium text-text-secondary"
               style={{ color: "var(--color-disabled)" }}

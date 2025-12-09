@@ -22,7 +22,6 @@ import EditableTitle from "@/components/presentation/EditableTitle";
 import { useSetHeader } from "@/components/layout/HeaderContext";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
-import { FolderPageSkeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import type { Project, Artifact, Folder, ProjectArtifact, Page } from "@/types";
 import {
@@ -338,12 +337,8 @@ function FolderPageContent() {
     [folder?.name, folder?.id, canEdit]
   );
 
-  // Show skeleton while loading, null if folder not found after loading
-  if (isLoading) {
-    return <FolderPageSkeleton />;
-  }
-
-  if (!folder) {
+  // Return null while loading or if folder not found
+  if (isLoading || !folder) {
     return null;
   }
 

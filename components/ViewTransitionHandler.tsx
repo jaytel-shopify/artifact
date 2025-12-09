@@ -6,6 +6,7 @@ import {
   useEffect,
   useRef,
   useCallback,
+  useMemo,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -49,6 +50,10 @@ export default function ViewTransitionHandler({
   const query = useSearchParams();
   const contentRef = useRef<HTMLElement | null>(null);
   const navigating = useRef(false);
+  
+  // Use a ref to store the router so the click handler doesn't need to be re-attached
+  const routerRef = useRef(router);
+  routerRef.current = router;
 
   // Fade in when new page arrives
   useEffect(() => {
@@ -64,6 +69,7 @@ export default function ViewTransitionHandler({
     }
   }, [pathname, query]);
 
+  // Navigate function that uses ref to avoid dependency on router
   const navigate = useCallback(
     (href: string, method: "push" | "replace" = "push") => {
       // Skip transition if navigating to the same route
@@ -72,18 +78,18 @@ export default function ViewTransitionHandler({
         href === currentPath ||
         href === currentPath + window.location.search
       ) {
-        return router[method](href);
+        return routerRef.current[method](href);
       }
-      if (!contentRef.current) return router[method](href);
+      if (!contentRef.current) return routerRef.current[method](href);
       navigating.current = true;
       contentRef.current.style.transition = `opacity ${FADE_MS}ms ease-in`;
       contentRef.current.style.opacity = "0";
-      setTimeout(() => router[method](href), FADE_MS);
+      setTimeout(() => routerRef.current[method](href), FADE_MS);
     },
-    [router]
+    [] // No dependencies - uses refs
   );
 
-  // Intercept link clicks
+  // Intercept link clicks - handler is stable since navigate has no dependencies
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       const link = (e.target as Element).closest("a");
@@ -102,11 +108,12 @@ export default function ViewTransitionHandler({
       document.removeEventListener("click", onClick, { capture: true });
   }, [navigate]);
 
-  const transitionRouter = {
+  // Memoize the transition router to avoid unnecessary re-renders
+  const transitionRouter = useMemo(() => ({
     ...router,
     push: (href: string) => navigate(href, "push"),
     replace: (href: string) => navigate(href, "replace"),
-  };
+  }), [router, navigate]);
 
   return (
     <TransitionContext.Provider

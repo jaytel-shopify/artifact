@@ -746,6 +746,7 @@ function PresentationPageInner({
             globalMutate(`artifact-${publishArtifactId}`);
           }
         }}
+        publisherId={user?.id || ""}
       />
 
       {/* Dev Debug Panel - Press '/' to toggle */}

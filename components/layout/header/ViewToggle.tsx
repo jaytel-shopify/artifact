@@ -327,22 +327,21 @@ export default function ViewToggle() {
       const clickX = pointerDownXRef.current - rect.left;
       const midpoint = rect.width / 2;
       const clickedIndex = clickX < midpoint ? 0 : 1;
-      const targetPath = clickedIndex === 0 ? "/" : "/projects/";
 
       // Update index to animate the handle
       currentIndexRef.current = clickedIndex;
       setLocalIndex(clickedIndex);
 
-      // Delay navigation to allow animation to start
+      // Let the click event propagate to the Link - ViewTransitionHandler will handle navigation
+      // Just clear the block flag after a short delay
       setTimeout(() => {
-        router.push(targetPath);
         blockLinkClickRef.current = false;
-      }, 100);
+      }, 50);
       return;
     }
 
-    // Navigate based on final handle position
-    const targetPath = finalIndex === 0 ? "/" : "/projects/";
+    // For drag releases (not quick taps), we need to navigate based on final handle position
+    // since the user didn't click on a specific Link
     const currentIsExplore =
       pathname === "/" ||
       pathname.startsWith("/user") ||
@@ -353,6 +352,7 @@ export default function ViewToggle() {
       (finalIndex === 1 && currentIsExplore);
 
     if (shouldNavigate) {
+      const targetPath = finalIndex === 0 ? "/" : "/projects/";
       router.push(targetPath);
     }
 
