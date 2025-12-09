@@ -11,6 +11,7 @@ import ViewTransitionHandler from "@/components/ViewTransitionHandler";
 import "./globals.css";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
 import { SharedFilesHandler } from "@/components/SharedFilesHandler";
+import { WelcomeDialog } from "@/components/WelcomeDialog";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -188,6 +189,7 @@ export default function RootLayout({
               </ViewTransitionHandler>
               <PWAInstallPrompt />
               <SharedFilesHandler />
+              <WelcomeDialog />
             </ThemeProvider>
           </AuthProvider>
         </SWRProvider>
