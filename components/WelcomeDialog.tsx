@@ -58,20 +58,20 @@ export function WelcomeDialog() {
         showCloseButton={false}
       >
         {/* Lottie Animation */}
-        <div className="flex items-center justify-center bg-gradient-to-b from-[#1a2a32] to-[#0f1315] px-8 pt-8">
-          <div className="aspect-square w-48">
+        <div className="flex items-center bg-text-primary justify-center w-full aspect-[520/220]">
+          <div className="aspect-square w-30">
             {animationData && (
               <Lottie
                 animationData={animationData}
                 loop={true}
-                className="lottie-light"
+                className="lottie-dark-light"
               />
             )}
           </div>
         </div>
 
         {/* Content */}
-        <div className="space-y-4 p-6 pt-4">
+        <div className="space-y-4 p-12 pt-8">
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xlarge text-center text-balance">
               Welcome to Artifact
@@ -84,10 +84,20 @@ export function WelcomeDialog() {
 
           {/* CTA */}
           <div className="w-full flex gap-2 items-center justify-center">
-            <Button variant="primary" size="lg" onClick={handleDismiss}>
+            <Button
+              href="/projects/new"
+              variant="primary"
+              size="lg"
+              onClick={handleDismiss}
+            >
               Create a project
             </Button>
-            <Button variant="secondary" size="lg" onClick={handleDismiss}>
+            <Button
+              href="/"
+              variant="secondary"
+              size="lg"
+              onClick={handleDismiss}
+            >
               Explore the feed
             </Button>
           </div>

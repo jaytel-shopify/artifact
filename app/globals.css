@@ -271,6 +271,11 @@ body {
     fill: var(--c-text-primary);
   }
 }
+.lottie-dark-light {
+  svg * {
+    fill: var(--c-primary);
+  }
+}
 .lottie-light {
   svg * {
     fill: var(--c-light);
