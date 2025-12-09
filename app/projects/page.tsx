@@ -17,7 +17,6 @@ import ViewToggle from "@/components/layout/header/ViewToggle";
 import SearchBar from "@/components/layout/header/SearchBar";
 import DarkModeToggle from "@/components/layout/header/DarkModeToggle";
 import HeaderUserAvatar from "@/components/layout/header/HeaderUserAvatar";
-import { ProjectsPageSkeleton } from "@/components/ui/skeleton";
 import { ProjectsSection, FoldersSection } from "@/components/projects";
 
 export default function ProjectsPage() {
@@ -82,11 +81,6 @@ export default function ProjectsPage() {
       </>
     ),
   });
-
-  // Show skeleton while loading
-  if (isLoading) {
-    return <ProjectsPageSkeleton />;
-  }
 
   return (
     <div className="max-w-[1100px] mx-auto p-6 space-y-10">
