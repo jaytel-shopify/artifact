@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Image, Link, Type } from "lucide-react";
@@ -78,6 +78,72 @@ export default function ArtifactAdder({
   // Media dialog is open if explicitly set OR if there are pending files from hook
   const isMediaDialogOpen = openDialog === "media" || showPreviewDialog;
 
+  // Hidden file input ref for fallback when showOpenFilePicker is not supported
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Handle opening file picker using native API or fallback
+  const handleOpenFilePicker = useCallback(async () => {
+    // Check if showOpenFilePicker is supported (File System Access API)
+    const windowWithPicker = window as Window & {
+      showOpenFilePicker?: (options?: {
+        multiple?: boolean;
+        types?: Array<{
+          description?: string;
+          accept: Record<string, string[]>;
+        }>;
+      }) => Promise<FileSystemFileHandle[]>;
+    };
+
+    if (windowWithPicker.showOpenFilePicker) {
+      try {
+        const fileHandles = await windowWithPicker.showOpenFilePicker({
+          multiple: true,
+          types: [
+            {
+              description: "Media files",
+              accept: {
+                "image/*": [".png", ".gif", ".jpeg", ".jpg", ".webp", ".svg"],
+                "video/*": [".mp4", ".webm", ".mov", ".avi"],
+              },
+            },
+          ],
+        });
+
+        // Get File objects from handles
+        const files = await Promise.all(
+          fileHandles.map((handle: FileSystemFileHandle) => handle.getFile())
+        );
+
+        if (files.length > 0) {
+          stageFilesForUpload(files);
+        }
+      } catch (err) {
+        // User cancelled the picker - that's fine, do nothing
+        if (err instanceof Error && err.name === "AbortError") {
+          return;
+        }
+        // For other errors, fall back to input
+        fileInputRef.current?.click();
+      }
+    } else {
+      // Fallback to traditional file input
+      fileInputRef.current?.click();
+    }
+  }, [stageFilesForUpload]);
+
+  // Handle file input change (fallback)
+  const handleFileInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(e.target.files || []);
+      if (files.length > 0) {
+        stageFilesForUpload(files);
+      }
+      // Reset input so same file can be selected again
+      e.target.value = "";
+    },
+    [stageFilesForUpload]
+  );
+
   function resetTitleCardState() {
     setHeadline("");
     setSubheadline("");
@@ -107,6 +173,16 @@ export default function ArtifactAdder({
 
   return (
     <>
+      {/* Hidden file input for fallback */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,video/*"
+        onChange={handleFileInputChange}
+        className="hidden"
+      />
+
       {/* Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -120,7 +196,7 @@ export default function ArtifactAdder({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuItem
-            onClick={() => setOpenDialog("media")}
+            onClick={handleOpenFilePicker}
             className="cursor-pointer"
           >
             <Image className="h-4 w-4 mr-2" />

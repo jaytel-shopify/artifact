@@ -56,6 +56,23 @@ const manifestData = {
       url: `${SITE_URL}/?new=url`,
     },
   ],
+  file_handlers: [
+    {
+      action: `${SITE_URL}/?new=media`,
+      accept: {
+        "image/jpeg": [".jpg", ".jpeg"],
+        "image/png": [".png"],
+        "image/webp": [".webp"],
+        "image/gif": [".gif"],
+        "image/avif": [".avif"],
+        "video/mp4": [".mp4"],
+        "video/mov": [".mov"],
+        "video/quicktime": [".mov"],
+        "video/webm": [".webm"],
+        "video/ogg": [".ogg"],
+      },
+    },
+  ],
   share_target: {
     action: `${SITE_URL}/share-file-handler`,
     method: "POST",
