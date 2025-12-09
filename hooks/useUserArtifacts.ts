@@ -45,13 +45,16 @@ export function useUserArtifacts(userId: string | null) {
 
   // Fetch user's artifacts
   const {
-    data: artifacts = [],
+    data: artifactsData,
     isLoading: artifactsLoading,
     error,
   } = useSWR<Artifact[]>(
     userId ? `user-artifacts-${userId}` : null,
     () => (userId ? fetchUserArtifacts(userId) : [])
   );
+
+  // Only use empty array once data has been fetched
+  const artifacts = artifactsData ?? [];
 
   // Attach creator info to artifacts
   const artifactsWithCreator: ArtifactWithCreator[] = artifacts.map(
@@ -64,7 +67,7 @@ export function useUserArtifacts(userId: string | null) {
   return {
     artifacts: artifactsWithCreator,
     userInfo,
-    isLoading: userInfoLoading || artifactsLoading,
+    isLoading: userInfoLoading || artifactsLoading || artifactsData === undefined,
     error,
   };
 }

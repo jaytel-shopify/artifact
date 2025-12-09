@@ -64,12 +64,7 @@ export function usePublicArtifacts() {
   const [hasMore, setHasMore] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const {
-    data: artifacts = [],
-    isLoading,
-    error,
-    mutate,
-  } = useSWR<ArtifactWithCreator[]>(
+  const { data, isLoading, error, mutate } = useSWR<ArtifactWithCreator[]>(
     "public-artifacts",
     () => fetchPublicArtifacts(0, PAGE_SIZE),
     {
@@ -84,6 +79,9 @@ export function usePublicArtifacts() {
       },
     }
   );
+
+  // Only use empty array as default once data has been fetched (data is not undefined)
+  const artifacts = data ?? [];
 
   const loadMore = async () => {
     if (isLoadingMore || !hasMore) return;
@@ -153,7 +151,7 @@ export function usePublicArtifacts() {
 
   return {
     artifacts,
-    isLoading,
+    isLoading: isLoading || data === undefined,
     isLoadingMore,
     error,
     hasMore,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { searchResources, SearchResults } from "@/lib/search";
 import { waitForQuick } from "@/lib/quick";
@@ -16,7 +16,7 @@ import {
   UsersSection,
 } from "@/components/projects";
 
-export default function SearchPage() {
+function SearchPageContent() {
   const searchParams = useSearchParams();
   const query = searchParams?.get("q") || "";
 
@@ -122,5 +122,13 @@ export default function SearchPage() {
         <UsersSection users={results.users} />
       </div>
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={null}>
+      <SearchPageContent />
+    </Suspense>
   );
 }

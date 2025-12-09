@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import useSWR, { mutate as globalMutate } from "swr";
 import { toast } from "sonner";
 import { ArtifactWithCreator } from "@/types";
@@ -56,7 +56,7 @@ async function fetchArtifact(
   return artifact;
 }
 
-export default function Page() {
+function ArtifactPageContent() {
   const searchParams = useSearchParams();
   const router = useTransitionRouter();
   const artifactId = searchParams?.get("id") || "";
@@ -428,5 +428,13 @@ export default function Page() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <ArtifactPageContent />
+    </Suspense>
   );
 }

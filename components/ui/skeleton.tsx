@@ -50,24 +50,6 @@ function ProjectCardSkeleton({ className }: { className?: string }) {
 }
 
 /**
- * FolderCardSkeleton
- * Matches FolderCard layout: simple card with title and count
- */
-function FolderCardSkeleton({ className }: { className?: string }) {
-  return (
-    <div
-      className={cn(
-        "bg-primary rounded-card border-border border p-4 space-y-2",
-        className
-      )}
-    >
-      <Skeleton className="h-5 w-2/3" />
-      <Skeleton className="h-4 w-1/4" />
-    </div>
-  );
-}
-
-/**
  * FeedCardSkeleton
  * Matches FeedCard for masonry grid - variable aspect ratios
  */
@@ -105,36 +87,6 @@ function ArtifactCardSkeleton({ className }: { className?: string }) {
       )}
     >
       <Skeleton className="w-full h-full rounded-none" />
-    </div>
-  );
-}
-
-/**
- * ProjectsPageSkeleton
- * Full page skeleton for /projects with folders and projects sections
- */
-function ProjectsPageSkeleton() {
-  return (
-    <div className="max-w-[1100px] mx-auto p-6 space-y-10">
-      {/* Folders Section */}
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-20" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <FolderCardSkeleton key={`folder-${i}`} />
-          ))}
-        </div>
-      </div>
-
-      {/* Projects Section */}
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-20" />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <ProjectCardSkeleton key={`project-${i}`} />
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -211,10 +163,8 @@ function CanvasSkeleton() {
 export {
   Skeleton,
   ProjectCardSkeleton,
-  FolderCardSkeleton,
   FeedCardSkeleton,
   ArtifactCardSkeleton,
-  ProjectsPageSkeleton,
   FolderPageSkeleton,
   HomeFeedSkeleton,
   CanvasSkeleton,

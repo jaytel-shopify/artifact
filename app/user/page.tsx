@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useSetHeader } from "@/components/layout/HeaderContext";
@@ -13,7 +13,7 @@ import ArtifactFeed from "@/components/presentation/ArtifactFeed";
 import { useUserArtifacts } from "@/hooks/useUserArtifacts";
 import { Button } from "@/components/ui/button";
 
-export default function UserProfilePage() {
+function UserProfilePageContent() {
   const searchParams = useSearchParams();
   const userId = searchParams?.get("id") || "";
   const { user } = useAuth();
@@ -116,5 +116,13 @@ export default function UserProfilePage() {
         userId={userId}
       />
     </div>
+  );
+}
+
+export default function UserProfilePage() {
+  return (
+    <Suspense fallback={null}>
+      <UserProfilePageContent />
+    </Suspense>
   );
 }

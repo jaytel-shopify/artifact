@@ -3,7 +3,7 @@
 import useSWR, { mutate as globalMutate } from "swr";
 import { Suspense, useEffect, useState, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ArrowLeft, PanelLeft, PanelLeftClose, Plus } from "lucide-react";
 import { usePages } from "@/hooks/usePages";
 import { useCurrentPage } from "@/hooks/useCurrentPage";
