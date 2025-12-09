@@ -7,6 +7,8 @@ import FeedCard from "@/components/presentation/FeedCard";
 interface ArtifactFeedProps {
   artifacts: ArtifactWithCreator[];
   isLoading?: boolean;
+  /** True once data has been fetched at least once (distinguishes "loading" from "empty") */
+  hasLoadedOnce?: boolean;
   isLoadingMore?: boolean;
   hasMore?: boolean;
   onLoadMore?: () => void;
@@ -19,6 +21,7 @@ interface ArtifactFeedProps {
 export default function ArtifactFeed({
   artifacts,
   isLoading,
+  hasLoadedOnce,
   isLoadingMore,
   hasMore,
   onLoadMore,
@@ -159,11 +162,11 @@ export default function ArtifactFeed({
           {/* Infinite scroll sentinel */}
           {onLoadMore && <div ref={sentinelRef} className="h-px" />}
         </div>
-      ) : (
+      ) : hasLoadedOnce ? (
         <div className="py-12 text-center">
           <p className="text-text-secondary">{emptyMessage}</p>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -56,6 +56,8 @@ interface Props {
   sidebarOpen?: boolean;
   artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
+  /** True when artifacts are being loaded (prevents showing empty state during page transitions) */
+  isLoading?: boolean;
   onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (
@@ -130,6 +132,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       sidebarOpen = false,
       artifacts,
       expandedCollections,
+      isLoading = false,
       currentUserId,
       onReorder,
       onCreateCollection,
@@ -406,12 +409,18 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       ]
     );
 
-    if (items.length === 0) {
+    // Only show empty state if not loading and items are actually empty
+    if (items.length === 0 && !isLoading) {
       return (
         <div className="h-full flex items-center justify-center text-text-primary">
           No artifacts yet. Add one to get started.
         </div>
       );
+    }
+
+    // Show nothing while loading (prevents flash of "no artifacts" message)
+    if (items.length === 0 && isLoading) {
+      return null;
     }
 
     return (

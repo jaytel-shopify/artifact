@@ -68,6 +68,7 @@ export function useUserArtifacts(userId: string | null) {
     artifacts: artifactsWithCreator,
     userInfo,
     isLoading: userInfoLoading || artifactsLoading || artifactsData === undefined,
+    hasLoadedOnce: artifactsData !== undefined,
     error,
   };
 }

@@ -18,7 +18,7 @@ function UserProfilePageContent() {
   const userId = searchParams?.get("id") || "";
   const { user } = useAuth();
 
-  const { artifacts, userInfo, isLoading, error } = useUserArtifacts(userId);
+  const { artifacts, userInfo, isLoading, hasLoadedOnce, error } = useUserArtifacts(userId);
 
   // Update page title when user info loads
   useEffect(() => {
@@ -107,6 +107,7 @@ function UserProfilePageContent() {
       <ArtifactFeed
         artifacts={artifacts}
         isLoading={isLoading}
+        hasLoadedOnce={hasLoadedOnce}
         error={error}
         emptyMessage={
           isOwnProfile

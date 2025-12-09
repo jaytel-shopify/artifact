@@ -359,6 +359,7 @@ function PresentationPageInner({
   // Use artifacts from prop (already fetched in parent)
   const {
     artifacts,
+    isLoading: isArtifactsLoading,
     createArtifact,
     reorderArtifacts,
     updateArtifact,
@@ -555,6 +556,7 @@ function PresentationPageInner({
                 sidebarOpen={sidebarOpen && !presentationMode}
                 artifacts={artifacts}
                 expandedCollections={expandedCollections}
+                isLoading={isArtifactsLoading}
                 onReorder={async (reorderedArtifacts) => {
                   const command = new ReorderArtifactsCommand(
                     reorderedArtifacts,

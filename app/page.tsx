@@ -16,6 +16,7 @@ export default function Home() {
   const {
     artifacts,
     isLoading,
+    hasLoadedOnce,
     isLoadingMore,
     error,
     hasMore,
@@ -54,6 +55,7 @@ export default function Home() {
     <ArtifactFeed
       artifacts={artifacts}
       isLoading={isLoading}
+      hasLoadedOnce={hasLoadedOnce}
       isLoadingMore={isLoadingMore}
       hasMore={hasMore}
       onLoadMore={loadMore}

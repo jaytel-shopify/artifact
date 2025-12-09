@@ -13,6 +13,8 @@ interface CanvasProps {
   artifacts: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   sidebarOpen?: boolean;
+  /** True when artifacts are being loaded (prevents showing empty state during page transitions) */
+  isLoading?: boolean;
   onReorder?: (artifacts: ArtifactWithPosition[]) => void;
   onCreateCollection?: (draggedId: string, targetId: string) => Promise<void>;
   onRemoveFromCollection?: (artifactId: string, newPosition: number) => Promise<void>;
@@ -39,6 +41,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     artifacts,
     expandedCollections,
     sidebarOpen = false,
+    isLoading = false,
     onReorder,
     onCreateCollection,
     onRemoveFromCollection,
@@ -66,6 +69,7 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         sidebarOpen={sidebarOpen}
         artifacts={artifacts}
         expandedCollections={expandedCollections}
+        isLoading={isLoading}
         onReorder={onReorder}
         onCreateCollection={onCreateCollection}
         onRemoveFromCollection={onRemoveFromCollection}

@@ -157,6 +157,7 @@ export function usePublicArtifacts() {
   return {
     artifacts,
     isLoading: isLoading || data === undefined,
+    hasLoadedOnce: data !== undefined,
     isLoadingMore,
     error,
     hasMore,
