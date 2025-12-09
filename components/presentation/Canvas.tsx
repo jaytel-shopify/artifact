@@ -24,10 +24,13 @@ interface CanvasProps {
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;
   onEditTitleCard?: (artifactId: string) => void;
+  onPublishArtifact?: (artifactId: string) => void;
   onFocusArtifact?: (artifactId: string) => void;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
   fitMode?: boolean;
+  /** Current user ID - needed to check if user can publish artifacts */
+  currentUserId?: string;
 }
 
 const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
@@ -44,10 +47,12 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     onDeleteArtifact,
     onReplaceMedia,
     onEditTitleCard,
+    onPublishArtifact,
     onFocusArtifact,
     focusedArtifactId,
     isReadOnly = false,
     fitMode = false,
+    currentUserId,
   },
   ref
 ) {
@@ -69,9 +74,11 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         onDeleteArtifact={onDeleteArtifact}
         onReplaceMedia={onReplaceMedia}
         onEditTitleCard={onEditTitleCard}
+        onPublishArtifact={onPublishArtifact}
         onFocusArtifact={onFocusArtifact}
         focusedArtifactId={focusedArtifactId}
         isReadOnly={isReadOnly}
+        currentUserId={currentUserId}
       />
     </div>
   );

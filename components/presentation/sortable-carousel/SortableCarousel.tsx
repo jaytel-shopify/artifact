@@ -70,9 +70,12 @@ interface Props {
   onDeleteArtifact?: (artifactId: string) => Promise<void>;
   onReplaceMedia?: (artifactId: string, file: File) => Promise<void>;
   onEditTitleCard?: (artifactId: string) => void;
+  onPublishArtifact?: (artifactId: string) => void;
   onFocusArtifact?: (artifactId: string) => void;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
+  /** Current user ID - needed to check if user can publish artifacts */
+  currentUserId?: string;
 }
 
 const measuring: MeasuringConfiguration = {
@@ -127,6 +130,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       sidebarOpen = false,
       artifacts,
       expandedCollections,
+      currentUserId,
       onReorder,
       onCreateCollection,
       onRemoveFromCollection,
@@ -135,6 +139,7 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       onDeleteArtifact,
       onReplaceMedia,
       onEditTitleCard,
+      onPublishArtifact,
       onFocusArtifact,
       focusedArtifactId,
       isReadOnly = false,
@@ -495,6 +500,14 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                   onEdit={
                     onEditTitleCard && artifact.type === "titleCard"
                       ? () => onEditTitleCard(artifact.id)
+                      : undefined
+                  }
+                  onPublish={
+                    onPublishArtifact &&
+                    currentUserId &&
+                    artifact.creator_id === currentUserId &&
+                    !artifact.published
+                      ? async () => onPublishArtifact(artifact.id)
                       : undefined
                   }
                   onFocus={
