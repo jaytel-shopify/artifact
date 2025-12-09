@@ -21,6 +21,7 @@ const inter = Inter({
 // Inline manifest to bypass IAP CORS issues with manifest.json fetch
 // Must use absolute URLs since data URIs have no base URL context
 const SITE_URL = "https://artifact.quick.shopify.io";
+const OG_IMAGE_URL = `${SITE_URL}/artifact-og.png`;
 
 const manifestData = {
   name: "Artifact",
@@ -117,6 +118,7 @@ export const metadata: Metadata = {
   title: "Projects | Artifact",
   description: "Collaborative presentation tool for design artifacts",
   applicationName: "Artifact",
+  metadataBase: new URL(SITE_URL),
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -129,6 +131,30 @@ export const metadata: Metadata = {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",
     apple: "/favicon.svg",
+  },
+  // OpenGraph metadata for rich link previews (Slack, Facebook, LinkedIn, etc.)
+  openGraph: {
+    type: "website",
+    siteName: "Artifact",
+    title: "Artifact",
+    description: "Collaborative presentation tool for design artifacts",
+    url: SITE_URL,
+    images: [
+      {
+        url: OG_IMAGE_URL,
+        width: 1200,
+        height: 630,
+        alt: "Artifact - Design collaboration tool",
+      },
+    ],
+    locale: "en_US",
+  },
+  // Twitter Card metadata (also used by Slack)
+  twitter: {
+    card: "summary_large_image",
+    title: "Artifact",
+    description: "Collaborative presentation tool for design artifacts",
+    images: [OG_IMAGE_URL],
   },
 };
 
