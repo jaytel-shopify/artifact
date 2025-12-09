@@ -49,7 +49,7 @@ export default function FeedCard({
     "duration-500",
     "ease-bouyant",
     "opacity-1",
-    "translate-y-full",
+    "translate-y-[40%]",
     "group-hover:translate-y-0",
     "group-hover:rotate-0",
     "group-hover:opacity-100"
@@ -68,10 +68,10 @@ export default function FeedCard({
         <ArtifactThumbnail artifact={artifact} className="w-full" />
       </Link>
 
-      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex justify-between items-center will-change-[opacity]">
+      <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex gap-2 justify-between items-center">
         <Link
           href={`/user/?id=${artifact.creator?.id}`}
-          className={`pl-1 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/35 backdrop-blur-md gap-2 hover:bg-dark rotate-4 ${hoverClasses}`}
+          className={`pl-1 pr-3 h-8 flex items-center justify-center rounded-button bg-dark/40 backdrop-blur-md gap-2 hover:bg-dark rotate-2 ${hoverClasses}`}
         >
           <UserAvatar
             id={artifact.creator?.id}
@@ -88,10 +88,10 @@ export default function FeedCard({
           <button
             onClick={handleLike}
             disabled={!canReact}
-            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light rotate-30 ${hoverClasses} ${
+            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light rotate-10 ${hoverClasses} ${
               userLiked
                 ? "bg-dark"
-                : "bg-dark/35 backdrop-blur-md hover:bg-dark"
+                : "bg-dark/40 backdrop-blur-md hover:bg-dark"
             } ${!canReact ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span className="tabular-nums">
@@ -102,10 +102,10 @@ export default function FeedCard({
           <button
             onClick={handleDislike}
             disabled={!canReact}
-            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light -rotate-30 ${hoverClasses} ${
+            className={`flex items-center gap-1 text-small px-3 h-8 rounded-button text-light -rotate-10 ${hoverClasses} ${
               userDisliked
                 ? "bg-dark"
-                : "bg-dark/35 backdrop-blur-md hover:bg-dark"
+                : "bg-dark/40 backdrop-blur-md hover:bg-dark"
             } ${!canReact ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             <span className="tabular-nums">
