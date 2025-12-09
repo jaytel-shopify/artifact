@@ -10,6 +10,7 @@ import { SWRProvider } from "@/components/SWRProvider";
 import ViewTransitionHandler from "@/components/ViewTransitionHandler";
 import "./globals.css";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { SharedFilesHandler } from "@/components/SharedFilesHandler";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -59,19 +60,37 @@ const manifestData = {
   categories: ["productivity", "design", "collaboration"],
   shortcuts: [
     {
-      name: "Projects",
-      short_name: "Projects",
-      description: "View all projects",
-      url: `${SITE_URL}/projects`,
-      icons: [
+      name: "Add URL",
+      url: `${SITE_URL}/?new=url`,
+    },
+    {
+      name: "Add Title Card",
+      url: `${SITE_URL}/?new=titlecard`,
+    },
+  ],
+  share_target: {
+    action: `${SITE_URL}/share-file-handler`,
+    method: "POST",
+    enctype: "multipart/form-data",
+    params: {
+      files: [
         {
-          src: `${SITE_URL}/favicon.svg`,
-          sizes: "any",
-          type: "image/svg+xml",
+          name: "images",
+          accept: [
+            "image/jpeg",
+            "image/png",
+            "image/webp",
+            "image/gif",
+            "image/avif",
+          ],
+        },
+        {
+          name: "videos",
+          accept: ["video/mp4", "video/mov", "video/quicktime"],
         },
       ],
     },
-  ],
+  },
 };
 
 const manifestDataUri = `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifestData))}`;
@@ -122,7 +141,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#06090a" />
 
         {/* Service Worker Registration */}
-        {/* <Script src="/register-sw.js" strategy="afterInteractive" /> */}
+        <Script src="/register-sw.js" strategy="afterInteractive" />
 
         {/* Quick Platform SDK - only works on deployed Quick sites */}
         <Script src="/client/quick.js" async fetchPriority="high" />
@@ -151,6 +170,7 @@ export default function RootLayout({
                 <Toaster />
               </ViewTransitionHandler>
               <PWAInstallPrompt />
+              <SharedFilesHandler />
             </ThemeProvider>
           </AuthProvider>
         </SWRProvider>

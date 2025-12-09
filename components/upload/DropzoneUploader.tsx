@@ -18,7 +18,6 @@ export default function DropzoneUploader() {
   const [dragging, setDragging] = useState(false);
   const dragDepth = useRef(0);
   const isInternalDrag = useRef(false);
-
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { user } = useAuth();

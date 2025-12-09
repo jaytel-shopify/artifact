@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Image, Link, Type } from "lucide-react";
@@ -21,6 +21,7 @@ import { useArtifactUpload } from "@/hooks/useArtifactUpload";
 import UploadPreviewDialog from "./UploadPreviewDialog";
 import UrlPreviewDialog from "./UrlPreviewDialog";
 import type { Artifact, ArtifactWithPosition } from "@/types";
+import { useSearchParams } from "next/navigation";
 
 type DialogType = "url" | "titleCard" | null;
 
@@ -41,6 +42,18 @@ export default function ArtifactAdder({
   const [openDialog, setOpenDialog] = useState<DialogType>(null);
   const [headline, setHeadline] = useState("");
   const [subheadline, setSubheadline] = useState("");
+
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const newParam = searchParams.get("new");
+    if (newParam === "url") {
+      setOpenDialog("url");
+    } else if (newParam === "media") {
+      // openFilePicker();
+    } else if (newParam === "titlecard") {
+      setOpenDialog("titleCard");
+    }
+  }, [searchParams]);
 
   // Build context if both projectId and pageId are provided
   const defaultContext =

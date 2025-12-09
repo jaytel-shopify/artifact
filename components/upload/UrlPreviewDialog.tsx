@@ -89,12 +89,13 @@ export default function UrlPreviewDialog({
     try {
       return new URL(normalizeUrl(urlValue)).hostname;
     } catch {
-      return "URL";
+      return "Name";
     }
   }, [urlValue]);
 
   // Reset form when dialog opens
   useEffect(() => {
+    console.log("isOpen", isOpen);
     if (isOpen) {
       setUrlValue(url);
       setName("");

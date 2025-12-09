@@ -24,7 +24,9 @@ self.addEventListener("activate", (event) => {
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter((name) => name.startsWith("artifact-") && name !== CACHE_NAME)
+            .filter(
+              (name) => name.startsWith("artifact-") && name !== CACHE_NAME
+            )
             .map((name) => caches.delete(name))
         );
       })
@@ -81,6 +83,41 @@ async function networkFirst(request) {
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
+
+  if (
+    event.request.method === "POST" &&
+    url.pathname === "/share-file-handler"
+  ) {
+    event.respondWith(
+      (async () => {
+        // Get the data from the submitted form.
+        const formData = await event.request.formData();
+
+        // Get the submitted files.
+        const imageFiles = formData.getAll("images");
+        const videoFiles = formData.getAll("videos");
+
+        // Combine all files
+        const files = [...imageFiles, ...videoFiles];
+
+        // Send files to all clients via postMessage
+        const allClients = await self.clients.matchAll({
+          type: "window",
+          includeUncontrolled: true,
+        });
+
+        for (const client of allClients) {
+          client.postMessage({
+            type: "SHARED_FILES",
+            files: files,
+          });
+        }
+
+        // Redirect the user to a URL that shows the imported files.
+        return Response.redirect("/?shared=true", 303);
+      })()
+    );
+  }
 
   // Skip non-GET requests
   if (request.method !== "GET") return;
