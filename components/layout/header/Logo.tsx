@@ -19,7 +19,9 @@ const Logo = forwardRef<LottieMethods>(function Logo(_, ref) {
       aria-label="Home"
       className="-m-2"
       onMouseEnter={() => {
-        lottieRef.current?.playSegments([0, 100]);
+        if (lottieRef.current?.animationItem?.isPaused) {
+          lottieRef.current?.playSegments([0, 100]);
+        }
       }}
       onMouseLeave={() => {
         lottieRef.current?.playSegments([100, 211]);
