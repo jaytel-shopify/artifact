@@ -196,8 +196,12 @@ export default function UploadPreviewDialog({
       getProjects(user.id)
         .then((p) => {
           setProjects(p);
-          // Auto-select first project if none selected
-          if (p.length > 0 && !selectedProjectId) {
+          // Check if initialContext has a valid project - if so, don't override
+          // We check initialContext directly because state updates from other effects
+          // may not have been applied yet in the same render cycle
+          const initialProjectValid = initialContext?.projectId && 
+            p.some((proj) => proj.id === initialContext.projectId);
+          if (!initialProjectValid && p.length > 0) {
             setSelectedProjectId(p[0].id);
           }
         })
@@ -206,7 +210,7 @@ export default function UploadPreviewDialog({
         })
         .finally(() => setIsLoadingProjects(false));
     }
-  }, [isOpen, requireProjectSelection, user?.id]);
+  }, [isOpen, requireProjectSelection, user?.id, initialContext?.projectId]);
 
   // Load pages when project changes
   useEffect(() => {
@@ -214,11 +218,18 @@ export default function UploadPreviewDialog({
       getPages(selectedProjectId)
         .then((p) => {
           setPages(p);
-          // Auto-select first page
-          if (p.length > 0) {
-            setSelectedPageId(p[0].id);
-          } else {
-            setSelectedPageId("");
+          // Check if initialContext has a valid page for this project - if so, don't override
+          // We check initialContext directly because state updates from other effects
+          // may not have been applied yet in the same render cycle
+          const initialPageValid = initialContext?.pageId && 
+            initialContext?.projectId === selectedProjectId &&
+            p.some((page) => page.id === initialContext.pageId);
+          if (!initialPageValid) {
+            if (p.length > 0) {
+              setSelectedPageId(p[0].id);
+            } else {
+              setSelectedPageId("");
+            }
           }
         })
         .catch((err) => {
@@ -228,7 +239,7 @@ export default function UploadPreviewDialog({
       setPages([]);
       setSelectedPageId("");
     }
-  }, [selectedProjectId, requireProjectSelection]);
+  }, [selectedProjectId, requireProjectSelection, initialContext?.projectId, initialContext?.pageId]);
 
   const currentUpload = pendingUploads[currentIndex];
   const isMultiple = pendingUploads.length > 1;

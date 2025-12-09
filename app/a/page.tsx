@@ -308,7 +308,9 @@ export default function Page() {
               style={{ color: "var(--color-disabled)" }}
             >
               {new Date(
-                (artifact.metadata?.original_created_at as string) || artifact.created_at
+                artifact.published_at ||
+                  (artifact.metadata?.original_created_at as string) ||
+                  artifact.created_at
               ).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",

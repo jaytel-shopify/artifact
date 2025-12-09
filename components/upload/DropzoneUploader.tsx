@@ -86,34 +86,52 @@ export default function DropzoneUploader() {
   const { uploading, currentFileIndex, currentProgress, totalFiles } =
     uploadState;
 
-  // Determine if we're on a page that requires project selection
-  const requireProjectSelection =
-    pathname === "/projects/" || pathname === "/folder/";
-
   // Get current project context from URL if on project page
-  const getUploadContext = useCallback(() => {
-    const projectId = searchParams?.get("id");
-    const pageId = searchParams?.get("page");
+  // IMPORTANT: Read directly from window.location.search instead of useSearchParams
+  // because useSearchParams may be stale after window.history.replaceState() calls
+  // (which is used by useCurrentPage when switching pages)
+  const getUploadContext = useCallback((): UploadContext | undefined => {
+    // Read fresh from URL to avoid stale searchParams after replaceState
+    const params = new URLSearchParams(window.location.search);
+    const projectId = params.get("id");
+    const pageId = params.get("page");
     if (projectId && pageId) {
       return { projectId, pageId };
     }
     return undefined;
-  }, [searchParams]);
+  }, []);
+
+  // Only require project selection if we're on a page listing route AND don't have context
+  // On /p/ with valid context (project + page in URL), use that context directly like ArtifactAdder does
+  const getRequireProjectSelection = useCallback(() => {
+    const isProjectListingPage = pathname === "/projects/" || pathname === "/folder/";
+    if (isProjectListingPage) {
+      return true;
+    }
+    // On /p/, only require selection if we can't get context from URL
+    if (pathname === "/p/") {
+      const context = getUploadContext();
+      return !context; // Require selection only if no valid context
+    }
+    return false;
+  }, [pathname, getUploadContext]);
 
   const handleFileUpload = useCallback(
     (files: File[]) => {
       const context = getUploadContext();
+      const requireProjectSelection = getRequireProjectSelection();
       stageFilesForUpload(files, context, requireProjectSelection);
     },
-    [getUploadContext, stageFilesForUpload, requireProjectSelection]
+    [getUploadContext, getRequireProjectSelection, stageFilesForUpload]
   );
 
   const handleUrlAdd = useCallback(
     (url: string) => {
       const context = getUploadContext();
+      const requireProjectSelection = getRequireProjectSelection();
       stageUrlForUpload(url, context, requireProjectSelection);
     },
-    [getUploadContext, stageUrlForUpload, requireProjectSelection]
+    [getUploadContext, getRequireProjectSelection, stageUrlForUpload]
   );
 
   // Wrap confirmFileUpload to also refresh caches

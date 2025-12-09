@@ -19,24 +19,37 @@ async function fetchPublicArtifacts(
   const quick = await waitForQuick();
   const collection = quick.db.collection("artifacts");
 
-  // Query public artifacts with pagination
+  // Query all public artifacts (we need client-side sorting by metadata.original_created_at)
   const publicArtifacts: Artifact[] = await collection
     .where({ published: true })
-    .orderBy("created_at", "desc")
-    .limit(limit)
-    .offset(offset)
     .find();
+
+  // Sort by published_at (for newly published), then original_created_at, then created_at
+  publicArtifacts.sort((a, b) => {
+    const dateA =
+      a.published_at ||
+      (a.metadata?.original_created_at as string) ||
+      a.created_at;
+    const dateB =
+      b.published_at ||
+      (b.metadata?.original_created_at as string) ||
+      b.created_at;
+    return new Date(dateB).getTime() - new Date(dateA).getTime();
+  });
+
+  // Apply pagination after sorting
+  const paginatedArtifacts = publicArtifacts.slice(offset, offset + limit);
 
   // Collect unique creator IDs
   const creatorIds = [
-    ...new Set(publicArtifacts.map((a) => a.creator_id).filter(Boolean)),
+    ...new Set(paginatedArtifacts.map((a) => a.creator_id).filter(Boolean)),
   ];
 
   // Batch fetch users
   const usersMap = await getUsersByIds(creatorIds);
 
   // Attach creator to each artifact
-  const artifactsWithCreators: ArtifactWithCreator[] = publicArtifacts.map(
+  const artifactsWithCreators: ArtifactWithCreator[] = paginatedArtifacts.map(
     (artifact) => ({
       ...artifact,
       creator: usersMap.get(artifact.creator_id),
