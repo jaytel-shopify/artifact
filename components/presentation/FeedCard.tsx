@@ -65,7 +65,10 @@ export default function FeedCard({
         className="col-span-1 col-start-1 row-span-2 row-start-1 w-full hover:opacity-100"
         tabIndex={tabIndex}
       >
-        <ArtifactThumbnail artifact={artifact} className="w-full" />
+        <ArtifactThumbnail
+          artifact={artifact}
+          className="w-full rounded-card"
+        />
       </Link>
 
       <div className="relative z-1 col-span-1 col-start-1 row-start-2 p-2 md:p-4 flex gap-2 justify-between items-center">

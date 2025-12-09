@@ -1,8 +1,9 @@
 /**
  * VideoPoolManager - Manages a pool of reusable video elements
  * for efficient memory usage when displaying many video thumbnails.
- * 
- * Uses LRU (Least Recently Used) eviction when pool is exhausted.
+ *
+ * Dynamically scales the pool when more videos are requested.
+ * Uses LRU (Least Recently Used) eviction only when max pool size is reached.
  */
 
 export type VideoRequest = {
@@ -21,45 +22,54 @@ type PooledVideo = {
 
 class VideoPoolManager {
   private pool: PooledVideo[] = [];
-  private poolSize: number;
+  private minPoolSize: number;
+  private maxPoolSize: number;
   private activeRequests: Map<string, PooledVideo> = new Map();
   private initialized = false;
 
-  constructor(poolSize = 5) {
-    this.poolSize = poolSize;
+  constructor(minPoolSize = 5, maxPoolSize = 50) {
+    this.minPoolSize = minPoolSize;
+    this.maxPoolSize = maxPoolSize;
   }
 
   /**
-   * Initialize the pool - creates video elements
+   * Create a new video element with standard configuration
+   */
+  private createVideoElement(): HTMLVideoElement {
+    const video = document.createElement("video");
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.preload = "auto";
+    video.autoplay = true;
+
+    // Style for overlay positioning
+    video.style.cssText = `
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease-out;
+      z-index: 1;
+    `;
+
+    return video;
+  }
+
+  /**
+   * Initialize the pool - creates initial video elements
    * Should be called once when the app mounts
    */
   init() {
-    if (this.initialized || typeof document === 'undefined') return;
+    if (this.initialized || typeof document === "undefined") return;
 
-    for (let i = 0; i < this.poolSize; i++) {
-      const video = document.createElement('video');
-      video.muted = true;
-      video.loop = true;
-      video.playsInline = true;
-      video.preload = 'auto';
-      video.autoplay = true;
-      
-      // Style for overlay positioning
-      video.style.cssText = `
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 0.2s ease-out;
-        z-index: 1;
-      `;
-
+    for (let i = 0; i < this.minPoolSize; i++) {
       this.pool.push({
-        element: video,
+        element: this.createVideoElement(),
         requestId: null,
         assignedAt: 0,
       });
@@ -70,7 +80,8 @@ class VideoPoolManager {
 
   /**
    * Request a video element for a given container
-   * Returns the video element or null if pool is exhausted and eviction fails
+   * Dynamically grows the pool if needed, up to maxPoolSize
+   * Returns the video element or null if max pool size reached and eviction fails
    */
   request(request: VideoRequest): HTMLVideoElement | null {
     if (!this.initialized) this.init();
@@ -83,9 +94,19 @@ class VideoPoolManager {
     }
 
     // Try to find an available video in the pool
-    let pooledVideo = this.pool.find(pv => pv.requestId === null);
+    let pooledVideo = this.pool.find((pv) => pv.requestId === null);
 
-    // If no available video, evict the LRU (oldest assignment)
+    // If no available video, try to grow the pool
+    if (!pooledVideo && this.pool.length < this.maxPoolSize) {
+      pooledVideo = {
+        element: this.createVideoElement(),
+        requestId: null,
+        assignedAt: 0,
+      };
+      this.pool.push(pooledVideo);
+    }
+
+    // If still no available video (max pool size reached), evict the LRU
     if (!pooledVideo) {
       pooledVideo = this.evictLRU();
     }
@@ -107,11 +128,11 @@ class VideoPoolManager {
 
     // Append to container and show
     request.container.appendChild(video);
-    
+
     // Trigger reflow then fade in
     video.offsetHeight;
-    video.style.opacity = '1';
-    
+    video.style.opacity = "1";
+
     // Start playback
     video.play().catch(() => {
       // Playback failed - might be blocked by browser
@@ -124,6 +145,7 @@ class VideoPoolManager {
 
   /**
    * Release a video element back to the pool
+   * May shrink the pool if it exceeds minPoolSize
    */
   release(requestId: string, onReleased?: () => void) {
     const pooledVideo = this.activeRequests.get(requestId);
@@ -132,7 +154,7 @@ class VideoPoolManager {
     const video = pooledVideo.element;
 
     // Fade out
-    video.style.opacity = '0';
+    video.style.opacity = "0";
 
     // After fade, pause and remove from DOM
     setTimeout(() => {
@@ -140,14 +162,28 @@ class VideoPoolManager {
       if (video.parentElement) {
         video.parentElement.removeChild(video);
       }
-      
-      // Clear the source to free memory
-      // video.src = '';
-      // video.load();
 
-      pooledVideo.requestId = null;
-      pooledVideo.assignedAt = 0;
       this.activeRequests.delete(requestId);
+
+      // Shrink pool if we have excess capacity beyond minPoolSize
+      const availableCount = this.pool.filter(
+        (pv) => pv.requestId === null
+      ).length;
+      if (
+        this.pool.length > this.minPoolSize &&
+        availableCount > this.minPoolSize
+      ) {
+        // Remove this video element from the pool entirely
+        const index = this.pool.indexOf(pooledVideo);
+        if (index !== -1) {
+          this.pool.splice(index, 1);
+          video.src = "";
+        }
+      } else {
+        // Keep in pool for reuse
+        pooledVideo.requestId = null;
+        pooledVideo.assignedAt = 0;
+      }
 
       onReleased?.();
     }, 200);
@@ -172,7 +208,7 @@ class VideoPoolManager {
 
     // Release the oldest
     const video = oldest.element;
-    video.style.opacity = '0';
+    video.style.opacity = "0";
     video.pause();
     if (video.parentElement) {
       video.parentElement.removeChild(video);
@@ -191,7 +227,7 @@ class VideoPoolManager {
   destroy() {
     for (const pv of this.pool) {
       pv.element.pause();
-      pv.element.src = '';
+      pv.element.src = "";
       if (pv.element.parentElement) {
         pv.element.parentElement.removeChild(pv.element);
       }
@@ -206,16 +242,17 @@ class VideoPoolManager {
    */
   getStats() {
     return {
-      poolSize: this.poolSize,
+      minPoolSize: this.minPoolSize,
+      maxPoolSize: this.maxPoolSize,
+      currentPoolSize: this.pool.length,
       activeCount: this.activeRequests.size,
-      availableCount: this.pool.filter(pv => pv.requestId === null).length,
+      availableCount: this.pool.filter((pv) => pv.requestId === null).length,
     };
   }
 }
 
-// Export a singleton instance
-export const videoPoolManager = new VideoPoolManager(5);
+// Export a singleton instance with default min=5, max=50
+export const videoPoolManager = new VideoPoolManager(5, 50);
 
 // Export the class for custom instances if needed
 export { VideoPoolManager };
-
