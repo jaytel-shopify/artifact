@@ -63,7 +63,7 @@ export function WelcomeDialog() {
             {animationData && (
               <Lottie
                 animationData={animationData}
-                loop={false}
+                loop={true}
                 className="lottie-light"
               />
             )}
@@ -73,65 +73,26 @@ export function WelcomeDialog() {
         {/* Content */}
         <div className="space-y-4 p-6 pt-4">
           <DialogHeader className="space-y-2">
-            <DialogTitle className="text-xlarge text-center">
+            <DialogTitle className="text-xlarge text-center text-balance">
               Welcome to Artifact
             </DialogTitle>
-            <DialogDescription className="text-center text-text-secondary">
-              A collaborative presentation tool for sharing design artifacts.
-              Create projects, upload media, and present your work beautifully.
+            <DialogDescription className="text-center text-small text-text-secondary text-balance">
+              Artifact introduces a new way to gather, present, and share work
+              across Shopify Design.
             </DialogDescription>
           </DialogHeader>
 
-          {/* Feature highlights */}
-          <div className="space-y-3 rounded-card-inner bg-background/50 p-4">
-            <Feature
-              icon="📁"
-              title="Organize in Projects"
-              description="Group related artifacts together"
-            />
-            <Feature
-              icon="🖼️"
-              title="Share Media"
-              description="Images, videos, and URLs"
-            />
-            <Feature
-              icon="🎨"
-              title="Present Beautifully"
-              description="Full-screen presentation mode"
-            />
-          </div>
-
           {/* CTA */}
-          <Button
-            variant="primary"
-            size="lg"
-            className="w-full"
-            onClick={handleDismiss}
-          >
-            Get Started
-          </Button>
+          <div className="w-full flex gap-2 items-center justify-center">
+            <Button variant="primary" size="lg" onClick={handleDismiss}>
+              Create a project
+            </Button>
+            <Button variant="secondary" size="lg" onClick={handleDismiss}>
+              Explore the feed
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function Feature({
-  icon,
-  title,
-  description,
-}: {
-  icon: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-lg">{icon}</span>
-      <div>
-        <p className="text-small text-text-primary">{title}</p>
-        <p className="text-small text-text-secondary">{description}</p>
-      </div>
-    </div>
   );
 }
