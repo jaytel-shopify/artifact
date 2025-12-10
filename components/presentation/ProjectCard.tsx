@@ -130,9 +130,34 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
   const handleDelete = async () => {
     const currentFolderId = project.folder_id;
+    const projectsKey = cacheKeys.projectsData(user?.id);
+    
     try {
       await deleteProject(project.id);
-      await refreshCaches([currentFolderId]);
+      
+      // Optimistic update: immediately remove project from cache
+      if (projectsKey) {
+        await globalMutate(
+          projectsKey,
+          (currentData: ProjectsData | undefined) => {
+            if (!currentData) return currentData;
+            return {
+              ...currentData,
+              projects: currentData.projects.filter((p) => p.id !== project.id),
+            };
+          },
+          { revalidate: true }
+        );
+      }
+      
+      // Also refresh folder cache if project was in a folder
+      if (currentFolderId) {
+        const folderKey = cacheKeys.folderData(currentFolderId);
+        if (folderKey) {
+          await globalMutate(folderKey, undefined, { revalidate: true });
+        }
+      }
+      
       toast.success(`Project "${project.name}" deleted`);
     } catch (error) {
       console.error("Failed to delete project:", error);
