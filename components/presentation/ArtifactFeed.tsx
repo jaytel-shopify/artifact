@@ -123,7 +123,7 @@ export default function ArtifactFeed({
         }
       },
       {
-        rootMargin: "200px", // Start loading before user reaches the bottom
+        rootMargin: "400px", // Start loading before user reaches the bottom
       }
     );
 
