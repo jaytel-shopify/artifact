@@ -86,7 +86,7 @@ export default function DeleteFolderDialog({
 
         {projectCount > 0 && (
           <div className="py-4 space-y-2 flex flex-col gap-1">
-            <label className="text-medium">
+            <label className="sr-only text-medium">
               Type <span className="font-mono rounded">DELETE</span> to confirm:
             </label>
             <Input

@@ -209,7 +209,7 @@ export default function UrlPreviewDialog({
         <div className="flex-1 min-h-0 space-y-4">
           {/* URL Input with Autocomplete */}
           <div className="gap-2 flex flex-col">
-            <label className="text-small text-text-secondary">URL</label>
+            <label className="sr-only text-small text-text-secondary">URL</label>
             <UrlAutocomplete
               value={urlValue}
               onChange={setUrlValue}
@@ -234,7 +234,7 @@ export default function UrlPreviewDialog({
               ) : (
                 <div className="grid grid-cols-2 gap-4">
                   <div className="gap-2 flex flex-col">
-                    <label className="text-small text-text-secondary">
+                    <label className="sr-only text-small text-text-secondary">
                       Project
                     </label>
                     <Select
@@ -255,7 +255,7 @@ export default function UrlPreviewDialog({
                   </div>
 
                   <div className="gap-2 flex flex-col">
-                    <label className="text-small text-text-secondary">
+                    <label className="sr-only text-small text-text-secondary">
                       Page
                     </label>
                     <Select
@@ -285,7 +285,7 @@ export default function UrlPreviewDialog({
           )}
 
           <div className="gap-2 flex flex-col">
-            <label className="text-small text-text-secondary">Viewport</label>
+            <label className="sr-only text-small text-text-secondary">Viewport</label>
             <Select
               value={viewport}
               onValueChange={(value) => setViewport(value as ViewportKey)}
@@ -306,7 +306,7 @@ export default function UrlPreviewDialog({
 
           {/* Name input */}
           <div className="gap-2 flex flex-col">
-            <label className="text-small text-text-secondary">Name</label>
+            <label className="sr-only text-small text-text-secondary">Name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -318,7 +318,7 @@ export default function UrlPreviewDialog({
 
           {/* Description input */}
           <div className="gap-2 flex flex-col">
-            <label className="text-small text-text-secondary">
+            <label className="sr-only text-small text-text-secondary">
               Description (optional)
             </label>
             <textarea

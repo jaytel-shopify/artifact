@@ -487,7 +487,7 @@ export default function UploadPreviewDialog({
               ) : (
                 <div className="grid grid-cols-2 gap-x-4">
                   <div className="gap-2 flex flex-col">
-                    <label className="text-small text-text-secondary">
+                    <label className="sr-only text-small text-text-secondary">
                       Project
                     </label>
                     <Select
@@ -508,7 +508,7 @@ export default function UploadPreviewDialog({
                   </div>
 
                   <div className="gap-2 flex flex-col">
-                    <label className="text-small text-text-secondary">
+                    <label className="sr-only text-small text-text-secondary">
                       Page
                     </label>
                     <Select
@@ -540,7 +540,7 @@ export default function UploadPreviewDialog({
           {/* Name input - only show when there are files */}
           {hasFiles && currentUpload && (
             <div className="gap-2 flex flex-col">
-              <label className="text-small text-text-secondary">Name</label>
+              <label className="sr-only text-small text-text-secondary">Name</label>
               <Input
                 value={currentUpload.name}
                 onChange={(e) => updateCurrentUpload({ name: e.target.value })}
@@ -553,7 +553,7 @@ export default function UploadPreviewDialog({
           {/* Description input - only show when there are files */}
           {hasFiles && currentUpload && (
             <div className="gap-2 flex flex-col">
-              <label className="text-small text-text-secondary">
+              <label className="sr-only text-small text-text-secondary">
                 Description (optional)
               </label>
               <textarea

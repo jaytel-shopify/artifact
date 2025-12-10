@@ -48,7 +48,7 @@ export default function GenerateThumbnailsPage() {
                   onChange={(e) => setForce(e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="force" className="text-sm">
+                <label htmlFor="force" className="sr-only text-sm">
                   Force regenerate all thumbnails (even if they already exist)
                 </label>
               </div>

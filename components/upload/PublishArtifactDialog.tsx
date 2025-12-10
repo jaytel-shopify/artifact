@@ -148,7 +148,7 @@ export default function PublishArtifactDialog({
 
           {/* Name input */}
           <div className="gap-2 flex flex-col">
-            <label className="text-small text-text-secondary">Name</label>
+            <label className="sr-only text-small text-text-secondary">Name</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -159,7 +159,7 @@ export default function PublishArtifactDialog({
 
           {/* Description input */}
           <div className="gap-2 flex flex-col">
-            <label className="text-small text-text-secondary">
+            <label className="sr-only text-small text-text-secondary">
               Description (optional)
             </label>
             <textarea

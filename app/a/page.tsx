@@ -436,7 +436,10 @@ function ArtifactPageContent() {
           </DialogHeader>
           <div className="flex flex-col gap-4 py-4">
             <div className="flex flex-col gap-2">
-              <label htmlFor="name" className="text-small text-text-secondary">
+              <label
+                htmlFor="name"
+                className="sr-only text-small text-text-secondary"
+              >
                 Name
               </label>
               <Input
@@ -449,7 +452,7 @@ function ArtifactPageContent() {
             <div className="flex flex-col gap-2">
               <label
                 htmlFor="description"
-                className="text-small text-text-secondary"
+                className="sr-only text-small text-text-secondary"
               >
                 Description
               </label>

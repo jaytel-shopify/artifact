@@ -674,7 +674,7 @@ function PresentationPageInner({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-small text-text-secondary">Headline</label>
+              <label className="sr-only text-small text-text-secondary">Headline</label>
               <Input
                 value={editingTitleCard?.headline || ""}
                 onChange={(e) =>
@@ -688,7 +688,7 @@ function PresentationPageInner({
             </div>
 
             <div className="space-y-2">
-              <label className="text-small text-text-secondary">
+              <label className="sr-only text-small text-text-secondary">
                 Subheadline
               </label>
               <Input

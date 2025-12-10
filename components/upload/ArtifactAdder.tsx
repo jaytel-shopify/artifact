@@ -279,7 +279,7 @@ export default function ArtifactAdder({
 
           <div className="space-y-4">
             <div className="gap-2 flex flex-col">
-              <label className="text-small text-text-secondary">Headline</label>
+              <label className="sr-only text-small text-text-secondary">Headline</label>
               <Input
                 value={headline}
                 onChange={(e) => setHeadline(e.target.value)}
@@ -289,7 +289,7 @@ export default function ArtifactAdder({
             </div>
 
             <div className="gap-2 flex flex-col">
-              <label className="text-small text-text-secondary">
+              <label className="sr-only text-small text-text-secondary">
                 Subheadline
               </label>
               <Input

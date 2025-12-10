@@ -143,7 +143,7 @@ export function SaveToProjectDialog({
           ) : (
             <>
               <div className="space-y-2">
-                <label className="text-medium">Project</label>
+                <label className="sr-only text-medium">Project</label>
                 <Select
                   value={selectedProjectId}
                   onValueChange={setSelectedProjectId}
@@ -163,7 +163,7 @@ export function SaveToProjectDialog({
 
               {pages.length > 0 && (
                 <div className="space-y-2">
-                  <label className="text-medium">Page</label>
+                  <label className="sr-only text-medium">Page</label>
                   <Select
                     value={selectedPageId}
                     onValueChange={setSelectedPageId}

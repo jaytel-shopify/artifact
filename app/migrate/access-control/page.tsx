@@ -497,7 +497,7 @@ export default function AccessControlMigrationPage() {
                 onChange={(e) => setIsDryRun(e.target.checked)}
                 className="h-4 w-4"
               />
-              <label htmlFor="dryRun" className="text-sm">
+              <label htmlFor="dryRun" className="sr-only text-sm">
                 Dry run (preview changes without modifying database)
               </label>
             </div>
