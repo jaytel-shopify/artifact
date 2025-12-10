@@ -9,7 +9,7 @@ async function fetchUserArtifacts(userId: string): Promise<Artifact[]> {
 
   return await collection
     .where({ creator_id: userId, published: true })
-    .orderBy("created_at", "desc")
+    .orderBy("published_at", "desc")
     .find();
 }
 
@@ -21,7 +21,7 @@ async function fetchUserInfo(userId: string): Promise<User | null> {
   const results = await collection.where({ id: userId }).find();
   if (results.length > 0) {
     const dbUser = results[0] as User;
-    
+
     // If title is missing, fetch from directory and merge
     if (!dbUser.title) {
       const directoryUser = await getUserFromDirectoryById(userId);
@@ -48,9 +48,8 @@ export function useUserArtifacts(userId: string | null) {
     data: artifactsData,
     isLoading: artifactsLoading,
     error,
-  } = useSWR<Artifact[]>(
-    userId ? `user-artifacts-${userId}` : null,
-    () => (userId ? fetchUserArtifacts(userId) : [])
+  } = useSWR<Artifact[]>(userId ? `user-artifacts-${userId}` : null, () =>
+    userId ? fetchUserArtifacts(userId) : []
   );
 
   // Only use empty array once data has been fetched
@@ -67,9 +66,9 @@ export function useUserArtifacts(userId: string | null) {
   return {
     artifacts: artifactsWithCreator,
     userInfo,
-    isLoading: userInfoLoading || artifactsLoading || artifactsData === undefined,
+    isLoading:
+      userInfoLoading || artifactsLoading || artifactsData === undefined,
     hasLoadedOnce: artifactsData !== undefined,
     error,
   };
 }
-
