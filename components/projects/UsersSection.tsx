@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/components/ui/TransitionLink";
 import { Card } from "@/components/ui/card";
 import type { User } from "@/types";
 
