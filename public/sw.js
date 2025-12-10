@@ -1,6 +1,6 @@
 // Service Worker for Artifact PWA
 // Strategy: Stale-While-Revalidate for optimal performance
-const CACHE_VERSION = "v3";
+const CACHE_VERSION = "v5";
 const CACHE_NAME = `artifact-${CACHE_VERSION}`;
 
 // Assets to precache on install
@@ -42,8 +42,8 @@ async function staleWhileRevalidate(request) {
   // Fetch fresh version in background
   const fetchPromise = fetch(request)
     .then((networkResponse) => {
-      // Only cache successful responses
-      if (networkResponse.ok) {
+      // Only cache complete 200 OK responses (not 206 partial content)
+      if (networkResponse.status === 200) {
         cache.put(request, networkResponse.clone());
       }
       return networkResponse;
@@ -61,7 +61,8 @@ async function staleWhileRevalidate(request) {
 async function networkFirst(request) {
   try {
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
+    // Only cache complete 200 OK responses (not 206 partial content)
+    if (networkResponse.status === 200) {
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
@@ -125,6 +126,9 @@ self.addEventListener("fetch", (event) => {
   // Skip non-HTTP(S) requests
   if (!request.url.startsWith("http")) return;
 
+  // Skip range requests (video/audio streaming) - Cache API doesn't support partial responses
+  if (request.headers.get("Range")) return;
+
   // Skip navigation requests - let Next.js handle routing
   if (request.mode === "navigate") return;
 
@@ -139,6 +143,9 @@ self.addEventListener("fetch", (event) => {
 
   // Skip Next.js internals - let Next.js handle these
   if (url.pathname.startsWith("/_next/")) return;
+
+  // Skip RSC payload files (.txt) - these contain chunk references that must match the current build
+  if (url.pathname.endsWith("/index.txt") || url.pathname.endsWith(".txt")) return;
 
   // Skip external domains (CDNs, etc.) - use network-first
   if (url.origin !== self.location.origin) {
