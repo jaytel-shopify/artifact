@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import useSWR from "swr";
 import { getUserByEmail } from "@/lib/quick-users";
+import { ChevronDown } from "lucide-react";
 
 interface User {
   socketId: string;
@@ -17,12 +18,79 @@ interface SyncStatusIndicatorProps {
   getUsers: () => User[];
   onFollowUser?: (socketId: string) => void;
   followingUserId?: string | null;
+  useMockData?: boolean;
 }
+
+// Generate 10 mock users for testing
+const MOCK_USERS: User[] = [
+  {
+    socketId: "mock-1",
+    name: "Alice Chen",
+    email: "alice@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=1",
+  },
+  {
+    socketId: "mock-2",
+    name: "Bob Smith",
+    email: "bob@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=2",
+  },
+  {
+    socketId: "mock-3",
+    name: "Carol White",
+    email: "carol@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=3",
+  },
+  {
+    socketId: "mock-4",
+    name: "David Lee",
+    email: "david@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=4",
+  },
+  {
+    socketId: "mock-5",
+    name: "Emma Davis",
+    email: "emma@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=5",
+  },
+  {
+    socketId: "mock-6",
+    name: "Frank Miller",
+    email: "frank@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=6",
+  },
+  {
+    socketId: "mock-7",
+    name: "Grace Kim",
+    email: "grace@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=7",
+  },
+  {
+    socketId: "mock-8",
+    name: "Henry Park",
+    email: "henry@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=8",
+  },
+  {
+    socketId: "mock-9",
+    name: "Ivy Zhang",
+    email: "ivy@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=9",
+  },
+  {
+    socketId: "mock-10",
+    name: "Jack Brown",
+    email: "jack@shopify.com",
+    slackImageUrl: "https://i.pravatar.cc/150?img=10",
+  },
+];
 
 // Fetch slack images for a list of emails
 async function fetchSlackImages(emails: string[]) {
   const results = await Promise.all(emails.map((e) => getUserByEmail(e)));
-  return Object.fromEntries(emails.map((e, i) => [e, results[i]?.slack_image_url]));
+  return Object.fromEntries(
+    emails.map((e, i) => [e, results[i]?.slack_image_url])
+  );
 }
 
 export default function SyncStatusIndicator({
@@ -30,18 +98,42 @@ export default function SyncStatusIndicator({
   getUsers,
   onFollowUser,
   followingUserId,
+  useMockData = false,
 }: SyncStatusIndicatorProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [updateTrigger, setUpdateTrigger] = useState(0);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Update users list when triggered
+  // Close dropdown when clicking outside
   useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isDropdownOpen]);
+
+  // Update users list when triggered (or use mock data)
+  useEffect(() => {
+    if (useMockData) {
+      setUsers(MOCK_USERS);
+      return;
+    }
     if (!isPresenceReady) {
       setUsers([]);
       return;
     }
     setUsers(getUsers());
-  }, [isPresenceReady, getUsers, updateTrigger]);
+  }, [isPresenceReady, getUsers, updateTrigger, useMockData]);
 
   // Fetch slack images from database (SWR handles caching)
   const emails = users.map((u) => u.email);
@@ -65,8 +157,8 @@ export default function SyncStatusIndicator({
 
   return (
     <div className="flex items-center gap-2">
-      {/* Viewer Avatars (only show when synced and there are other viewers) */}
-      {isPresenceReady && viewersCount >= 1 && (
+      {/* Viewer Avatars (only show when synced and there are other viewers, or mock mode) */}
+      {(useMockData || isPresenceReady) && viewersCount >= 1 && (
         <div className="flex items-center gap-1.5 px-2 py-1 rounded-full text-medium border bg-primary/10 border-primary/20 text-text-primary">
           <div className="flex items-center -space-x-2">
             {users.slice(0, 5).map((user, index) => {
@@ -123,6 +215,91 @@ export default function SyncStatusIndicator({
               </div>
             )}
           </div>
+          {/* Chevron dropdown button - only show when more than 5 viewers */}
+          {viewersCount > 5 && (
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="ml-1 p-1 rounded-full hover:bg-primary/20 transition-colors"
+                title="View all viewers"
+              >
+                <ChevronDown
+                  className={`w-4 h-4 text-text-primary transition-transform ${
+                    isDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {/* Dropdown menu */}
+              {isDropdownOpen && (
+                <div className="absolute top-full right-0 mt-2 w-64 max-h-80 overflow-y-auto bg-primary border border-border rounded-lg shadow-lg z-50">
+                  <div className="p-2">
+                    <div className="text-small text-text-secondary px-2 py-1 mb-1">
+                      {viewersCount} viewer{viewersCount !== 1 ? "s" : ""}
+                    </div>
+                    {users.map((user) => {
+                      const displayName = user.name || user.email || "Unknown";
+                      const initial = displayName[0].toUpperCase();
+                      const isFollowing = followingUserId === user.socketId;
+                      const imageUrl =
+                        user.slackImageUrl || slackImages?.[user.email];
+
+                      return (
+                        <button
+                          key={user.socketId}
+                          onClick={() => {
+                            onFollowUser?.(user.socketId);
+                            setIsDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-2 py-2 rounded-md hover:bg-primary-foreground/10 transition-colors ${
+                            isFollowing ? "bg-destructive/10" : ""
+                          }`}
+                        >
+                          {imageUrl ? (
+                            <img
+                              src={imageUrl}
+                              alt={displayName}
+                              width={32}
+                              height={32}
+                              className={`w-8 h-8 rounded-full object-cover border ${
+                                isFollowing
+                                  ? "border-destructive"
+                                  : "border-border"
+                              }`}
+                            />
+                          ) : (
+                            <div
+                              className={`w-8 h-8 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center text-small font-medium text-text-primary border ${
+                                isFollowing
+                                  ? "border-destructive"
+                                  : "border-border"
+                              }`}
+                            >
+                              {initial}
+                            </div>
+                          )}
+                          <div className="flex-1 text-left">
+                            <div className="text-small font-medium text-text-primary truncate">
+                              {displayName}
+                            </div>
+                            {user.email && (
+                              <div className="text-xs text-text-secondary truncate">
+                                {user.email}
+                              </div>
+                            )}
+                          </div>
+                          {isFollowing && (
+                            <span className="text-xs text-destructive font-medium">
+                              Following
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
