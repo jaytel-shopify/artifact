@@ -1,5 +1,9 @@
-// Service Worker Registration
-if ("serviceWorker" in navigator) {
+// Service Worker Registration - only in standalone (PWA) mode
+const isStandalone =
+  window.matchMedia("(display-mode: standalone)").matches ||
+  window.navigator.standalone === true;
+
+if ("serviceWorker" in navigator && isStandalone) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
       .register("/sw.js")
