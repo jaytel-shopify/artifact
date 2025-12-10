@@ -386,7 +386,7 @@ export default function ViewToggle() {
   const hoverEffect = getHoverOffset();
 
   return (
-    <div ref={wrapperRef} className="relative h-10">
+    <div ref={wrapperRef} className="relative h-10 w-max">
       <div
         ref={containerRef}
         className="relative grid grid-cols-2 grid-rows-[100%] bg-primary rounded-button p-0.5 h-10 border border-border will-change-transform cursor-grab active:cursor-grabbing"

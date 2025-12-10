@@ -8,6 +8,8 @@ import { LottieMethods } from "@/types";
 
 const Logo = forwardRef<LottieMethods>(function Logo(_, ref) {
   const lottieRef = useRef<LottieRefCurrentProps>(null);
+  const leaveQueuedRef = useRef(false);
+
   useImperativeHandle(ref, () => ({
     playSegments: (segments, forceFlag = true) =>
       lottieRef.current?.playSegments(segments, forceFlag),
@@ -24,7 +26,13 @@ const Logo = forwardRef<LottieMethods>(function Logo(_, ref) {
         }
       }}
       onMouseLeave={() => {
-        lottieRef.current?.playSegments([100, 211]);
+        if (leaveQueuedRef.current) return;
+        leaveQueuedRef.current = true;
+        const anim = lottieRef.current?.animationItem;
+        const isPlayingEnter =
+          anim && !anim.isPaused && anim.currentFrame < 100;
+        // Queue (forceFlag=false) if enter segment is playing, otherwise force
+        lottieRef.current?.playSegments([100, 211], !isPlayingEnter);
       }}
     >
       <Lottie
@@ -32,6 +40,12 @@ const Logo = forwardRef<LottieMethods>(function Logo(_, ref) {
         animationData={LottieLogo}
         loop={false}
         className="lottie-light-dark h-14 w-14 fill-text-primary"
+        onComplete={() => {
+          // Reset queue flag when leave segment [100, 211] finishes
+          if (leaveQueuedRef.current) {
+            leaveQueuedRef.current = false;
+          }
+        }}
       />
     </Link>
   );
