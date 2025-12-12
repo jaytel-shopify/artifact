@@ -80,6 +80,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (!isMounted) return;
 
+        // Identify users in quicklytics
+        (window as any).quicklytics?.identify(dbUser.email);
+
         // dbUser is already the User type from the database
         setUser(dbUser);
         setLoading(false);

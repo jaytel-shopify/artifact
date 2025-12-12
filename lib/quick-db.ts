@@ -114,6 +114,11 @@ export async function createProject(data: {
     position: 0,
   });
 
+  (window as any).quicklytics?.track("create_project", {
+    project_id: project.id,
+    project_name: project.name,
+  });
+
   return project;
 }
 
@@ -195,7 +200,14 @@ export async function createPage(data: {
   const quick = await waitForQuick();
   const collection = quick.db.collection("pages");
 
-  return await collection.create(data);
+  const page = await collection.create(data);
+
+  (window as any).quicklytics?.track("create_page", {
+    page_id: page.id,
+    page_name: page.name,
+  });
+
+  return page;
 }
 
 /**
@@ -521,7 +533,15 @@ export async function createArtifact(data: {
   // NOTE: Quick.db auto-generates created_at/updated_at - we can't override them
   // Original timestamps are stored in metadata.original_created_at instead
 
-  return await collection.create(artifactData);
+  const response = await collection.create(artifactData);
+
+  (window as any).quicklytics?.track("create_artifact", {
+    artifact_id: response.id,
+    artifact_type: response.type,
+    artifact_name: response.name,
+  });
+
+  return response;
 }
 
 /**
@@ -618,10 +638,10 @@ export async function deleteArtifact(
   } else {
     const quick = await waitForQuick();
     const collection = quick.db.collection("artifacts");
-
+    let artifact: Artifact | null = null;
     // Get the artifact to find its files before deleting
     try {
-      const artifact = await collection.findById(id);
+      artifact = await collection.findById(id);
       if (artifact) {
         // Delete associated files from Quick.fs
         await deleteArtifactFiles(artifact);
@@ -632,6 +652,12 @@ export async function deleteArtifact(
     }
 
     await collection.delete(id);
+
+    (window as any).quicklytics?.track("delete_artifact", {
+      artifact_id: id,
+      artifact_type: artifact?.type,
+      artifact_name: artifact?.name,
+    });
   }
 }
 

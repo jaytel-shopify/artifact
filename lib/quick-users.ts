@@ -102,7 +102,13 @@ export async function createUser(data: {
 
   const user = await collection.create(userData);
 
-  return user;
+  (window as any).quicklytics?.track("create_user", {
+    user_id: userData.id,
+    user_email: userData.email,
+    user_name: userData.name,
+  });
+
+  return await collection.findById(user.id);
 }
 
 /**

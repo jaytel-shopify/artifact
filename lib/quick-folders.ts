@@ -89,6 +89,11 @@ export async function createFolder(data: {
     user.id // Granted by self
   );
 
+  (window as any).quicklytics?.track("create_folder", {
+    folder_id: folder.id,
+    folder_name: folder.name,
+  });
+
   return folder;
 }
 
@@ -130,6 +135,10 @@ export async function deleteFolder(id: string): Promise<void> {
 
   // Delete all access entries for this folder
   await deleteAllAccessForResource(id, "folder");
+
+  (window as any).quicklytics?.track("delete_folder", {
+    folder_id: id,
+  });
 }
 
 // canEditFolder removed - use canUserEdit from lib/access-control.ts instead
@@ -160,8 +169,13 @@ export async function getProjectsInFolder(
   if (userId) {
     // Batch fetch all user's project access entries in a single query
     const { getUserAccessibleResources } = await import("./access-control");
-    const userProjectAccess = await getUserAccessibleResources(userId, "project");
-    const accessibleProjectIds = new Set(userProjectAccess.map(a => a.resource_id));
+    const userProjectAccess = await getUserAccessibleResources(
+      userId,
+      "project"
+    );
+    const accessibleProjectIds = new Set(
+      userProjectAccess.map((a) => a.resource_id)
+    );
 
     // Filter to only projects user has access to
     accessibleProjects = folderProjects.filter((project: Project) =>

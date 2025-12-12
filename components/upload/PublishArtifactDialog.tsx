@@ -62,7 +62,13 @@ export default function PublishArtifactDialog({
         published_at: new Date().toISOString(),
         published_by: publisherId,
       });
-      
+
+      (window as any).quicklytics?.track("publish_artifact", {
+        artifact_id: updatedArtifact.id,
+        artifact_type: updatedArtifact.type,
+        artifact_name: updatedArtifact.name,
+      });
+
       toast.success("Artifact published to feed!");
       onPublished?.(updatedArtifact);
       onClose();
@@ -85,7 +91,8 @@ export default function PublishArtifactDialog({
   const isVideo = artifact.type === "video";
   const isImage = artifact.type === "image";
   const isUrl = artifact.type === "url";
-  const thumbnailUrl = (artifact.metadata as Record<string, unknown>)?.thumbnail_url as string | undefined;
+  const thumbnailUrl = (artifact.metadata as Record<string, unknown>)
+    ?.thumbnail_url as string | undefined;
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
@@ -142,13 +149,16 @@ export default function PublishArtifactDialog({
           {/* Info text */}
           <div className="text-center">
             <p className="text-small text-text-secondary">
-              Publishing will share this artifact to the public feed where other team members can see it.
+              Publishing will share this artifact to the public feed where other
+              team members can see it.
             </p>
           </div>
 
           {/* Name input */}
           <div className="gap-2 flex flex-col">
-            <label className="sr-only text-small text-text-secondary">Name</label>
+            <label className="sr-only text-small text-text-secondary">
+              Name
+            </label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -187,4 +197,3 @@ export default function PublishArtifactDialog({
     </Dialog>
   );
 }
-
