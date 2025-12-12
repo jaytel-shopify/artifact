@@ -13,14 +13,42 @@ const USERS_COLLECTION = "users";
  * Note: Quick.db auto-generates UUIDs for document IDs, but we store the
  * Quick.id (numeric ID from quick.id.waitForUser()) in the `id` field.
  * This function queries by the `id` field value, not the document ID.
+ * 
+ * Also checks the `quick_id` backup field for newer users where Quick.db
+ * may have overwritten the `id` field.
  */
 export async function getUserById(id: string): Promise<User | null> {
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);
 
   try {
+    // First try to find by the id field (Quick identity ID)
     const results = await collection.where({ id }).find();
-    return results.length > 0 ? results[0] : null;
+    if (results.length > 0) {
+      return results[0];
+    }
+    
+    // Fallback 1: try to find by quick_id field (backup for newer users)
+    const quickIdResults = await collection.where({ quick_id: id }).find();
+    if (quickIdResults.length > 0) {
+      // Return with the expected id value
+      return {
+        ...quickIdResults[0],
+        id, // Ensure we return the Quick identity ID
+      };
+    }
+    
+    // Fallback 2: try to find by document ID (in case Quick.db used our id as the doc ID)
+    try {
+      const doc = await collection.findById(id);
+      if (doc) {
+        return doc;
+      }
+    } catch {
+      // Document not found by ID, continue
+    }
+    
+    return null;
   } catch (error) {
     console.error("[Users] User not found by ID:", id, error);
     return null;
@@ -49,20 +77,35 @@ export async function getUserByEmail(email: string): Promise<User | null> {
  * Get multiple users by their IDs
  * Useful for batch lookups (e.g., resolving creator_ids)
  * Uses $in query for efficient batch fetching
+ * Also checks quick_id field for newer users where Quick.db may have overwritten id
  */
 export async function getUsersByIds(ids: string[]): Promise<Map<string, User>> {
   if (ids.length === 0) return new Map();
 
   const quick = await waitForQuick();
   const collection = quick.db.collection(USERS_COLLECTION);
+  const userMap = new Map<string, User>();
 
   try {
-    // Use $in query to fetch only the users we need
-    const users = await collection.where({ id: { $in: ids } }).find();
-    const userMap = new Map<string, User>();
-
-    for (const user of users) {
+    // First try to find by the id field
+    const usersByIdField = await collection.where({ id: { $in: ids } }).find();
+    for (const user of usersByIdField) {
       userMap.set(user.id, user);
+    }
+
+    // Find IDs that weren't found by the id field
+    const missingIds = ids.filter(id => !userMap.has(id));
+    
+    if (missingIds.length > 0) {
+      // Fallback: try to find by quick_id field
+      const usersByQuickId = await collection.where({ quick_id: { $in: missingIds } }).find();
+      for (const user of usersByQuickId) {
+        // Use quick_id as the map key (the ID we were looking for)
+        const quickId = user.quick_id;
+        if (quickId && missingIds.includes(quickId)) {
+          userMap.set(quickId, { ...user, id: quickId });
+        }
+      }
     }
 
     return userMap;
@@ -77,6 +120,9 @@ export async function getUsersByIds(ids: string[]): Promise<Map<string, User>> {
 /**
  * Create a new user record
  * Email is normalized to lowercase for consistency
+ * 
+ * Note: Quick.db may auto-generate a document ID that differs from our user ID.
+ * We store the Quick identity ID in both `id` and `quick_id` fields for redundancy.
  */
 export async function createUser(data: {
   id: string;
@@ -92,6 +138,7 @@ export async function createUser(data: {
 
   const userData = {
     id: data.id,
+    quick_id: data.id, // Backup field in case Quick.db overwrites id
     email: data.email.toLowerCase().trim(),
     name: data.name,
     slack_image_url: data.slack_image_url,
@@ -100,7 +147,7 @@ export async function createUser(data: {
     title: data.title,
   };
 
-  const user = await collection.create(userData);
+  const createdDoc = await collection.create(userData);
 
   (window as any).quicklytics?.track("create_user", {
     user_id: userData.id,
@@ -108,7 +155,11 @@ export async function createUser(data: {
     user_name: userData.name,
   });
 
-  return await collection.findById(user.id);
+  // Return with our expected ID regardless of what Quick.db returned
+  return {
+    ...createdDoc,
+    id: userData.id,
+  };
 }
 
 /**

@@ -43,6 +43,9 @@ export async function getProjects(userId?: string): Promise<Project[]> {
   );
   const accessibleProjectIds = accessibleProjects.map((a) => a.resource_id);
 
+  // Return early if user has no accessible projects (avoids $in: [] query issue)
+  if (accessibleProjectIds.length === 0) return [];
+
   const quick = await waitForQuick();
   const collection = quick.db.collection("projects");
 
@@ -84,9 +87,32 @@ export async function createProject(data: {
   const collection = quick.db.collection("projects");
 
   // Look up user by ID to get their email for access control display
-  const user = await getUserById(data.creator_id);
+  let user = await getUserById(data.creator_id);
+  
+  // If user not found by ID, try to find by looking at all users and matching
+  // This handles cases where Quick.db may have stored the user with a different ID format
   if (!user) {
-    throw new Error(`User not found for id: ${data.creator_id}`);
+    console.warn(`[createProject] User not found by ID: ${data.creator_id}, attempting sync...`);
+    // Get identity from Quick and try to create/sync the user
+    const identity = await quick.id.waitForUser();
+    if (identity && identity.id === data.creator_id) {
+      // Re-sync user to database
+      const { getOrCreateUser } = await import("./quick-users");
+      user = await getOrCreateUser({
+        id: identity.id,
+        email: identity.email,
+        fullName: identity.fullName,
+        firstName: identity.firstName,
+        slackImageUrl: identity.slackImageUrl,
+        slackId: identity.slackId,
+        slackHandle: identity.slackHandle,
+        title: identity.title,
+      });
+    }
+  }
+  
+  if (!user) {
+    throw new Error(`User not found for id: ${data.creator_id}. Please refresh the page and try again.`);
   }
 
   const projectData = {
