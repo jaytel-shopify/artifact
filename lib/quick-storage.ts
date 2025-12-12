@@ -2,6 +2,7 @@
 
 import { waitForQuick } from "./quick";
 import { compressFile } from "./compress-video";
+import type { Artifact } from "@/types";
 
 /**
  * Quick.fs File Storage Helper
@@ -307,4 +308,108 @@ export async function getMediaDimensions(
     console.error("Failed to get media dimensions:", error);
     return null;
   }
+}
+
+/**
+ * Extract filename from a Quick.fs URL or path
+ * URLs can be:
+ * - Full URL: https://site.quick.shopify.io/files/abc123.png
+ * - Relative path: /files/abc123.png
+ * - Just filename: abc123.png
+ */
+function extractFilename(urlOrPath: string): string | null {
+  if (!urlOrPath) return null;
+
+  // If it's a full URL, parse it
+  if (urlOrPath.startsWith("http")) {
+    try {
+      const url = new URL(urlOrPath);
+      const pathname = url.pathname;
+      // Extract filename from /files/{filename}
+      const match = pathname.match(/\/files\/(.+)$/);
+      if (match) {
+        return decodeURIComponent(match[1]);
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  // If it's a relative path like /files/{filename}
+  if (urlOrPath.startsWith("/files/")) {
+    return decodeURIComponent(urlOrPath.slice(7)); // Remove "/files/"
+  }
+
+  // If it starts with /uploads/ (old format), extract the filename
+  if (urlOrPath.startsWith("/uploads/")) {
+    return decodeURIComponent(urlOrPath.slice(9)); // Remove "/uploads/"
+  }
+
+  // If it's just a filename or unknown format, return as-is
+  if (!urlOrPath.startsWith("/") && !urlOrPath.startsWith("http")) {
+    return urlOrPath;
+  }
+
+  return null;
+}
+
+/**
+ * Delete a file from Quick.fs storage
+ * @param urlOrPath - The URL, path, or filename of the file to delete
+ */
+export async function deleteFile(urlOrPath: string): Promise<void> {
+  if (!urlOrPath) return;
+
+  // Skip external URLs (not hosted on quick.fs)
+  if (urlOrPath.startsWith("http") && !urlOrPath.includes("quick.shopify.io")) {
+    console.log("Skipping deletion of external URL:", urlOrPath);
+    return;
+  }
+
+  // Skip mock/local files
+  if (urlOrPath.startsWith("/mock/")) {
+    console.log("Skipping deletion of mock file:", urlOrPath);
+    return;
+  }
+
+  const filename = extractFilename(urlOrPath);
+  if (!filename) {
+    console.log("Could not extract filename from:", urlOrPath);
+    return;
+  }
+
+  try {
+    const quick = await waitForQuick();
+    await quick.fs.delete(filename);
+    console.log("Deleted file from Quick.fs:", filename);
+  } catch (error) {
+    console.error("Failed to delete file from Quick.fs:", filename, error);
+    // Don't throw - file deletion failure shouldn't block artifact deletion
+  }
+}
+
+/**
+ * Delete all files associated with an artifact from Quick.fs
+ * This includes the main file (source_url/file_path) and any thumbnails
+ */
+export async function deleteArtifactFiles(artifact: Artifact): Promise<void> {
+  const urlsToDelete: string[] = [];
+
+  // Main file - prefer file_path (relative) over source_url (full URL)
+  if (artifact.file_path) {
+    urlsToDelete.push(artifact.file_path);
+  } else if (artifact.source_url) {
+    urlsToDelete.push(artifact.source_url);
+  }
+
+  // Thumbnail for videos/urls (stored in metadata)
+  const thumbnailUrl = (artifact.metadata as Record<string, unknown>)
+    ?.thumbnail_url as string | undefined;
+  if (thumbnailUrl) {
+    urlsToDelete.push(thumbnailUrl);
+  }
+
+  // Delete all files in parallel
+  await Promise.all(urlsToDelete.map((url) => deleteFile(url)));
 }

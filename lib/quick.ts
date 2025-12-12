@@ -96,6 +96,22 @@ interface QuickFS {
     size: number;
     mimeType: string;
   }>;
+
+  /**
+   * Delete a file from storage
+   * @param filename - The filename to delete (as returned from upload)
+   */
+  delete(filename: string): Promise<{ success: boolean; filename: string }>;
+
+  /**
+   * Get relative file URL
+   */
+  getUrl(filename: string): string;
+
+  /**
+   * Get full absolute URL
+   */
+  getFullUrl(filename: string): string;
 }
 
 // ==================== IDENTITY ====================

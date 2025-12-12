@@ -12,6 +12,7 @@ import type {
 } from "@/types";
 import { grantAccess, getUserAccessibleResources } from "./access-control";
 import { getUserById } from "./quick-users";
+import { deleteArtifactFiles } from "./quick-storage";
 
 /**
  * Quick.db Service Layer
@@ -605,7 +606,7 @@ export async function updateArtifact(
 }
 
 /**
- * Delete an artifact (only the artifact, not junction entries)
+ * Delete an artifact and its associated files from storage
  * Use removeArtifactFromProject for proper deletion with cascade logic
  */
 export async function deleteArtifact(
@@ -617,6 +618,19 @@ export async function deleteArtifact(
   } else {
     const quick = await waitForQuick();
     const collection = quick.db.collection("artifacts");
+
+    // Get the artifact to find its files before deleting
+    try {
+      const artifact = await collection.findById(id);
+      if (artifact) {
+        // Delete associated files from Quick.fs
+        await deleteArtifactFiles(artifact);
+      }
+    } catch (error) {
+      console.error("Error fetching artifact for file cleanup:", error);
+      // Continue with deletion even if we couldn't get the artifact
+    }
+
     await collection.delete(id);
   }
 }
@@ -634,6 +648,7 @@ export async function removeArtifactFromProject(
 ): Promise<{ junctionDeleted: boolean; artifactDeleted: boolean }> {
   const quick = await waitForQuick();
   const junctionCollection = quick.db.collection("project_artifacts");
+  const artifactsCollection = quick.db.collection("artifacts");
 
   // Get the junction entry to find the artifact ID
   let junctionEntry: ProjectArtifact;
@@ -652,12 +667,13 @@ export async function removeArtifactFromProject(
   const remainingLinks = await getProjectArtifactsByArtifact(artifactId);
 
   if (remainingLinks.length === 0) {
-    // Artifact is orphaned - check if user is the creator
+    // Artifact is orphaned - check if it's published
     const artifact = await getArtifactById(artifactId);
 
     if (artifact && !artifact.published) {
-      // User is creator and artifact is orphaned - delete it
-      await deleteArtifact(artifactId);
+      // Artifact is orphaned and unpublished - delete it and its files
+      await deleteArtifactFiles(artifact);
+      await artifactsCollection.delete(artifactId);
       return { junctionDeleted: true, artifactDeleted: true };
     }
   }

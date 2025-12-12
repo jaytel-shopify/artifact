@@ -1009,6 +1009,17 @@ export function createMockQuick() {
           mimeType: file.type,
         };
       },
+      async delete(filename: string) {
+        console.log("[Mock] Deleting file:", filename);
+        // No-op in mock - just log for debugging
+        return { success: true, filename };
+      },
+      getUrl(filename: string) {
+        return `/files/${encodeURIComponent(filename)}`;
+      },
+      getFullUrl(filename: string) {
+        return `${window.location.origin}/files/${encodeURIComponent(filename)}`;
+      },
     },
     id: {
       id: MOCK_USER_ID,
