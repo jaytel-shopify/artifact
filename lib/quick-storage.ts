@@ -67,8 +67,6 @@ export async function uploadFile(
 ): Promise<UploadResult> {
   const quick = await waitForQuick();
 
-  console.log("Uploading file to Quick.fs:", file.name, file.type, file.size);
-
   // Track processed file for dimension extraction
   let processedFile: File = file;
 
@@ -87,12 +85,9 @@ export async function uploadFile(
 
   const result = await quick.fs.uploadFile(processedFile, {
     onProgress: (progress) => {
-      console.log("Upload progress:", progress);
       onProgress?.({ percentage: progress.percentage, type: "upload" });
     },
   });
-
-  console.log("Quick.fs upload result:", result);
 
   // Quick.fs returns the file data directly (not wrapped in { files: [...] })
   return {
@@ -127,16 +122,9 @@ export async function uploadFiles(
     })
   );
 
-  console.log(
-    "Uploading multiple files to Quick.fs:",
-    files.map((f) => f.name)
-  );
-
   const result = await quick.fs.upload(files, {
     strategy: options?.strategy || "hybrid",
   });
-
-  console.log("Quick.fs batch upload result:", result);
 
   // Quick.fs batch upload might return differently
   // If it returns an array directly, use it
@@ -363,26 +351,22 @@ export async function deleteFile(urlOrPath: string): Promise<void> {
 
   // Skip external URLs (not hosted on quick.fs)
   if (urlOrPath.startsWith("http") && !urlOrPath.includes("quick.shopify.io")) {
-    console.log("Skipping deletion of external URL:", urlOrPath);
     return;
   }
 
   // Skip mock/local files
   if (urlOrPath.startsWith("/mock/")) {
-    console.log("Skipping deletion of mock file:", urlOrPath);
     return;
   }
 
   const filename = extractFilename(urlOrPath);
   if (!filename) {
-    console.log("Could not extract filename from:", urlOrPath);
     return;
   }
 
   try {
     const quick = await waitForQuick();
     await quick.fs.delete(filename);
-    console.log("Deleted file from Quick.fs:", filename);
   } catch (error) {
     console.error("Failed to delete file from Quick.fs:", filename, error);
     // Don't throw - file deletion failure shouldn't block artifact deletion

@@ -9,8 +9,8 @@ const USERS_COLLECTION = "users";
 
 /**
  * Get a user by their Quick.id (stored in the `id` field)
- * 
- * Note: Quick.db auto-generates UUIDs for document IDs, but we store the 
+ *
+ * Note: Quick.db auto-generates UUIDs for document IDs, but we store the
  * Quick.id (numeric ID from quick.id.waitForUser()) in the `id` field.
  * This function queries by the `id` field value, not the document ID.
  */
@@ -101,7 +101,6 @@ export async function createUser(data: {
   };
 
   const user = await collection.create(userData);
-  console.log("[Users] Created new user:", { id: user.id, email: user.email });
 
   return user;
 }

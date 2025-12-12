@@ -94,7 +94,10 @@ export async function searchUsers(query: string): Promise<User[]> {
 
     // Normalize to remove diacritics (e.g., "ë" -> "e", "é" -> "e")
     const normalize = (str: string) =>
-      str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      str
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase();
 
     const normalizedQuery = normalize(query.trim());
 
@@ -111,7 +114,9 @@ export async function searchUsers(query: string): Promise<User[]> {
  * Get a user from /users.json by their Vault ID
  * Used for profile pages of users who haven't logged in yet
  */
-export async function getUserFromDirectoryById(userId: string): Promise<User | null> {
+export async function getUserFromDirectoryById(
+  userId: string
+): Promise<User | null> {
   try {
     const response = await fetch("/users.json");
     if (!response.ok) return null;
@@ -354,14 +359,6 @@ export async function grantAccess(
       granted_by: grantedBy,
     });
 
-    console.log("[AccessControl] Granted access:", {
-      resourceType,
-      resourceId,
-      userId,
-      userEmail,
-      accessLevel,
-    });
-
     // If granting folder access, cascade to all projects in folder
     if (resourceType === RESOURCE_TYPES.FOLDER) {
       await cascadeAccessToFolderProjects(
@@ -421,13 +418,6 @@ export async function updateAccessLevel(
 
     await collection.update(existing.id, { access_level: newAccessLevel });
 
-    console.log("[AccessControl] Updated access level:", {
-      resourceType,
-      resourceId,
-      userId,
-      newAccessLevel,
-    });
-
     return true;
   } catch (error) {
     console.error("[AccessControl] Failed to update access level:", error);
@@ -456,12 +446,6 @@ export async function revokeAccess(
     }
 
     await collection.delete(existing.id);
-
-    console.log("[AccessControl] Revoked access:", {
-      resourceType,
-      resourceId,
-      userId,
-    });
 
     return true;
   } catch (error) {
@@ -563,7 +547,10 @@ async function getProjectFolderAccess(
 
     return folderEntry ? folderEntry.access_level : null;
   } catch (error) {
-    console.error("[AccessControl] Failed to check folder access for project:", error);
+    console.error(
+      "[AccessControl] Failed to check folder access for project:",
+      error
+    );
     return null;
   }
 }
@@ -641,7 +628,10 @@ async function hasAccessToAnyProjectInFolder(
 
     return userProjectAccess.length > 0;
   } catch (error) {
-    console.error("[AccessControl] Failed to check project access in folder:", error);
+    console.error(
+      "[AccessControl] Failed to check project access in folder:",
+      error
+    );
     return false;
   }
 }
@@ -669,7 +659,10 @@ export async function getUserAccessibleResources(
 
     // For folders, also include derived access from project memberships
     if (resourceType === RESOURCE_TYPES.FOLDER) {
-      const derivedFolderAccess = await getDerivedFolderAccess(userId, directAccess);
+      const derivedFolderAccess = await getDerivedFolderAccess(
+        userId,
+        directAccess
+      );
       return [...directAccess, ...derivedFolderAccess];
     }
 
@@ -714,7 +707,9 @@ async function getDerivedFolderAccess(
       .find();
 
     // Collect unique folder IDs (excluding null and folders user already has direct access to)
-    const existingFolderIds = new Set(existingFolderAccess.map((a) => a.resource_id));
+    const existingFolderIds = new Set(
+      existingFolderAccess.map((a) => a.resource_id)
+    );
     const derivedFolderIds = new Set<string>();
 
     for (const project of projects) {
@@ -725,21 +720,26 @@ async function getDerivedFolderAccess(
 
     // Create synthetic "viewer" access entries for these folders
     // These represent derived access - user can view folder but not edit it
-    const derivedAccess: AccessEntry[] = Array.from(derivedFolderIds).map((folderId) => ({
-      id: `derived-${folderId}-${userId}`, // Synthetic ID
-      resource_id: folderId,
-      resource_type: RESOURCE_TYPES.FOLDER,
-      user_id: userId,
-      user_email: "", // Not needed for derived access
-      access_level: ACCESS_LEVELS.VIEWER, // Derived access is always viewer
-      granted_by: "system", // Indicates derived access
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    }));
+    const derivedAccess: AccessEntry[] = Array.from(derivedFolderIds).map(
+      (folderId) => ({
+        id: `derived-${folderId}-${userId}`, // Synthetic ID
+        resource_id: folderId,
+        resource_type: RESOURCE_TYPES.FOLDER,
+        user_id: userId,
+        user_email: "", // Not needed for derived access
+        access_level: ACCESS_LEVELS.VIEWER, // Derived access is always viewer
+        granted_by: "system", // Indicates derived access
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+    );
 
     return derivedAccess;
   } catch (error) {
-    console.error("[AccessControl] Failed to get derived folder access:", error);
+    console.error(
+      "[AccessControl] Failed to get derived folder access:",
+      error
+    );
     return [];
   }
 }
@@ -760,12 +760,6 @@ export async function deleteAllAccessForResource(
     await Promise.all(
       accessList.map((entry: AccessEntry) => collection.delete(entry.id))
     );
-
-    console.log("[AccessControl] Deleted all access for resource:", {
-      resourceType,
-      resourceId,
-      count: accessList.length,
-    });
   } catch (error) {
     console.error("[AccessControl] Failed to delete resource access:", error);
   }

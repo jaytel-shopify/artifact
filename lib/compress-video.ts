@@ -53,16 +53,9 @@ export const compressFile = async (
       // Always compress .mov files to mp4
       const dimensions = await getVideoDimensions(resource);
       if (dimensions && dimensions.width <= MAX_VIDEO_SIZE && !isMov) {
-        console.log(
-          `Video resolution (${dimensions.width}x${dimensions.height}) is already within limit, skipping compression`
-        );
         onProgress({ percentage: 100, type: "convert" });
         resolve(resource);
         return;
-      }
-
-      if (isMov) {
-        console.log(`Converting .mov file to mp4: ${resource.name}`);
       }
 
       // Create a new input from the resource
@@ -106,10 +99,6 @@ export const compressFile = async (
 
       clearInterval(currentIntervalId);
       updateProgress();
-
-      console.log(
-        `Compressed video to ${((output.target.buffer!.byteLength / fileSize) * 100).toPrecision(3)}% of original size`
-      );
 
       const blob = new Blob([output.target.buffer!], {
         type: output.format.mimeType,

@@ -59,23 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     async function initUser() {
       try {
-        console.time("[AuthProvider] Quick SDK loaded");
         const quick = await waitForQuick();
-        console.timeEnd("[AuthProvider] Quick SDK loaded");
 
         // Get user identity from Quick
-        console.log("[AuthProvider] Fetching user identity...");
         const userData = await quick.id.waitForUser();
-
-        console.log("[AuthProvider] User loaded:", {
-          email: userData.email,
-          name: userData.fullName,
-        });
 
         if (!isMounted) return;
 
         // Sync user to database and get/create DB record
-        console.log("[AuthProvider] Syncing user to database...");
         const dbUser = await getOrCreateUser({
           id: userData.id,
           email: userData.email,
@@ -86,17 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           slackHandle: userData.slackHandle,
           title: userData.title,
         });
-
-        console.log("[AuthProvider] User synced to DB:", {
-          id: dbUser.id,
-          email: dbUser.email,
-        });
-
-        // Log user profile URL for easy testing
-        console.log(
-          `%c🔗 Your profile URL: /user/${dbUser.id}`,
-          "background: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold;"
-        );
 
         if (!isMounted) return;
 

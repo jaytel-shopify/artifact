@@ -120,8 +120,6 @@ export async function generateAndUploadThumbnail(
   pageId?: string
 ): Promise<void> {
   try {
-    console.log(`Generating thumbnail for video artifact ${artifactId}...`);
-
     // Generate the thumbnail
     const thumbnailBlob = await generateVideoThumbnail(videoFile);
 
@@ -134,11 +132,6 @@ export async function generateAndUploadThumbnail(
 
     // Upload the thumbnail to Quick.fs
     const uploadResult = await uploadFile(thumbnailFile);
-
-    console.log(
-      `Thumbnail uploaded for artifact ${artifactId}:`,
-      uploadResult.fullUrl
-    );
 
     // Get the current artifact to preserve existing metadata
     const { getArtifactById } = await import("./quick-db");
@@ -162,8 +155,6 @@ export async function generateAndUploadThumbnail(
     if (pageId) {
       globalMutate(cacheKeys.pageArtifacts(pageId));
     }
-
-    console.log(`Thumbnail metadata updated for artifact ${artifactId}`);
   } catch (error) {
     // Log the error but don't throw - thumbnail generation is nice-to-have
     console.error(

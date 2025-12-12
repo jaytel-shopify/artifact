@@ -8,11 +8,6 @@ if ("serviceWorker" in navigator && isStandalone) {
     navigator.serviceWorker
       .register("/sw.js")
       .then((registration) => {
-        console.log(
-          "Service Worker registered successfully:",
-          registration.scope
-        );
-
         // Check for updates periodically
         setInterval(() => {
           registration.update();
@@ -39,13 +34,6 @@ if ("serviceWorker" in navigator && isStandalone) {
       .catch((error) => {
         console.log("Service Worker registration failed:", error);
       });
-
-    // Handle controller change (new SW activated)
-    // Note: We don't auto-reload on controller change as it can interfere with SPA navigation
-    // The user will get the new SW on next full page load
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      console.log("Service Worker controller changed - new version active");
-    });
   });
 }
 
@@ -56,7 +44,6 @@ window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   // Stash the event so it can be triggered later
   deferredPrompt = e;
-  console.log("App install prompt available");
 
   // You can show your own install UI here
   // For example, dispatch a custom event that your app can listen to
@@ -67,6 +54,5 @@ window.addEventListener("beforeinstallprompt", (e) => {
 
 // Log when app is installed
 window.addEventListener("appinstalled", () => {
-  console.log("App installed successfully");
   deferredPrompt = null;
 });
