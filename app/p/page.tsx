@@ -30,6 +30,7 @@ import QuickFollowProvider, {
 import { useFollowSync } from "@/hooks/useFollowSync";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useArtifactFocus } from "@/hooks/useArtifactFocus";
+import { usePinchZoom } from "@/hooks/usePinchZoom";
 import { useProjectTracking } from "@/hooks/useProjectTracking";
 import { useUserFolders } from "@/hooks/useUserFolders";
 import { useTitleCardEditor } from "@/hooks/useTitleCardEditor";
@@ -296,6 +297,12 @@ function PresentationPageInner({
     onTogglePresentationMode: () => setPresentationMode((prev) => !prev),
   });
 
+  // Pinch-to-zoom gesture (trackpad) to control columns
+  usePinchZoom(undefined, {
+    onZoomIn: () => handleSetColumns(Math.max(1, columns - 1)),
+    onZoomOut: () => handleSetColumns(Math.min(8, columns + 1)),
+  });
+
   // Check permissions (access already verified in parent, this is for edit permissions)
   const permissions = useResourcePermissions(project?.id || null, "project");
 
@@ -422,11 +429,13 @@ function PresentationPageInner({
 
   // Share dialog state
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
-  
+
   // Publish dialog state
-  const [publishArtifactId, setPublishArtifactId] = useState<string | null>(null);
-  const artifactToPublish = publishArtifactId 
-    ? artifacts.find(a => a.id === publishArtifactId) ?? null
+  const [publishArtifactId, setPublishArtifactId] = useState<string | null>(
+    null
+  );
+  const artifactToPublish = publishArtifactId
+    ? (artifacts.find((a) => a.id === publishArtifactId) ?? null)
     : null;
 
   // Set header content using shared helper - must be called before any return statements
@@ -609,7 +618,9 @@ function PresentationPageInner({
                 }}
                 onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
                 onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
-                onPublishArtifact={(artifactId) => setPublishArtifactId(artifactId)}
+                onPublishArtifact={(artifactId) =>
+                  setPublishArtifactId(artifactId)
+                }
                 currentUserId={user?.id}
                 onFocusArtifact={(artifactId) => {
                   // If already in focused mode (columns=1, fitMode=true), restore
@@ -674,7 +685,9 @@ function PresentationPageInner({
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="sr-only text-small text-text-secondary">Headline</label>
+              <label className="sr-only text-small text-text-secondary">
+                Headline
+              </label>
               <Input
                 value={editingTitleCard?.headline || ""}
                 onChange={(e) =>
