@@ -174,7 +174,11 @@ function SortablePageItem({
           <Pencil className="h-4 w-4" />
           Rename
         </ContextMenuItem>
-        <ContextMenuItem variant="destructive" onClick={onDelete} className="flex items-center gap-2">
+        <ContextMenuItem
+          variant="destructive"
+          onClick={onDelete}
+          className="flex items-center gap-2"
+        >
           <Trash2 className="h-4 w-4" />
           Delete
         </ContextMenuItem>
@@ -301,7 +305,7 @@ export default function PageNavigationSidebar({
 
         {/* Add New Page Button (hidden in read-only mode) */}
         {!isReadOnly && onPageCreate && (
-          <Button variant="primary" onClick={onPageCreate}>
+          <Button variant="primary-wide" onClick={onPageCreate}>
             <Plus className="h-4 w-4" />
             <span>New page</span>
           </Button>
