@@ -216,7 +216,7 @@ export function SharePanel({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0">
         {/* Header */}
-        <DialogHeader className="px-6 pt-5 pb-3 border-b border-border">
+        <DialogHeader className="px-6 py-3 border-b border-border">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-large text-text-primary">
               Share {resourceName}
@@ -294,7 +294,11 @@ export function SharePanel({
 
               {/* Invite Button */}
               {selectedUsers.length > 0 && (
-                <Button onClick={handleInviteUsers} className="w-full">
+                <Button
+                  onClick={handleInviteUsers}
+                  variant="primary-wide"
+                  className="w-full"
+                >
                   Invite {selectedUsers.length}{" "}
                   {selectedUsers.length === 1 ? "person" : "people"} as{" "}
                   {selectedAccessLevel}

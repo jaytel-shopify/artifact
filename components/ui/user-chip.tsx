@@ -33,7 +33,7 @@ export function UserChip({
   return (
     <div
       className={`
-        flex items-center bg-secondary rounded-full text-medium
+        flex items-center bg-transparent border border-border rounded-full text-medium text-text-primary
         ${sizeClasses[size]}
       `}
     >
