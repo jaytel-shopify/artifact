@@ -528,6 +528,7 @@ export async function createArtifact(data: {
     published: data.published ?? false,
     description: data.description || "",
     tags: data.tags || [],
+    published_at: new Date().toISOString(),
   };
 
   // NOTE: Quick.db auto-generates created_at/updated_at - we can't override them
