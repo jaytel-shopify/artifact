@@ -17,7 +17,7 @@ export function LoadingLottie({ className }: LoadingLottieProps) {
       lottieRef={lottieRef}
       animationData={LottieLoad}
       loop={false}
-      className={cn("lottie-light-dark h-14 w-14", className)}
+      className={cn("lottie-light-dark h-18 w-18", className)}
       onComplete={() => {
         lottieRef.current?.playSegments([105, 285], true);
       }}
@@ -27,4 +27,3 @@ export function LoadingLottie({ className }: LoadingLottieProps) {
     />
   );
 }
-

@@ -83,8 +83,13 @@ export default function DropzoneUploader() {
     onArtifactCreated: handleArtifactCreated,
   });
 
-  const { uploading, currentFileIndex, currentProgress, totalFiles } =
-    uploadState;
+  const {
+    uploading,
+    currentFileIndex,
+    currentProgress,
+    currentProgressType,
+    totalFiles,
+  } = uploadState;
 
   // Get current project context from URL if on project page
   // IMPORTANT: Read directly from window.location.search instead of useSearchParams
@@ -322,6 +327,7 @@ export default function DropzoneUploader() {
                 currentIndex: currentFileIndex,
                 currentProgress,
                 totalFiles,
+                type: currentProgressType,
               }
             : undefined
         }

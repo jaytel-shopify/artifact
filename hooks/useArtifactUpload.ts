@@ -26,6 +26,7 @@ export interface UploadState {
   currentFileIndex: number;
   currentFileName: string;
   currentProgress: number;
+  currentProgressType?: "upload" | "convert";
   error: string | null;
 }
 
@@ -35,6 +36,7 @@ const initialUploadState: UploadState = {
   currentFileIndex: 0,
   currentFileName: "",
   currentProgress: 0,
+  currentProgressType: undefined,
   error: null,
 };
 
@@ -245,6 +247,7 @@ export function useArtifactUpload({
             setUploadState((prev) => ({
               ...prev,
               currentProgress: progress.percentage,
+              currentProgressType: progress.type,
             }));
           });
 

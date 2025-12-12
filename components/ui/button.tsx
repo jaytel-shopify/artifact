@@ -17,6 +17,8 @@ const buttonVariants = cva(
         outline: "bg-background hover:bg-[#C7CED1] hover:text-text-primary",
         primary:
           "button-primary before:transition-transform before:duration-1500 before:ease-extreme hover:before:scale-x-105 hover:before:scale-y-98",
+        "primary-wide":
+          "button-primary before:transition-transform before:duration-1500 before:ease-extreme hover:before:scale-x-101 hover:before:scale-y-99",
         secondary: "bg-secondary/10  text-text-primary hover:bg-secondary/15",
         ghost:
           "hover:bg-primary text-text-primary border-transparent hover:text-text-primary hover:shadow-md active:shadow-none",
@@ -58,7 +60,7 @@ function Button({
     "text-small"
   );
 
-  const isPrimary = variant === "primary";
+  const isPrimary = variant?.startsWith("primary");
   const content = isPrimary ? (
     <span
       className="relative"

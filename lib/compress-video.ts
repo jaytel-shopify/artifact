@@ -56,7 +56,7 @@ export const compressFile = async (
         console.log(
           `Video resolution (${dimensions.width}x${dimensions.height}) is already within limit, skipping compression`
         );
-        onProgress({ percentage: 100 });
+        onProgress({ percentage: 100, type: "convert" });
         resolve(resource);
         return;
       }
@@ -95,7 +95,7 @@ export const compressFile = async (
       currentConversion.onProgress = (newProgress) => (progress = newProgress);
 
       const updateProgress = () => {
-        onProgress({ percentage: progress * 100 });
+        onProgress({ percentage: progress * 100, type: "convert" });
       };
 
       // Update the progress indicator regularly

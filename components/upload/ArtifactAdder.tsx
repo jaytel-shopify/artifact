@@ -72,8 +72,14 @@ export default function ArtifactAdder({
     onArtifactCreated,
   });
 
-  const { uploading, totalFiles, currentFileIndex, currentProgress, error } =
-    uploadState;
+  const {
+    uploading,
+    totalFiles,
+    currentFileIndex,
+    currentProgress,
+    currentProgressType,
+    error,
+  } = uploadState;
 
   // Media dialog is open if explicitly set OR if there are pending files from hook
   const isMediaDialogOpen = openDialog === "media" || showPreviewDialog;
@@ -237,6 +243,7 @@ export default function ArtifactAdder({
                 currentIndex: currentFileIndex,
                 currentProgress,
                 totalFiles,
+                type: currentProgressType,
               }
             : undefined
         }

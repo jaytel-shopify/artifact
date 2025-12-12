@@ -25,6 +25,7 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { toast } from "sonner";
 import type { ArtifactType, Project, Page } from "@/types";
 import type { UploadContext } from "@/hooks/useArtifactUpload";
+import { LoadingLottie } from "../ui/LoadingLottie";
 
 export interface PendingUpload {
   file: File;
@@ -45,6 +46,7 @@ interface UploadPreviewDialogProps {
     currentIndex: number;
     currentProgress: number;
     totalFiles: number;
+    type?: "upload" | "convert";
   };
   /** If true, show project/page selection */
   requireProjectSelection?: boolean;
@@ -199,7 +201,8 @@ export default function UploadPreviewDialog({
           // Check if initialContext has a valid project - if so, don't override
           // We check initialContext directly because state updates from other effects
           // may not have been applied yet in the same render cycle
-          const initialProjectValid = initialContext?.projectId && 
+          const initialProjectValid =
+            initialContext?.projectId &&
             p.some((proj) => proj.id === initialContext.projectId);
           if (!initialProjectValid && p.length > 0) {
             setSelectedProjectId(p[0].id);
@@ -221,7 +224,8 @@ export default function UploadPreviewDialog({
           // Check if initialContext has a valid page for this project - if so, don't override
           // We check initialContext directly because state updates from other effects
           // may not have been applied yet in the same render cycle
-          const initialPageValid = initialContext?.pageId && 
+          const initialPageValid =
+            initialContext?.pageId &&
             initialContext?.projectId === selectedProjectId &&
             p.some((page) => page.id === initialContext.pageId);
           if (!initialPageValid) {
@@ -239,7 +243,12 @@ export default function UploadPreviewDialog({
       setPages([]);
       setSelectedPageId("");
     }
-  }, [selectedProjectId, requireProjectSelection, initialContext?.projectId, initialContext?.pageId]);
+  }, [
+    selectedProjectId,
+    requireProjectSelection,
+    initialContext?.projectId,
+    initialContext?.pageId,
+  ]);
 
   const currentUpload = pendingUploads[currentIndex];
   const isMultiple = pendingUploads.length > 1;
@@ -430,9 +439,10 @@ export default function UploadPreviewDialog({
                     <video
                       src={currentUpload.previewUrl}
                       className="object-contain rounded-button-inner shadow-lg rotate-3 max-w-40 max-h-40 mx-auto"
-                      controls
                       muted
                       playsInline
+                      autoPlay
+                      loop
                     />
                   ) : currentUpload ? (
                     <img
@@ -537,119 +547,130 @@ export default function UploadPreviewDialog({
             </div>
           )}
 
-          {/* Name input - only show when there are files */}
-          {hasFiles && currentUpload && (
-            <div className="gap-2 flex flex-col">
-              <label className="sr-only text-small text-text-secondary">Name</label>
-              <Input
-                value={currentUpload.name}
-                onChange={(e) => updateCurrentUpload({ name: e.target.value })}
-                placeholder="Enter a name for this artifact"
-                disabled={uploading}
-              />
-            </div>
-          )}
-
-          {/* Description input - only show when there are files */}
-          {hasFiles && currentUpload && (
-            <div className="gap-2 flex flex-col">
-              <label className="sr-only text-small text-text-secondary">
-                Description (optional)
-              </label>
-              <textarea
-                value={currentUpload.description}
-                onChange={(e) =>
-                  updateCurrentUpload({ description: e.target.value })
-                }
-                placeholder="Add a description..."
-                disabled={uploading}
-                rows={3}
-                className="w-full min-w-0 rounded-button border border-border bg-background p-3 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
-              />
-            </div>
-          )}
-
-          {/* Upload progress */}
-          {uploading && uploadProgress && (
-            <div className="gap-2 flex flex-col">
-              <div className="flex justify-between text-small">
-                <span className="text-text-secondary">
-                  Uploading {uploadProgress.currentIndex} of{" "}
-                  {uploadProgress.totalFiles}
-                </span>
-                <span className="text-text-primary/90">
-                  {Math.round(overallProgress)}%
-                </span>
-              </div>
-              <div className="w-full h-2 bg-text-primary/10 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-text-primary transition-all duration-300 ease-out"
-                  style={{ width: `${overallProgress}%` }}
+          <div className="gap-2 flex flex-col relative">
+            {/* Name input - only show when there are files */}
+            {hasFiles && currentUpload && (
+              <div className="gap-2 flex flex-col">
+                <label className="sr-only text-small text-text-secondary">
+                  Name
+                </label>
+                <Input
+                  value={currentUpload.name}
+                  onChange={(e) =>
+                    updateCurrentUpload({ name: e.target.value })
+                  }
+                  placeholder="Enter a name for this artifact"
+                  disabled={uploading}
                 />
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Thumbnail navigation for multiple files - with add more button */}
-          {hasFiles && pendingUploads.length <= 10 && !uploading && (
-            <div className="flex gap-2 overflow-x-auto py-2 -mx-6 px-8 scrollbar-hide">
-              {pendingUploads.map((upload, index) => (
+            {/* Description input - only show when there are files */}
+            {hasFiles && currentUpload && (
+              <div className="gap-2 flex flex-col">
+                <label className="sr-only text-small text-text-secondary">
+                  Description (optional)
+                </label>
+                <textarea
+                  value={currentUpload.description}
+                  onChange={(e) =>
+                    updateCurrentUpload({ description: e.target.value })
+                  }
+                  placeholder="Add a description..."
+                  disabled={uploading}
+                  rows={3}
+                  className="w-full min-w-0 rounded-button border border-border bg-background p-3 text-text-primary placeholder:text-text-secondary transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-small resize-none"
+                />
+              </div>
+            )}
+            {/* Thumbnail navigation for multiple files - with add more button */}
+            {hasFiles && pendingUploads.length <= 10 && (
+              <div className="flex gap-2 overflow-x-auto py-2 -mx-6 px-8 scrollbar-hide">
+                {pendingUploads.map((upload, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentIndex(index)}
+                    className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
+                      index === currentIndex
+                        ? "border-text-primary"
+                        : "border-transparent opacity-60 hover:opacity-100"
+                    }`}
+                  >
+                    {upload.type === "video" ? (
+                      <video
+                        src={upload.previewUrl}
+                        className="w-full h-full object-cover"
+                        muted
+                      />
+                    ) : (
+                      <img
+                        src={upload.previewUrl}
+                        alt={upload.name}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </button>
+                ))}
+                {/* Add more files button */}
                 <button
-                  key={index}
-                  onClick={() => setCurrentIndex(index)}
-                  className={`relative flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition ${
-                    index === currentIndex
-                      ? "border-text-primary"
-                      : "border-transparent opacity-60 hover:opacity-100"
-                  }`}
+                  onClick={openFilePicker}
+                  className="flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-border hover:border-text-secondary transition flex items-center justify-center text-text-secondary hover:text-text-primary"
+                  title="Add more files"
                 >
-                  {upload.type === "video" ? (
-                    <video
-                      src={upload.previewUrl}
-                      className="w-full h-full object-cover"
-                      muted
-                    />
-                  ) : (
-                    <img
-                      src={upload.previewUrl}
-                      alt={upload.name}
-                      className="w-full h-full object-cover"
-                    />
-                  )}
+                  <Plus className="w-5 h-5" />
                 </button>
-              ))}
-              {/* Add more files button */}
-              <button
-                onClick={openFilePicker}
-                className="flex-shrink-0 w-16 h-16 rounded-lg border-2 border-dashed border-border hover:border-text-secondary transition flex items-center justify-center text-text-secondary hover:text-text-primary"
-                title="Add more files"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-            </div>
-          )}
-        </div>
+              </div>
+            )}
 
-        <DialogFooter>
-          {hasFiles ? (
-            <Button
-              variant="primary"
-              onClick={handleConfirm}
-              disabled={isConfirmDisabled}
-              className="w-full"
+            {hasFiles ? (
+              <Button
+                variant="primary-wide"
+                onClick={handleConfirm}
+                disabled={isConfirmDisabled}
+                className="w-full"
+              >
+                {uploading
+                  ? "Adding..."
+                  : isMultiple
+                    ? `Add ${pendingUploads.length} Artifacts`
+                    : "Add Artifact"}
+              </Button>
+            ) : (
+              <Button variant="ghost" onClick={handleClose} className="w-full">
+                Cancel
+              </Button>
+            )}
+
+            <div
+              className={`absolute -left-6 -right-6 -top-4 -bottom-6 flex items-center justify-center bg-primary/50 backdrop-blur-sm ${uploading && uploadProgress ? "opacity-100 visible" : "opacity-0 invisible"} transition-opacity duration-300`}
             >
-              {uploading
-                ? "Adding..."
-                : isMultiple
-                  ? `Add ${pendingUploads.length} Artifacts`
-                  : "Add Artifact"}
-            </Button>
-          ) : (
-            <Button variant="ghost" onClick={handleClose} className="w-full">
-              Cancel
-            </Button>
-          )}
-        </DialogFooter>
+              {/* Upload progress */}
+              <div className="gap-2 w-full p-12 flex flex-col items-center justify-center">
+                <LoadingLottie />
+
+                <div className="flex w-full justify-between text-small">
+                  <span className="text-text-secondary">
+                    {uploadProgress?.type === "convert"
+                      ? "Compressing"
+                      : "Uploading"}{" "}
+                    {uploadProgress?.type === "convert" ? "video" : "file"}
+                    {(uploadProgress?.totalFiles ?? 0) > 1 &&
+                      ` ${uploadProgress?.currentIndex} of ${uploadProgress?.totalFiles}`}
+                  </span>
+                  <span className="text-text-primary/90">
+                    {Math.round(overallProgress)}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-text-primary/10 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-text-primary transition-all duration-300 linear origin-left"
+                    style={{ transform: `scaleX(${overallProgress / 100})` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -38,8 +38,13 @@ export function SharedFilesHandler() {
     // No default context - user will select project in dialog or create standalone
   });
 
-  const { uploading, totalFiles, currentFileIndex, currentProgress } =
-    uploadState;
+  const {
+    uploading,
+    totalFiles,
+    currentFileIndex,
+    currentProgress,
+    currentProgressType,
+  } = uploadState;
 
   // Handle files from Share Target API (service worker messages)
   useEffect(() => {
@@ -101,6 +106,7 @@ export function SharedFilesHandler() {
               currentIndex: currentFileIndex,
               currentProgress,
               totalFiles,
+              type: currentProgressType,
             }
           : undefined
       }

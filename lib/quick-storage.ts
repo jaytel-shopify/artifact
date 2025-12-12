@@ -21,6 +21,7 @@ export interface UploadResult {
 
 export interface UploadProgress {
   percentage: number; // 0-100
+  type?: "upload" | "convert";
 }
 
 const MAX_IMAGE_SIZE = 2500;
@@ -75,7 +76,7 @@ export async function uploadFile(
   } else if (file.type.startsWith("video/")) {
     processedFile = await compressFile(file, {
       onProgress: (progress) => {
-        onProgress?.(progress);
+        onProgress?.({ percentage: progress.percentage, type: "convert" });
       },
     });
   }
@@ -86,7 +87,7 @@ export async function uploadFile(
   const result = await quick.fs.uploadFile(processedFile, {
     onProgress: (progress) => {
       console.log("Upload progress:", progress);
-      onProgress?.(progress);
+      onProgress?.({ percentage: progress.percentage, type: "upload" });
     },
   });
 
