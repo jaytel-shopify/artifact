@@ -1,12 +1,21 @@
 import { useEffect, useRef, useCallback } from "react";
 
+interface PinchZoomEvent {
+  /** The element under the cursor when pinch started */
+  targetElement: Element | null;
+  /** Cursor X position */
+  clientX: number;
+  /** Cursor Y position */
+  clientY: number;
+}
+
 interface PinchZoomOptions {
   /** Accumulated delta threshold to trigger zoom step */
   threshold?: number;
   /** Called when pinch zoom in is detected */
-  onZoomIn?: () => void;
+  onZoomIn?: (event: PinchZoomEvent) => void;
   /** Called when pinch zoom out is detected */
-  onZoomOut?: () => void;
+  onZoomOut?: (event: PinchZoomEvent) => void;
   /** Whether the hook is enabled */
   enabled?: boolean;
 }
@@ -27,6 +36,10 @@ export function usePinchZoom(
   // Accumulate delta to create "steps" for column changes
   const accumulatedDelta = useRef(0);
 
+  // Track cursor position and cached target element
+  const lastCursorPos = useRef<{ x: number; y: number } | null>(null);
+  const cachedTargetElement = useRef<Element | null>(null);
+
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       // Trackpad pinch gestures have ctrlKey set to true
@@ -38,12 +51,33 @@ export function usePinchZoom(
       // Accumulate the delta
       accumulatedDelta.current += e.deltaY;
 
+      // Only update target element if cursor has moved
+      const cursorMoved =
+        !lastCursorPos.current ||
+        lastCursorPos.current.x !== e.clientX ||
+        lastCursorPos.current.y !== e.clientY;
+
+      if (cursorMoved) {
+        cachedTargetElement.current = document.elementFromPoint(
+          e.clientX,
+          e.clientY
+        );
+        lastCursorPos.current = { x: e.clientX, y: e.clientY };
+      }
+
+      // Build event info with cached target
+      const pinchEvent: PinchZoomEvent = {
+        targetElement: cachedTargetElement.current,
+        clientX: e.clientX,
+        clientY: e.clientY,
+      };
+
       // Check if we've crossed the threshold
       if (accumulatedDelta.current > threshold) {
-        onZoomOut?.();
+        onZoomOut?.(pinchEvent);
         accumulatedDelta.current = 0;
       } else if (accumulatedDelta.current < -threshold) {
-        onZoomIn?.();
+        onZoomIn?.(pinchEvent);
         accumulatedDelta.current = 0;
       }
     },

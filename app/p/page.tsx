@@ -298,9 +298,35 @@ function PresentationPageInner({
   });
 
   // Pinch-to-zoom gesture (trackpad) to control columns
+  // Scrolls to the artifact under the cursor after zoom
+  const scrollToHoveredArtifact = useCallback(
+    (targetElement: Element | null) => {
+      if (!targetElement) return;
+      // Find the artifact container (has data-id attribute)
+      const artifactEl = targetElement.closest("[data-id]");
+      if (artifactEl) {
+        // Wait for layout to settle after column change
+        requestAnimationFrame(() => {
+          artifactEl.scrollIntoView({
+            behavior: "instant",
+            block: "nearest",
+            inline: "center",
+          });
+        });
+      }
+    },
+    []
+  );
+
   usePinchZoom(undefined, {
-    onZoomIn: () => handleSetColumns(Math.max(1, columns - 1)),
-    onZoomOut: () => handleSetColumns(Math.min(8, columns + 1)),
+    onZoomIn: (e) => {
+      handleSetColumns(Math.max(1, columns - 1));
+      scrollToHoveredArtifact(e.targetElement);
+    },
+    onZoomOut: (e) => {
+      handleSetColumns(Math.min(8, columns + 1));
+      scrollToHoveredArtifact(e.targetElement);
+    },
   });
 
   // Check permissions (access already verified in parent, this is for edit permissions)
