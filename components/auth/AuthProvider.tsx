@@ -23,7 +23,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 // ============================================================
 // DEBUG: Spoof user ID for testing other users' experiences
 // Priority: URL param > localStorage > null
-// 
+//
 // Usage:
 //   URL param:    ?spoof=18609
 //   Console:      localStorage.setItem('spoof_user_id', '18609')
@@ -31,16 +31,16 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 // ============================================================
 function getSpoofUserId(): string | null {
   if (typeof window === "undefined") return null;
-  
+
   // Check URL param first (highest priority)
   const urlParams = new URLSearchParams(window.location.search);
   const urlSpoof = urlParams.get("spoof");
   if (urlSpoof) return urlSpoof;
-  
+
   // Check localStorage
   const storedSpoof = localStorage.getItem("spoof_user_id");
   if (storedSpoof) return storedSpoof;
-  
+
   return null;
 }
 // ============================================================
