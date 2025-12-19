@@ -88,11 +88,13 @@ export async function createProject(data: {
 
   // Look up user by ID to get their email for access control display
   let user = await getUserById(data.creator_id);
-  
+
   // If user not found by ID, try to find by looking at all users and matching
   // This handles cases where Quick.db may have stored the user with a different ID format
   if (!user) {
-    console.warn(`[createProject] User not found by ID: ${data.creator_id}, attempting sync...`);
+    console.warn(
+      `[createProject] User not found by ID: ${data.creator_id}, attempting sync...`
+    );
     // Get identity from Quick and try to create/sync the user
     const identity = await quick.id.waitForUser();
     if (identity && identity.id === data.creator_id) {
@@ -110,9 +112,11 @@ export async function createProject(data: {
       });
     }
   }
-  
+
   if (!user) {
-    throw new Error(`User not found for id: ${data.creator_id}. Please refresh the page and try again.`);
+    throw new Error(
+      `User not found for id: ${data.creator_id}. Please refresh the page and try again.`
+    );
   }
 
   const projectData = {
@@ -566,6 +570,7 @@ export async function createArtifact(data: {
     artifact_id: response.id,
     artifact_type: response.type,
     artifact_name: response.name,
+    published: response.published,
   });
 
   return response;
