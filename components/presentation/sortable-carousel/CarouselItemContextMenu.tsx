@@ -9,14 +9,19 @@ import {
   Eye,
   EyeOff,
   Globe,
+  ArrowRight,
 } from "lucide-react";
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuTrigger,
+  ContextMenuSub,
+  ContextMenuSubTrigger,
+  ContextMenuSubContent,
 } from "@/components/ui/context-menu";
 import { toast } from "sonner";
+import type { Page } from "@/types";
 
 interface CarouselItemContextMenuProps {
   children: React.ReactNode;
@@ -35,6 +40,9 @@ interface CarouselItemContextMenuProps {
   onEdit?: () => void;
   onDelete?: () => void;
   onPublish?: () => Promise<void>;
+  onMoveToPage?: (pageId: string) => Promise<void>;
+  pages?: Page[];
+  currentPageId?: string;
   isReadOnly?: boolean;
 }
 
@@ -47,15 +55,22 @@ export function CarouselItemContextMenu({
   onEdit,
   onDelete,
   onPublish,
+  onMoveToPage,
+  pages,
+  currentPageId,
   isReadOnly = false,
 }: CarouselItemContextMenuProps) {
   const isVideo = contentType === "video";
   const isTitleCard = contentType === "titleCard";
 
+  // Filter out the current page from the move options
+  const availablePages = pages?.filter((p) => p.id !== currentPageId) || [];
+  const canMoveToPage = onMoveToPage && availablePages.length > 0;
+
   // If read-only or no handlers, just return children without context menu
   if (
     isReadOnly ||
-    (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit && !onPublish)
+    (!onDelete && !onUpdateMetadata && !onReplaceMedia && !onEdit && !onPublish && !canMoveToPage)
   ) {
     return <>{children}</>;
   }
@@ -217,12 +232,40 @@ export function CarouselItemContextMenu({
           </ContextMenuItem>
         )}
 
+        {/* Move to Page Submenu */}
+        {canMoveToPage && (
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className="flex items-center gap-2">
+              <ArrowRight className="w-4 h-4" />
+              Move to Page
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent>
+              {availablePages.map((page) => (
+                <ContextMenuItem
+                  key={page.id}
+                  onClick={async () => {
+                    try {
+                      await onMoveToPage(page.id);
+                      toast.success(`Moved to "${page.name}"`);
+                    } catch {
+                      toast.error("Failed to move artifact");
+                    }
+                  }}
+                >
+                  {page.name}
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        )}
+
         {/* Divider before delete */}
         {showDivider(
           !!(
             ((onReplaceMedia && !isTitleCard) ||
               (isTitleCard && onEdit) ||
-              onPublish) &&
+              onPublish ||
+              canMoveToPage) &&
             onDelete
           )
         )}

@@ -8,7 +8,7 @@ import { CarouselItemContent } from "./CarouselItemContent";
 import { CarouselItemContextMenu } from "./CarouselItemContextMenu";
 import EditableArtifactTitle from "@/components/artifacts/EditableArtifactTitle";
 import { Button } from "@/components/ui/button";
-import type { Artifact } from "@/types";
+import type { Artifact, Page } from "@/types";
 import {
   getCollectionMetadata,
   getCollectionArtifacts,
@@ -62,6 +62,9 @@ export interface Props extends Omit<HTMLAttributes<HTMLDivElement>, "id"> {
   onFocus?: () => void;
   onToggleCollection?: (collectionId: string) => Promise<void>;
   onPublish?: () => Promise<void>;
+  onMoveToPage?: (pageId: string) => Promise<void>;
+  pages?: Page[];
+  currentPageId?: string;
   isFocused?: boolean;
   isReadOnly?: boolean;
   isAnyDragging?: boolean;
@@ -101,6 +104,9 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
       onFocus,
       onToggleCollection,
       onPublish,
+      onMoveToPage,
+      pages,
+      currentPageId,
       isFocused = false,
       isReadOnly = false,
       isAnyDragging = false,
@@ -296,6 +302,9 @@ export const CarouselItem = forwardRef<HTMLLIElement, Props>(
         onEdit={onEdit}
         onDelete={onDelete}
         onPublish={onPublish}
+        onMoveToPage={onMoveToPage}
+        pages={pages}
+        currentPageId={currentPageId}
         isReadOnly={isReadOnly}
       >
         {contentElement}

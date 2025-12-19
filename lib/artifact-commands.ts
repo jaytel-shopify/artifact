@@ -467,3 +467,37 @@ export class ToggleDislikeCommand extends BaseCommand {
     }
   }
 }
+
+export class MoveToPageCommand extends BaseCommand {
+  private optimisticState: ArtifactWithPosition[];
+  private projectArtifactId: string;
+
+  constructor(
+    private artifactId: string,
+    private targetPageId: string,
+    currentArtifacts: ArtifactWithPosition[]
+  ) {
+    super(currentArtifacts);
+
+    const artifact = currentArtifacts.find((a) => a.id === artifactId);
+    if (!artifact) {
+      throw new Error("Artifact not found");
+    }
+
+    this.projectArtifactId = artifact.project_artifact_id;
+
+    // Optimistically remove the artifact from current page view
+    this.optimisticState = currentArtifacts.filter((a) => a.id !== artifactId);
+  }
+
+  getOptimisticState(): ArtifactWithPosition[] {
+    return this.optimisticState;
+  }
+
+  async execute(): Promise<void> {
+    // Update the page_id on the junction entry to move the artifact
+    await updateProjectArtifact(this.projectArtifactId, {
+      page_id: this.targetPageId,
+    });
+  }
+}

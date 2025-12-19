@@ -34,7 +34,7 @@ import {
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS, isKeyboardEvent } from "@dnd-kit/utilities";
-import type { ArtifactWithPosition } from "@/types";
+import type { ArtifactWithPosition, Page } from "@/types";
 
 import { CarouselItem, Layout, Position } from "./CarouselItem";
 import type { Props as CarouselItemProps } from "./CarouselItem";
@@ -74,6 +74,9 @@ interface Props {
   onEditTitleCard?: (artifactId: string) => void;
   onPublishArtifact?: (artifactId: string) => void;
   onFocusArtifact?: (artifactId: string) => void;
+  onMoveToPage?: (artifactId: string, pageId: string) => Promise<void>;
+  pages?: Page[];
+  currentPageId?: string;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
   /** Current user ID - needed to check if user can publish artifacts */
@@ -144,6 +147,9 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
       onEditTitleCard,
       onPublishArtifact,
       onFocusArtifact,
+      onMoveToPage,
+      pages,
+      currentPageId,
       focusedArtifactId,
       isReadOnly = false,
     },
@@ -521,6 +527,13 @@ export const SortableCarousel = forwardRef<HTMLUListElement, Props>(
                       ? () => onFocusArtifact(artifact.id)
                       : undefined
                   }
+                  onMoveToPage={
+                    onMoveToPage
+                      ? async (pageId) => onMoveToPage(artifact.id, pageId)
+                      : undefined
+                  }
+                  pages={pages}
+                  currentPageId={currentPageId}
                   isFocused={focusedArtifactId === artifact.id}
                 />
               );
@@ -630,6 +643,9 @@ function SortableCarouselItem({
   allArtifacts,
   expandedCollections,
   onToggleCollection,
+  onMoveToPage,
+  pages,
+  currentPageId,
   ...props
 }: CarouselItemProps & {
   activeIndex: number;
@@ -644,6 +660,9 @@ function SortableCarouselItem({
   allArtifacts?: ArtifactWithPosition[];
   expandedCollections?: Set<string>;
   onToggleCollection?: (collectionId: string) => Promise<void>;
+  onMoveToPage?: (pageId: string) => Promise<void>;
+  pages?: Page[];
+  currentPageId?: string;
 }) {
   const {
     attributes,
@@ -677,6 +696,9 @@ function SortableCarouselItem({
       allArtifacts={allArtifacts}
       expandedCollections={expandedCollections}
       onToggleCollection={onToggleCollection}
+      onMoveToPage={onMoveToPage}
+      pages={pages}
+      currentPageId={currentPageId}
       style={{
         transition,
         transform: isSorting ? undefined : CSS.Translate.toString(transform),

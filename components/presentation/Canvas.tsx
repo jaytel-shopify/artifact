@@ -3,7 +3,7 @@
 import { forwardRef, type MutableRefObject } from "react";
 import { SortableCarousel } from "./sortable-carousel/SortableCarousel";
 import { Layout } from "./sortable-carousel/CarouselItem";
-import type { ArtifactWithPosition } from "@/types";
+import type { ArtifactWithPosition, Page } from "@/types";
 
 // Carousel-based Canvas component
 // Original Canvas is backed up as Canvas.backup.tsx
@@ -28,6 +28,9 @@ interface CanvasProps {
   onEditTitleCard?: (artifactId: string) => void;
   onPublishArtifact?: (artifactId: string) => void;
   onFocusArtifact?: (artifactId: string) => void;
+  onMoveToPage?: (artifactId: string, pageId: string) => Promise<void>;
+  pages?: Page[];
+  currentPageId?: string;
   focusedArtifactId?: string | null;
   isReadOnly?: boolean;
   fitMode?: boolean;
@@ -52,6 +55,9 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
     onEditTitleCard,
     onPublishArtifact,
     onFocusArtifact,
+    onMoveToPage,
+    pages,
+    currentPageId,
     focusedArtifactId,
     isReadOnly = false,
     fitMode = false,
@@ -80,6 +86,9 @@ const Canvas = forwardRef<HTMLUListElement, CanvasProps>(function Canvas(
         onEditTitleCard={onEditTitleCard}
         onPublishArtifact={onPublishArtifact}
         onFocusArtifact={onFocusArtifact}
+        onMoveToPage={onMoveToPage}
+        pages={pages}
+        currentPageId={currentPageId}
         focusedArtifactId={focusedArtifactId}
         isReadOnly={isReadOnly}
         currentUserId={currentUserId}

@@ -19,6 +19,7 @@ import {
   RemoveFromCollectionCommand,
   UpdateArtifactCommand,
   DeleteArtifactCommand,
+  MoveToPageCommand,
 } from "@/lib/artifact-commands";
 import { cacheKeys } from "@/lib/cache-keys";
 import { useResourcePermissions } from "@/hooks/useResourcePermissions";
@@ -642,6 +643,20 @@ function PresentationPageInner({
                   );
                   await executeCommand(command, "DeleteArtifactCommand");
                 }}
+                onMoveToPage={
+                  canEdit
+                    ? async (artifactId, pageId) => {
+                        const command = new MoveToPageCommand(
+                          artifactId,
+                          pageId,
+                          artifacts
+                        );
+                        await executeCommand(command, "MoveToPageCommand");
+                      }
+                    : undefined
+                }
+                pages={pages}
+                currentPageId={currentPageId || undefined}
                 onReplaceMedia={canEdit ? handleReplaceMedia : undefined}
                 onEditTitleCard={canEdit ? handleEditTitleCard : undefined}
                 onPublishArtifact={(artifactId) =>
