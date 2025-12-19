@@ -183,6 +183,10 @@ export async function deleteProject(id: string): Promise<void> {
   // Delete the project
   const projectCollection = quick.db.collection("projects");
   await projectCollection.delete(id);
+
+  // Delete all access entries for this project (prevent orphaned entries)
+  const { deleteAllAccessForResource } = await import("./access-control");
+  await deleteAllAccessForResource(id, "project");
 }
 
 // canEditProject removed - use checkUserAccess from lib/access-control.ts instead
@@ -467,11 +471,18 @@ export async function getArtifactsByPage(
 
   const artifactIds = junctionEntries.map((e) => e.artifact_id);
 
-  // Fetch all artifacts
+  // Fetch artifacts in batches to avoid 414 URI Too Long errors
   const artifactsCollection = quick.db.collection("artifacts");
-  const allArtifacts = await artifactsCollection
-    .where({ id: { $in: artifactIds } })
-    .find();
+  const BATCH_SIZE = 50;
+  const allArtifacts: Artifact[] = [];
+  
+  for (let i = 0; i < artifactIds.length; i += BATCH_SIZE) {
+    const batch = artifactIds.slice(i, i + BATCH_SIZE);
+    const batchResults = await artifactsCollection
+      .where({ id: { $in: batch } })
+      .find();
+    allArtifacts.push(...batchResults);
+  }
 
   // Combine artifacts with position from junction table
   // Use name from junction entry (ProjectArtifact.name) instead of artifact's name

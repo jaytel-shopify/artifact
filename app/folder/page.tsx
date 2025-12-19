@@ -93,36 +93,62 @@ async function fetchFolderData(
       .find(),
   ]);
 
-  // Group pages by project_id
+  // Group pages by project_id and find first page for each project
   const pagesByProject = new Map<string, Page[]>();
+  const firstPageByProject = new Map<string, Page>();
   for (const page of allPages) {
     const pages = pagesByProject.get(page.project_id) || [];
     pages.push(page);
     pagesByProject.set(page.project_id, pages);
   }
+  // Determine first page for each project (position 0 or lowest position)
+  for (const [projectId, pages] of pagesByProject) {
+    const sortedPages = pages.sort((a, b) => a.position - b.position);
+    const firstPage = sortedPages.find((p) => p.position === 0) || sortedPages[0];
+    if (firstPage) {
+      firstPageByProject.set(projectId, firstPage);
+    }
+  }
 
-  // Group junction entries by project_id and collect all artifact IDs
+  // Group junction entries by project_id
   const junctionByProject = new Map<string, ProjectArtifact[]>();
-  const allArtifactIds = new Set<string>();
   for (const entry of allJunctionEntries) {
     const entries = junctionByProject.get(entry.project_id) || [];
     entries.push(entry);
     junctionByProject.set(entry.project_id, entries);
-    allArtifactIds.add(entry.artifact_id);
   }
 
-  // Batch fetch all artifacts referenced by junction entries
-  const allArtifacts =
-    allArtifactIds.size > 0
-      ? await quick.db
-          .collection("artifacts")
-          .where({ id: { $in: Array.from(allArtifactIds) } })
-          .find()
-      : [];
+  // Collect ONLY the artifact IDs needed for covers (first 3 from first page of each project)
+  const coverArtifactIds = new Set<string>();
+  const coverJunctionsByProject = new Map<string, ProjectArtifact[]>();
+  
+  for (const project of folderProjects) {
+    const firstPage = firstPageByProject.get(project.id);
+    if (!firstPage) continue;
+    
+    const projectJunctions = junctionByProject.get(project.id) || [];
+    const firstPageJunctions = projectJunctions
+      .filter((j) => j.page_id === firstPage.id)
+      .sort((a, b) => a.position - b.position)
+      .slice(0, 3); // Only need first 3 for cover
+    
+    coverJunctionsByProject.set(project.id, firstPageJunctions);
+    for (const junction of firstPageJunctions) {
+      coverArtifactIds.add(junction.artifact_id);
+    }
+  }
+
+  // Fetch ONLY the artifacts needed for covers (typically ~3 per project instead of ALL)
+  const coverArtifacts = coverArtifactIds.size > 0
+    ? await quick.db
+        .collection("artifacts")
+        .where({ id: { $in: Array.from(coverArtifactIds) } })
+        .find()
+    : [];
 
   // Create artifact lookup map
   const artifactById = new Map<string, Artifact>();
-  for (const artifact of allArtifacts) {
+  for (const artifact of coverArtifacts) {
     artifactById.set(artifact.id, artifact);
   }
 
@@ -130,33 +156,20 @@ async function fetchFolderData(
   const projectsWithCovers: ProjectWithCover[] = folderProjects.map(
     (project) => {
       const projectJunctions = junctionByProject.get(project.id) || [];
-      const projectPages = pagesByProject.get(project.id) || [];
+      const coverJunctions = coverJunctionsByProject.get(project.id) || [];
 
-      // Find first page (position 0 or first in list)
-      const sortedPages = projectPages.sort((a, b) => a.position - b.position);
-      const firstPage =
-        sortedPages.find((p) => p.position === 0) || sortedPages[0];
-
-      // Get cover artifacts (first 3 from first page)
-      let coverArtifacts: Artifact[] = [];
-      if (firstPage) {
-        const firstPageJunctions = projectJunctions
-          .filter((j) => j.page_id === firstPage.id)
-          .sort((a, b) => a.position - b.position);
-
-        coverArtifacts = firstPageJunctions
-          .slice(0, 3)
-          .map((j) => {
-            const artifact = artifactById.get(j.artifact_id);
-            if (!artifact) return null;
-            return { ...artifact, name: j.name || artifact.name };
-          })
-          .filter((a): a is Artifact => a !== null);
-      }
+      // Get cover artifacts from pre-computed cover junctions
+      const projectCoverArtifacts: Artifact[] = coverJunctions
+        .map((j) => {
+          const artifact = artifactById.get(j.artifact_id);
+          if (!artifact) return null;
+          return { ...artifact, name: j.name || artifact.name };
+        })
+        .filter((a): a is Artifact => a !== null);
 
       return {
         ...project,
-        coverArtifacts,
+        coverArtifacts: projectCoverArtifacts,
         artifactCount: projectJunctions.length,
       };
     }
