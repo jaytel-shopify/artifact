@@ -1,10 +1,12 @@
 // Service Worker for Artifact PWA
 // Strategy: Stale-While-Revalidate for optimal performance
-const CACHE_VERSION = "v5";
+// IMPORTANT: Increment version on every deploy to force cache refresh
+const CACHE_VERSION = "v6";
 const CACHE_NAME = `artifact-${CACHE_VERSION}`;
 
 // Assets to precache on install
-const PRECACHE_ASSETS = ["/", "/favicon.svg"];
+// NOTE: Do NOT cache "/" as it may include RSC payloads that become stale
+const PRECACHE_ASSETS = ["/favicon.svg"];
 
 // Install event - precache essential assets
 self.addEventListener("install", (event) => {
@@ -132,6 +134,10 @@ self.addEventListener("fetch", (event) => {
   // Skip navigation requests - let Next.js handle routing
   if (request.mode === "navigate") return;
 
+  // Skip HTML pages - these should always be fresh to prevent stale RSC payload issues
+  const acceptHeader = request.headers.get("Accept") || "";
+  if (acceptHeader.includes("text/html")) return;
+
   // Skip Quick API and analytics - always fresh
   if (
     url.pathname.includes("/client/quick.js") ||
@@ -141,11 +147,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Skip Next.js internals - let Next.js handle these
+  // Skip Next.js internals - let Next.js handle these (includes RSC payloads and chunks)
   if (url.pathname.startsWith("/_next/")) return;
 
   // Skip RSC payload files (.txt) - these contain chunk references that must match the current build
   if (url.pathname.endsWith("/index.txt") || url.pathname.endsWith(".txt")) return;
+
+  // Skip HTML files explicitly
+  if (url.pathname.endsWith(".html") || url.pathname.endsWith("/")) return;
 
   // Skip external domains (CDNs, etc.) - use network-first
   if (url.origin !== self.location.origin) {
